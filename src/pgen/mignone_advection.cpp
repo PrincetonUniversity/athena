@@ -4,10 +4,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mignone_advection.cpp
-//  \brief 1D passive scalar advection tests in curvilinear coordinates from:
-// Mignone, A. (2014). High-order conservative reconstruction schemes for finite volume
-// methods in cylindrical and spherical coordinates. Journal of Computational Physics,
-// 270, 784-814.
+//! \brief 1D passive scalar advection tests in curvilinear coordinates from:
+//! Mignone, A. (2014). High-order conservative reconstruction schemes for finite volume
+//! methods in cylindrical and spherical coordinates. Journal of Computational Physics,
+//! 270, 784-814.
 //========================================================================================
 
 // C++ headers
@@ -118,11 +118,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     Real l1_err[(NSCALARS > 0 ? NSCALARS : 1)]{},
         max_err[(NSCALARS > 0 ? NSCALARS : 1)]{};
     Real total_vol = 0.0;
-    MeshBlock *pmb = pblock;
+    MeshBlock *pmb = my_blocks(0);
     AthenaArray<Real> vol(pmb->ncells1);
     // recalculate initial condition from ProblemGenerator on final Mesh configuration:
     // (may have changed due to AMR)
-    while (pmb != nullptr) {
+    for (int b=0; b<nblocal; ++b) {
+      pmb = my_blocks(b);
       int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
           kl = pmb->ks, ku = pmb->ke;
       // only interested in error of the evolved passive scalar profiles
@@ -180,7 +181,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             }
           }
         }
-        pmb = pmb->next;
       }
     }
 #ifdef MPI_PARALLEL

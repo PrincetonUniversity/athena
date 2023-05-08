@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlle_mhd_rel_no_transform.cpp
-//  \brief Implements HLLE Riemann solver for relativistic MHD in pure GR.
+//! \brief Implements HLLE Riemann solver for relativistic MHD in pure GR.
 
 // C headers
 

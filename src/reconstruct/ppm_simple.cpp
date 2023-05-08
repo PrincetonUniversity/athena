@@ -4,27 +4,23 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file ppm_simple.cpp
-//  \brief piecewise parabolic reconstruction with modified McCorquodale/Colella limiter
-//         for a Cartesian-like coordinate with uniform spacing, Mignone modified original
-//         PPM limiter for nonuniform and/or curvilinear coordinate.
-//  Operates on the entire nx4 range of a single AthenaArray<Real> input (no MHD).
-//  No assumptions of hydrodynamic fluid variable input; no characteristic projection.
-
-// REFERENCES:
-// (CW) P. Colella & P. Woodward, "The Piecewise Parabolic Method (PPM) for Gas-Dynamical
-// Simulations", JCP, 54, 174 (1984)
-//
-// (CS) P. Colella & M. Sekora, "A limiter for PPM that preserves accuracy at smooth
-// extrema", JCP, 227, 7069 (2008)
-//
-// (MC) P. McCorquodale & P. Colella,  "A high-order finite-volume method for conservation
-// laws on locally refined grids", CAMCoS, 6, 1 (2011)
-//
-// (CD) P. Colella, M.R. Dorr, J. Hittinger, D. Martin, "High-order, finite-volume methods
-// in mapped coordinates", JCP, 230, 2952 (2011)
-//
-// (Mignone) A. Mignone, "High-order conservative reconstruction schemes for finite volume
-// methods in cylindrical and spherical coordinates", JCP, 270, 784 (2014)
+//! \brief piecewise parabolic reconstruction with modified McCorquodale/Colella limiter
+//!        for a Cartesian-like coordinate with uniform spacing, Mignone modified original
+//!        PPM limiter for nonuniform and/or curvilinear coordinate.
+//! Operates on the entire nx4 range of a single AthenaArray<Real> input (no MHD).
+//! No assumptions of hydrodynamic fluid variable input; no characteristic projection.
+//!
+//! REFERENCES:
+//! - (CW) P. Colella & P. Woodward, "The Piecewise Parabolic Method (PPM) for Gas-
+//!   Dynamical Simulations", JCP, 54, 174 (1984)
+//! - (CS) P. Colella & M. Sekora, "A limiter for PPM that preserves accuracy at smooth
+//!   extrema", JCP, 227, 7069 (2008)
+//! - (MC) P. McCorquodale & P. Colella,  "A high-order finite-volume method for
+//!   conservation laws on locally refined grids", CAMCoS, 6, 1 (2011)
+//! - (CD) P. Colella, M.R. Dorr, J. Hittinger, D. Martin, "High-order, finite-volume
+//!   methods in mapped coordinates", JCP, 230, 2952 (2011)
+//! - (Mignone) A. Mignone, "High-order conservative reconstruction schemes for finite
+//!   volume methods in cylindrical and spherical coordinates", JCP, 270, 784 (2014)
 //========================================================================================
 
 // C headers
@@ -40,9 +36,12 @@
 #include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::PiecewiseParabolicX1()
-//  \brief Returns L/R interface values in X1-dir constructed using fourth-order PPM and
-//         Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
+//! \fn Reconstruction::PiecewiseParabolicX1(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+//! \brief Returns L/R interface values in X1-dir constructed using fourth-order PPM and
+//!        Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
 
 void Reconstruction::PiecewiseParabolicX1(
     const int k, const int j, const int il, const int iu,
@@ -298,9 +297,12 @@ void Reconstruction::PiecewiseParabolicX1(
 }
 
 //-------------------------------------------------------------------------------------
-//! \fn Reconstruction::PiecewiseParabolicX2()
-//  \brief Returns L/R interface values in X2-dir constructed using fourth-order PPM and
-//         Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
+//! \fn Reconstruction::PiecewiseParabolicX2(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+//! \brief Returns L/R interface values in X2-dir constructed using fourth-order PPM and
+//!         Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
 
 void Reconstruction::PiecewiseParabolicX2(
     const int k, const int j, const int il, const int iu,
@@ -552,9 +554,12 @@ void Reconstruction::PiecewiseParabolicX2(
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::PiecewiseParabolicX3()
-//  \brief Returns L/R interface values in X3-dir constructed using fourth-order PPM and
-//         Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
+//! \fn Reconstruction::PiecewiseParabolicX3(const int k, const int j,
+//!                              const int il, const int iu,
+//!                              const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+//!                              AthenaArray<Real> &wl, AthenaArray<Real> &wr)
+//! \brief Returns L/R interface values in X3-dir constructed using fourth-order PPM and
+//!         Colella-Sekora or Mignone limiting over [kl,ku][jl,ju][il,iu]
 
 void Reconstruction::PiecewiseParabolicX3(
     const int k, const int j, const int il, const int iu,

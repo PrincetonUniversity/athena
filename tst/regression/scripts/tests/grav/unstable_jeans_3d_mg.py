@@ -60,7 +60,7 @@ def analyze():
     # error
     for i in range(len(data)):
         if data[i][4] > 1.e-7:
-            logger.warning("FFT Gravity Linear Jeans instability error is too large: %d",
+            logger.warning("MG Gravity Linear Jeans instability error is too large: %d",
                            32*2**i)
             result = False
     # compute overall convergence slope

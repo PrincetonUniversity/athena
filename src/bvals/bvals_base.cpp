@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_base.cpp
-//  \brief utility functions for BoundaryBase neighbors and buffers
+//! \brief utility functions for BoundaryBase neighbors and buffers
 
 // C headers
 
@@ -38,11 +38,7 @@ NeighborIndexes BoundaryBase::ni[56];
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
-//                          int iox1, int iox2, int iox3, NeighborConnect itype,
-//                          int ibid, int itargetid, int ifi1=0, int ifi2=0,
-//                          bool ipolar=false)
-// \brief Set neighbor information
+//! \brief Set neighbor information
 
 void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
                                 int iox1, int iox2, int iox3,
@@ -74,8 +70,8 @@ void NeighborBlock::SetNeighbor(int irank, int ilevel, int igid, int ilid,
 
 //----------------------------------------------------------------------------------------
 //! \fn BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
-//                                 BoundaryFlag *input_bcs)
-//  \brief constructor of BoundaryBase
+//!                                BoundaryFlag *input_bcs)
+//! \brief constructor of BoundaryBase
 BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
                            BoundaryFlag *input_bcs) {
   loc = iloc;
@@ -121,7 +117,7 @@ BoundaryBase::BoundaryBase(Mesh *pm, LogicalLocation iloc, RegionSize isize,
 
 //----------------------------------------------------------------------------------------
 //! \fn BoundaryBase::~BoundaryBase()
-//  \brief destructor of BoundaryBase
+//! \brief destructor of BoundaryBase
 
 BoundaryBase::~BoundaryBase() {
   if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar
@@ -135,12 +131,13 @@ BoundaryBase::~BoundaryBase() {
 
 //----------------------------------------------------------------------------------------
 //! \fn unsigned int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3,
-//                                                       int fi1, int fi2)
-//  \brief calculate a buffer identifier
+//!                                               int fi1, int fi2)
+//! \brief calculate a buffer identifier
 
 int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
-  // WARN: highly unsafe conversion if signed (oxi+1) are negative (they shouldn't be)
-  // See comments on BoundaryBase::CreateBvalsMPITag()
+  //! \warning: highly unsafe conversion if signed (oxi+1) are negative
+  //!   (they shouldn't be)
+  //! See comments on BoundaryBase::CreateBvalsMPITag()
   int ux1 = (ox1 + 1);
   int ux2 = (ox2 + 1);
   int ux3 = (ox3 + 1);
@@ -151,7 +148,7 @@ int BoundaryBase::CreateBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 
 //----------------------------------------------------------------------------------------
 //! \fn int BoundaryBase::BufferID(int dim, bool multilevel)
-//  \brief calculate neighbor indexes and target buffer IDs
+//! \brief calculate neighbor indexes and target buffer IDs
 
 int BoundaryBase::BufferID(int dim, bool multilevel) {
   int nf1 = 1, nf2 = 1;
@@ -256,7 +253,7 @@ int BoundaryBase::BufferID(int dim, bool multilevel) {
 
 //----------------------------------------------------------------------------------------
 //! \fn int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2)
-//  \brief find the boundary buffer ID from the direction
+//! \brief find the boundary buffer ID from the direction
 
 int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
   int bid = CreateBufferID(ox1, ox2, ox3, fi1, fi2);
@@ -270,18 +267,22 @@ int BoundaryBase::FindBufferID(int ox1, int ox2, int ox3, int fi1, int fi2) {
 
 //----------------------------------------------------------------------------------------
 //! \fn int BoundaryBase::CreateBvalsMPITag(int lid, int bufid, int phys)
-//  \brief calculate an MPI tag for Bval communications
-//  MPI tag = local id of destination (remaining bits) + bufid(6 bits) + physics(5 bits)
-
-// WARN: The below procedure of generating unsigned integer bitfields from signed integer
-// types and converting output to signed integer tags (required by MPI) is tricky and may
-// lead to unsafe conversions (and overflows from built-in types and MPI_TAG_UB).  Note,
-// the MPI standard requires signed int tag, with MPI_TAG_UB>= 2^15-1 = 32,767 (inclusive)
-
-// TODO(felker) Consider adding safety check: if (tag > MPI_TAG_UB) ATHENA_ERROR();
-// TODO(felker) Consider adding safety check: signed int inputs & outputs are positive
-// TODO(felker) Store # of bits for each bitfield component in preprocessor macros
-//              TAG_BITS_PHYS=5, MAX_NUM_PHYS=31
+//! \brief calculate an MPI tag for Bval communications
+//!
+//! MPI tag = local id of destination (remaining bits) + bufid(6 bits) + physics(5 bits)
+//!
+//! \warning
+//! The below procedure of generating unsigned integer bitfields from signed integer
+//! types and converting output to signed integer tags (required by MPI) is tricky and may
+//! lead to unsafe conversions (and overflows from built-in types and MPI_TAG_UB).
+//! Note, the MPI standard requires signed int tag,
+//! with MPI_TAG_UB>= 2^15-1 = 32,767 (inclusive)
+//!
+//! \todo (felker):
+//! - Consider adding safety check: if (tag > MPI_TAG_UB) ATHENA_ERROR();
+//! - Consider adding safety check: signed int inputs & outputs are positive
+//! - Store # of bits for each bitfield component in preprocessor macros
+//!   TAG_BITS_PHYS=5, MAX_NUM_PHYS=31
 
 int BoundaryBase::CreateBvalsMPITag(int lid, int bufid, int phys) {
   return (lid<<11) | (bufid<<5) | phys;
@@ -289,11 +290,11 @@ int BoundaryBase::CreateBvalsMPITag(int lid, int bufid, int phys) {
 
 
 //----------------------------------------------------------------------------------------
-// \!fn void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
-//                                               int *ranklist, int *nslist)
-// \brief Search and set all the neighbor blocks
-
-// TODO(felker): break-up this long function
+//! \fn void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree,
+//!                                              int *ranklist, int *nslist)
+//! \brief Search and set all the neighbor blocks
+//!
+//! \todo (felker): break-up this long function
 
 void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
                                          int *nslist) {
@@ -323,7 +324,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
 
   // x1 face
   for (int n=-1; n<=1; n+=2) {
-    neibt = tree.FindNeighbor(loc, n, 0, 0);
+    neibt = tree.FindNeighbor(loc, n, 0, 0, block_bcs);
     if (neibt == nullptr) { bufid += nf1*nf2; continue;}
     if (neibt->pleaf_ != nullptr) { // neighbor at finer level
       int fface = 1 - (n + 1)/2; // 0 for BoundaryFace::outer_x1, 1 for inner_x1
@@ -367,7 +368,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
 
   // x2 face
   for (int n=-1; n<=1; n+=2) {
-    neibt = tree.FindNeighbor(loc, 0, n, 0);
+    neibt = tree.FindNeighbor(loc, 0, n, 0, block_bcs);
     if (neibt == nullptr) { bufid += nf1*nf2; continue;}
     if (neibt->pleaf_ != nullptr) { // neighbor at finer level
       int fface = 1 - (n + 1)/2; // 0 for BoundaryFace::outer_x2, 1 for inner_x2
@@ -409,7 +410,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   // x3 face
   if (block_size_.nx3 > 1) {
     for (int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(loc, 0, 0, n);
+      neibt=tree.FindNeighbor(loc, 0, 0, n, block_bcs);
       if (neibt == nullptr) { bufid += nf1*nf2; continue;}
       if (neibt->pleaf_ != nullptr) { // neighbor at finer level
         int fface = 1 - (n + 1)/2; // 0 for BoundaryFace::outer_x3, 1 for inner_x3
@@ -447,7 +448,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   // x1x2 edge
   for (int m=-1; m<=1; m+=2) {
     for (int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(loc, n, m, 0);
+      neibt=tree.FindNeighbor(loc, n, m, 0, block_bcs);
       if (neibt == nullptr) { bufid += nf2; continue;}
       bool polar = false;
       if ((m == -1 && block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar)
@@ -598,7 +599,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   // x1x3 edge
   for (int m=-1; m<=1; m+=2) {
     for (int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(loc, n, 0, m);
+      neibt=tree.FindNeighbor(loc, n, 0, m, block_bcs);
       if (neibt == nullptr) { bufid += nf1; continue;}
       if (neibt->pleaf_ != nullptr) { // neighbor at finer level
         int ff1 = 1 - (n + 1)/2; // 0 for BoundaryFace::outer_x1, 1 for inner_x1
@@ -646,7 +647,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   // x2x3 edge
   for (int m=-1; m<=1; m+=2) {
     for (int n=-1; n<=1; n+=2) {
-      neibt=tree.FindNeighbor(loc, 0, n, m);
+      neibt=tree.FindNeighbor(loc, 0, n, m, block_bcs);
       if (neibt == nullptr) { bufid += nf1; continue;}
       if (neibt->pleaf_ != nullptr) { // neighbor at finer level
         int ff1 = 1 - (n + 1)/2; // 0 for BoundaryFace::outer_x2, 1 for inner_x2
@@ -693,7 +694,7 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
   for (int l=-1; l<=1; l+=2) {
     for (int m=-1; m<=1; m+=2) {
       for (int n=-1; n<=1; n+=2) {
-        neibt=tree.FindNeighbor(loc, n, m, l);
+        neibt=tree.FindNeighbor(loc, n, m, l, block_bcs);
         if (neibt == nullptr) { bufid++; continue;}
         bool polar = false;
         if ((m == -1 && block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::polar)
@@ -712,11 +713,19 @@ void BoundaryBase::SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist,
         int nlevel = neibt->loc_.level;
         nblevel[l+1][m+1][n+1] = nlevel;
         if (nlevel >= loc.level || (myox1 == n && myox2 == m && myox3 == l)) {
+          bool shear = false;
+          if ((nlevel == loc.level) &&
+              ((n == -1 && block_bcs[BoundaryFace::inner_x1]
+                                 == BoundaryFlag::shear_periodic) ||
+               (n ==  1 && block_bcs[BoundaryFace::outer_x1]
+                                 == BoundaryFlag::shear_periodic))) {
+            shear = true; // neighbor is shearing periodic
+          }
           int nid = neibt->gid_;
           int tbid = FindBufferID(-n, polar ? m : -m, -l, 0, 0);
           neighbor[nneighbor].SetNeighbor(
               ranklist[nid], nlevel, nid, nid-nslist[ranklist[nid]], n, m, l,
-              NeighborConnect::corner, bufid, tbid, polar, false);
+              NeighborConnect::corner, bufid, tbid, polar, shear);
           nneighbor++;
         }
         bufid++;

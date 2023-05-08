@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file reconstruction.hpp
-//  \brief defines class Reconstruction, data and functions for spatial reconstruction
+//! \brief defines class Reconstruction, data and functions for spatial reconstruction
 
 // C headers
 
@@ -21,7 +21,7 @@ class MeshBlock;
 class ParameterInput;
 
 //! \class Reconstruction
-//  \brief member functions implement various spatial reconstruction algorithms
+//! \brief member functions implement various spatial reconstruction algorithms
 
 class Reconstruction {
  public:

@@ -6,24 +6,29 @@
 // See LICENSE file for full public license information.
 //======================================================================================
 //! \file meshblock_tree.hpp
-//  \brief defines the LogicalLocation structure and MeshBlockTree class
+//! \brief defines the LogicalLocation structure and MeshBlockTree class
 //======================================================================================
 
 // C headers
 
 // C++ headers
+#include <unordered_map>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
 #include "../defs.hpp"
+#include "../multigrid/multigrid.hpp"
 
 class Mesh;
+struct MGOctet;
+struct LogicalLocationHash;
 
 //--------------------------------------------------------------------------------------
 //! \class MeshBlockTree
-//  \brief Objects are nodes in an AMR MeshBlock tree structure
+//! \brief Objects are nodes in an AMR MeshBlock tree structure
 
 class MeshBlockTree {
   friend class Mesh;
@@ -37,6 +42,7 @@ class MeshBlockTree {
   // accessor
   MeshBlockTree* GetLeaf(int ox1, int ox2, int ox3)
   { return pleaf_[(ox1 + (ox2<<1) + (ox3<<2))]; }
+  int GetGid() const {return gid_;}
 
   // functions
   void CreateRootGrid();
@@ -48,7 +54,10 @@ class MeshBlockTree {
   void CountMeshBlock(int& count);
   void GetMeshBlockList(LogicalLocation *list, int *pglist, int& count);
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
-                              bool amrflag=false);
+                              BoundaryFlag *bcs, bool amrflag=false);
+  void CountMGOctets(int *noct);
+  void GetMGOctetList(std::vector<MGOctet> *oct,
+       std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct);
 
  private:
   // data
@@ -56,6 +65,7 @@ class MeshBlockTree {
   int gid_;
   LogicalLocation loc_;
 
+  static Mesh* pmesh_;
   static MeshBlockTree* proot_;
   static int nleaf_;
 };

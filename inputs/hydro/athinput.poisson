@@ -49,7 +49,18 @@ nx3        = 64
 
 <hydro>
 gamma           = 1.666666666667 # gamma = C_p/C_v
-iso_sound_speed = 0.4082482905   # equavalent to sqrt(gamma*p/d) for p=0.1, d=1
+iso_sound_speed = 0.4082482905   # equivalent to sqrt(gamma*p/d) for p=0.1, d=1
+
+<gravity>
+mgmode          = FMG
+threshold       = 0.0
+output_defect   = true
+ix1_bc          = periodic
+ox1_bc          = periodic
+ix2_bc          = periodic
+ox2_bc          = periodic
+ix3_bc          = periodic
+ox3_bc          = periodic
 
 <problem>
 iprob           = 1 # problem choice

@@ -15,6 +15,8 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     brew install gcc
     brew link libevent || true
     brew install libevent || true
+    brew link hwloc || true
+    brew install hwloc || true
     brew link open-mpi || true
     # check to see if OpenMPI is cached from previous build
     if [ -f "bin/mpirun" ]; then

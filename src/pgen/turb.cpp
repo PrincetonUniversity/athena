@@ -4,8 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file turb.cpp
-//  \brief Problem generator for turbulence generator
-//
+//! \brief Problem generator for turbulence driver
 
 // C headers
 
@@ -32,9 +31,6 @@
 #include <omp.h>
 #endif
 
-
-std::int64_t rseed; // seed for turbulence power spectrum
-
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief
@@ -42,9 +38,7 @@ std::int64_t rseed; // seed for turbulence power spectrum
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (SELF_GRAVITY_ENABLED) {
     Real four_pi_G = pin->GetReal("problem","four_pi_G");
-    Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
     SetFourPiG(four_pi_G);
-    SetGravityThreshold(eps);
   }
 
   // turb_flag is initialzed in the Mesh constructor to 0 by default;
@@ -61,6 +55,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     return;
 #endif
   }
+
   return;
 }
 

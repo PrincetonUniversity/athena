@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file reflect.cpp
-//  \brief implementation of reflecting BCs in each dimension
+//! \file reflect_hydro.cpp
+//! \brief implementation of reflecting BCs in each dimension
 
 // C headers
 
@@ -17,8 +17,8 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectInnerX1(
-//          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, inner x1 boundary
+//!         Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, inner x1 boundary
 
 void HydroBoundaryVariable::ReflectInnerX1(
     Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh) {
@@ -49,8 +49,8 @@ void HydroBoundaryVariable::ReflectInnerX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectOuterX1(
-//          Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, outer x1 boundary
+//!         Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, outer x1 boundary
 
 void HydroBoundaryVariable::ReflectOuterX1(
     Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
@@ -81,8 +81,8 @@ void HydroBoundaryVariable::ReflectOuterX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectInnerX2(
-//          Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, inner x2 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, inner x2 boundary
 
 void HydroBoundaryVariable::ReflectInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
@@ -113,8 +113,8 @@ void HydroBoundaryVariable::ReflectInnerX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectOuterX2(
-//          Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, outer x2 boundary
+//!         Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, outer x2 boundary
 
 void HydroBoundaryVariable::ReflectOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
@@ -145,8 +145,8 @@ void HydroBoundaryVariable::ReflectOuterX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectInnerX3(
-//          Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
-//  \brief REFLECTING boundary conditions, inner x3 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh)
+//! \brief REFLECTING boundary conditions, inner x3 boundary
 
 void HydroBoundaryVariable::ReflectInnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
@@ -177,8 +177,8 @@ void HydroBoundaryVariable::ReflectInnerX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::ReflectOuterX3(
-//          Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, outer x3 boundary
+//!         Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh)
+//! \brief REFLECTING boundary conditions, outer x3 boundary
 
 void HydroBoundaryVariable::ReflectOuterX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {

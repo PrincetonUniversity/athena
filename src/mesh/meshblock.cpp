@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mesh.cpp
-//  \brief implementation of functions in MeshBlock class
+//! \brief implementation of functions in MeshBlock class
 
 // C headers
 
@@ -31,6 +31,7 @@
 #include "../gravity/gravity.hpp"
 #include "../gravity/mg_gravity.hpp"
 #include "../hydro/hydro.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
@@ -40,14 +41,13 @@
 #include "meshblock_tree.hpp"
 
 //----------------------------------------------------------------------------------------
-// MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
-//                        and mesh refinement objects.
+//! MeshBlock constructor: constructs coordinate, boundary condition, hydro, field
+//!                        and mesh refinement objects.
 
 MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_block,
-                     BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin,
-                     int igflag, bool ref_flag) :
+           BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, bool ref_flag) :
     pmy_mesh(pm), loc(iloc), block_size(input_block),
-    gid(igid), lid(ilid), gflag(igflag), nuser_out_var(), prev(nullptr), next(nullptr),
+    gid(igid), lid(ilid), nuser_out_var(),
     new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(1.0) {
@@ -127,14 +127,15 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // physics-related, per-MeshBlock objects: may depend on Coordinates for diffusion
   // terms, and may enroll quantities in AMR and BoundaryVariable objs. in BoundaryValues
 
-  // TODO(felker): prepare this section of the MeshBlock ctor to become more complicated
-  // for several extensions:
-  // 1) allow solver to compile without a Hydro class (or with a Hydro class for the
-  // background fluid that is not dynamically evolved)
-  // 2) MPI ranks containing MeshBlocks that solve a subset of the physics, e.g. Gravity
-  // but not Hydro.
-  // 3) MAGNETIC_FIELDS_ENABLED, SELF_GRAVITY_ENABLED, NSCALARS, (future) FLUID_ENABLED,
-  // etc. become runtime switches
+  //! \todo (felker):
+  //! * prepare this section of the MeshBlock ctor to become more complicated
+  //!   for several extensions:
+  //! 1. allow solver to compile without a Hydro class (or with a Hydro class for the
+  //!    background fluid that is not dynamically evolved)
+  //! 2. MPI ranks containing MeshBlocks that solve a subset of the physics, e.g. Gravity
+  //!    but not Hydro.
+  //! 3. MAGNETIC_FIELDS_ENABLED, SELF_GRAVITY_ENABLED, NSCALARS, (future) FLUID_ENABLED,
+  //!    etc. become runtime switches
 
   // if (FLUID_ENABLED) {
     // if (this->hydro_block)
@@ -166,11 +167,16 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
   // class type that is used in each PassiveScalars, Gravity, Field, Hydro, ... etc. class
   // in order to correctly advance the BoundaryValues::bvars_next_phys_id_ local counter.
 
-  // TODO(felker): check that local counter pbval->bvars_next_phys_id_ agrees with shared
-  // Mesh::next_phys_id_ counter (including non-BoundaryVariable / per-MeshBlock reserved
-  // values). Compare both private member variables via BoundaryValues::CheckCounterPhysID
+  //! \todo (felker):
+  //! * check that local counter pbval->bvars_next_phys_id_ agrees with shared
+  //!   Mesh::next_phys_id_ counter
+  //!   (including non-BoundaryVariable / per-MeshBlock reserved values).
+  //! * Compare both private member variables via BoundaryValues::CheckCounterPhysID
 
   peos = new EquationOfState(this, pin);
+
+  // OrbitalAdvection: constructor depends on Coordinates, Hydro, Field, PassiveScalars.
+  porb = new OrbitalAdvection(this, pin);
 
   // Create user mesh data
   InitUserMeshBlockData(pin);
@@ -179,14 +185,13 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 }
 
 //----------------------------------------------------------------------------------------
-// MeshBlock constructor for restarts
+//! MeshBlock constructor for restarts
 
 MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
                      LogicalLocation iloc, RegionSize input_block,
-                     BoundaryFlag *input_bcs,
-                     double icost, char *mbdata, int igflag) :
+                     BoundaryFlag *input_bcs, double icost, char *mbdata) :
     pmy_mesh(pm), loc(iloc), block_size(input_block),
-    gid(igid), lid(ilid), gflag(igflag), nuser_out_var(), prev(nullptr), next(nullptr),
+    gid(igid), lid(ilid), nuser_out_var(),
     new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(icost) {
@@ -287,6 +292,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   peos = new EquationOfState(this, pin);
 
+  // OrbitalAdvection: constructor depends on Coordinates, Hydro, Field, PassiveScalars.
+  porb = new OrbitalAdvection(this, pin);
+
   InitUserMeshBlockData(pin);
 
   std::size_t os = 0;
@@ -294,8 +302,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   // load hydro and field data
   std::memcpy(phydro->u.data(), &(mbdata[os]), phydro->u.GetSizeInBytes());
-  // load it into the other memory register(s) too
-  std::memcpy(phydro->u1.data(), &(mbdata[os]), phydro->u1.GetSizeInBytes());
   os += phydro->u.GetSizeInBytes();
   if (GENERAL_RELATIVITY) {
     std::memcpy(phydro->w.data(), &(mbdata[os]), phydro->w.GetSizeInBytes());
@@ -305,21 +311,16 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
   if (MAGNETIC_FIELDS_ENABLED) {
     std::memcpy(pfield->b.x1f.data(), &(mbdata[os]), pfield->b.x1f.GetSizeInBytes());
-    std::memcpy(pfield->b1.x1f.data(), &(mbdata[os]), pfield->b1.x1f.GetSizeInBytes());
     os += pfield->b.x1f.GetSizeInBytes();
     std::memcpy(pfield->b.x2f.data(), &(mbdata[os]), pfield->b.x2f.GetSizeInBytes());
-    std::memcpy(pfield->b1.x2f.data(), &(mbdata[os]), pfield->b1.x2f.GetSizeInBytes());
     os += pfield->b.x2f.GetSizeInBytes();
     std::memcpy(pfield->b.x3f.data(), &(mbdata[os]), pfield->b.x3f.GetSizeInBytes());
-    std::memcpy(pfield->b1.x3f.data(), &(mbdata[os]), pfield->b1.x3f.GetSizeInBytes());
     os += pfield->b.x3f.GetSizeInBytes();
   }
 
   // (conserved variable) Passive scalars:
   if (NSCALARS > 0) {
     std::memcpy(pscalars->s.data(), &(mbdata[os]), pscalars->s.GetSizeInBytes());
-    // load it into the other memory register(s) too
-    std::memcpy(pscalars->s1.data(), &(mbdata[os]), pscalars->s1.GetSizeInBytes());
     os += pscalars->s.GetSizeInBytes();
   }
 
@@ -339,12 +340,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 }
 
 //----------------------------------------------------------------------------------------
-// MeshBlock destructor
+//! MeshBlock destructor
 
 MeshBlock::~MeshBlock() {
-  if (prev != nullptr) prev->next = next;
-  if (next != nullptr) next->prev = prev;
-
   delete pcoord;
   delete precon;
   if (pmy_mesh->multilevel) delete pmr;
@@ -352,7 +350,9 @@ MeshBlock::~MeshBlock() {
   delete phydro;
   if (MAGNETIC_FIELDS_ENABLED) delete pfield;
   delete peos;
+  delete porb;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
+  if (SELF_GRAVITY_ENABLED == 2) delete pmg;
   if (NSCALARS > 0) delete pscalars;
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
@@ -368,7 +368,7 @@ MeshBlock::~MeshBlock() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::AllocateRealUserMeshBlockDataField(int n)
-//  \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
+//! \brief Allocate Real AthenaArrays for user-defned data in MeshBlock
 
 void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
   if (nreal_user_meshblock_data_ != 0) {
@@ -384,7 +384,7 @@ void MeshBlock::AllocateRealUserMeshBlockDataField(int n) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::AllocateIntUserMeshBlockDataField(int n)
-//  \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
+//! \brief Allocate integer AthenaArrays for user-defned data in MeshBlock
 
 void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
   if (nint_user_meshblock_data_ != 0) {
@@ -401,7 +401,7 @@ void MeshBlock::AllocateIntUserMeshBlockDataField(int n) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::AllocateUserOutputVariables(int n)
-//  \brief Allocate user-defined output variables
+//! \brief Allocate user-defined output variables
 
 void MeshBlock::AllocateUserOutputVariables(int n) {
   if (n <= 0) return;
@@ -421,7 +421,7 @@ void MeshBlock::AllocateUserOutputVariables(int n) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::SetUserOutputVariableName(int n, const char *name)
-//  \brief set the user-defined output variable name
+//! \brief set the user-defined output variable name
 
 void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
   if (n >= nuser_out_var) {
@@ -437,7 +437,7 @@ void MeshBlock::SetUserOutputVariableName(int n, const char *name) {
 
 //----------------------------------------------------------------------------------------
 //! \fn std::size_t MeshBlock::GetBlockSizeInBytes()
-//  \brief Calculate the block data size required for restart.
+//! \brief Calculate the block data size required for restart.
 
 std::size_t MeshBlock::GetBlockSizeInBytes() {
   std::size_t size;
@@ -450,8 +450,6 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
   if (MAGNETIC_FIELDS_ENABLED)
     size += (pfield->b.x1f.GetSizeInBytes() + pfield->b.x2f.GetSizeInBytes()
              + pfield->b.x3f.GetSizeInBytes());
-  if (SELF_GRAVITY_ENABLED)
-    size += pgrav->phi.GetSizeInBytes();
   if (NSCALARS > 0)
     size += pscalars->s.GetSizeInBytes();
 
@@ -466,7 +464,7 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::SetCostForLoadBalancing(double cost)
-//  \brief stop time measurement and accumulate it in the MeshBlock cost
+//! \brief stop time measurement and accumulate it in the MeshBlock cost
 
 void MeshBlock::SetCostForLoadBalancing(double cost) {
   if (pmy_mesh->lb_manual_) {
@@ -477,7 +475,7 @@ void MeshBlock::SetCostForLoadBalancing(double cost) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::ResetTimeMeasurement()
-//  \brief reset the MeshBlock cost for automatic load balancing
+//! \brief reset the MeshBlock cost for automatic load balancing
 
 void MeshBlock::ResetTimeMeasurement() {
   if (pmy_mesh->lb_automatic_) cost_ = TINY_NUMBER;
@@ -485,7 +483,7 @@ void MeshBlock::ResetTimeMeasurement() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::StartTimeMeasurement()
-//  \brief start time measurement for automatic load balancing
+//! \brief start time measurement for automatic load balancing
 
 void MeshBlock::StartTimeMeasurement() {
   if (pmy_mesh->lb_automatic_) {
@@ -499,7 +497,7 @@ void MeshBlock::StartTimeMeasurement() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::StartTimeMeasurement()
-//  \brief stop time measurement and accumulate it in the MeshBlock cost
+//! \brief stop time measurement and accumulate it in the MeshBlock cost
 
 void MeshBlock::StopTimeMeasurement() {
   if (pmy_mesh->lb_automatic_) {
@@ -525,13 +523,14 @@ void MeshBlock::RegisterMeshBlockData(FaceField &pvar_fc) {
 }
 
 
-// TODO(felker): consider merging the MeshRefinement::pvars_cc/fc_ into the
-// MeshBlock::pvars_cc/fc_. Would need to weaken the MeshBlock std::vector to use tuples
-// of pointers instead of a std::vector of references, so that:
-// - nullptr can be passed for the second entry if multilevel==false
-// - we can rebind the pointers to Hydro for GR purposes in bvals_refine.cpp
-// If GR, etc. in the future requires additional flexiblity from non-refinement load
-// balancing, we will need to use ptrs instead of references anyways, and add:
+//! \todo (felker):
+//! * consider merging the MeshRefinement::pvars_cc/fc_ into the MeshBlock::pvars_cc/fc_.
+//! * Would need to weaken the MeshBlock std::vector to use tuples
+//!   of pointers instead of a std::vector of references, so that:
+//!   - nullptr can be passed for the second entry if multilevel==false
+//!   - we can rebind the pointers to Hydro for GR purposes in bvals_refine.cpp
+//! * If GR, etc. in the future requires additional flexiblity from non-refinement load
+//!   balancing, we will need to use ptrs instead of references anyways, and add:
 
 // void MeshBlock::SetHydroData(HydroBoundaryQuantity hydro_type)
 //   Hydro *ph = pmy_block_->phydro;

@@ -1,16 +1,15 @@
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file blast.cpp
-//  \brief Problem generator for spherical blast wave problem.  Works in Cartesian,
-//         cylindrical, and spherical coordinates.  Contains post-processing code
-//         to check whether blast is spherical for regression tests
-//
-// REFERENCE: P. Londrillo & L. Del Zanna, "High-order upwind schemes for
-//   multidimensional MHD", ApJ, 530, 508 (2000), and references therein.
+//! \brief Problem generator for spherical blast wave problem.  Works in Cartesian,
+//!        cylindrical, and spherical coordinates.  Contains post-processing code
+//!        to check whether blast is spherical for regression tests
+//!
+//! REFERENCE: P. Londrillo & L. Del Zanna, "High-order upwind schemes for
+//!   multidimensional MHD", ApJ, 530, 508 (2000), and references therein.
 
 // C headers
 
@@ -48,7 +47,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Spherical blast wave test problem generator
+//! \brief Spherical blast wave test problem generator
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
@@ -215,18 +214,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 //========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-//  \brief Check radius of sphere to make sure it is round
+//! \brief Check radius of sphere to make sure it is round
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
+  MeshBlock *pmb = my_blocks(0);
 
   // analysis - check shape of the spherical blast wave
-  int is = pblock->is, ie = pblock->ie;
-  int js = pblock->js, je = pblock->je;
-  int ks = pblock->ks, ke = pblock->ke;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
   AthenaArray<Real> pr;
-  pr.InitWithShallowSlice(pblock->phydro->w, 4, IPR, 1);
+  pr.InitWithShallowSlice(pmb->phydro->w, 4, IPR, 1);
 
   // get coordinate location of the center, convert to Cartesian
   Real x1_0 = pin->GetOrAddReal("problem", "x1_0", 0.0);
@@ -256,13 +256,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // find indices of the center
   int ic, jc, kc;
   for (ic=is; ic<=ie; ic++)
-    if (pblock->pcoord->x1f(ic) > x1_0) break;
+    if (pmb->pcoord->x1f(ic) > x1_0) break;
   ic--;
-  for (jc=pblock->js; jc<=pblock->je; jc++)
-    if (pblock->pcoord->x2f(jc) > x2_0) break;
+  for (jc=pmb->js; jc<=pmb->je; jc++)
+    if (pmb->pcoord->x2f(jc) > x2_0) break;
   jc--;
-  for (kc=pblock->ks; kc<=pblock->ke; kc++)
-    if (pblock->pcoord->x3f(kc) > x3_0) break;
+  for (kc=pmb->ks; kc<=pmb->ke; kc++)
+    if (pmb->pcoord->x3f(kc) > x3_0) break;
   kc--;
 
   // search pressure maximum in each direction
@@ -336,9 +336,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       }
 
       Real xm, ym, zm;
-      Real x1m = pblock->pcoord->x1v(imax);
-      Real x2m = pblock->pcoord->x2v(jmax);
-      Real x3m = pblock->pcoord->x3v(kmax);
+      Real x1m = pmb->pcoord->x1v(imax);
+      Real x2m = pmb->pcoord->x2v(jmax);
+      Real x3m = pmb->pcoord->x3v(kmax);
       if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
         xm = x1m;
         ym = x2m;
@@ -363,11 +363,11 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   // use physical grid spacing at center of blast
   Real dr_max;
-  Real  x1c = pblock->pcoord->x1v(ic);
-  Real dx1c = pblock->pcoord->dx1f(ic);
-  Real  x2c = pblock->pcoord->x2v(jc);
-  Real dx2c = pblock->pcoord->dx2f(jc);
-  Real dx3c = pblock->pcoord->dx3f(kc);
+  Real  x1c = pmb->pcoord->x1v(ic);
+  Real dx1c = pmb->pcoord->dx1f(ic);
+  Real  x2c = pmb->pcoord->x2v(jc);
+  Real dx2c = pmb->pcoord->dx2f(jc);
+  Real dx3c = pmb->pcoord->dx3f(kc);
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     dr_max = std::max(std::max(dx1c, dx2c), dx3c);
   } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {

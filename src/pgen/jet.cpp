@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file jet.cpp
-//  \brief Sets up a nonrelativistic jet introduced through L-x1 boundary (left edge)
+//! \brief Sets up a nonrelativistic jet introduced through L-x1 boundary (left edge)
 //========================================================================================
 
 // C headers

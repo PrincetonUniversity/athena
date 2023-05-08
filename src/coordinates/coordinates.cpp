@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file coordinates.cpp
-//  \brief implements functions for Coordinates abstract base class
+//! \brief implements functions for Coordinates abstract base class
 
 // C headers
 
@@ -21,7 +21,7 @@
 #include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
-// Coordinates constructor: sets coordinates and coordinate spacing of cell FACES
+//! Coordinates constructor: sets coordinates and coordinate spacing of cell FACES
 
 Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
     pmy_block(pmb), coarse_flag(flag), pm(pmb->pmy_mesh) {
@@ -736,6 +736,14 @@ void Coordinates::LaplacianX3All(const AthenaArray<Real> &s, AthenaArray<Real> &
 void Coordinates::AddCoordTermsDivergence(
     const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Coordinate (Geometric) source term function for STS
+void Coordinates::AddCoordTermsDivergence_STS(
+    const Real dt, int stage, const AthenaArray<Real> *flux,
+    AthenaArray<Real> &u, AthenaArray<Real> &flux_div) {
   return;
 }
 

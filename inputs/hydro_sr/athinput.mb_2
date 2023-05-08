@@ -1,7 +1,7 @@
 <comment>
 problem   = SR hydro shocktube problem 2
 reference = Mignone & Bodo 2005, MNRAS 364 126
-configure = --prob=gr_shock_tube -s --coord=cartesian
+configure = -s --prob gr_shock_tube --coord cartesian [--nscalars 1]
 
 <job>
 problem_id = hydro_shock_rel_2
@@ -16,9 +16,9 @@ dt          = 0.4
 cfl_number = 0.4
 nlim       = -1
 tlim       = 0.4
-integrator  = vl2       # time integration algorithm
-xorder      = 2         # order of spatial reconstruction
-ncycle_out  = 1         # interval for stdout summary info
+integrator = vl2
+xorder     = 2
+ncycle_out = 1
 
 <mesh>
 nx1    = 400      # number of cells in x-direction
@@ -40,7 +40,8 @@ ix3_bc = periodic  # lower boundary
 ox3_bc = periodic  # upper boundary
 
 <hydro>
-gamma = 1.6666666666666667  # ratio of specific heats Gamma
+gamma  = 1.6666666666666667  # ratio of specific heats Gamma
+sfloor = 0.0                 # passive scalar floor
 
 <problem>
 shock_dir = 1    # 1/2/3 for x/y/z-directions

@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file fft_gravity.hpp
-//  \brief defines FFTGravity class
+//! \brief defines FFTGravity class
 
 // C headers
 
@@ -22,10 +22,10 @@ class ParameterInput;
 class Coordinates;
 class FFTBlock;
 class FFTDriver;
-class FFTGravitySolverTaskList;
+class GravityBoundaryTaskList;
 
 //! \class FFTGravity
-//  \brief FFT gravity solver for each block
+//! \brief FFT gravity solver for each block
 
 class FFTGravity : public FFTBlock {
  public:
@@ -38,7 +38,7 @@ class FFTGravity : public FFTBlock {
 
 
 //! \class FFTDriver
-//  \brief FFT gravity solver
+//! \brief FFT gravity solver
 
 class FFTGravityDriver : public FFTDriver{
  public:
@@ -48,7 +48,7 @@ class FFTGravityDriver : public FFTDriver{
 
  private:
   Real four_pi_G_;
-  FFTGravitySolverTaskList *gtlist_;
+  GravityBoundaryTaskList *gtlist_;
 };
 
 #endif // GRAVITY_FFT_GRAVITY_HPP_

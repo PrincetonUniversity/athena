@@ -3,25 +3,25 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file field_loop.c
-//  \brief Problem generator for advection of a field loop test.
-//
-// Can only be run in 2D or 3D.  Input parameters are:
-//   -  problem/rad   = radius of field loop
-//   -  problem/amp   = amplitude of vector potential (and therefore B)
-//   -  problem/vflow = flow velocity
-//   -  problem/drat  = density ratio in loop, to test density advection and conduction
-// The flow is automatically set to run along the diagonal.
-//
-// Various test cases are possible:
-//   - (iprob=1): field loop in x1-x2 plane (cylinder in 3D)
-//   - (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
-//   - (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
-//   - (iprob=4): rotated cylindrical field loop in 3D.
-//   - (iprob=5): spherical field loop in rotated plane
-//
-// REFERENCE: T. Gardiner & J.M. Stone, "An unsplit Godunov method for ideal MHD via
-// constrined transport", JCP, 205, 509 (2005)
+//! \file field_loop.cpp
+//! \brief Problem generator for advection of a field loop test.
+//!
+//! Can only be run in 2D or 3D.  Input parameters are:
+//!  -  problem/rad   = radius of field loop
+//!  -  problem/amp   = amplitude of vector potential (and therefore B)
+//!  -  problem/vflow = flow velocity
+//!  -  problem/drat  = density ratio in loop, to test density advection and conduction
+//! The flow is automatically set to run along the diagonal.
+//!
+//! Various test cases are possible:
+//!  - (iprob=1): field loop in x1-x2 plane (cylinder in 3D)
+//!  - (iprob=2): field loop in x2-x3 plane (cylinder in 3D)
+//!  - (iprob=3): field loop in x3-x1 plane (cylinder in 3D)
+//!  - (iprob=4): rotated cylindrical field loop in 3D.
+//!  - (iprob=5): spherical field loop in rotated plane
+//!
+//! REFERENCE: T. Gardiner & J.M. Stone, "An unsplit Godunov method for ideal MHD via
+//! constrined transport", JCP, 205, 509 (2005)
 //========================================================================================
 
 // C headers
@@ -41,6 +41,7 @@
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 
 #if !MAGNETIC_FIELDS_ENABLED
@@ -49,7 +50,7 @@
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief field loop advection problem generator for 2D/3D problems.
+//! \brief field loop advection problem generator for 2D/3D problems.
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
@@ -71,11 +72,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real vflow = pin->GetReal("problem","vflow");
   Real drat = pin->GetOrAddReal("problem","drat",1.0);
   int iprob = pin->GetInteger("problem","iprob");
-  Real omega0, qshear;
-  if (SHEARING_BOX) {
-    omega0 = pin->GetOrAddReal("problem","Omega0",1.0e-3);
-    qshear = pin->GetOrAddReal("problem","qshear",1.5);
-  }
+  Real omega0 = porb->Omega0;
+  Real qshear = porb->qshear;
   Real ang_2, cos_a2(0.0), sin_a2(0.0), lambda(0.0);
 
   // For (iprob=4) -- rotated cylinder in 3D -- set up rotation angle and wavelength
@@ -224,10 +222,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x2size/diag;
           phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i)*vflow*x3size/diag;
         }
-        if (SHEARING_BOX) {
+        if (pmy_mesh->shear_periodic) {
           Real x1 = pcoord->x1v(i);
           phydro->u(IM1,k,j,i) += iso_cs*phydro->u(IDN,k,j,i);
-          phydro->u(IM2,k,j,i) -= qshear*omega0*x1*phydro->u(IDN,k,j,i);
+          if(!porb->orbital_advection_defined)
+            phydro->u(IM2,k,j,i) -= qshear*omega0*x1*phydro->u(IDN,k,j,i);
         }
       }
     }

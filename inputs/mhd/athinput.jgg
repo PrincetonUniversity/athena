@@ -1,0 +1,70 @@
+<comment>
+problem   = MHD shwave test 
+reference = Johnson, 2007, ApJ, 660, 1375, Johnson et al., 2008, ApJS, 177, 373
+configure = --prob==jgg --eos=isothermal -b -fft
+
+<job>
+problem_id = JGG         # problem ID: basename of output filenames
+
+<output1>
+file_type   = hst        # History data dump
+dt          = 0.01       # time increment between outputs
+data_format = %1.16f     # format of History data
+
+<output2>
+file_type   = vtk        # Binary data dump
+variable    = prim       # variables to be output
+dt          = 1.0        # time increment between outputs
+
+<time>
+cfl_number  = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = -1         # cycle limit
+tlim        = 3.0        # time limit (15 orbits)
+integrator  = vl2        # time integration algorithm
+xorder      = 2          # order of spatial reconstruction
+ncycle_out  = 1          # interval for stdout summary info
+
+<mesh>
+nx1         = 32         # Number of zones in X1-direction
+x1min       = -0.25      # minimum value of X1
+x1max       = 0.25       # maximum value of X1
+ix1_bc      = shear_periodic      # inner-X1 boundary flag
+ox1_bc      = shear_periodic      # outer-X1 boundary flag
+
+nx2         = 16        # Number of zones in X2-direction
+x2min       = -0.25     # minimum value of X2
+x2max       = 0.25      # maximum value of X2
+ix2_bc      = periodic  # inner-X2 boundary flag
+ox2_bc      = periodic  # outer-X2 boundary flag
+
+nx3         = 16        # Number of zones in X3-direction
+x3min       = -0.25     # minimum value of X3
+x3max       = 0.25      # maximum value of X3
+ix3_bc      = periodic  # inner-X3 boundary flag
+ox3_bc      = periodic  # outer-X3 boundary flag
+
+num_threads = 1        # maximum number of OMP threads
+
+<meshblock>
+nx1 = 32 #
+nx2 = 16 #
+nx3 = 16 #
+
+<hydro>
+gamma = 1.666666666666667  # gamma = C_p/C_v
+iso_sound_speed = 1.0      # isothermal sound speed
+
+<orbital_advection>
+OAorder      = 0       # 0: w/o OA, 1: w/ OA (1st), 2: w/ OA (2nd)
+qshear       = 1.5     # shear rate
+Omega0       = 1.0     # angular velocity of the system
+
+<problem>
+d0           = 1.0    # background density
+amp          = 1.0e-6 # wave amplitude
+nwx          = -2     # wavenumber in x1
+nwy          = 1      # wavenumber in x2
+nwz          = 1      # wavenumber in x3
+ipert        = 2      # 1: Figs 5-7, 2: Fig 11 in JGG
+beta         = 20     # plasma beta
+error_output = false  # flag of error output in history file

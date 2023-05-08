@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mesh_refinement.cpp
-//  \brief implements functions for static/adaptive mesh refinement
+//! \brief implements functions for static/adaptive mesh refinement
 
 // C headers
 
@@ -30,7 +30,7 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin)
-//  \brief constructor
+//! \brief constructor
 
 MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block_(pmb), deref_count_(0),
@@ -91,7 +91,7 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
 
 //----------------------------------------------------------------------------------------
 //! \fn MeshRefinement::~MeshRefinement()
-//  \brief destructor
+//! \brief destructor
 
 MeshRefinement::~MeshRefinement() {
   delete pcoarsec;
@@ -99,9 +99,9 @@ MeshRefinement::~MeshRefinement() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::RestrictCellCenteredValues(const AthenaArray<Real> &fine,
-//                           AthenaArray<Real> &coarse, int sn, int en,
-//                           int csi, int cei, int csj, int cej, int csk, int cek)
-//  \brief restrict cell centered values
+//!                          AthenaArray<Real> &coarse, int sn, int en,
+//!                          int csi, int cei, int csj, int cej, int csk, int cek)
+//! \brief restrict cell centered values
 
 void MeshRefinement::RestrictCellCenteredValues(
     const AthenaArray<Real> &fine, AthenaArray<Real> &coarse, int sn, int en,
@@ -121,6 +121,7 @@ void MeshRefinement::RestrictCellCenteredValues(
           pco->CellVolume(k,j+1,si,ei,fvol_[0][1]);
           pco->CellVolume(k+1,j,si,ei,fvol_[1][0]);
           pco->CellVolume(k+1,j+1,si,ei,fvol_[1][1]);
+#pragma ivdep
           for (int ci=csi; ci<=cei; ci++) {
             int i = (ci - pmb->cis)*2 + pmb->is;
             // KGF: add the off-centered quantities first to preserve FP symmetry
@@ -146,6 +147,7 @@ void MeshRefinement::RestrictCellCenteredValues(
         int j = (cj - pmb->cjs)*2 + pmb->js;
         pco->CellVolume(0,j  ,si,ei,fvol_[0][0]);
         pco->CellVolume(0,j+1,si,ei,fvol_[0][1]);
+#pragma ivdep
         for (int ci=csi; ci<=cei; ci++) {
           int i = (ci - pmb->cis)*2 + pmb->is;
           // KGF: add the off-centered quantities first to preserve FP symmetry
@@ -164,6 +166,7 @@ void MeshRefinement::RestrictCellCenteredValues(
     int j = pmb->js, cj = pmb->cjs, k = pmb->ks, ck = pmb->cks;
     for (int n=sn; n<=en; ++n) {
       pco->CellVolume(k,j,si,ei,fvol_[0][0]);
+#pragma ivdep
       for (int ci=csi; ci<=cei; ci++) {
         int i = (ci - pmb->cis)*2 + pmb->is;
         Real tvol = fvol_[0][0](i) + fvol_[0][0](i+1);
@@ -176,8 +179,8 @@ void MeshRefinement::RestrictCellCenteredValues(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine
-//      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
-//  \brief restrict the x1 field data and set them into the coarse buffer
+//!     AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
+//! \brief restrict the x1 field data and set them into the coarse buffer
 
 void MeshRefinement::RestrictFieldX1(
     const AthenaArray<Real> &fine, AthenaArray<Real> &coarse,
@@ -196,6 +199,7 @@ void MeshRefinement::RestrictFieldX1(
         pco->Face1Area(k,   j+1, si, ei, sarea_x1_[0][1]);
         pco->Face1Area(k+1, j,   si, ei, sarea_x1_[1][0]);
         pco->Face1Area(k+1, j+1, si, ei, sarea_x1_[1][1]);
+#pragma ivdep
         for (int ci=csi; ci<=cei; ci++) {
           int i = (ci - pmb->cis)*2 + pmb->is;
           Real tarea = sarea_x1_[0][0](i) + sarea_x1_[0][1](i) +
@@ -213,6 +217,7 @@ void MeshRefinement::RestrictFieldX1(
       int j = (cj - pmb->cjs)*2 + pmb->js;
       pco->Face1Area(k,  j,   si, ei, sarea_x1_[0][0]);
       pco->Face1Area(k,  j+1, si, ei, sarea_x1_[0][1]);
+#pragma ivdep
       for (int ci=csi; ci<=cei; ci++) {
         int i = (ci - pmb->cis)*2 + pmb->is;
         Real tarea = sarea_x1_[0][0](i) + sarea_x1_[0][1](i);
@@ -221,6 +226,7 @@ void MeshRefinement::RestrictFieldX1(
       }
     }
   } else { // 1D - no restriction, just copy
+#pragma ivdep
     for (int ci=csi; ci<=cei; ci++) {
       int i = (ci - pmb->cis)*2 + pmb->is;
       coarse(csk,csj,ci) = fine(pmb->ks,pmb->js,i);
@@ -232,8 +238,8 @@ void MeshRefinement::RestrictFieldX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::RestrictFieldX2(const AthenaArray<Real> &fine
-//      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
-//  \brief restrict the x2 field data and set them into the coarse buffer
+//!     AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
+//! \brief restrict the x2 field data and set them into the coarse buffer
 
 void MeshRefinement::RestrictFieldX2(
     const AthenaArray<Real> &fine, AthenaArray<Real> &coarse,
@@ -259,6 +265,7 @@ void MeshRefinement::RestrictFieldX2(
             sarea_x2_[1][0](i) = pco->dx1f(i);
           }
         }
+#pragma ivdep
         for (int ci=csi; ci<=cei; ci++) {
           int i = (ci - pmb->cis)*2 + pmb->is;
           Real tarea = sarea_x2_[0][0](i) + sarea_x2_[0][0](i+1) +
@@ -283,6 +290,7 @@ void MeshRefinement::RestrictFieldX2(
           sarea_x2_[0][0](i) = pco->dx1f(i);
         }
       }
+#pragma ivdep
       for (int ci=csi; ci<=cei; ci++) {
         int i = (ci - pmb->cis)*2 + pmb->is;
         Real tarea = sarea_x2_[0][0](i) + sarea_x2_[0][0](i+1);
@@ -293,6 +301,7 @@ void MeshRefinement::RestrictFieldX2(
   } else { // 1D
     int k = pmb->ks, j = pmb->js;
     pco->Face2Area(k, j, si, ei, sarea_x2_[0][0]);
+#pragma ivdep
     for (int ci=csi; ci<=cei; ci++) {
       int i = (ci - pmb->cis)*2 + pmb->is;
       Real tarea = sarea_x2_[0][0](i) + sarea_x2_[0][0](i+1);
@@ -306,8 +315,8 @@ void MeshRefinement::RestrictFieldX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::RestrictFieldX3(const AthenaArray<Real> &fine
-//      AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
-//  \brief restrict the x3 field data and set them into the coarse buffer
+//!     AthenaArray<Real> &coarse, int csi, int cei, int csj, int cej, int csk, int cek)
+//! \brief restrict the x3 field data and set them into the coarse buffer
 
 void MeshRefinement::RestrictFieldX3(
     const AthenaArray<Real> &fine, AthenaArray<Real> &coarse,
@@ -324,6 +333,7 @@ void MeshRefinement::RestrictFieldX3(
         int j = (cj - pmb->cjs)*2 + pmb->js;
         pco->Face3Area(k,   j,  si, ei, sarea_x3_[0][0]);
         pco->Face3Area(k, j+1,  si, ei, sarea_x3_[0][1]);
+#pragma ivdep
         for (int ci=csi; ci<=cei; ci++) {
           int i = (ci - pmb->cis)*2 + pmb->is;
           Real tarea = sarea_x3_[0][0](i) + sarea_x3_[0][0](i+1) +
@@ -341,6 +351,7 @@ void MeshRefinement::RestrictFieldX3(
       int j = (cj - pmb->cjs)*2 + pmb->js;
       pco->Face3Area(k,   j, si, ei, sarea_x3_[0][0]);
       pco->Face3Area(k, j+1, si, ei, sarea_x3_[0][1]);
+#pragma ivdep
       for (int ci=csi; ci<=cei; ci++) {
         int i = (ci - pmb->cis)*2 + pmb->is;
         Real tarea = sarea_x3_[0][0](i) + sarea_x3_[0][0](i+1) +
@@ -354,6 +365,7 @@ void MeshRefinement::RestrictFieldX3(
   } else { // 1D
     int k = pmb->ks, j = pmb->js;
     pco->Face3Area(k, j, si, ei, sarea_x3_[0][0]);
+#pragma ivdep
     for (int ci=csi; ci<=cei; ci++) {
       int i = (ci - pmb->cis)*2 + pmb->is;
       Real tarea = sarea_x3_[0][0](i) + sarea_x3_[0][0](i+1);
@@ -367,9 +379,9 @@ void MeshRefinement::RestrictFieldX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::ProlongateCellCenteredValues(
-//        const AthenaArray<Real> &coarse,AthenaArray<Real> &fine, int sn, int en,,
-//        int si, int ei, int sj, int ej, int sk, int ek)
-//  \brief Prolongate cell centered values
+//!       const AthenaArray<Real> &coarse,AthenaArray<Real> &fine, int sn, int en,
+//!       int si, int ei, int sj, int ej, int sk, int ek)
+//! \brief Prolongate cell centered values
 
 void MeshRefinement::ProlongateCellCenteredValues(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
@@ -400,6 +412,7 @@ void MeshRefinement::ProlongateCellCenteredValues(
           const Real& fx2p = pco->x2v(fj+1);
           Real dx2fm = x2c - fx2m;
           Real dx2fp = fx2p - x2c;
+#pragma ivdep
           for (int i=si; i<=ei; i++) {
             int fi = (i - pmb->cis)*2 + pmb->is;
             const Real& x1m = pcoarsec->x1v(i-1);
@@ -455,6 +468,7 @@ void MeshRefinement::ProlongateCellCenteredValues(
         const Real& fx2p = pco->x2v(fj+1);
         Real dx2fm = x2c - fx2m;
         Real dx2fp = fx2p - x2c;
+#pragma ivdep
         for (int i=si; i<=ei; i++) {
           int fi = (i - pmb->cis)*2 + pmb->is;
           const Real& x1m = pcoarsec->x1v(i-1);
@@ -490,6 +504,7 @@ void MeshRefinement::ProlongateCellCenteredValues(
   } else { // 1D
     int k = pmb->cks, fk = pmb->ks, j = pmb->cjs, fj = pmb->js;
     for (int n=sn; n<=en; n++) {
+#pragma ivdep
       for (int i=si; i<=ei; i++) {
         int fi = (i - pmb->cis)*2 + pmb->is;
         const Real& x1m = pcoarsec->x1v(i-1);
@@ -520,8 +535,8 @@ void MeshRefinement::ProlongateCellCenteredValues(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::ProlongateSharedFieldX1(const AthenaArray<Real> &coarse,
-//      AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
-//  \brief prolongate x1 face-centered fields shared between coarse and fine levels
+//!     AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
+//! \brief prolongate x1 face-centered fields shared between coarse and fine levels
 
 void MeshRefinement::ProlongateSharedFieldX1(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
@@ -547,6 +562,7 @@ void MeshRefinement::ProlongateSharedFieldX1(
         Real dx2p = x2p - x2c;
         const Real& fx2m = pco->x2s1(fj);
         const Real& fx2p = pco->x2s1(fj+1);
+#pragma ivdep
         for (int i=si; i<=ei; i++) {
           int fi = (i - pmb->cis)*2 + pmb->is;
           Real ccval = coarse(k,j,i);
@@ -578,6 +594,7 @@ void MeshRefinement::ProlongateSharedFieldX1(
       Real dx2p = x2p - x2c;
       const Real& fx2m = pco->x2s1(fj);
       const Real& fx2p = pco->x2s1(fj+1);
+#pragma ivdep
       for (int i=si; i<=ei; i++) {
         int fi = (i - pmb->cis)*2 + pmb->is;
         Real ccval = coarse(k,j,i);
@@ -592,6 +609,7 @@ void MeshRefinement::ProlongateSharedFieldX1(
       }
     }
   } else { // 1D
+#pragma ivdep
     for (int i=si; i<=ei; i++) {
       int fi = (i - pmb->cis)*2 + pmb->is;
       fine(0,0,fi) = coarse(0,0,i);
@@ -602,8 +620,8 @@ void MeshRefinement::ProlongateSharedFieldX1(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::ProlongateSharedFieldX2(const AthenaArray<Real> &coarse,
-//      AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
-//  \brief prolongate x2 face-centered fields shared between coarse and fine levels
+//!     AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
+//! \brief prolongate x2 face-centered fields shared between coarse and fine levels
 
 void MeshRefinement::ProlongateSharedFieldX2(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
@@ -622,6 +640,7 @@ void MeshRefinement::ProlongateSharedFieldX2(
       const Real& fx3p = pco->x3s2(fk+1);
       for (int j=sj; j<=ej; j++) {
         int fj = (j - pmb->cjs)*2 + pmb->js;
+#pragma ivdep
         for (int i=si; i<=ei; i++) {
           int fi = (i - pmb->cis)*2 + pmb->is;
           const Real& x1m = pcoarsec->x1s2(i-1);
@@ -653,6 +672,7 @@ void MeshRefinement::ProlongateSharedFieldX2(
     int k = pmb->cks, fk = pmb->ks;
     for (int j=sj; j<=ej; j++) {
       int fj = (j - pmb->cjs)*2 + pmb->js;
+#pragma ivdep
       for (int i=si; i<=ei; i++) {
         int fi = (i - pmb->cis)*2 + pmb->is;
         const Real& x1m = pcoarsec->x1s2(i-1);
@@ -672,6 +692,7 @@ void MeshRefinement::ProlongateSharedFieldX2(
       }
     }
   } else {
+#pragma ivdep
     for (int i=si; i<=ei; i++) {
       int fi = (i - pmb->cis)*2 + pmb->is;
       Real gxm = (coarse(0,0,i) - coarse(0,0,i-1))
@@ -691,8 +712,8 @@ void MeshRefinement::ProlongateSharedFieldX2(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::ProlongateSharedFieldX3(const AthenaArray<Real> &coarse,
-//      AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
-//  \brief prolongate x3 face-centered fields shared between coarse and fine levels
+//!     AthenaArray<Real> &fine, int si, int ei, int sj, int ej, int sk, int ek)
+//! \brief prolongate x3 face-centered fields shared between coarse and fine levels
 
 void MeshRefinement::ProlongateSharedFieldX3(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
@@ -711,6 +732,7 @@ void MeshRefinement::ProlongateSharedFieldX3(
         Real dx2p = x2p - x2c;
         const Real& fx2m = pco->x2s3(fj);
         const Real& fx2p = pco->x2s3(fj+1);
+#pragma ivdep
         for (int i=si; i<=ei; i++) {
           int fi = (i - pmb->cis)*2 + pmb->is;
           const Real& x1m = pcoarsec->x1s3(i-1);
@@ -751,6 +773,7 @@ void MeshRefinement::ProlongateSharedFieldX3(
       const Real& fx2p = pco->x2s3(fj+1);
       Real dx2fm = x2c - fx2m;
       Real dx2fp = fx2p - x2c;
+#pragma ivdep
       for (int i=si; i<=ei; i++) {
         int fi = (i - pmb->cis)*2 + pmb->is;
         const Real& x1m = pcoarsec->x1s3(i-1);
@@ -782,6 +805,7 @@ void MeshRefinement::ProlongateSharedFieldX3(
       }
     }
   } else {
+#pragma ivdep
     for (int i=si; i<=ei; i++) {
       int fi = (i - pmb->cis)*2 + pmb->is;
       Real gxm = (coarse(0,0,i)   - coarse(0,0,i-1))
@@ -801,8 +825,8 @@ void MeshRefinement::ProlongateSharedFieldX3(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::ProlongateInternalField(FaceField &fine,
-//                           int si, int ei, int sj, int ej, int sk, int ek)
-//  \brief prolongate the internal face-centered fields
+//!                          int si, int ei, int sj, int ej, int sk, int ek)
+//! \brief prolongate the internal face-centered fields
 
 void MeshRefinement::ProlongateInternalField(
     FaceField &fine, int si, int ei, int sj, int ej, int sk, int ek) {
@@ -830,6 +854,7 @@ void MeshRefinement::ProlongateInternalField(
         pco->Face3Area(fk+1, fj+1, fsi, fei,   sarea_x3_[1][1]);
         pco->Face3Area(fk+2, fj,   fsi, fei,   sarea_x3_[2][0]);
         pco->Face3Area(fk+2, fj+1, fsi, fei,   sarea_x3_[2][1]);
+#pragma ivdep
         for (int i=si; i<=ei; i++) {
           int fi = (i - pmb->cis)*2 + pmb->is;
           Real Uxx = 0.0, Vyy = 0.0, Wzz = 0.0;
@@ -931,6 +956,7 @@ void MeshRefinement::ProlongateInternalField(
       pco->Face2Area(fk,   fj,   fsi, fei,   sarea_x2_[0][0]);
       pco->Face2Area(fk,   fj+1, fsi, fei,   sarea_x2_[0][1]);
       pco->Face2Area(fk,   fj+2, fsi, fei,   sarea_x2_[0][2]);
+#pragma ivdep
       for (int i=si; i<=ei; i++) {
         int fi = (i - pmb->cis)*2 + pmb->is;
         Real tmp1 = 0.25*(fine.x2f(fk,fj+2,fi+1)*sarea_x2_[0][2](fi+1)
@@ -961,6 +987,7 @@ void MeshRefinement::ProlongateInternalField(
     }
   } else {
     pco->Face1Area(0, 0, fsi, fei+1, sarea_x1_[0][0]);
+#pragma ivdep
     for (int i=si; i<=ei; i++) {
       int fi = (i - pmb->cis)*2 + pmb->is;
       Real ph = sarea_x1_[0][0](fi)*fine.x1f(0,0,fi);
@@ -972,15 +999,15 @@ void MeshRefinement::ProlongateInternalField(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::CheckRefinementCondition()
-//  \brief Check refinement criteria
+//! \brief Check refinement criteria
 
 void MeshRefinement::CheckRefinementCondition() {
   MeshBlock *pmb = pmy_block_;
   int ret = 0, aret = -1;
   refine_flag_ = 0;
 
-  // *** should be implemented later ***
-  // loop-over refinement criteria
+  //! \todo **should be implemented later:**
+  //! loop-over refinement criteria
   if (AMRFlag_ != nullptr)
     ret = AMRFlag_(pmb);
   aret = std::max(aret,ret);
@@ -1034,7 +1061,8 @@ void MeshRefinement::CheckRefinementCondition() {
   return;
 }
 
-// TODO(felker): consider merging w/ MeshBlock::pvars_cc, etc. See meshblock.cpp
+//! \todo (felker):
+//! * consider merging w/ MeshBlock::pvars_cc, etc. See meshblock.cpp
 
 int MeshRefinement::AddToRefinement(AthenaArray<Real> *pvar_cc,
                                      AthenaArray<Real> *pcoarse_cc) {
@@ -1047,32 +1075,34 @@ int MeshRefinement::AddToRefinement(FaceField *pvar_fc, FaceField *pcoarse_fc) {
   return static_cast<int>(pvars_fc_.size() - 1);
 }
 
-// Currently, only called in 2x functions in bvals_refine.cpp:
-// ----------
-// - BoundaryValues::RestrictGhostCellsOnSameLevel()--- to perform additional
-// restriction on primitive Hydro standard/coarse arrays (only for GR) without changing
-// the var_cc/coarse_buf pointer members of the HydroBoundaryVariable.
-
-// - BoundaryValues::ProlongateGhostCells()--- to ensure prolongation occurs on conserved
-// (not primitive) variable standard/coarse arrays for Hydro, PassiveScalars
-
-// Should probably consolidate this function and std::vector of tuples with
-// BoundaryVariable interface ptr members. Too much independent switching of ptrs!
-// ----------
-// Even though we currently do not have special GR functionality planned for
-// PassiveScalars::coarse_r_ like Hydro::coarse_prim_
-// (it is never transferred in Mesh::LoadBalancingAndAdaptiveMeshRefinement)
-// the physical (non-periodic) boundary functions will still apply only to the PRIMITIVE
-// scalar variable arrays, thus S/AMR demand 1) AthenaArray<Real> PassiveScalars::coarse_r
-// 2) ability to switch (s, coarse_s) and (r, coarse_r) ptrs in MeshRefinement::bvals_cc_
+//! Currently, only called in 2x functions in bvals_refine.cpp:
+//! __________
+//! - BoundaryValues::RestrictGhostCellsOnSameLevel()--- to perform additional
+//! restriction on primitive Hydro standard/coarse arrays (only for GR) without changing
+//! the var_cc/coarse_buf pointer members of the HydroBoundaryVariable.
+//!
+//! - BoundaryValues::ProlongateGhostCells()--- to ensure prolongation occurs on conserved
+//! (not primitive) variable standard/coarse arrays for Hydro, PassiveScalars
+//!
+//! Should probably consolidate this function and std::vector of tuples with
+//! BoundaryVariable interface ptr members. Too much independent switching of ptrs!
+//! __________
+//! Even though we currently do not have special GR functionality planned for
+//! PassiveScalars::coarse_r_ like Hydro::coarse_prim_
+//! (it is never transferred in Mesh::LoadBalancingAndAdaptiveMeshRefinement)
+//! the physical (non-periodic) boundary functions will still apply only to the PRIMITIVE
+//! scalar variable arrays, thus S/AMR demand
+//! 1. AthenaArray<Real> PassiveScalars::coarse_r
+//! 2. ability to switch (s, coarse_s) and (r, coarse_r) ptrs in MeshRefinement::bvals_cc_
 
 void MeshRefinement::SetHydroRefinement(HydroBoundaryQuantity hydro_type) {
-  // TODO(felker): make more general so it can be used as SetPassiveScalarsRefinement()
-  // e.g. refer to "int Hydro::refinement_idx" instead of assuming that the correct tuple
-  // is in the first vector entry
+  //! \todo (felker):
+  //! * make more general so it can be used as SetPassiveScalarsRefinement()
+  //! * e.g. refer to "int Hydro::refinement_idx" instead of assuming that
+  //!   the correct tuple is in the first vector entry
   Hydro *ph = pmy_block_->phydro;
-  // hard-coded assumption that, if multilevel, then Hydro is always present
-  // and enrolled in mesh refinement in the first pvars_cc_ vector entry
+  //! hard-coded assumption that, if multilevel, then Hydro is always present
+  //! and enrolled in mesh refinement in the first pvars_cc_ vector entry
   switch (hydro_type) {
     case (HydroBoundaryQuantity::cons): {
       pvars_cc_.front() = std::make_tuple(&ph->u, &ph->coarse_cons_);

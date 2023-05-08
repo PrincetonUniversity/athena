@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlld_rel.cpp
-//  \brief Implements HLLD Riemann solver for relativistic MHD.
+//! \brief Implements HLLD Riemann solver for relativistic MHD.
 
 // C headers
 
@@ -177,12 +177,6 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
   }
 #endif  // GENERAL_RELATIVITY
 
-  // Calculate wavespeeds
-  pmb->peos->FastMagnetosonicSpeedsSR(prim_l, bb_normal, k, j, il, iu, ivx, lambdas_p_l,
-                                      lambdas_m_l);
-  pmb->peos->FastMagnetosonicSpeedsSR(prim_r, bb_normal, k, j, il, iu, ivx, lambdas_p_r,
-                                      lambdas_m_r);
-
   // Calculate cyclic permutations of indices
   int ivy = IVX + ((ivx-IVX)+1)%3;
   int ivz = IVX + ((ivx-IVX)+2)%3;
@@ -191,6 +185,7 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
   const Real gamma_adi = pmb->peos->GetGamma();
   const Real gamma_prime = gamma_adi/(gamma_adi-1.0);
 
+  // Allocate aligned memory
   Real cons_l[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real flux_l[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real cons_r[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
@@ -207,7 +202,6 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
   Real flux_c[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real cons_interface[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real flux_interface[NWAVE][SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
-
   Real ptot_init[SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real ptot_c[SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
   Real ptot_0[SIMD_WIDTH] __attribute__((aligned(CACHELINE_BYTES)));
@@ -231,24 +225,14 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       // Extract left primitives
       Real rho_l = prim_l(IDN,ipm);
       Real pgas_l = prim_l(IPR,ipm);
+      Real ux_l = prim_l(ivx,ipm);
+      Real uy_l = prim_l(ivy,ipm);
+      Real uz_l = prim_l(ivz,ipm);
       Real u_l[4];
-      if (GENERAL_RELATIVITY) {
-        Real vx_l = prim_l(ivx,ipm);
-        Real vy_l = prim_l(ivy,ipm);
-        Real vz_l = prim_l(ivz,ipm);
-        u_l[0] = std::sqrt(1.0 + SQR(vx_l) + SQR(vy_l) + SQR(vz_l));
-        u_l[1] = vx_l;
-        u_l[2] = vy_l;
-        u_l[3] = vz_l;
-      } else {  // SR
-        Real vx_l = prim_l(ivx,ipm);
-        Real vy_l = prim_l(ivy,ipm);
-        Real vz_l = prim_l(ivz,ipm);
-        u_l[0] = std::sqrt(1.0 / (1.0 - SQR(vx_l) - SQR(vy_l) - SQR(vz_l)));
-        u_l[1] = u_l[0] * vx_l;
-        u_l[2] = u_l[0] * vy_l;
-        u_l[3] = u_l[0] * vz_l;
-      }
+      u_l[0] = std::sqrt(1.0 + SQR(ux_l) + SQR(uy_l) + SQR(uz_l));
+      u_l[1] = ux_l;
+      u_l[2] = uy_l;
+      u_l[3] = uz_l;
       Real bby_l = prim_l(IBY,ipm);
       Real bbz_l = prim_l(IBZ,ipm);
 
@@ -256,23 +240,13 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       Real rho_r = prim_r(IDN,ipm);
       Real pgas_r = prim_r(IPR,ipm);
       Real u_r[4];
-      if (GENERAL_RELATIVITY) {
-        Real vx_r = prim_r(ivx,ipm);
-        Real vy_r = prim_r(ivy,ipm);
-        Real vz_r = prim_r(ivz,ipm);
-        u_r[0] = std::sqrt(1.0 + SQR(vx_r) + SQR(vy_r) + SQR(vz_r));
-        u_r[1] = vx_r;
-        u_r[2] = vy_r;
-        u_r[3] = vz_r;
-      } else {  // SR
-        Real vx_r = prim_r(ivx,ipm);
-        Real vy_r = prim_r(ivy,ipm);
-        Real vz_r = prim_r(ivz,ipm);
-        u_r[0] = std::sqrt(1.0 / (1.0 - SQR(vx_r) - SQR(vy_r) - SQR(vz_r)));
-        u_r[1] = u_r[0] * vx_r;
-        u_r[2] = u_r[0] * vy_r;
-        u_r[3] = u_r[0] * vz_r;
-      }
+      Real ux_r = prim_r(ivx,ipm);
+      Real uy_r = prim_r(ivy,ipm);
+      Real uz_r = prim_r(ivz,ipm);
+      u_r[0] = std::sqrt(1.0 + SQR(ux_r) + SQR(uy_r) + SQR(uz_r));
+      u_r[1] = ux_r;
+      u_r[2] = uy_r;
+      u_r[3] = uz_r;
       Real bby_r = prim_r(IBY,ipm);
       Real bbz_r = prim_r(IBZ,ipm);
 
@@ -294,6 +268,16 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
       b_r[2] = (bby_r + b_r[0] * u_r[2]) / u_r[0];
       b_r[3] = (bbz_r + b_r[0] * u_r[3]) / u_r[0];
       Real b_sq_r = -SQR(b_r[0]) + SQR(b_r[1]) + SQR(b_r[2]) + SQR(b_r[3]);
+
+      // Calculate left wavespeeds
+      Real wgas_l = rho_l + gamma_adi / (gamma_adi - 1.0) * pgas_l;
+      pmb->peos->FastMagnetosonicSpeedsGR(wgas_l, pgas_l, u_l[0], u_l[1], b_sq_l, -1.0,
+                                          0.0, 1.0, &lambdas_p_l(ipm), &lambdas_m_l(ipm));
+
+      // Calculate right wavespeeds
+      Real wgas_r = rho_r + gamma_adi / (gamma_adi - 1.0) * pgas_r;
+      pmb->peos->FastMagnetosonicSpeedsGR(wgas_r, pgas_r, u_r[0], u_r[1], b_sq_r, -1.0,
+                                          0.0, 1.0, &lambdas_p_r(ipm), &lambdas_m_r(ipm));
 
       // Calculate extremal wavespeeds (MB 55)
       Real lambda_l = std::min(lambdas_m_l(ipm), lambdas_m_r(ipm));
@@ -940,7 +924,6 @@ void HLLDTransforming(MeshBlock *pmb, const int k, const int j,
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
-//   same function as in adiabatic_mhd_sr.cpp
 
 Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq,
                Real gamma_prime) {
@@ -969,7 +952,6 @@ Real EResidual(Real w_guess, Real dd, Real ee, Real m_sq, Real bb_sq, Real ss_sq
 // Notes:
 //   follows Mignone & McKinney 2007, MNRAS 378 1118 (MM)
 //   implementation follows that of hlld_sr.c in Athena 4.2
-//   same function as in adiabatic_mhd_sr.cpp
 
 Real EResidualPrime(Real w_guess, Real dd, Real m_sq, Real bb_sq, Real ss_sq,
                     Real gamma_prime) {

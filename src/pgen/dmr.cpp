@@ -4,11 +4,11 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file dmr.cpp
-//  \brief Problem generator for double Mach reflection test.
-//  Only works for genuinely 2D hydro problems in X1-X2 plane with adiabatic EOS.
-//
-// REFERENCE: P. Woodward & P. Colella, "The numerical simulation of two-dimensional
-// fluid flow with strong shocks", JCP, 54, 115, sect. IVc.
+//! \brief Problem generator for double Mach reflection test.
+//!  Only works for genuinely 2D hydro problems in X1-X2 plane with adiabatic EOS.
+//!
+//! REFERENCE: P. Woodward & P. Colella, "The numerical simulation of two-dimensional
+//! fluid flow with strong shocks", JCP, 54, 115, sect. IVc.
 
 // C headers
 
@@ -52,9 +52,9 @@ int RefinementCondition(MeshBlock *pmb);
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
-//  \brief Function to initialize problem-specific data in mesh class.  Can also be used
-//  to initialize variables which are global to (and therefore can be passed to) other
-//  functions in this file.  Called in Mesh constructor.
+//! \brief Function to initialize problem-specific data in mesh class.  Can also be used
+//! to initialize variables which are global to (and therefore can be passed to) other
+//! functions in this file.  Called in Mesh constructor.
 //========================================================================================
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
@@ -71,7 +71,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief Initialize DMR test
+//! \brief Initialize DMR test
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
@@ -154,8 +154,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void DMRInnerX1()
-//  \brief Sets boundary condition on left X boundary (iib) for dmr test
-//  Quantities at this boundary are held fixed at the downstream state
+//! \brief Sets boundary condition on left X boundary (iib) for dmr test
+//! Quantities at this boundary are held fixed at the downstream state
 
 void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                 Real time, Real dt,
@@ -180,9 +180,9 @@ void DMRInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
 //----------------------------------------------------------------------------------------
 //! \fn void DMRInnerX2()
-//  \brief  Sets boundary condition on lower Y boundary (ijb) for dmr test.
-//  Quantaties at this boundary are held fixed at the downstream state for
-//  x1 < 0.16666666, and are reflected for x1 > 0.16666666
+//! \brief  Sets boundary condition on lower Y boundary (ijb) for dmr test.
+//! Quantaties at this boundary are held fixed at the downstream state for
+//! x1 < 0.16666666, and are reflected for x1 > 0.16666666
 
 void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                 Real time, Real dt,
@@ -217,10 +217,10 @@ void DMRInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 
 //----------------------------------------------------------------------------------------
 //! \fn void DMROuterX2()
-//  \brief Sets TIME-DEPENDENT boundary condition on upper Y boundary (ojb) for dmr test
-//  Quantaties at this boundary are held fixed at the downstream state for
-//  x1 < 0.16666666+v1_shock*time, and at the upstream state for
-//  x1 > 0.16666666+v1_shock*time
+//! \brief Sets TIME-DEPENDENT boundary condition on upper Y boundary (ojb) for dmr test
+//! Quantaties at this boundary are held fixed at the downstream state for
+//! x1 < 0.16666666+v1_shock*time, and at the upstream state for
+//! x1 > 0.16666666+v1_shock*time
 
 void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
                 Real time, Real dt,
@@ -256,8 +256,8 @@ void DMROuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceF
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn
-//  \brief refinement condition: maximum density and pressure curvature
+//! \fn int RefinementCondition(MeshBlock *pmb)
+//! \brief refinement condition: maximum density and pressure curvature
 
 int RefinementCondition(MeshBlock *pmb) {
   AthenaArray<Real> &w = pmb->phydro->w;

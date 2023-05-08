@@ -1,14 +1,13 @@
 #ifndef GRAVITY_GRAVITY_HPP_
 #define GRAVITY_GRAVITY_HPP_
-
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gravity.hpp
-//  \brief defines Gravity class which implements data and functions for gravitational
-//         potential. Shared by both Multigrid and FFT schemes for self-gravity.
+//! \brief defines Gravity class which implements data and functions for gravitational
+//!        potential. Shared by both Multigrid and FFT schemes for self-gravity.
 
 // C headers
 
@@ -25,34 +24,37 @@ class ParameterInput;
 class Coordinates;
 class GravityBoundaryValues;
 class MGGravity;
-class MGGRavityDriver;
+class MGGravityDriver;
 
 //! \class Gravity
-//  \brief gravitational potential data and functions
+//! \brief gravitational potential data and functions
 
 class Gravity {
  public:
   Gravity(MeshBlock *pmb, ParameterInput *pin);
 
   MeshBlock* pmy_block;  // ptr to MeshBlock containing this Field
-  AthenaArray<Real> phi;   // gravitational potential
+  AthenaArray<Real> phi, coarse_phi;   // gravitational potential
+  AthenaArray<Real> def;   // defect from the Multigrid solver
   AthenaArray<Real> empty_flux[3];
-  Real gconst, four_pi_G;
-  Real grav_mean_rho;
-  bool srcterm;
+  Real four_pi_G;
+  bool output_defect;
+  bool fill_ghost;
 
   // TODO(felker): consider creating a CellCentered.. derived class, and changing to
   //GravityBoundaryVariable *pgbval;
   CellCenteredBoundaryVariable gbvar;
 
-  void Initialize(ParameterInput *pin);
-  void Solver(const AthenaArray<Real> &u);
+  void SaveFaceBoundaries();
+  void RestoreFaceBoundaries();
+  void ExpandPhysicalBoundaries();
 
   friend class MGGravityDriver;
 
  private:
   bool gravity_tensor_momentum_;
   bool gravity_tensor_energy_;
+  AthenaArray<Real> fbuf_[6];
 };
 
 #endif // GRAVITY_GRAVITY_HPP_

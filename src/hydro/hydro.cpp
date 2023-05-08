@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hydro.cpp
-//  \brief implementation of functions in class Hydro
+//! \brief implementation of functions in class Hydro
 
 // C headers
 
@@ -17,6 +17,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../defs.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../mesh/mesh.hpp"
@@ -25,13 +26,14 @@
 #include "hydro_diffusion/hydro_diffusion.hpp"
 #include "srcterms/hydro_srcterms.hpp"
 
-// constructor, initializes data structures and parameters
+//! constructor, initializes data structures and parameters
 
 Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), u(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     w(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     u1(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     w1(NHYDRO, pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    dvn(pmb->ncells1), dvt(pmb->ncells1),
     // C++11: nested brace-init-list in Hydro member initializer list = aggregate init. of
     // flux[3] array --> direct list init. of each array element --> direct init. via
     // constructor overload resolution of non-aggregate class type AthenaArray<Real>
@@ -71,6 +73,15 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     u2.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
   }
 
+  // If STS RKL2, allocate additional memory registers
+  if (STS_ENABLED) {
+    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl2");
+    if (sts_integrator == "rkl2") {
+      u0.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+      fl_div.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+    }
+  }
+
   // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
   if (pm->multilevel) {
     refinement_idx = pmy_block->pmr->AddToRefinement(&u, &coarse_cons_);
@@ -80,6 +91,11 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
   hbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&hbvar);
   pmb->pbval->bvars_main_int.push_back(&hbvar);
+  if (STS_ENABLED) {
+    if (hdif.hydro_diffusion_defined) {
+      pmb->pbval->bvars_sts.push_back(&hbvar);
+    }
+  }
 
   // Allocate memory for scratch arrays
   dt1_.NewAthenaArray(nc1);
@@ -102,6 +118,9 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
   dflx_.NewAthenaArray(NHYDRO, nc1);
   if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) { // only used in (SR/GR)MHD
     bb_normal_.NewAthenaArray(nc1);
+  }
+  if (RELATIVISTIC_DYNAMICS && std::strcmp(RIEMANN_SOLVER, "hlld") == 0) {
+    // only used in (SR/GR)MHD with HLLD
     lambdas_p_l_.NewAthenaArray(nc1);
     lambdas_m_l_.NewAthenaArray(nc1);
     lambdas_p_r_.NewAthenaArray(nc1);
@@ -111,20 +130,6 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     g_.NewAthenaArray(NMETRIC, nc1);
     gi_.NewAthenaArray(NMETRIC, nc1);
     cons_.NewAthenaArray(NWAVE, nc1);
-  }
-  // for one-time potential calcuation and correction (old Athena)
-  if (SELF_GRAVITY_ENABLED == 3) {
-    gflx[X1DIR].NewAthenaArray(NHYDRO, nc3, nc2, nc1+1);
-    if (pm->f2)
-      gflx[X2DIR].NewAthenaArray(NHYDRO, nc3, nc2+1, nc1);
-    if (pm->f3)
-      gflx[X3DIR].NewAthenaArray(NHYDRO, nc3+1, nc2, nc1);
-
-    gflx_old[X1DIR].NewAthenaArray(NHYDRO, nc3, nc2, nc1+1);
-    if (pm->f2)
-      gflx_old[X2DIR].NewAthenaArray(NHYDRO, nc3, nc2+1, nc1);
-    if (pm->f3)
-      gflx_old[X3DIR].NewAthenaArray(NHYDRO, nc3+1, nc2, nc1);
   }
 
   // fourth-order hydro integration scheme
@@ -144,7 +149,7 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Hydro::GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt)
-//  \brief Calculate the weighting factor for the constrained transport method
+//! \brief Calculate the weighting factor for the constrained transport method
 
 Real Hydro::GetWeightForCT(Real dflx, Real rhol, Real rhor, Real dx, Real dt) {
   Real v_over_c = (1024.0)* dt * dflx / (dx * (rhol + rhor));

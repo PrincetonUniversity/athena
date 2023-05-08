@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file calculate_scalar_fluxes.cpp
-//  \brief Calculate passive scalar fluxes
+//! \brief Calculate passive scalar fluxes
 
 // C headers
 
@@ -27,17 +27,21 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn  void PassiveScalars::CalculateFluxes
-//  \brief Calculate passive scalar fluxes using reconstruction + weighted upwinding rule
-
+//! \brief Calculate passive scalar fluxes using reconstruction + weighted upwinding rule
+//!
+//! \note
+//! design decision: do not pass Hydro::flux (for mass flux) via function parameters,
+//! since
+//! - it is unlikely that anything else would be passed,
+//! - the current PassiveScalars class/feature implementation is inherently
+//!   coupled to Hydro class
+//! - high-order calculation of scalar fluxes will require other Hydro flux
+//!   approximations (flux_fc in calculate_fluxes.cpp is currently not saved persistently
+//!   in Hydro class but each flux dir is temp. stored in 4D scratch array scr1_nkji_)
 void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
   MeshBlock *pmb = pmy_block;
 
-  // design decision: do not pass Hydro::flux (for mass flux) via function parameters,
-  // since 1) it is unlikely that anything else would be passed, 2) the current
-  // PassiveScalars class/feature implementation is inherently coupled to Hydro class
-  // 3) high-order calculation of scalar fluxes will require other Hydro flux
-  // approximations (flux_fc in calculate_fluxes.cpp is currently not saved persistently
-  // in Hydro class but each flux dir is temp. stored in 4D scratch array scr1_nkji_)
+
 
   Hydro &hyd = *(pmb->phydro);
 

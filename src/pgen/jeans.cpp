@@ -3,12 +3,12 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file linear_wave.c
-//  \brief Linear wave problem generator for 1D/2D/3D problems.
-//
-// In 1D, the problem is setup along one of the three coordinate axes (specified by
-// setting [ang_2,ang_3] = 0.0 or PI/2 in the input file).  In 2D/3D this routine
-// automatically sets the wavevector along the domain diagonal.
+//! \file jeans.cpp
+//! \brief Linear wave problem generator for 1D/2D/3D problems including self-gravity
+//!
+//! In 1D, the problem is setup along one of the three coordinate axes (specified by
+//! setting [ang_2,ang_3] = 0.0 or PI/2 in the input file).  In 2D/3D this routine
+//! automatically sets the wavevector along the domain diagonal.
 //========================================================================================
 
 // C headers
@@ -100,9 +100,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   if (SELF_GRAVITY_ENABLED) {
     SetGravitationalConstant(gconst);
-    Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
-    SetGravityThreshold(eps);
-    SetMeanDensity(d0);
   }
 
   if (Globals::my_rank==0) {
@@ -163,7 +160,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     //    return;
   }
 
-  MeshBlock *pmb = pblock;
+  MeshBlock *pmb = my_blocks(0);
   // Initialize errors to zero
   Real l1_err[NHYDRO+NFIELD],max_err[NHYDRO+NFIELD];
   for (int i=0; i<(NHYDRO+NFIELD); ++i) {
@@ -171,15 +168,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     max_err[i]=0.0;
   }
 
-  Hydro *phydro = pblock->phydro;
-  Coordinates *pcoord = pblock->pcoord;
+  Hydro *phydro = pmb->phydro;
+  Coordinates *pcoord = pmb->pcoord;
   Real sinkx, coskx, sinot, cosot;
-  int is=pblock->is, ie=pblock->ie;
-  int js=pblock->js, je=pblock->je;
-  int ks=pblock->ks, ke=pblock->ke;
+  int is=pmb->is, ie=pmb->ie;
+  int js=pmb->js, je=pmb->je;
+  int ks=pmb->ks, ke=pmb->ke;
 
   Real tlim = time;
-  while (pmb != nullptr) {
+  for (int b=0; b<nblocal; ++b) {
+    pmb = my_blocks(b);
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
@@ -226,7 +224,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         }
       }
     }
-    pmb=pmb->next;
   }
 
   for (int i=0; i<(NHYDRO+NFIELD); ++i) {

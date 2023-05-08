@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_shear_hydro.cpp
-//  \brief functions that apply shearing box BCs for hydro variables
+//! \brief functions that apply shearing box BCs for hydro variables
 //========================================================================================
 
 // C headers
@@ -39,9 +39,9 @@
 #include <mpi.h>
 #endif
 
-//--------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
 //! \fn void HydroBoundaryVariable::AddHydroShearForInit()
-//  \brief Send shearing box boundary buffers for hydro variables
+//! \brief Send shearing box boundary buffers for hydro variables
 
 void HydroBoundaryVariable::AddHydroShearForInit() {
   MeshBlock *pmb = pmy_block_;
@@ -71,16 +71,14 @@ void HydroBoundaryVariable::AddHydroShearForInit() {
       for (int k=kl; k<=ku; k++) {
         for (int j=jl; j<=ju; j++) {
           for (int i=0; i<NGHOST; i++) {
-            int ii = ib[upper] + i;
             // add shear to conservative
-            shear_cc_[upper](IM2,k,j,i) = var(IM2,k,j,ii)
-                                          + sign[upper]*qomL*var(IDN,k,j,ii);
-            // Update energy, THEN x2 momentum (careful!)
+            int ii = ib[upper] + i;
+            Real vel = var(IM2,k,j,ii);
+            var(IM2,k,j,ii) += sign[upper]*qomL*var(IDN,k,j,ii);
             if (NON_BAROTROPIC_EOS) {
-              var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))*(SQR(shear_cc_[upper](IM2,k,j,i))
-                                                        - SQR(var(IM2,k,j,ii)));
+              var(IEN,k,j,ii) += (0.5/var(IDN,k,j,ii))
+                                          *(SQR(var(IM2,k,j,ii)) - SQR(vel));
             }
-            var(IM2,k,j,ii) = shear_cc_[upper](IM2,k,j,i);
           }
         }
       }
@@ -88,20 +86,17 @@ void HydroBoundaryVariable::AddHydroShearForInit() {
   }  // loop over inner/outer boundaries
   return;
 }
-// --------------------------------------------------------------------------------------
-// ! \fn void HydroBoundaryVariable::ShearQuantities(AthenaArray<Real> &shear_cc_,
-//                                                   bool upper)
-//  \brief Apply shear to Hydro x2 momentum and energy
+//----------------------------------------------------------------------------------------
+//! \fn void HydroBoundaryVariable::ShearQuantities(AthenaArray<Real> &shear_cc_,
+//!                                                   bool upper)
+//! \brief Apply shear to Hydro x2 momentum and energy
 
 void HydroBoundaryVariable::ShearQuantities(AthenaArray<Real> &shear_cc_, bool upper) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
-  AthenaArray<Real> &var = *var_cc;
-  int js = pmb->js;
-  int je = pmb->je;
-
-  int jl = js - NGHOST;
-  int ju = je + NGHOST;
+  int &xgh = pbval_->xgh_;
+  int jl = pmb->js - NGHOST;
+  int ju = pmb->je + NGHOST+2*xgh+1;
   int kl = pmb->ks;
   int ku = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1) {
@@ -114,13 +109,13 @@ void HydroBoundaryVariable::ShearQuantities(AthenaArray<Real> &shear_cc_, bool u
   int ib[2]{pmb->is - NGHOST, pmb->ie + 1};
 
   for (int k=kl; k<=ku; k++) {
-    for (int j=jl; j<=ju; j++) {
-      for (int i=0; i<NGHOST; i++) {
-        int ii = ib[upper] + i;
-        shear_cc_(IM2,k,j,i) += + sign[upper]*qomL*var(IDN,k,j,ii);
+    for (int i=0; i<NGHOST; i++) {
+      for (int j=jl; j<=ju; j++) {
+        Real vel = shear_cc_(IM2,k,i,j);
+        shear_cc_(IM2,k,i,j) += + sign[upper]*qomL*shear_cc_(IDN,k,i,j);
         if (NON_BAROTROPIC_EOS) {
-          shear_cc_(IEN,k,j,i) += (0.5/var(IDN,k,j,ii))
-                                  *(SQR(shear_cc_(IM2,k,j,i)) - SQR(var(IM2,k,j,ii)));
+          shear_cc_(IEN,k,i,j) += (0.5/shear_cc_(IDN,k,i,j))
+                                *(SQR(shear_cc_(IM2,k,i,j)) - SQR(vel));
         }
       }
     }

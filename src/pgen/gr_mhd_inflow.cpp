@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file gr_mhd_inflow.cpp
-//  \brief Problem generator for magnetized equatorial inflow around Kerr black hole.
+//! \brief Problem generator for magnetized equatorial inflow around Kerr black hole.
 
 // C headers
 

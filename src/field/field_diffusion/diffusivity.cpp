@@ -1,9 +1,10 @@
-//=======================================================================================
+//========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
-//=======================================================================================
-//  \brief functions to calculate diffusion fluxes
+//========================================================================================
+//! \file diffusivity.cpp
+//! \brief implements functions that are related to non-ideal MHD diffusivities
 
 // C headers
 
@@ -20,24 +21,9 @@
 #include "../field.hpp"              // Field
 #include "field_diffusion.hpp"
 
-//======================================================================================
-//! \file diffusivity.cpp
-//  \brief implements functions that are related to non-ideal MHD diffusivities
-//  Include the following functions:
-//
-//    ConstDiffusivity          - magnetic diffusivity with constant proportional
-//                                 coefficients (default choice)
-//    CalcCurrent               - calculate current density
-//
-//    OhmicEMF                  - calculate EMF from Ohmic resistivity
-//
-//    AmbipolarEMF              - calculate EMF from ambipolar diffusion
-//
-//    PoyntingFlux              - calculate the Poynting flux due to dissipation
-//=======================================================================================
-
-//--------------------------------------------------------------------------------------
-// Magnetic diffusivity from constant coefficients
+//----------------------------------------------------------------------------------------
+//! \fn void ConstDiffusivity
+//! \brief Magnetic diffusivity from constant coefficients
 
 void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<Real> &w,
                       const AthenaArray<Real> &bmag,
@@ -77,8 +63,9 @@ void ConstDiffusivity(FieldDiffusion *pfdif, MeshBlock *pmb, const AthenaArray<R
 }
 
 
-//-------------------------------------------------------------------------------------
-// Calculate current density
+//----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::CalcCurrent
+//! \brief Calculate current density
 
 void FieldDiffusion::CalcCurrent(FaceField &b) {
   MeshBlock *pmb = pmy_block;
@@ -172,8 +159,9 @@ void FieldDiffusion::CalcCurrent(FaceField &b) {
 }
 
 
-//--------------------------------------------------------------------------------------
-// EMF from Ohmic resistivity
+//----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::OhmicEMF
+//! \brief EMF from Ohmic resistivity
 
 void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc,
                               EdgeField &e) {
@@ -240,8 +228,9 @@ void FieldDiffusion::OhmicEMF(const FaceField &b, const AthenaArray<Real> &bc,
   return;
 }
 
-//--------------------------------------------------------------------------------------
-// EMF from ambipolar diffusion
+//----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::AmbipolarEMF
+//! \brief EMF from ambipolar diffusion
 
 void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &bc,
                                   EdgeField &e) {
@@ -407,8 +396,9 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
   return;
 }
 
-//--------------------------------------------------------------------------------------
-//Poynting flux from non-ideal MHD
+//----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::PoyntingFlux
+//! \brief Poynting flux from non-ideal MHD
 
 void FieldDiffusion::PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bc) {
   MeshBlock *pmb = pmy_block;

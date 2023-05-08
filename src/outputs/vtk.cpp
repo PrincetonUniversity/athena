@@ -4,9 +4,10 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file vtk.cpp
-//  \brief writes output data in (legacy) vtk format.
-//  Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
-//  Writes one file per MeshBlock.
+//! \brief writes output data in (legacy) vtk format.
+//!
+//! Data is written in RECTILINEAR_GRID geometry, in BINARY format, and in FLOAT type
+//! Writes one file per MeshBlock.
 
 // C headers
 
@@ -29,8 +30,8 @@
 #include "outputs.hpp"
 
 //----------------------------------------------------------------------------------------
-// Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
-// legacy format requires data to be stored as big-endian.
+//! Functions to detect big endian machine, and to byte-swap 32-bit words.  The vtk
+//! legacy format requires data to be stored as big-endian.
 
 int IsBigEndian() {
   std::int32_t n = 1;
@@ -50,16 +51,16 @@ inline void Swap4Bytes(void *vdat) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void VTKOutput:::WriteOutputFile(Mesh *pm)
-//  \brief Cycles over all MeshBlocks and writes OutputData in (legacy) vtk format, one
-//         MeshBlock per file
+//! \fn void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
+//! \brief Cycles over all MeshBlocks and writes OutputData in (legacy) vtk format, one
+//!        MeshBlock per file
 
 void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  MeshBlock *pmb = pm->pblock;
   int big_end = IsBigEndian(); // =1 on big endian machine
 
   // Loop over MeshBlocks
-  while (pmb != nullptr) {
+  for (int b=0; b<pm->nblocal; ++b) {
+    MeshBlock *pmb = pm->my_blocks(b);
     // set start/end array indices depending on whether ghost zones are included
     out_is = pmb->is; out_ie = pmb->ie;
     out_js = pmb->js; out_je = pmb->je;
@@ -75,7 +76,6 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     LoadOutputData(pmb);
     if (!TransformOutputData(pmb)) {
       ClearOutputData();  // required when LoadOutputData() is used.
-      pmb = pmb->next;
       continue;
     } // skip if slice was out of range
 
@@ -208,7 +208,6 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     std::fclose(pfile);
     ClearOutputData();  // required when LoadOutputData() is used.
     delete [] data;
-    pmb = pmb->next;
   }  // end loop over MeshBlocks
 
   // increment counters

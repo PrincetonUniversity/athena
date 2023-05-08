@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mesh_refinement.hpp
-//  \brief defines MeshRefinement class used for static/adaptive mesh refinement
+//! \brief defines MeshRefinement class used for static/adaptive mesh refinement
 
 // C headers
 
@@ -30,16 +30,19 @@ struct FaceField;
 class BoundaryValues;
 class FaceCenteredBoundaryVariable;
 class HydroBoundaryVariable;
+class OrbitalAdvection;
 
 //----------------------------------------------------------------------------------------
 //! \class MeshRefinement
-//  \brief
+//! \brief
 
 class MeshRefinement {
   // needs to access pcoarsec in ProlongateBoundaries() for passing to BoundaryFunc()
   friend class BoundaryValues;
   // needs to access refine_flag_ in Mesh::AdaptiveMeshRefinement(). Make var public?
   friend class Mesh;
+  // needs to access pcoarsec
+  friend class OrbitalAdvection;
 
  public:
   MeshRefinement(MeshBlock *pmb, ParameterInput *pin);

@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file scalars.hpp
-//  \brief definitions for PassiveScalars class
+//! \brief definitions for PassiveScalars class
 
 // C headers
 
@@ -21,9 +21,9 @@ class MeshBlock;
 class ParameterInput;
 
 //! \class PassiveScalars
-//  \brief
-
-// TODO(felker): consider renaming to Scalars
+//! \brief
+//!
+//! \todo (felker): consider renaming to Scalars
 class PassiveScalars {
  public:
   // TODO(felker): pin is currently only used for checking ssprk5_4, otherwise unused.
@@ -33,6 +33,7 @@ class PassiveScalars {
   // public data:
   // "conserved vars" = passive scalar mass
   AthenaArray<Real> s, s1, s2;  // (no more than MAX_NREGISTER allowed)
+  AthenaArray<Real> s0, s_fl_div;  // rkl2 STS memory registers;
   // "primitive vars" = (density-normalized) mass fraction/concentration of each species
   AthenaArray<Real> r;  // , r1;
   AthenaArray<Real> s_flux[3];  // face-averaged flux vector
@@ -53,22 +54,28 @@ class PassiveScalars {
   // public functions:
   // KGF: use inheritance for these functions / overall class?
   void AddFluxDivergence(const Real wght, AthenaArray<Real> &s_out);
+  void AddFluxDivergence_STS(const Real wght, int stage,
+                             AthenaArray<Real> &s_out, AthenaArray<Real> &s_flux_div_out);
   void CalculateFluxes(AthenaArray<Real> &s, const int order);
   void CalculateFluxes_STS();
 
-  // NOTE: for now, not creating subfolder "scalars_diffusion/", nor class ScalarDiffusion
-  // that is would have an instance contained within PassiveScalars like HydroDiffusion
-  // approach. Consider creating an encapsulated class as these features are generalized.
+  //! \note
+  //! for now, not creating subfolder "scalars_diffusion/", nor class ScalarDiffusion
+  //! that is would have an instance contained within PassiveScalars like HydroDiffusion
+  //! approach. Consider creating an encapsulated class as these features are generalized.
   Real nu_scalar_iso; //, nu_scalar_aniso;          // diffusion coeff
   bool scalar_diffusion_defined;
   AthenaArray<Real> diffusion_flx[3];
   // AthenaArray<Real> nu_scalar;               // diffusion array
 
-  // No need for nu_scalar array, nor counterpart to HydroDiffusion::CalcDiffusionFlux
-  // wrapper function since, currently: 1) nu_scalar_iso must be constant across the mesh
-  // (does not depend on local fluid or field variables), 2) there is only one type of
-  // passive scalar diffusion process (nu_scalar_aniso disabled, no "eta"l, etc.)
-  // 3) nu_scalar_iso is identical for all NSCALARS
+  //! \note
+  //! No need for nu_scalar array, nor counterpart to HydroDiffusion::CalcDiffusionFlux
+  //! wrapper function since, currently:
+  //! - nu_scalar_iso must be constant across the mesh
+  //!   (does not depend on local fluid or field variables),
+  //! - there is only one type of
+  //!   passive scalar diffusion process (nu_scalar_aniso disabled, no "eta"l, etc.)
+  //! - nu_scalar_iso is identical for all NSCALARS
   void DiffusiveFluxIso(const AthenaArray<Real> &prim_r, const AthenaArray<Real> &w,
                         AthenaArray<Real> *flx_out);
   Real NewDiffusionDt();

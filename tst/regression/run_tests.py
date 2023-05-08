@@ -20,6 +20,7 @@ from __future__ import print_function
 import argparse
 import os
 from collections import OrderedDict
+from importlib import reload
 import logging
 import logging.config
 from pkgutil import iter_modules
@@ -86,12 +87,32 @@ def main(**kwargs):
     test_results = []
     test_errors = []
     try:
+        # Check that required modules are installed for all test dependencies
+        deps_installed = True
+        for name in test_names:
+            try:
+                name_full = 'scripts.tests.' + name
+                module = __import__(name_full, globals(), locals(),
+                                    fromlist=['prepare', 'run', 'analyze'])
+            except ImportError as e:
+                if sys.version_info >= (3, 6, 0):  # ModuleNotFoundError subclass
+                    missing_module = e.name
+                else:
+                    missing_module = e.message.split(' ')[-1]
+                logger.warning('Unable to import "{:}".'.format(missing_module))
+                deps_installed = False
+        if not deps_installed:
+            logger.warning('##########################################################')
+            logger.warning('# WARNING! Not all required Python mdules are available. #')
+            logger.warning('##########################################################')
+        # Run each test
         for name in test_names:
             t0 = timer()
             try:
                 name_full = 'scripts.tests.' + name
                 module = __import__(name_full, globals(), locals(),
                                     fromlist=['prepare', 'run', 'analyze'])
+                reload(module)
                 os.system('rm -rf {0}/bin'.format(current_dir))
                 os.system('rm -rf {0}/obj'.format(current_dir))
 

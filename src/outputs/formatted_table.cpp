@@ -4,9 +4,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file formatted_table.cpp
-//  \brief writes output data as a formatted table.  Should not be used to output large
-//  3D data sets as this format is very slow and memory intensive.  Most useful for 1D
-//  slices and/or sums.  Writes one file per Meshblock.
+//! \brief writes output data as a formatted table.  Should not be used to output large
+//! 3D data sets as this format is very slow and memory intensive.  Most useful for 1D
+//! slices and/or sums.  Writes one file per Meshblock.
 
 // C headers
 
@@ -27,15 +27,15 @@
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void FormattedTableOutput:::WriteOutputFile(Mesh *pm)
-//  \brief writes OutputData to file in tabular format using C style std::fprintf
-//         Writes one file per MeshBlock
+//! \fn void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin,
+//!                                                bool flag)
+//! \brief writes OutputData to file in tabular format using C style std::fprintf
+//!        Writes one file per MeshBlock
 
 void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  MeshBlock *pmb = pm->pblock;
-
   // Loop over MeshBlocks
-  while (pmb != nullptr) {
+  for (int b=0; b<pm->nblocal; ++b) {
+    MeshBlock *pmb = pm->my_blocks(b);
     // set start/end array indices depending on whether ghost zones are included
     out_is = pmb->is; out_ie = pmb->ie;
     out_js = pmb->js; out_je = pmb->je;
@@ -51,7 +51,6 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     LoadOutputData(pmb);
     if (!TransformOutputData(pmb)) {
       ClearOutputData();  // required when LoadOutputData() is used.
-      pmb = pmb->next;
       continue;
     } // skip if slice was out of range
 
@@ -140,7 +139,6 @@ void FormattedTableOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool f
     // don't forget to close the output file and clean up ptrs to data in OutputData
     std::fclose(pfile);
     ClearOutputData(); // required when LoadOutputData() is used.
-    pmb = pmb->next;
   }  // end loop over MeshBlocks
 
   // increment counters

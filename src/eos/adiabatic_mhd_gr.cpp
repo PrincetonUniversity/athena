@@ -4,14 +4,14 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file adiabatic_mhd_gr.cpp
-//  \brief Implements functions for going between primitive and conserved variables in
-//  general-relativistic MHD, as well as for computing wavespeeds.
+//! \brief Implements functions for going between primitive and conserved variables in
+//! general-relativistic MHD, as well as for computing wavespeeds.
 
 // C headers
 
 // C++ headers
-#include <algorithm>  // max(), min()
-#include <cmath>      // abs(), cbrt(), isfinite(), isnan(), NAN, pow(), sqrt()
+#include <algorithm>  // max, min
+#include <cmath>      // abs, acos, cbrt, cos, isfinite, pow, sqrt
 
 // Athena++ headers
 #include "../athena.hpp"                   // enums, macros
@@ -26,19 +26,18 @@ namespace {
 // Declarations
 void CalculateNormalConserved(
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bb,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int il, int iu, AthenaArray<Real> &dd, AthenaArray<Real> &ee,
-    AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int il, int iu,
+    AthenaArray<Real> &dd, AthenaArray<Real> &ee, AthenaArray<Real> &mm,
+    AthenaArray<Real> &bbb, AthenaArray<Real> &tt);
 bool ConservedToPrimitiveNormal(
     const AthenaArray<Real> &dd_vals, const AthenaArray<Real> &ee_vals,
     const AthenaArray<Real> &mm_vals, const AthenaArray<Real> &bb_vals,
-    const AthenaArray<Real> &tt_vals,
-    Real gamma_adi, Real pgas_old,
-    int k, int j, int i, AthenaArray<Real> &prim, Real *p_gamma_lor, Real *p_pmag);
+    const AthenaArray<Real> &tt_vals, Real gamma_adi, Real pgas_old, int k, int j, int i,
+    AthenaArray<Real> &prim, Real *p_gamma_lor, Real *p_pmag);
 void PrimitiveToConservedSingle(
     const AthenaArray<Real> &prim, Real gamma_adi, const AthenaArray<Real> &bb_cc,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int i, AthenaArray<Real> &cons, Coordinates *pco);
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
+    AthenaArray<Real> &cons, Coordinates *pco);
 } // namespace
 
 //----------------------------------------------------------------------------------------
@@ -70,7 +69,6 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
   normal_tt_.NewAthenaArray(nc1);
 }
 
-
 //----------------------------------------------------------------------------------------
 // Variable inverter
 // Inputs:
@@ -78,15 +76,18 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
 //   prim_old: primitive quantities from previous half timestep
 //   bb: face-centered magnetic field
 //   pco: pointer to Coordinates
-//   il,iu,jl,ju,kl,ku: index bounds of region to be updated
+//   il, iu, jl, ju, kl, ku: index bounds of region to be updated
 // Outputs:
 //   prim: primitives
 //   bb_cc: cell-centered magnetic field
+// Notes:
+//   Simpler version without magnetic fields found in adiabatic_hydro_gr.cpp.
+//   Simpler version for SR found in adiabatic_mhd_sr.cpp.
 
 void EquationOfState::ConservedToPrimitive(
     AthenaArray<Real> &cons, const AthenaArray<Real> &prim_old, const FaceField &bb,
-    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco,
-    int il, int iu, int jl, int ju, int kl, int ku) {
+    AthenaArray<Real> &prim, AthenaArray<Real> &bb_cc, Coordinates *pco, int il, int iu,
+    int jl, int ju, int kl, int ku) {
   // Parameters
   const Real mm_sq_ee_sq_max = 1.0 - 1.0e-12;  // max. of squared momentum over energy
 
@@ -172,8 +173,10 @@ void EquationOfState::ConservedToPrimitive(
         if (beta_min_ > 0.0) {
           pressure_floor_local = std::max(pressure_floor_local, beta_min_*pmag);
         }
-        Real rho_add = std::max(density_floor_local-prim(IDN,k,j,i), 0.0);
-        Real pgas_add = std::max(pressure_floor_local-prim(IPR,k,j,i), 0.0);
+        Real rho_add = std::max(density_floor_local-prim(IDN,k,j,i),
+                                                static_cast<Real>(0.0));
+        Real pgas_add = std::max(pressure_floor_local-prim(IPR,k,j,i),
+                                                static_cast<Real>(0.0));
         if (success && (rho_add > 0.0 || pgas_add > 0.0)) {
           // Adjust conserved density and energy
           Real wgas_add = rho_add + gamma_adi/(gamma_adi-1.0) * pgas_add;
@@ -183,8 +186,8 @@ void EquationOfState::ConservedToPrimitive(
           // Recalculate primitives
           success = ConservedToPrimitiveNormal(normal_dd_, normal_ee_, normal_mm_,
                                                normal_bb_, normal_tt_, gamma_adi,
-                                               prim_old(IPR,k,j,i), k, j, i, prim,
-                                               &gamma, &pmag);
+                                               prim_old(IPR,k,j,i), k, j, i, prim, &gamma,
+                                               &pmag);
 
           // Handle failures
           if (!success) {
@@ -286,8 +289,8 @@ void EquationOfState::ConservedToPrimitive(
 // Outputs:
 //   cons: conserved variables
 // Notes:
-//   single-cell function exists for other purposes; call made to that function rather
-//       than having duplicate code
+//   Single-cell function exists for other purposes; call made to that function rather
+//       than having duplicate code.
 
 void EquationOfState::PrimitiveToConserved(
     const AthenaArray<Real> &prim,
@@ -312,8 +315,8 @@ namespace {
 // Inputs:
 //   cons: conserved quantities rho u^0, T^0_\mu
 //   bb: cell-centered magnetic field B^i
-//   g,gi: 1D arrays of metric covariant and contravariant coefficients
-//   k,j,il,iu: indices and index bounds of 1D array to use
+//   g, gi: 1D arrays of metric covariant and contravariant coefficients
+//   k, j, il, iu: indices and index bounds of 1D array to use
 // Outputs:
 //   dd: normal density D
 //   ee: normal energy E
@@ -322,19 +325,19 @@ namespace {
 //       its components \mathcal{B}^i
 //   tt: projection of momentum onto field \mathcal{T} = g_{ij} M^i \mathcal{B}^j
 // Notes:
-//   references Noble et al. 2006, ApJ 641 626 (N)
-//   symbols:
+//   References Noble et al. 2006, ApJ 641 626 (N).
+//   Symbols:
 //     t: T
 //     qq_n: Q \cdot n
 //     bbb: \mathcal{B}
 //     tt: \mathcal{T}
+//   Simpler version without magnetic fields found in adiabatic_hydro_gr.cpp.
 
 void CalculateNormalConserved(
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bb,
-    const AthenaArray<Real> &g, const AthenaArray<Real> &gi,
-    int k, int j, int il, int iu,
-    AthenaArray<Real> &dd, AthenaArray<Real> &ee,
-    AthenaArray<Real> &mm, AthenaArray<Real> &bbb, AthenaArray<Real> &tt) {
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int il, int iu,
+    AthenaArray<Real> &dd, AthenaArray<Real> &ee, AthenaArray<Real> &mm,
+    AthenaArray<Real> &bbb, AthenaArray<Real> &tt) {
   // Go through row
   for (int i=il; i<=iu; ++i) {
     // Extract metric
@@ -418,19 +421,19 @@ void CalculateNormalConserved(
 //   tt_vals: array of M_i B^i values
 //   gamma_adi: ratio of specific heats
 //   pgas_old: previous value of p_{gas} used to initialize iteration
-//   k,j,i: indices of cell
+//   k, j, i: indices of cell
 // Outputs:
 //   returned value: true for successful convergence, false otherwise
 //   prim: all values set in given cell
 //   p_gamma_lor: normal-frame Lorentz factor
 //   p_pmag: magnetic pressure
 // Notes:
-//   generalizes Newman & Hamlin 2014, SIAM J. Sci. Comput. 36(4) B661 (NH)
-//     like SR, but all 3-vector operations done with respect to g_{ij} rather than
-//         \eta_{ij}
-//   notation here largely follows (NH), so for example writing B^i for what is really
-//       \mathcal{B}^i
-//   symbols:
+//   Generalizes Newman & Hamlin 2014, SIAM J. Sci. Comput. 36(4) B661 (NH).
+//     Like SR, but all 3-vector operations done with respect to g_{ij} rather than
+//         \eta_{ij}.
+//   Notation here largely follows (NH), so for example writing B^i for what is really
+//       \mathcal{B}^i.
+//   Symbols:
 //     tt: \mathcal{T}
 //     ee: E (NH: e)
 //     mm: M (NH: m)
@@ -438,15 +441,16 @@ void CalculateNormalConserved(
 //     ll: \mathcal{L}
 //     wgas: w_{gas} (NH: w)
 //     rr: \mathcal{R}
+//   Also found in adiabatic_mhd_sr.cpp.
+//   Simpler version without magnetic fields found in adiabatic_hydro_gr.cpp.
 
 bool ConservedToPrimitiveNormal(
     const AthenaArray<Real> &dd_vals, const AthenaArray<Real> &ee_vals,
     const AthenaArray<Real> &mm_vals, const AthenaArray<Real> &bb_vals,
-    const AthenaArray<Real> &tt_vals, Real gamma_adi, Real pgas_old,
-    int k, int j, int i,
+    const AthenaArray<Real> &tt_vals, Real gamma_adi, Real pgas_old, int k, int j, int i,
     AthenaArray<Real> &prim, Real *p_gamma_lor, Real *p_pmag) {
   // Parameters
-  const int max_iterations = 10;
+  const int max_iterations = 15;
   const Real tol = 1.0e-12;
   const Real pgas_uniform_min = 1.0e-12;
   const Real a_min = 1.0e-12;
@@ -467,8 +471,8 @@ bool ConservedToPrimitiveNormal(
   const Real &tt = tt_vals(i);
 
   // Calculate functions of conserved quantities
-  Real d = 0.5 * (mm_sq * bb_sq - SQR(tt));             // (NH 5.7)
-  d = std::max(d, 0.0);
+  Real d = 0.5 * (mm_sq * bb_sq - SQR(tt));                  // (NH 5.7)
+  d = std::max(d, static_cast<Real>(0.0));
   Real pgas_min = std::cbrt(27.0/4.0 * d) - ee - 0.5*bb_sq;
   pgas_min = std::max(pgas_min, pgas_uniform_min);
 
@@ -491,7 +495,7 @@ bool ConservedToPrimitiveNormal(
       eee = a/3.0 - 2.0/3.0 * a * std::cos(2.0/3.0 * (phi+PI));               // (NH 5.11)
       ll = eee - bb_sq;                                                       // (NH 5.5)
       v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll)) / SQR(ll * (bb_sq+ll)); // (NH 5.2)
-      v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
+      v_sq = std::min(std::max(v_sq, static_cast<Real>(0.0)), v_sq_max);
       Real gamma_sq = 1.0/(1.0-v_sq);                                         // (NH 3.1)
       Real gamma = std::sqrt(gamma_sq);                                       // (NH 3.1)
       Real wgas = ll/gamma_sq;                                                // (NH 5.1)
@@ -536,10 +540,9 @@ bool ConservedToPrimitiveNormal(
   Real ll = eee - bb_sq;                                          // (NH 5.5)
   Real v_sq = (mm_sq*SQR(ll) + SQR(tt)*(bb_sq+2.0*ll))
               / SQR(ll * (bb_sq+ll));                             // (NH 5.2)
-  v_sq = std::min(std::max(v_sq, 0.0), v_sq_max);
+  v_sq = std::min(std::max(v_sq, static_cast<Real>(0.0)), v_sq_max);
   Real gamma_sq = 1.0/(1.0-v_sq);                                 // (NH 3.1)
   Real gamma = std::sqrt(gamma_sq);                               // (NH 3.1)
-  //Real wgas = ll/gamma_sq;                                      // (NH 5.1); unused var
   prim(IDN,k,j,i) = dd/gamma;                                     // (NH 4.5)
   if (!std::isfinite(prim(IDN,k,j,i))) {
     return false;
@@ -574,10 +577,9 @@ bool ConservedToPrimitiveNormal(
 //   cons: conserved variables set in desired cell
 
 void PrimitiveToConservedSingle(
-    const AthenaArray<Real> &prim, Real gamma_adi,
-    const AthenaArray<Real> &bb_cc, const AthenaArray<Real> &g,
-    const AthenaArray<Real> &gi, int k, int j, int i, AthenaArray<Real> &cons,
-    Coordinates *pco) {
+    const AthenaArray<Real> &prim, Real gamma_adi, const AthenaArray<Real> &bb_cc,
+    const AthenaArray<Real> &g, const AthenaArray<Real> &gi, int k, int j, int i,
+    AthenaArray<Real> &cons, Coordinates *pco) {
   // Extract primitives and magnetic fields
   const Real &rho = prim(IDN,k,j,i);
   const Real &pgas = prim(IPR,k,j,i);
@@ -630,239 +632,44 @@ void PrimitiveToConservedSingle(
   t0_3 = wtot * u0 * u_3 - b0 * b_3;
   return;
 }
+
 } // namespace
-
-//----------------------------------------------------------------------------------------
-// Function for calculating relativistic fast wavespeeds
-// Inputs:
-//   prim: 1D array of primitive states
-//   bbx_vals: 1D array of B^x
-//   k,j: x3- and x2-indices
-//   il,iu: lower and upper x1-indices
-//   ivx: type of interface (IVX for x1, IVY for x2, IVZ for x3)
-// Outputs:
-//   lambdas_p,lambdas_m: 1D arrays set to +/- wavespeeds
-// Notes:
-//   references Mignone & Bodo 2005, MNRAS 364 126 (MB2005)
-//   references Mignone & Bodo 2006, MNRAS 368 1040 (MB2006)
-//   references Numerical Recipes, 3rd ed. (NR)
-//   follows advice in NR for avoiding large cancellations in solving quadratics
-//   almost same function as in adiabatic_mhd_sr.cpp
-
-void EquationOfState::FastMagnetosonicSpeedsSR(
-    const AthenaArray<Real> &prim, const AthenaArray<Real> &bbx_vals,
-    int k, int j, int il, int iu, int ivx,
-    AthenaArray<Real> &lambdas_p, AthenaArray<Real> &lambdas_m) {
-  // Parameters
-  const double v_limit = 1.0e-12;  // squared velocities less than this are considered 0
-  const double b_limit = 1.0e-14;  // squared B^x less than this is considered 0
-
-  // Calculate cyclic permutations of indices
-  int ivy = IVX + ((ivx-IVX)+1)%3;
-  int ivz = IVX + ((ivx-IVX)+2)%3;
-
-  // Calculate ratio of specific heats
-  const Real gamma_adi = gamma_;
-  const Real gamma_adi_red = gamma_adi/(gamma_adi-1.0);
-
-  // Go through states
-#pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    // Extract primitives
-    const Real &rho = prim(IDN,i);
-    const Real &pgas = prim(IPR,i);
-    Real u[4];
-    u[1] = prim(ivx,i);
-    u[2] = prim(ivy,i);
-    u[3] = prim(ivz,i);
-    u[0] = std::sqrt(1.0 + SQR(u[1]) + SQR(u[2]) + SQR(u[3]));
-    const Real &bbx = bbx_vals(i);
-    const Real &bby = prim(IBY,i);
-    const Real &bbz = prim(IBZ,i);
-
-    // Calculate 3-velocity
-    Real vx = u[1]/u[0];
-    Real vy = u[2]/u[0];
-    Real vz = u[3]/u[0];
-
-    // Calculate contravariant magnetic field
-    Real b[4];
-    b[0] = bbx*u[1] + bby*u[2] + bbz*u[3];
-    b[1] = (bbx + b[0] * u[1]) / u[0];
-    b[2] = (bby + b[0] * u[2]) / u[0];
-    b[3] = (bbz + b[0] * u[3]) / u[0];
-
-    // Calculate intermediate quantities
-    Real v_sq = SQR(vx) + SQR(vy) + SQR(vz);
-    Real gamma_rel_sq = 1.0/(1.0-v_sq);
-    Real w_gas = rho + gamma_adi_red * pgas;
-    Real cs_sq = gamma_adi * pgas / w_gas;                       // (MB2005 4)
-    Real b_sq = -SQR(b[0]) + SQR(b[1]) + SQR(b[2]) + SQR(b[3]);
-    Real bbx_sq = SQR(bbx);
-
-    // Calculate wavespeeds in vanishing velocity case (MB2006 57)
-    Real lambda_plus_no_v, lambda_minus_no_v;
-    {
-      Real w_tot = w_gas + b_sq;
-      Real a1 = -(b_sq + cs_sq * (w_gas + bbx_sq)) / w_tot;
-      Real a0 = cs_sq * bbx_sq / w_tot;
-      Real s2 = SQR(a1) - 4.0*a0;
-      Real s = (s2 > 0.0) ? std::sqrt(s2) : 0.0;
-      Real lambda_sq = 0.5 * (-a1 + s);
-      lambda_plus_no_v = std::sqrt(lambda_sq);
-      lambda_minus_no_v = -lambda_plus_no_v;
-    }
-
-    // Calculate wavespeeds in vanishing normal field case (MB2006 58)
-    Real lambda_plus_no_bbx, lambda_minus_no_bbx;
-    {
-      Real vx_sq = SQR(vx);
-      Real v_dot_bb_perp = vy*bby + vz*bbz;
-      Real q = b_sq - cs_sq*SQR(v_dot_bb_perp);
-      Real denominator = w_gas * (cs_sq + gamma_rel_sq*(1.0-cs_sq)) + q;
-      Real a1 = -2.0 * w_gas * gamma_rel_sq * vx * (1.0-cs_sq) / denominator;
-      Real a0 = (w_gas * (-cs_sq + gamma_rel_sq*vx_sq*(1.0-cs_sq)) - q) / denominator;
-      Real s2 = SQR(a1) - 4.0*a0;
-      Real s = (s2 > 0.0) ? std::sqrt(s2) : 0.0;
-      lambda_plus_no_bbx = (a1 >= 0.0) ? -2.0*a0/(a1+s) : (-a1+s)/2.0;
-      lambda_minus_no_bbx = (a1 >= 0.0) ? (-a1-s)/2.0 : -2.0*a0/(a1-s);
-    }
-
-    // Calculate wavespeeds in general case (MB2006 56)
-    Real lambda_plus, lambda_minus;
-    {
-      // Calculate quartic coefficients
-      Real vx2 = SQR(vx);
-      Real vx3 = vx2 * vx;
-      Real vx4 = SQR(vx2);
-      Real bt_sq = SQR(b[0]);
-      Real bx_sq = SQR(b[1]);
-      Real tmp1 = SQR(gamma_rel_sq) * w_gas * (1.0-cs_sq);
-      Real tmp2 = gamma_rel_sq * (b_sq + w_gas * cs_sq);
-      Real denominator = tmp1 + tmp2 - cs_sq * bt_sq;
-      Real a3 = (-(4.0*tmp1+2.0*tmp2)*vx + 2.0*cs_sq*b[0]*b[1]) / denominator;
-      Real a2 = (6.0*tmp1*vx2 + tmp2*(vx2-1.0) + cs_sq*(bt_sq-bx_sq)) / denominator;
-      Real a1 = (-4.0*tmp1*vx3 + 2.0*tmp2*vx - 2.0*cs_sq*b[0]*b[1]) / denominator;
-      Real a0 = (tmp1*vx4 - tmp2*vx2 + cs_sq*bx_sq) / denominator;
-
-      // Calculate reduced quartic coefficients
-      Real b2 = a2 - 3.0/8.0*SQR(a3);
-      Real b1 = a1 - 1.0/2.0*a2*a3 + 1.0/8.0*a3*SQR(a3);
-      Real b0 = a0 - 1.0/4.0*a1*a3 + 1.0/16.0*a2*SQR(a3) - 3.0/256.0*SQR(SQR(a3));
-
-      // Solve reduced quartic equation
-      Real y1, y2, y3, y4;
-      {
-        // Calculate resolvent cubic coefficients
-        Real c2 = -b2;
-        Real c1 = -4.0*b0;
-        Real c0 = 4.0*b0*b2 - SQR(b1);
-
-        // Solve resolvent cubic equation
-        Real q = (c2*c2 - 3.0*c1) / 9.0;                       // (NR 5.6.10)
-        Real r = (2.0*c2*c2*c2 - 9.0*c1*c2 + 27.0*c0) / 54.0;  // (NR 5.6.10)
-        Real q3 = q*q*q;
-        Real r2 = SQR(r);
-        Real s2 = r2 - q3;
-        Real z0;
-        if (s2 < 0.0) {
-          Real theta = std::acos(r/std::sqrt(q3));             // (NR 5.6.11)
-          z0 = -2.0 * std::sqrt(q) * std::cos(theta/3.0) - c2/3.0;  // (NR 5.6.12)
-        } else {
-          Real s = std::sqrt(s2);
-          Real aa = -copysign(1.0, r) * std::cbrt(std::abs(r) + s);  // (NR 5.6.15)
-          Real bb = (aa != 0.0) ? q/aa : 0.0;                   // (NR 5.6.16)
-          z0 = aa + bb - c2/3.0;
-        }
-
-        // Calculate quadratic coefficients
-        Real d1 = (z0-b2 > 0.0) ? std::sqrt(z0-b2) : 0.0;
-        Real e1 = -d1;
-        s2 = SQR(z0)/4.0 - b0;
-        Real s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        Real d0 = (b1 < 0) ? 0.5*z0+s : 0.5*z0-s;
-        Real e0 = (b1 < 0) ? 0.5*z0-s : 0.5*z0+s;
-
-        // Solve quadratic equations
-        s2 = SQR(d1) - 4.0*d0;
-        s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        y1 = (d1 >= 0.0) ? (-d1-s)/2.0 : -2.0*d0/(d1-s);
-        y2 = (d1 >= 0.0) ? -2.0*d0/(d1+s) : (-d1+s)/2.0;
-        s2 = SQR(e1) - 4.0*e0;
-        s = (s2 < 0.0) ? 0.0 : std::sqrt(s2);
-        y3 = (e1 >= 0.0) ? (-e1-s)/2.0 : -2.0*e0/(e1-s);
-        y4 = (e1 >= 0.0) ? -2.0*e0/(e1+s) : (-e1+s)/2.0;
-      }
-
-      // Calculate extremal original quartic roots
-      lambda_minus = std::min(y1, y3) - a3/4.0;
-      lambda_plus = std::max(y2, y4) - a3/4.0;
-
-      // Ensure wavespeeds are not superluminal
-      if (!std::isfinite(lambda_minus) || lambda_minus < -1.0) {
-        lambda_minus = -1.0;
-      }
-      if (!std::isfinite(lambda_plus) || lambda_plus > 1.0) {
-        lambda_plus = 1.0;
-      }
-    }
-
-    // Set wavespeeds based on velocity and magnetic field
-    if (v_sq < v_limit) {
-      lambdas_p(i) = lambda_plus_no_v;
-      lambdas_m(i) = lambda_minus_no_v;
-    } else if (bbx_sq < b_limit) {
-      lambdas_p(i) = lambda_plus_no_bbx;
-      lambdas_m(i) = lambda_minus_no_bbx;
-    } else {
-      lambdas_p(i) = lambda_plus;
-      lambdas_m(i) = lambda_minus;
-    }
-  }
-  return;
-}
 
 //----------------------------------------------------------------------------------------
 // Function for calculating relativistic fast wavespeeds in arbitrary coordinates
 // Inputs:
-//   rho_h: gas enthalpy
+//   wgas: gas enthalpy
 //   pgas: gas pressure
-//   u0,u1: contravariant components of 4-velocity
+//   u0, u1: contravariant components of 4-velocity
 //   b_sq: b_\mu b^\mu
-//   g00,g01,g11: contravariant components of metric
+//   g00, g01, g11: contravariant components of metric (-1, 0, 1 in SR)
 // Outputs:
-//   plambda_plus: value set to most positive wavespeed
-//   plambda_minus: value set to most negative wavespeed
+//   p_lambda_plus: value set to most positive wavespeed
+//   p_lambda_minus: value set to most negative wavespeed
 // Notes:
-//   follows same general procedure as vchar() in phys.c in Harm
-//   variables are named as though 1 is normal direction
+//   Follows same general procedure as vchar() in phys.c in Harm.
+//   Variables are named as though 1 is normal direction.
+//   Same function as in adiabatic_mhd_sr.cpp.
 
-void EquationOfState::FastMagnetosonicSpeedsGR(Real rho_h, Real pgas, Real u0, Real u1,
+void EquationOfState::FastMagnetosonicSpeedsGR(Real wgas, Real pgas, Real u0, Real u1,
                                                Real b_sq, Real g00, Real g01, Real g11,
-                                               Real *plambda_plus, Real *plambda_minus) {
-  // Parameters and constants
-  const Real gamma_adi = gamma_;
-
+                                               Real *p_lambda_plus,
+                                               Real *p_lambda_minus) {
   // Calculate comoving fast magnetosonic speed
-  Real cs_sq = gamma_adi * pgas / rho_h;
-  Real va_sq = b_sq / (b_sq + rho_h);
+  const Real gamma_adi = gamma_;
+  Real cs_sq = gamma_adi * pgas / wgas;
+  Real va_sq = b_sq / (b_sq + wgas);
   Real cms_sq = cs_sq + va_sq - cs_sq * va_sq;
 
   // Set fast magnetosonic speeds in appropriate coordinates
   Real a = SQR(u0) - (g00 + SQR(u0)) * cms_sq;
-  Real b = -2.0 * (u0*u1 - (g01 + u0*u1) * cms_sq);
+  Real b = -2.0 * (u0 * u1 - (g01 + u0 * u1) * cms_sq);
   Real c = SQR(u1) - (g11 + SQR(u1)) * cms_sq;
-  Real d = std::max(SQR(b) - 4.0*a*c, 0.0);
-  Real d_sqrt = std::sqrt(d);
-  Real root_1 = (-b + d_sqrt) / (2.0*a);
-  Real root_2 = (-b - d_sqrt) / (2.0*a);
-  if (root_1 > root_2) {
-    *plambda_plus = root_1;
-    *plambda_minus = root_2;
-  } else {
-    *plambda_plus = root_2;
-    *plambda_minus = root_1;
-  }
+  Real a1 = b / a;
+  Real a0 = c / a;
+  Real s = std::sqrt(std::max(SQR(a1) - 4.0 * a0, static_cast<Real>(0.0)));
+  *p_lambda_plus = (a1 >= 0.0) ? -2.0 * a0 / (a1 + s) : (-a1 + s) / 2.0;
+  *p_lambda_minus = (a1 >= 0.0) ? (-a1 - s) / 2.0 : -2.0 * a0 / (a1 - s);
   return;
 }
 

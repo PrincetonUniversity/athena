@@ -3,13 +3,19 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//  \brief Class to implement diffusion processes in the hydro equations
+//! \file hydro_diffusion.cpp
+//! \brief Class to implement diffusion processes in the hydro equations
 
 // C headers
 
 // C++ headers
 #include <algorithm>  // min()
+#include <cstring>    // strcmp()
+#include <iostream>   // endl
 #include <limits>
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
 
 // Athena++ headers
 #include "../../athena.hpp"
@@ -21,7 +27,7 @@
 #include "../hydro.hpp"
 #include "hydro_diffusion.hpp"
 
-// HydroDiffusion constructor
+//! HydroDiffusion constructor
 
 HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
     hydro_diffusion_defined(false),
@@ -74,6 +80,13 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
     }
   }
 
+  if (hydro_diffusion_defined && RELATIVISTIC_DYNAMICS) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in HydroDiffusion" << std::endl
+        << "Diffusion is incompatibile with relativistic dynamics" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
   if (hydro_diffusion_defined) {
     dx1_.NewAthenaArray(nc1);
     dx2_.NewAthenaArray(nc1);
@@ -86,32 +99,29 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::CalcDiffusionFlux
-//  \brief Wrapper function for calculating local diffusivity coefficients and then
-//  diffusion fluxes (of various flavors) for overall hydro flux.
+//! \brief Wrapper function for calculating local diffusivity coefficients and then
+//!  diffusion fluxes (of various flavors) for overall hydro flux.
 
 void HydroDiffusion::CalcDiffusionFlux(const AthenaArray<Real> &prim,
-                                       const AthenaArray<Real> &cons,
-                                       AthenaArray<Real> *flux) {
-  Hydro *ph = pmb_->phydro;
-  Field *pf = pmb_->pfield;
-
-  SetDiffusivity(ph->w, pf->bcc);
+                                       const AthenaArray<Real> &iprim,
+                                       const AthenaArray<Real> &bcc) {
+  SetDiffusivity(prim, bcc);
 
   if (nu_iso > 0.0 || nu_aniso > 0.0) ClearFlux(visflx);
-  if (nu_iso > 0.0) ViscousFluxIso(prim, cons, visflx);
-  if (nu_aniso > 0.0) ViscousFluxAniso(prim, cons, visflx);
+  if (nu_iso > 0.0) ViscousFluxIso(prim, iprim, visflx);
+  if (nu_aniso > 0.0) ViscousFluxAniso(prim, iprim, visflx);
 
   if (kappa_iso > 0.0 || kappa_aniso > 0.0) ClearFlux(cndflx);
-  if (kappa_iso > 0.0) ThermalFluxIso(prim, cons, cndflx);
-  if (kappa_aniso > 0.0) ThermalFluxAniso(prim, cons, cndflx);
+  if (kappa_iso > 0.0) ThermalFluxIso(prim, cndflx);
+  if (kappa_aniso > 0.0) ThermalFluxAniso(prim, cndflx);
 
   return;
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::AddDiffusionEnergyFlux
-//  \brief Adds only diffusion energy flux to hydro flux
-
+//! \brief Adds only diffusion energy flux to hydro flux
+//
 // TODO(felker): completely general operation for any 2x AthenaArray<Real>
 // flux[3]. Replace calls with below "AddDiffusionFlux" on shallow-sliced inputs.
 
@@ -150,8 +160,8 @@ void HydroDiffusion::AddDiffusionEnergyFlux(AthenaArray<Real> *flux_src,
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::AddDiffusionFlux
-//  \brief Adds all componenets of diffusion flux to hydro flux
-
+//!  \brief Adds all componenets of diffusion flux to hydro flux
+//
 // TODO(felker): completely general operation for any 2x AthenaArray<Real> flux[3]. Move
 // from this class, and remove "Diffusion" from name.
 
@@ -180,8 +190,8 @@ void HydroDiffusion::AddDiffusionFlux(AthenaArray<Real> *flux_src,
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::ClearFlux
-//  \brief Reset diffusion flux back to zeros
-
+//! \brief Reset diffusion flux back to zeros
+//
 // TODO(felker): completely general operation for any 1x AthenaArray<Real> flux[3]. Move
 // from this class.
 
@@ -193,11 +203,14 @@ void HydroDiffusion::ClearFlux(AthenaArray<Real> *flux) {
 }
 
 //---------------------------------------------------------------------------------------
-//! \fn void HydroDiffusion::SetDiffusivity(Athena<Real> &w, AthenaArray<Real> &bc)
-//  Set local hydro diffusion coefficients based on the fluid and magnetic field variables
-//  across the mesh. Called within HydroDiffusion::CalcDiffusionFlux wrapper function.
+//! \fn void HydroDiffusion::SetDiffusivity(const Athena<Real> &w,
+//                                          const AthenaArray<Real> &bc)
+//! \brief  Set local hydro diffusion coefficients based on the fluid and
+//! magnetic field variables across the mesh.
+//! Called within HydroDiffusion::CalcDiffusionFlux wrapper function.
 
-void HydroDiffusion::SetDiffusivity(AthenaArray<Real> &w, AthenaArray<Real> &bc) {
+void HydroDiffusion::SetDiffusivity(const AthenaArray<Real> &w,
+                                    const AthenaArray<Real> &bc) {
   int il = pmb_->is - NGHOST; int jl = pmb_->js; int kl = pmb_->ks;
   int iu = pmb_->ie + NGHOST; int ju = pmb_->je; int ku = pmb_->ke;
   if (pmb_->block_size.nx2 > 1) {
@@ -217,8 +230,11 @@ void HydroDiffusion::SetDiffusivity(AthenaArray<Real> &w, AthenaArray<Real> &bc)
   return;
 }
 
-// Get the hydro diffusion timestep
-// currently return dt for viscous and conduction processes
+//---------------------------------------------------------------------------------------
+//! \fn void HydroDiffusion::NewDiffusionDt(Real &dt_vis, Real &dt_cnd)
+//! \brief Get the hydro diffusion timestep
+//!
+//! currently return dt for viscous and conduction processes
 
 void HydroDiffusion::NewDiffusionDt(Real &dt_vis, Real &dt_cnd) {
   Real real_max = std::numeric_limits<Real>::max();

@@ -1,12 +1,6 @@
 # Changelog
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project (mostly) adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
-We will attempt to follow the guideline of incrementing only one of the `X.Y.Z` values for each tag and/or release:
-- `X` (MAJOR) version when you make incompatible API changes,
-- `Y` (MINOR) version when you add functionality in a backwards-compatible manner, and
-- `Z` (PATCH) version when you make backwards-compatible bug fixes.
-
-The `X` vs. `Y` division won’t be strictly followed for Athena++ releases; for example, certain backwards-compatible versions may be released as a new `X` value to signify major new physics capabilities. As of `v1.1.0`, the Athena++ public API is only loosely documented in the GitHub Wiki, so the notion of backwards-compatibility is ambiguous. Nevertheless, versions with major changes to existing Athena++ core classes and  functions will generally be released under a new `X` value.
+The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project (mostly) adheres to Calendar Versioning.
 
 All major changes to the Athena++ private repository between each version/tag are summarized in this `CHANGLEOG.md` document. Each version has an **Issues and Pull Requests** section, whose subsections are automatically populated from the issue/PR labels. The list entries contain links to the private repository issue tracker `#N` id.
 
@@ -22,13 +16,73 @@ The automatically-generated content should be used for reference when writing th
 
 ## [Unreleased](https://github.com/PrincetonUniversity/athena/tree/HEAD)
 
-[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.1-dev...HEAD)
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v21.0...HEAD)
 
-### Added
-Feature branches to merge to `master`:
-- Chemistry (`chemistry`)
-- Fourth-order solvers
-  - MHD (`mhd4`, `mhd4_3D`)
+## [v21.0](https://github.com/PrincetonUniversity/athena/tree/v21.0) (2021-01-06)
+
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v21.0-dev...v21.0)
+
+### Removed
+- Multigrid solver and related regression tests (removed directly from `v21.0-dev`)
+
+## [v21.0-dev](https://github.com/PrincetonUniversity/athena/tree/v21.0-dev) (2021-01-06)
+
+[Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v19.0...v21.0-dev)
+
+#### Implemented enhancements:
+
+- Need more flexible task control in STS [\#270](https://github.com/PrincetonUniversity/athena/issues/270)
+- Enable AMR/SMR and source terms with -sts [\#250](https://github.com/PrincetonUniversity/athena/issues/250)
+- Robustness improvements to relativity [\#316](https://github.com/PrincetonUniversity/athena/pull/316) ([c-white](https://github.com/c-white))
+- Change primitive velocities in SR [\#303](https://github.com/PrincetonUniversity/athena/pull/303) ([c-white](https://github.com/c-white))
+- Update passive scalars to have user source terms and work with relativity [\#297](https://github.com/PrincetonUniversity/athena/pull/297) ([c-white](https://github.com/c-white))
+
+#### Fixed bugs:
+
+- Spurious waves emerging from corners using the intel 19.1 compiler and MPI? [\#340](https://github.com/PrincetonUniversity/athena/issues/340)
+- EOS Riemann regression test fails [\#335](https://github.com/PrincetonUniversity/athena/issues/335)
+- Unused and uninitialized variables with orbital advection [\#332](https://github.com/PrincetonUniversity/athena/issues/332)
+- regression tests for diffusion do not work & failed [\#328](https://github.com/PrincetonUniversity/athena/issues/328)
+- Reconstruction of passive scalars uses wrong array size [\#306](https://github.com/PrincetonUniversity/athena/issues/306)
+- malloc error with gcc compiler, spherical polar coordinate and xorder=3 [\#304](https://github.com/PrincetonUniversity/athena/issues/304)
+- RK3 integrator breaks conservation [\#300](https://github.com/PrincetonUniversity/athena/issues/300)
+- Runtime error "pure virtual method called" with intel compiler [\#289](https://github.com/PrincetonUniversity/athena/issues/289)
+- Test GR/SR compatibility with passive scalars [\#281](https://github.com/PrincetonUniversity/athena/issues/281)
+- New Limitation of MeshBlock Size [\#343](https://github.com/PrincetonUniversity/athena/pull/343) ([tomo-ono](https://github.com/tomo-ono))
+- Move Poisson solve to after ptlist-\>DoTaskListOneStage\(\) [\#309](https://github.com/PrincetonUniversity/athena/pull/309) ([pdmullen](https://github.com/pdmullen))
+- Add support for NSCALARS \> NWAVE [\#307](https://github.com/PrincetonUniversity/athena/pull/307) ([msbc](https://github.com/msbc))
+- Fix logic in bvars\_sts designation [\#305](https://github.com/PrincetonUniversity/athena/pull/305) ([pdmullen](https://github.com/pdmullen))
+
+#### Closed issues:
+
+- bugs in using std::min or std::max for single precision [\#326](https://github.com/PrincetonUniversity/athena/issues/326)
+- Mismatch of the function argument in WeightedAve for FaceField [\#318](https://github.com/PrincetonUniversity/athena/issues/318)
+
+#### Merged pull requests:
+
+- Implemented the source term formula for gravitational acceleration [\#344](https://github.com/PrincetonUniversity/athena/pull/344) ([tomidakn](https://github.com/tomidakn))
+- Enable STS in Shearing Box with Orbital Advection [\#342](https://github.com/PrincetonUniversity/athena/pull/342) ([tomo-ono](https://github.com/tomo-ono))
+- Logical location \(long\)is used to set array index \(int\) -- Jenkins passed! [\#341](https://github.com/PrincetonUniversity/athena/pull/341) ([changgoo](https://github.com/changgoo))
+- Fix lack of deallocating dynamic memory [\#338](https://github.com/PrincetonUniversity/athena/pull/338) ([tomo-ono](https://github.com/tomo-ono))
+- fix dependency in tasklist [\#337](https://github.com/PrincetonUniversity/athena/pull/337) ([tomo-ono](https://github.com/tomo-ono))
+- Increased thresholds for eos\_riemann test [\#336](https://github.com/PrincetonUniversity/athena/pull/336) ([msbc](https://github.com/msbc))
+- fix EMF flux correction in shearing box [\#334](https://github.com/PrincetonUniversity/athena/pull/334) ([tomo-ono](https://github.com/tomo-ono))
+- fix unused and uninitialized variables [\#333](https://github.com/PrincetonUniversity/athena/pull/333) ([tomo-ono](https://github.com/tomo-ono))
+- Fix conditionals in TimeIntegratorTaskList fns for compatibility with STS [\#331](https://github.com/PrincetonUniversity/athena/pull/331) ([pdmullen](https://github.com/pdmullen))
+- Docstring Style Correction [\#330](https://github.com/PrincetonUniversity/athena/pull/330) ([changgoo](https://github.com/changgoo))
+- Correct the input block name in the turbulence regression test and make driving isotropic regardless of the box shape [\#329](https://github.com/PrincetonUniversity/athena/pull/329) ([changgoo](https://github.com/changgoo))
+- put cast in the min or max function [\#327](https://github.com/PrincetonUniversity/athena/pull/327) ([tomo-ono](https://github.com/tomo-ono))
+- Implement a New Discretization of the Gravitational Stress Tensor [\#325](https://github.com/PrincetonUniversity/athena/pull/325) ([pdmullen](https://github.com/pdmullen))
+- Change in turbulence input style [\#324](https://github.com/PrincetonUniversity/athena/pull/324) ([changgoo](https://github.com/changgoo))
+- Fix Bug with Mesh Structure Output [\#322](https://github.com/PrincetonUniversity/athena/pull/322) ([tomo-ono](https://github.com/tomo-ono))
+- Orbital Advection & New Shearing Box [\#321](https://github.com/PrincetonUniversity/athena/pull/321) ([tomo-ono](https://github.com/tomo-ono))
+- Fix typo: bounday\_flag.cpp to boundary\_flag.cpp [\#320](https://github.com/PrincetonUniversity/athena/pull/320) ([changgoo](https://github.com/changgoo))
+- Fix mismatch between WeightedAve prototype and definition [\#319](https://github.com/PrincetonUniversity/athena/pull/319) ([pdmullen](https://github.com/pdmullen))
+- Improve performance of turbulence driver [\#317](https://github.com/PrincetonUniversity/athena/pull/317) ([changgoo](https://github.com/changgoo))
+- Update to bug fix on fft pgen [\#315](https://github.com/PrincetonUniversity/athena/pull/315) ([changgoo](https://github.com/changgoo))
+- Fix typo in HLLC and bug in Hydrogen EOS [\#314](https://github.com/PrincetonUniversity/athena/pull/314) ([msbc](https://github.com/msbc))
+- Bug fixes for FFT; New regression test [\#313](https://github.com/PrincetonUniversity/athena/pull/313) ([changgoo](https://github.com/changgoo))
+- Modifying the KH problem and a input file for MHD KH [\#312](https://github.com/PrincetonUniversity/athena/pull/312) ([tomo-ono](https://github.com/tomo-ono))
 
 ## [v19.0](https://github.com/PrincetonUniversity/athena/tree/v19.0) (2019-08-06)
 
@@ -39,7 +93,7 @@ Feature branches to merge to `master`:
 
 ## [v19.0-dev](https://github.com/PrincetonUniversity/athena/tree/v19.0-dev) (2019-08-06)
 
-**Switched to using CalVer (Calendar Versioning) scheme from SemVer (Semantic Versioning)**. `v1.1.1-dev` was the previous tag and version. 
+**Switched to using CalVer (Calendar Versioning) scheme from SemVer (Semantic Versioning)**. `v1.1.1-dev` was the previous tag and version.
 
 [Full Changelog](https://github.com/PrincetonUniversity/athena/compare/v1.1.1...v19.0-dev)
 
@@ -55,7 +109,7 @@ Feature branches to merge to `master`:
 - \(Non-Zero\) Mean Density Must Be Set for FFT Self-Gravity with Periodic BC's [\#155](https://github.com/PrincetonUniversity/athena/issues/155)
 - include input parameters in hdf5 output? [\#143](https://github.com/PrincetonUniversity/athena/issues/143)
 - Extend TaskList to support more than 64 task IDs [\#286](https://github.com/PrincetonUniversity/athena/pull/286) ([tomidakn](https://github.com/tomidakn))
--  Add timing to regression tests [\#284](https://github.com/PrincetonUniversity/athena/pull/284) ([msbc](https://github.com/msbc))
+- Add timing to regression tests [\#284](https://github.com/PrincetonUniversity/athena/pull/284) ([msbc](https://github.com/msbc))
 - Throw error when reading HDF5 files with ghost zones if their number hasn't been specified. [\#280](https://github.com/PrincetonUniversity/athena/pull/280) ([msbc](https://github.com/msbc))
 - Add user ability to specify names of libraries when linking [\#277](https://github.com/PrincetonUniversity/athena/pull/277) ([c-white](https://github.com/c-white))
 - Remove MeshBlock dependency of FFTDriver [\#276](https://github.com/PrincetonUniversity/athena/pull/276) ([changgoo](https://github.com/changgoo))

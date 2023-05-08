@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file field.cpp
-//  \brief implementation of functions in class Field
+//! \brief implementation of functions in class Field
 
 // C headers
 
@@ -16,12 +16,13 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "field.hpp"
 #include "field_diffusion/field_diffusion.hpp"
 
-// constructor, initializes data structures and parameters
+//! constructor, initializes data structures and parameters
 
 Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), b(pmb->ncells3, pmb->ncells2, pmb->ncells1),
@@ -41,7 +42,7 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     coarse_b_(pmb->ncc3, pmb->ncc2, pmb->ncc1+1,
               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                AthenaArray<Real>::DataStatus::empty)),
-    fbvar(pmb, &b, coarse_b_, e),
+    fbvar(pmb, &b, coarse_b_, e, true),
     fdif(pmb, pin) {
   int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
   Mesh *pm = pmy_block->pmy_mesh;
@@ -56,6 +57,18 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     b2.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
     b2.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
     b2.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+  }
+
+  if (STS_ENABLED) {
+    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl2");
+    if (sts_integrator == "rkl2") {
+      b0.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+      b0.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+      b0.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+      ct_update.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+      ct_update.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+      ct_update.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+    }
   }
 
   // Allocate memory for scratch vectors
@@ -81,12 +94,20 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
   fbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&fbvar);
   pmb->pbval->bvars_main_int.push_back(&fbvar);
+  if (STS_ENABLED) {
+    if (fdif.field_diffusion_defined) {
+      if (!pmb->phydro->hdif.hydro_diffusion_defined && NON_BAROTROPIC_EOS) {
+        pmb->pbval->bvars_sts.push_back(pmb->pbval->bvars_main_int[0]);
+      }
+      pmb->pbval->bvars_sts.push_back(&fbvar);
+    }
+  }
 }
 
 
 //----------------------------------------------------------------------------------------
-// \! fn
-// \! brief
+//! \fn void Field::CalculateCellCenteredField
+//! \brief cell center B-fields are defined as spatial interpolation at the volume center
 
 void Field::CalculateCellCenteredField(
     const FaceField &bf, AthenaArray<Real> &bc, Coordinates *pco,

@@ -6,9 +6,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file defs.hpp.in
-//  \brief Template file for defs.hpp.  When the configure.py script is run, a new
-//  defs.hpp file will be created (overwriting the last) from this template.  This new
-//  file contains Athena++ specific cpp macros and definitions set by configure.
+//! \brief Template file for defs.hpp.  When the configure.py script is run, a new
+//! defs.hpp file will be created (overwriting the last) from this template.  This new
+//! file contains Athena++ specific cpp macros and definitions set by configure.
 
 //----------------------------------------------------------------------------------------
 // macros which define physics and algorithms
@@ -24,9 +24,6 @@
 #define RIEMANN_SOLVER "@RSOLVER@"
 
 // configure.py dict(definitions) Boolean values:
-// enable shearing box? default=0 (false)
-#define SHEARING_BOX @SHEARING_BOX@
-
 // Equation of state
 #define EQUATION_OF_STATE "@EQUATION_OF_STATE@"
 
@@ -101,7 +98,7 @@
 #define NWAVE @NWAVE_VALUE@
 #define NSCALARS @NUMBER_PASSIVE_SCALARS@
 #define NGHOST @NUMBER_GHOST_CELLS@
-#define MAX_NSTAGE 5     // maximum number of stages per cycle for time-integrator
+#define MAX_NSTAGE 6     // maximum number of stages per cycle for time-integrator
 #define MAX_NREGISTER 3  // maximum number of (u, b) register pairs for time-integrator
 
 //----------------------------------------------------------------------------------------

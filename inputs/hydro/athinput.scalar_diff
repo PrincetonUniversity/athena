@@ -1,0 +1,56 @@
+<comment>
+problem   = scalar diffusion
+reference =
+configure = --prob=scalar_diffusion --eos=isothermal --nscalars=1 (-sts)
+
+<job>
+problem_id = ScalarDiffusion  # problem ID: basename of output filenames
+
+<output1>
+file_type = hst   # History data dump
+dt        = 0.01  # time increment between outputs
+
+<output2>
+file_type   = tab      # tab data dump
+variable    = r0       # variable(s) to output
+data_format = %24.16e  # output precision
+dt          = 0.01     # time increment between outputs
+
+<time>
+cfl_number = 0.8      # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1       # cycle limit
+tlim       = 2.0      # time limit
+integrator = vl2      # time integration algorithm
+xorder     = 2        # order of spatial reconstruction
+ncycle_out = 1        # interval for stdout summary info
+sts_integrator = none # sts integration algorithm
+
+<mesh>
+nx1    = 128       # Number of zones in X1-direction
+x1min  = -6.0      # minimum value of X1
+x1max  = 6.0       # maximum value of X1
+ix1_bc = outflow   # Inner-X1 boundary condition flag
+ox1_bc = outflow   # Outer-X1 boundary condition flag
+
+nx2    = 1         # Number of zones in X2-direction
+x2min  = -0.5      # minimum value of X2
+x2max  = 0.5       # maximum value of X2
+ix2_bc = periodic  # Inner-X2 boundary condition flag
+ox2_bc = periodic  # Outer-X2 boundary condition flag
+
+nx3    = 1         # Number of zones in X3-direction
+x3min  = -0.5      # minimum value of X3
+x3max  = 0.5       # maximum value of X3
+ix3_bc = periodic  # Inner-X3 boundary condition flag
+ox3_bc = periodic  # Outer-X3 boundary condition flag
+
+refinement  = None
+
+<hydro>
+iso_sound_speed = 1.0  # isothermal sound speed
+
+<problem>
+amp    = 1.e-6        # amplitude of Gaussian velocity distr.
+iprob  = 0            # 0: 1-D, 1: 2-D, 2: 3-D
+nu_scalar_iso = 0.25  # scalar diffusion coefficient
+t0     = 0.5          # intial time for Gaussian distr

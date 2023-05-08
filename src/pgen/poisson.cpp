@@ -4,13 +4,14 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file poisson.cpp
-//  \brief Problem generator to test Poisson's solver
+//! \brief Problem generator to test Poisson's solver
 
 // C headers
 
 // C++ headers
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstring>    // memset
 #include <ctime>
 #include <iomanip>
@@ -41,16 +42,9 @@
 #include <mpi.h>
 #endif
 
-#if MAGNETIC_FIELDS_ENABLED
-#error "This problem generator does not support magnetic fields"
-#endif
-
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real four_pi_G = pin->GetReal("problem","four_pi_G");
-  Real eps = pin->GetOrAddReal("problem","grav_eps", 0.0);
   SetFourPiG(four_pi_G);
-  SetGravityThreshold(eps);
-  SetMeanDensity(0.0);
 }
 
 //========================================================================================
@@ -109,7 +103,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phia = four_pi_G*std::exp(-a0*r2);
         }
 
-        if (nlim > 0) {
+        if (nlim != 0) {
           phydro->u(IDN,k,j,i) = den;
           phydro->u(IM1,k,j,i) = 0.0;
           phydro->u(IM2,k,j,i) = 0.0;
@@ -140,10 +134,10 @@ void MeshBlock::UserWorkInLoop() {
 //========================================================================================
 
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
-  int is = pblock->is, ie = pblock->ie;
-  int js = pblock->js, je = pblock->je;
-  int ks = pblock->ks, ke = pblock->ke;
-  int cnt = (ke-ks+1)*(je-js+1)*(ie-is+1);
+  MeshBlock *pmb = my_blocks(0);
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
 
   int nlim = pin->GetInteger("time","nlim");
 
@@ -163,10 +157,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 #endif
 
       for (int n=0; n < ncycle; n++) {
-        MeshBlock *pmb = pblock;
-        while (pmb != nullptr) {
-          std::memset(pmb->pgrav->phi.data(), 0, pmb->pgrav->phi.GetSizeInBytes());
-          pmb = pmb->next;
+        for (int b=0; b<nblocal; ++b) {
+          pmb = my_blocks(b);
+          pmb->pgrav->phi.ZeroClear();
         }
         if (SELF_GRAVITY_ENABLED == 1) pfgrd->Solve(1,1);
         else if (SELF_GRAVITY_ENABLED == 2) pmgrd->Solve(1);
@@ -192,8 +185,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         std::cout << "Mesh configuration = " << mesh_size.nx1 << "x"
                   << mesh_size.nx2 << "x" << mesh_size.nx3 << std::endl;
         std::cout << "number of zones in MeshBlock = " << mb_zones << std::endl;
-        std::cout << "MeshBlock configuration = " << pblock->block_size.nx1 << "x"
-                  << pblock->block_size.nx2 << "x" << pblock->block_size.nx3 << std::endl;
+        std::cout << "MeshBlock configuration = " << pmb->block_size.nx1 << "x"
+                  << pmb->block_size.nx2 << "x" << pmb->block_size.nx3 << std::endl;
         std::cout << "number of processors = " << Globals::nranks << std::endl;
         std::cout << "processor configuration = "
                   << nrbx1 << "x" << nrbx2 << "x" << nrbx3 << std::endl;
@@ -213,8 +206,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       }
 
       Real err1 = 0.0, maxphi = 0.0; // err2 = 0.0
-      MeshBlock *pmb = pblock;
-      while (pmb != nullptr) {
+      for (int b=0; b<nblocal; ++b) {
+        pmb = my_blocks(b);
         Hydro *phydro = pmb->phydro;
         Gravity *pgrav = pmb->pgrav;
         for (int k=ks; k<=ke; ++k) {
@@ -226,15 +219,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             }
           }
         }
-        pmb = pmb->next;
       }
 #ifdef MPI_PARALLEL
       MPI_Allreduce(MPI_IN_PLACE, &err1, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
       MPI_Allreduce(MPI_IN_PLACE, &maxphi, 1, MPI_ATHENA_REAL, MPI_MAX, MPI_COMM_WORLD);
 #endif
 
-      err1 = err1/(static_cast<Real>(cnt*nbtotal));
-      // err2 = err2/cnt;
+      err1 = err1/static_cast<Real>(zones);
 
       Real x1size = mesh_size.x1max - mesh_size.x1min;
       Real x2size = mesh_size.x2max - mesh_size.x2min;

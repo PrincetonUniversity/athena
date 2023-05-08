@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file fft_gravity.cpp
-//  \brief implementation of functions in class FFTGravity
+//! \brief implementation of functions in class FFTGravity
 
 // C headers
 
@@ -23,13 +23,13 @@
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-#include "../task_list/fft_grav_task_list.hpp"
+#include "../task_list/grav_task_list.hpp"
 #include "fft_gravity.hpp"
 #include "gravity.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
-//  \brief FFTGravityDriver constructor
+//! \brief FFTGravityDriver constructor
 
 FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
     : FFTDriver(pm, pin) {
@@ -52,7 +52,7 @@ FFTGravityDriver::FFTGravityDriver(Mesh *pm, ParameterInput *pin)
 
   QuickCreatePlan();
 
-  gtlist_ = new FFTGravitySolverTaskList(pin, pm);
+  gtlist_ = new GravityBoundaryTaskList(pin, pm);
 }
 
 FFTGravityDriver::~FFTGravityDriver() {
@@ -60,8 +60,8 @@ FFTGravityDriver::~FFTGravityDriver() {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void GravityDriver::Solve(int stage)
-//  \brief load the data and solve
+//! \fn void FFTGravityDriver::Solve(int stage, int mode)
+//! \brief load the data and solve
 
 void FFTGravityDriver::Solve(int stage, int mode) {
   FFTBlock *pfb = pmy_fb;
@@ -100,8 +100,8 @@ void FFTGravityDriver::Solve(int stage, int mode) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FFTGravity::ApplyKernel(const AthenaArray<Real> &src, int ns)
-//  \brief Apply kernel
+//! \fn void FFTGravity::ApplyKernel(int mode)
+//! \brief Apply kernel
 void FFTGravity::ApplyKernel(int mode) {
   Real pcoeff(0.0);
   Real dx1sq = SQR(TWO_PI/(kNx[0]*dkx[0]));

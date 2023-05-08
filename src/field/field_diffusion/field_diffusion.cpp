@@ -3,14 +3,20 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//  \brief Class to implement diffusion processes in the induction equations
+//! \file field_diffusion.cpp
+//! \brief Class to implement diffusion processes in the induction equations
 
 // C headers
 
 // C++ headers
 #include <algorithm>  // min()
 #include <cmath>      // sqrt(), fabs()
+#include <cstring>    // strcmp()
+#include <iostream>   // endl
 #include <limits>
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
+#include <string>     // c_str()
 
 // Athena++ headers
 #include "../../athena.hpp"
@@ -22,7 +28,7 @@
 #include "../field.hpp"
 #include "field_diffusion.hpp"
 
-// FieldDiffusion constructor
+//! FieldDiffusion constructor
 
 FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), field_diffusion_defined(false) {
@@ -73,12 +79,19 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
     else
       CalcMagDiffCoeff_ = pmb->pmy_mesh->FieldDiffusivity_;
   }
+
+  if (field_diffusion_defined && RELATIVISTIC_DYNAMICS) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in FieldDiffusion" << std::endl
+        << "Diffusion is incompatibile with relativistic dynamics" << std::endl;
+    ATHENA_ERROR(msg);
+  }
 }
 
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::CalcDiffusionEMF
-//  \brief Calculate diffusion EMF(Ohmic & Ambipolar for now)
+//! \brief Calculate diffusion EMF(Ohmic & Ambipolar for now)
 
 void FieldDiffusion::CalcDiffusionEMF(FaceField &bi, const AthenaArray<Real> &bc,
                                       EdgeField &e) {
@@ -102,7 +115,7 @@ void FieldDiffusion::CalcDiffusionEMF(FaceField &bi, const AthenaArray<Real> &bc
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::AddEMF(EdgeField &e_src, EdgeField &e_des)
-//  \brief Add source EMF to destination EMF
+//! \brief Add source EMF to destination EMF
 
 void FieldDiffusion::AddEMF(const EdgeField &e_src, EdgeField &e_des) {
   int size1 = e_src.x1e.GetSize();
@@ -125,8 +138,8 @@ void FieldDiffusion::AddEMF(const EdgeField &e_src, EdgeField &e_des) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void FieldDiffusion::ClearFieldDiffusionEMF(EdgeField &e)
-//  \brief Clear EMF
+//! \fn void FieldDiffusion::ClearEMF(EdgeField &e)
+//! \brief Clear EMF
 
 // TODO(felker): move out of FieldDiffusion class. Completely general operation
 void FieldDiffusion::ClearEMF(EdgeField &e) {
@@ -137,8 +150,9 @@ void FieldDiffusion::ClearEMF(EdgeField &e) {
 }
 
 
-//--------------------------------------------------------------------------------------
-// Set magnetic diffusion coefficients
+//----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::SetDiffusivity
+//! \brief Set magnetic diffusion coefficients
 
 void FieldDiffusion::SetDiffusivity(const AthenaArray<Real> &w,
                                     const AthenaArray<Real> &bc) {
@@ -167,8 +181,9 @@ void FieldDiffusion::SetDiffusivity(const AthenaArray<Real> &w,
   return;
 }
 
-//--------------------------------------------------------------------------------------
-// Add Poynting flux to the hydro energy flux
+//----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::AddPoyntingFlux
+//! \brief Add Poynting flux to the hydro energy flux
 
 void FieldDiffusion::AddPoyntingFlux(FaceField &p_src) {
   MeshBlock *pmb = pmy_block;
@@ -215,8 +230,9 @@ void FieldDiffusion::AddPoyntingFlux(FaceField &p_src) {
   return;
 }
 
-//--------------------------------------------------------------------------------------
-// Get the non-ideal MHD timestep
+//----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::NewDiffusionDt
+//! \brief Get the non-ideal MHD timestep
 
 void FieldDiffusion::NewDiffusionDt(Real &dt_oa, Real &dt_h) {
   MeshBlock *pmb = pmy_block;

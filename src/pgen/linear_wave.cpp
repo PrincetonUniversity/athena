@@ -3,12 +3,12 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file linear_wave.c
-//  \brief Linear wave problem generator for 1D/2D/3D problems.
-//
-// In 1D, the problem is setup along one of the three coordinate axes (specified by
-// setting [ang_2,ang_3] = 0.0 or PI/2 in the input file).  In 2D/3D this routine
-// automatically sets the wavevector along the domain diagonal.
+//! \file linear_wave.cpp
+//! \brief Linear wave problem generator for 1D/2D/3D problems.
+//!
+//! In 1D, the problem is setup along one of the three coordinate axes (specified by
+//! setting [ang_2,ang_3] = 0.0 or PI/2 in the input file).  In 2D/3D this routine
+//! automatically sets the wavevector along the domain diagonal.
 //========================================================================================
 
 // C headers
@@ -193,8 +193,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   // Initialize errors to zero
   Real l1_err[NHYDRO+NFIELD]{}, max_err[NHYDRO+NFIELD]{};
 
-  MeshBlock *pmb = pblock;
-  while (pmb != nullptr) {
+  for (int b=0; b<nblocal; ++b) {
+    MeshBlock *pmb = my_blocks(b);
     BoundaryValues *pbval = pmb->pbval;
     int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
         kl = pmb->ks, ku = pmb->ke;
@@ -341,7 +341,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         }
       }
     }
-    pmb = pmb->next;
   }
   Real rms_err = 0.0, max_max_over_l1 = 0.0;
 

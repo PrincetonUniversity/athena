@@ -12,6 +12,7 @@
 // C headers
 
 // C++ headers
+#include <random>     // mt19937, normal_distribution, uniform_real_distribution
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -50,6 +51,8 @@ class TurbulenceDriver : public FFTDriver{
   std::complex<Real> **fv_, **fv_new_;
   std::complex<Real> **fv_sh_, **fv_co_;
   bool initialized_ = false;
+  bool global_ps_ = false;
+  std::mt19937_64 rng_generator;
 };
 
 #endif // FFT_TURBULENCE_HPP_

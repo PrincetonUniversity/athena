@@ -4,11 +4,11 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file hlld_iso.cpp
-//  \brief HLLD Riemann solver for isothermal MHD.
-//
-// REFERENCES:
-// - A. Mignone, "A simple and accurate Riemann solver for isothermal MHD", JPC, 225,
-//   1427 (2007)
+//! \brief HLLD Riemann solver for isothermal MHD.
+//!
+//! REFERENCES:
+//! - A. Mignone, "A simple and accurate Riemann solver for isothermal MHD", JPC, 225,
+//!   1427 (2007)
 
 // C headers
 
@@ -28,10 +28,9 @@ struct Cons1D {
   Real d, mx, my, mz, by, bz;
 };
 
-#define SMALL_NUMBER 1.0e-8
-
 //----------------------------------------------------------------------------------------
-//! \fn
+//! \fn void Hydro::RiemannSolver
+//! \brief The HLLD Riemann solver for isothermal MHD
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bx,
@@ -44,6 +43,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
   Real flxi[(NWAVE)];             // temporary variable to store flux
   Real wli[(NWAVE)],wri[(NWAVE)]; // L/R states, primitive variables (input)
   Real spd[5];                    // signal speeds, left to right
+  constexpr Real SMALL_NUMBER = 1.0e-4;
 
   Real dfloor = pmy_block->peos->GetDensityFloor();
   Real cs = (pmy_block->peos->GetIsoSoundSpeed());

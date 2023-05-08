@@ -3,19 +3,19 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file shk_cloud.c
-//  \brief Problem generator for shock-cloud problem
-//
-// The shock-cloud problem consists of a planar shock impacting a single spherical cloud
-// Input parameters are:
-//    - problem/Mach   = Mach number of incident shock
-//    - problem/drat   = density ratio of cloud to ambient
-//    - problem/beta   = ratio of Pgas/Pmag
-//
-// The cloud radius is fixed at 1.0.  The center of the coordinate system defines the
-// center of the cloud, and should be in the middle of the cloud. The shock is initially
-// at x1=-2.0.  A typical grid domain should span x1 in [-3.0,7.0] , y and z in
-//[-2.5,2.5] (see input file in /tst).
+//! \file shk_cloud.cpp
+//! \brief Problem generator for shock-cloud problem
+//!
+//! The shock-cloud problem consists of a planar shock impacting a single spherical cloud
+//! Input parameters are:
+//!    - problem/Mach   = Mach number of incident shock
+//!    - problem/drat   = density ratio of cloud to ambient
+//!    - problem/beta   = ratio of Pgas/Pmag
+//!
+//! The cloud radius is fixed at 1.0.  The center of the coordinate system defines the
+//! center of the cloud, and should be in the middle of the cloud. The shock is initially
+//! at x1=-2.0.  A typical grid domain should span x1 in [-3.0,7.0] , y and z in
+//! [-2.5,2.5] (see input file in /tst).
 //========================================================================================
 
 // C headers

@@ -4,15 +4,15 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file  roe_mhd.cpp
-//  \brief Roe's linearized Riemann solver for MHD.
-//
-// Computes 1D fluxes using Roe's linearization.  When Roe's method fails because of
-// negative density in the intermediate states, LLF fluxes are used instead (only density,
-// not pressure, is checked in this version).
-//
-// REFERENCES:
-// - P. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes",
-//   JCP, 43, 357 (1981).
+//! \brief Roe's linearized Riemann solver for MHD.
+//!
+//! Computes 1D fluxes using Roe's linearization.  When Roe's method fails because of
+//! negative density in the intermediate states, LLF fluxes are used instead
+//! (only density, not pressure, is checked in this version).
+//!
+//! REFERENCES:
+//! - P. Roe, "Approximate Riemann solvers, parameter vectors, and difference schemes",
+//!   JCP, 43, 357 (1981).
 
 // C headers
 
@@ -38,7 +38,7 @@ Real gm1, iso_cs;
 
 //----------------------------------------------------------------------------------------
 //! \fn void Hydro::RiemannSolver
-//  \brief The Roe Riemann solver for MHD (both adiabatic and isothermal)
+//! \brief The Roe Riemann solver for MHD (both adiabatic and isothermal)
 
 void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                           const int ivx, const AthenaArray<Real> &bx,
@@ -216,29 +216,31 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
 namespace {
 //----------------------------------------------------------------------------------------
 //! \fn RoeFlux()
-//  \brief Computes Roe fluxes for the conserved variables, that is
-//            F[n] = 0.5*(F_l + F_r) - SUM_m(coeff[m]*rem[n][m])
-//  where     coeff[n] = 0.5*ev[n]*SUM_m(dU[m]*lem[n][m])
-//  and the rem[n][m] and lem[n][m] are matrices of the L- and R-eigenvectors of Roe's
-//  matrix "A". Also returns the eigenvalues through the argument list.
-//
-// INPUT:
-//   wroe: vector of Roe averaged primitive variables
-//   du: Ur - Ul, difference in L/R-states in conserved variables
-//   wli: Wl, left state in primitive variables
-//   flx: (F_l + F_r)/2
-//
-// OUTPUT:
-//   flx: final Roe flux
-//   ev: vector of eingenvalues
-//   llf_flag: flag set to 1 if d<0 in any intermediate state
-//
-//  The order of the components in the input vectors should be:
-//     (IDN,IVX,IVY,IVZ,[IPR])
-//
-// REFERENCES:
-// - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
-//   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
+//! \brief Computes Roe fluxes for the conserved variables
+//!
+//! Computes Roe fluxes for the conserved variables, that is
+//!            F[n] = 0.5*(F_l + F_r) - SUM_m(coeff[m]*rem[n][m])
+//! where     coeff[n] = 0.5*ev[n]*SUM_m(dU[m]*lem[n][m])
+//! and the rem[n][m] and lem[n][m] are matrices of the L- and R-eigenvectors of Roe's
+//! matrix "A". Also returns the eigenvalues through the argument list.
+//!
+//! INPUT:
+//!  - wroe: vector of Roe averaged primitive variables
+//!  - du: Ur - Ul, difference in L/R-states in conserved variables
+//!  - wli: Wl, left state in primitive variables
+//!  - flx: (F_l + F_r)/2
+//! OUTPUT:
+//!  - flx: final Roe flux
+//!  - ev: vector of eingenvalues
+//!  - llf_flag: flag set to 1 if d<0 in any intermediate state
+//!
+//! \note
+//!  The order of the components in the input vectors should be:
+//!     (IDN,IVX,IVY,IVZ,[IPR])
+//!
+//! REFERENCES:
+//! - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
+//!   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
 #pragma omp declare simd simdlen(SIMD_WIDTH) notinbranch
 inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y,
                     const Real du[], const Real wli[], Real flx[], Real ev[],

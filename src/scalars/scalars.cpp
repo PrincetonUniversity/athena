@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file scalars.cpp
-//  \brief implementation of functions in class PassiveScalars
+//! \brief implementation of functions in class PassiveScalars
 
 // C headers
 
@@ -22,7 +22,7 @@
 #include "../reconstruct/reconstruction.hpp"
 #include "scalars.hpp"
 
-// constructor, initializes data structures and parameters
+//! constructor, initializes data structures and parameters
 
 PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     s(NSCALARS, pmb->ncells3, pmb->ncells2, pmb->ncells1),
@@ -42,7 +42,7 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     coarse_r_(NSCALARS, pmb->ncc3, pmb->ncc2, pmb->ncc1,
               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                AthenaArray<Real>::DataStatus::empty)),
-    sbvar(pmb, &s, &coarse_s_, s_flux),
+    sbvar(pmb, &s, &coarse_s_, s_flux, true),
     nu_scalar_iso{pin->GetOrAddReal("problem", "nu_scalar_iso", 0.0)},
     //nu_scalar_aniso{pin->GetOrAddReal("problem", "nu_scalar_aniso", 0.0)},
     scalar_diffusion_defined{(nu_scalar_iso > 0.0 ? true : false)},
@@ -65,6 +65,15 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     // future extension may add "int nregister" to Hydro class
     s2.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
 
+  // If STS RKL2, allocate additional memory registers
+  if (STS_ENABLED) {
+    std::string sts_integrator = pin->GetOrAddString("time", "sts_integrator", "rkl2");
+    if (sts_integrator == "rkl2") {
+      s0.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+      s_fl_div.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+    }
+  }
+
   // "Enroll" in SMR/AMR by adding to vector of pointers in MeshRefinement class
   if (pm->multilevel) {
     refinement_idx = pmy_block->pmr->AddToRefinement(&s, &coarse_s_);
@@ -74,6 +83,11 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
   sbvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&sbvar);
   pmb->pbval->bvars_main_int.push_back(&sbvar);
+  if (STS_ENABLED) {
+    if (scalar_diffusion_defined) {
+      pmb->pbval->bvars_sts.push_back(&sbvar);
+    }
+  }
 
   // Allocate memory for scratch arrays
   rl_.NewAthenaArray(NSCALARS, nc1);

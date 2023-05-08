@@ -3,6 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
+//! \file athena_hdf5.cpp
+//! \brief hdf5 outputs
 
 // C headers
 
@@ -22,6 +24,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
+#include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
@@ -52,8 +55,8 @@ using H5Real = float;
 
 //----------------------------------------------------------------------------------------
 //! \fn void ATHDF5Output:::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-//  \brief Cycles over all MeshBlocks and writes OutputData in the Athena++ HDF5 format,
-//         one file per output using parallel IO.
+//! \brief Cycles over all MeshBlocks and writes OutputData in the Athena++ HDF5 format,
+//!        one file per output using parallel IO.
 
 void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // HDF5 structures
@@ -87,7 +90,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   H5Real *x3v_mesh;                            // array of x3 values on Mesh
   H5Real **data_buffers;                       // array of data buffers
 
-  MeshBlock *pmb = pm->pblock;
+  MeshBlock *pmb = pm->my_blocks(0);
   OutputData* pod;
   int max_blocks_global = pm->nbtotal;
   int max_blocks_local = pm->nblist[Globals::my_rank];
@@ -128,8 +131,11 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     if (output_params.cartesian_vector)
       num_variables[n_dataset] += 3;
     // Graviatational potential:
-    if (SELF_GRAVITY_ENABLED)
+    if (SELF_GRAVITY_ENABLED) {
       num_variables[n_dataset] += 1;
+      if (pmb->pgrav->output_defect)
+        num_variables[n_dataset] += 1;
+    }
     // Passive scalars:
     if (NSCALARS > 0)
       num_variables[n_dataset] += NSCALARS;
@@ -198,8 +204,8 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   if (output_params.output_slicex1 || output_params.output_slicex2
       || output_params.output_slicex3) {
     int nb = 0, nba = 0;
-    pmb = pm->pblock;
-    while (pmb != nullptr) {
+    for (int b=0; b<pm->nblocal; ++b) {
+      pmb = pm->my_blocks(b);
       if (output_params.output_slicex1) {
         if (pmb->block_size.x1min >  output_params.x1_slice
             || pmb->block_size.x1max <= output_params.x1_slice)
@@ -217,7 +223,6 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       }
       if (active_flags[nb]) nba++;
       nb++;
-      pmb = pmb->next;
     }
 #ifdef MPI_PARALLEL
     int *n_active = new int[Globals::nranks];
@@ -239,7 +244,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     num_blocks_local = max_blocks_local;
   }
 
-  pmb = pm->pblock;
+  pm->my_blocks(0);
   // set output size
   nx1 = pmb->block_size.nx1;
   nx2 = pmb->block_size.nx2;
@@ -270,7 +275,8 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     data_buffers[n] = new H5Real[num_variables[n]*num_blocks_local*nx3*nx2*nx1];
 
   int nb = 0, nba = 0;
-  while (pmb != nullptr) {
+  for (int b=0; b<pm->nblocal; ++b) {
+    pmb = pm->my_blocks(b);
     // Load the output data
     if (active_flags[nb]) {
       // set the default size because TransformOutputData will override it
@@ -411,7 +417,6 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       ClearOutputData();  // required when LoadOutputData() is used.
     }
     nb++;
-    pmb = pmb->next;
   }
 
   // Define output filename
@@ -792,15 +797,16 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 }
 
 //----------------------------------------------------------------------------------------
-
-// Function for writing auxiliary XDMF metadata file
-// Inputs: (none)
-// Outputs: (none)
-// Notes:
-//   writes .athdf.xdmf file for describing .athdf file
-//   should only be called by single process
-//   file size scales proportional to total number of MeshBlocks
-//   for many small MeshBlocks, this can take most of the output writing time
+//! \fn void ATHDF5Output::MakeXDMF()
+//! \brief Function for writing auxiliary XDMF metadata file
+//!
+//! Inputs: (none)
+//! Outputs: (none)
+//! Notes:
+//!   writes .athdf.xdmf file for describing .athdf file
+//!   should only be called by single process
+//!   file size scales proportional to total number of MeshBlocks
+//!   for many small MeshBlocks, this can take most of the output writing time
 
 void ATHDF5Output::MakeXDMF() {
   std::string filename_aux(filename);

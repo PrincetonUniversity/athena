@@ -6,7 +6,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file outputs.hpp
-//  \brief provides classes to handle ALL types of data output
+//! \brief provides classes to handle ALL types of data output
 
 // C headers
 
@@ -29,7 +29,7 @@ class Coordinates;
 
 //----------------------------------------------------------------------------------------
 //! \struct OutputParameters
-//  \brief  container for parameters read from <output> block in the input file
+//! \brief  container for parameters read from `<output>` block in the input file
 
 struct OutputParameters {
   int block_number;
@@ -40,10 +40,12 @@ struct OutputParameters {
   std::string file_type;
   std::string data_format;
   Real next_time, dt;
+  int dcycle;
   int file_number;
   bool output_slicex1, output_slicex2, output_slicex3;
   bool output_sumx1, output_sumx2, output_sumx3;
   bool include_ghost_zones, cartesian_vector;
+  bool orbital_system_output;
   int islice, jslice, kslice;
   Real x1_slice, x2_slice, x3_slice;
   // TODO(felker): some of the parameters in this class are not initialized in constructor
@@ -56,7 +58,7 @@ struct OutputParameters {
 
 //----------------------------------------------------------------------------------------
 //! \struct OutputData
-//  \brief container for output data and metadata; node in nested doubly linked list
+//! \brief container for output data and metadata; node in nested doubly linked list
 
 struct OutputData {
   std::string type;        // one of (SCALARS,VECTORS) used for vtk outputs
@@ -69,8 +71,8 @@ struct OutputData {
 };
 
 //----------------------------------------------------------------------------------------
-//  \brief abstract base class for different output types (modes/formats). Each OutputType
-//  is designed to be a node in a singly linked list created & stored in the Outputs class
+//! \brief abstract base class for different output types (modes/formats). Each OutputType
+//! is designed to be a node in a singly linked list created & stored in the Outputs class
 
 class OutputType {
  public:
@@ -103,6 +105,7 @@ class OutputType {
   void SumOutputData(MeshBlock *pmb, int dim);
   void CalculateCartesianVector(AthenaArray<Real> &src, AthenaArray<Real> &dst,
                                 Coordinates *pco);
+  bool ContainVariable(const std::string &haystack, const std::string &needle);
   // following pure virtual function must be implemented in all derived classes
   virtual void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) = 0;
 
@@ -114,8 +117,8 @@ class OutputType {
 };
 
 //----------------------------------------------------------------------------------------
-//! \class HistoryFile
-//  \brief derived OutputType class for history dumps
+//! \class HistoryOutput
+//! \brief derived OutputType class for history dumps
 
 class HistoryOutput : public OutputType {
  public:
@@ -125,7 +128,7 @@ class HistoryOutput : public OutputType {
 
 //----------------------------------------------------------------------------------------
 //! \class FormattedTableOutput
-//  \brief derived OutputType class for formatted table (tabular) data
+//! \brief derived OutputType class for formatted table (tabular) data
 
 class FormattedTableOutput : public OutputType {
  public:
@@ -135,7 +138,7 @@ class FormattedTableOutput : public OutputType {
 
 //----------------------------------------------------------------------------------------
 //! \class VTKOutput
-//  \brief derived OutputType class for vtk dumps
+//! \brief derived OutputType class for vtk dumps
 
 class VTKOutput : public OutputType {
  public:
@@ -145,7 +148,7 @@ class VTKOutput : public OutputType {
 
 //----------------------------------------------------------------------------------------
 //! \class RestartOutput
-//  \brief derived OutputType class for restart dumps
+//! \brief derived OutputType class for restart dumps
 
 class RestartOutput : public OutputType {
  public:
@@ -156,7 +159,7 @@ class RestartOutput : public OutputType {
 #ifdef HDF5OUTPUT
 //----------------------------------------------------------------------------------------
 //! \class ATHDF5Output
-//  \brief derived OutputType class for Athena HDF5 files
+//! \brief derived OutputType class for Athena HDF5 files
 
 class ATHDF5Output : public OutputType {
  public:
@@ -183,9 +186,8 @@ class ATHDF5Output : public OutputType {
 
 //----------------------------------------------------------------------------------------
 //! \class Outputs
-
-//  \brief root class for all Athena++ outputs. Provides a singly linked list of
-//  OutputTypes, with each node representing one mode/format of output to be made.
+//! \brief root class for all Athena++ outputs. Provides a singly linked list of
+//! OutputTypes, with each node representing one mode/format of output to be made.
 
 class Outputs {
  public:
