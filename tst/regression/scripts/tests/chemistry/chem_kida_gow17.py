@@ -34,9 +34,12 @@ def prepare(**kwargs):
 
 
 def run(**kwargs):
+    network_dir = os.path.abspath(
+                "../../src/chemistry/network/kida_network_files/gow17")
+    print(network_dir)
     arguments = [
             'chem_radiation/G0=1',
-            'chemistry/network_dir='+os.environ['NETWORK_DIR']
+            'chemistry/network_dir='+network_dir
             ]
     athena.run('chemistry/athinput.chem_kida_gow17', arguments)
 
