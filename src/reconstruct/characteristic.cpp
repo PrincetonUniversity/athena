@@ -72,7 +72,7 @@ void Reconstruction::LeftEigenmatrixDotVector(
 
         // Compute beta(s) (eq A17)
         Real bt  = std::sqrt(btsq);
-        Real bet2 = 0.0;
+        Real bet2 = 1.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
           bet2 = w(IBY,i)/bt;
@@ -160,7 +160,7 @@ void Reconstruction::LeftEigenmatrixDotVector(
 
         // Compute beta(s) (eq A17)
         Real bt  = std::sqrt(btsq);
-        Real bet2 = 0.0;
+        Real bet2 = 1.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
           bet2 = w(IBY,i)/bt;
