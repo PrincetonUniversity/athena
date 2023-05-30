@@ -68,22 +68,33 @@ int RefinementConditionDensityJump(MeshBlock *pmb);
 // namespaced variables, i.e. globals
 // should be turned into a class with setters and getters
 namespace {
-bool enable_pressure_refine;
-Real press_threshold;
-Real v1_inner, v2_inner, v3_inner;
-Real n_inner, e_inner;
-Real inner_radius, gamma_param;
-// Real r_measure;
-// Real m_p;
-Real b1, b2, b3;
-Real x_0, y_0, z_0;
-Real GM_norm;
-bool sun_gravity;
-bool enable_user_dt;
-Real user_dt;
-Real wave_rad;
-Real wave_mult;
-Real omega_sun;
+  bool enable_pressure_refine;
+  Real press_threshold;
+  Real v1_inner, v2_inner, v3_inner;
+  Real n_inner, e_inner;
+  Real inner_radius, gamma_param;
+  // Real r_measure;
+  // Real m_p;
+  Real b1, b2, b3;
+  Real x_0, y_0, z_0;
+  Real GM_norm;
+  bool sun_gravity;
+  bool enable_user_dt;
+  Real user_dt;
+  Real wave_rad;
+  Real wave_mult;
+  Real omega_sun;
+  
+  Real CME_start;
+  Real CME_duration;
+  
+  Real CME_density;
+  Real CME_velocity;
+  Real CME_energy;
+
+  Real CME_phi_0;
+  Real CME_phi_extent;
+  
 } // namespace
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
@@ -120,17 +131,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     EnrollUserBoundaryFunction(BoundaryFace::outer_x1, CMEOuterX1);
   }
 
-  return;
-}
-
-//========================================================================================
-//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//! \brief Solar wind test problem generator
-//========================================================================================
-
-void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-
-  gamma_param = peos->GetGamma();
+  ///////////////////
+#if 1
+  ///gamma_param = peos->GetGamma();
+  gamma_param = pin->GetOrAddReal("problem", "gamma", 1.666666666667);
   // would need to change this if not cylindrical
   // get minimum x1 grid location get inner radius
   Real x1_min = pin->GetReal("mesh", "x1min");
@@ -151,6 +155,31 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   b1 = calc_b_radial_inner(pin);
   b2 = calc_b_azimuthal_inner(pin, b1, v1_inner);
   b3 = 0.0;
+
+  //output for each meshblock
+  std::cout << "r_inner = " << inner_radius << std::endl;
+  std::cout << "n_inner = " << n_inner << std::endl;
+  std::cout << "v1_inner = " << v1_inner << std::endl;
+  std::cout << "e_inner = " << e_inner << std::endl;
+  std::cout << "b1 = " << b1 << std::endl;
+  std::cout << "b3 = " << b2 << std::endl;
+  std::cout << "--------------------------" << std::endl;
+  
+
+  // CME data
+  Real t_o = pin->GetReal("problem", "t_o");
+  Real vo = pin->GetReal("problem", "vo");
+
+  //CME_start = pin->GetReal("problem", "CME_timestart_hrs")*3600/t_o;
+  CME_start = pin->GetOrAddReal("problem", "CME_timestart_hrs",1e20)*3600/t_o;
+  CME_duration = pin->GetOrAddReal("problem", "CME_timespan_hrs",0.)*3600/t_o;
+
+  CME_density = pin->GetOrAddReal("problem", "CME_density",1.);
+  CME_velocity = pin->GetOrAddReal("problem", "CME_velocity",0.)*1000/vo;
+  CME_energy = e_inner*2;
+
+  CME_phi_0 = (PI/180.0)*pin->GetOrAddReal("problem", "CME_phi_0",100.);
+  CME_phi_extent = (PI/180.0)*pin->GetOrAddReal("problem", "CME_phi_extent",0.);
 
   // Real b0; //, angle;
   // if (MAGNETIC_FIELDS_ENABLED) {
@@ -200,6 +229,113 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // oscillation of current sheet
   wave_rad = pin->GetOrAddReal("problem", "wave_rad", 0.0);
   wave_mult = pin->GetOrAddReal("problem", "wave_mult", 1.0);
+#endif
+  //////////////////
+
+  return;
+}
+
+//========================================================================================
+//! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
+//! \brief Solar wind test problem generator
+//========================================================================================
+
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
+
+#if 0
+  gamma_param = peos->GetGamma();
+  // would need to change this if not cylindrical
+  // get minimum x1 grid location get inner radius
+  Real x1_min = pin->GetReal("mesh", "x1min");
+  inner_radius = pin->GetOrAddReal("problem", "radius", x1_min);
+  // r_measure = pin->GetOrAddReal("problem", "r_measure", 1.0);
+  // m_p = pin->GetOrAddReal("problem", "m_p", 1.67E-27);
+  // Real omega = pin->GetOrAddReal("problem", "omega_sun", 2.87e-6);
+  //assume orbital_advection is enabled
+  // Real omega_sun = pin->GetReal("orbital_advection", "Omega0");
+  // TODO need to make it clear the coordinate systems and inputs
+  v1_inner = calc_v_radial_inner(pin);
+  v2_inner = 0.0; // create calc for v2 and v3 when orbital advection is off
+  v3_inner = 0.0;
+  n_inner = calc_n_inner(pin, v1_inner);
+  e_inner = calc_energy_inner(pin, n_inner, gamma_param);
+
+  // defaults
+  b1 = calc_b_radial_inner(pin);
+  b2 = calc_b_azimuthal_inner(pin, b1, v1_inner);
+  b3 = 0.0;
+
+  //output for each meshblock
+  std::cout << "n_inner = " << n_inner << std::endl;
+  std::cout << "v1_inner = " << v1_inner << std::endl;
+  std::cout << "e_inner = " << e_inner << std::endl;
+  std::cout << "b1 = " << b1 << std::endl;
+  std::cout << "b3 = " << b2 << std::endl;
+  
+  // CME data
+  Real t_o = pin->GetReal("problem", "t_o");
+  Real vo = pin->GetReal("problem", "vo");
+
+  //CME_start = pin->GetReal("problem", "CME_timestart_hrs")*3600/t_o;
+  CME_start = pin->GetOrAddReal("problem", "CME_timestart_hrs",1e20)*3600/t_o;
+  CME_duration = pin->GetOrAddReal("problem", "CME_timespan_hrs",0.)*3600/t_o;
+
+  CME_density = pin->GetOrAddReal("problem", "CME_density",1.);
+  CME_velocity = pin->GetOrAddReal("problem", "CME_velocity",0.)*1000/vo;
+  CME_energy = e_inner*2;
+
+  CME_phi_0 = (PI/180.0)*pin->GetOrAddReal("problem", "CME_phi_0",100.);
+  CME_phi_extent = (PI/180.0)*pin->GetOrAddReal("problem", "CME_phi_extent",0.);
+
+  // Real b0; //, angle;
+  // if (MAGNETIC_FIELDS_ENABLED) {
+  //   b0 = pin->GetReal("problem", "b0");
+  //   angle = (PI/180.0)*pin->GetReal("problem", "angle");
+  // }
+
+  // get coordinates of center of sun, and convert to Cartesian if necessary
+  // should all be zero for now
+  Real x1_0   = pin->GetOrAddReal("problem", "x1_0", 0.0);
+  Real x2_0   = pin->GetOrAddReal("problem", "x2_0", 0.0);
+  Real x3_0   = pin->GetOrAddReal("problem", "x3_0", 0.0);
+  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
+    x_0 = x1_0;
+    y_0 = x2_0;
+    z_0 = x3_0;
+  } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+    x_0 = x1_0*std::cos(x2_0);
+    y_0 = x1_0*std::sin(x2_0);
+    z_0 = x3_0;
+    b2 = calc_b_azimuthal_inner(pin, b1, v1_inner);
+    b3 = 0.0; // z direction is zero
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+    x_0 = x1_0*std::sin(x2_0)*std::cos(x3_0);
+    y_0 = x1_0*std::sin(x2_0)*std::sin(x3_0);
+    z_0 = x1_0*std::cos(x2_0);
+    b2 = 0.0; // polar is zero 
+    b3 = calc_b_azimuthal_inner(pin, b1, v1_inner);
+  } else {
+    // Only check legality of COORDINATE_SYSTEM once in this function
+    std::stringstream msg;
+    msg << "### FATAL ERROR in wind.cpp ProblemGenerator" << std::endl
+        << "Unrecognized COORDINATE_SYSTEM=" << COORDINATE_SYSTEM << std::endl;
+    ATHENA_ERROR(msg);
+  }
+
+  // calculate normalized gravity potential
+  if (sun_gravity) {
+      GM_norm = calc_GM_sun(pin);
+      // std::cout << GM_norm << " yo" << std::endl;
+  }
+
+  if (enable_user_dt) {
+    user_dt = pin->GetOrAddReal("problem", "user_dt", 0.01);
+  }
+
+  // oscillation of current sheet
+  wave_rad = pin->GetOrAddReal("problem", "wave_rad", 0.0);
+  wave_mult = pin->GetOrAddReal("problem", "wave_mult", 1.0);
+#endif
 
   // setup uniform ambient medium
   // Modifies density, and energy (non-barotropic eos and relativistic dynamics)
@@ -459,7 +595,7 @@ void CMEInnerX1(MeshBlock *pmb, Coordinates *pcoord,
   // std::cout << " ng: " << ngh;
   // std::cout << std::endl;
 
-  Real den, press, rad, x, y, z;
+  Real den, vel, press, rad, x, y, z;
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -481,14 +617,44 @@ void CMEInnerX1(MeshBlock *pmb, Coordinates *pcoord,
 
         // may need to be looked at again
         den = n_inner;
+	//std::cout << "bc: n_inner = " << n_inner << std::endl;
         press = e_inner * (gamma_param-1.0);
         if (rad >= inner_radius) {
           den *= SQR((inner_radius / rad));
           press *= std::pow((inner_radius / rad), 2.0*gamma_param);
         }
+	
+	vel = v1_inner;
+	if (time > CME_start && time < CME_start + CME_duration) {
+	  if (CME_phi_extent > 0.) {
+	    Real cme_center = CME_phi_0;
+	    Real cme_width = CME_phi_extent;
+	    Real cme_var = (cme_width/2.3556)*(cme_width/2.3556); //variance of normal distr
+
+	    Real Gauss_prof = exp(-(pcoord->x3v(k) - cme_center)*(pcoord->x3v(k) - cme_center)/(2.*cme_var));
+	    Real CME_press = e_inner*(gamma_param-1.0)*(CME_density/n_inner) * 1.33; //*2.
+	    Real press_inner = e_inner * (gamma_param-1.0);
+	      	    
+	    den = n_inner + (CME_density - n_inner)*Gauss_prof;
+	    vel = v1_inner + (CME_velocity - v1_inner)*Gauss_prof;
+	    //press = e_inner*(gamma_param-1.0)*(CME_density/n_inner) * 2.;
+	    press = press_inner + (CME_press - press_inner)*Gauss_prof;
+	  }
+	  else {
+	    den = CME_density;
+	    vel = CME_velocity;
+	    press = e_inner*(gamma_param-1.0)*(CME_density/n_inner) * 2.;
+	  }
+	}
+	
+	//fprintf(stderr, "den = %e \n", den);
 
         prim(IDN,k,j,il-gi) = den;
-        prim(IVX,k,j,il-gi) = v1_inner;
+        ////prim(IVX,k,j,il-gi) = v1_inner;
+	prim(IVX,k,j,il-gi) = vel;
+
+
+
         // prim(IVY,k,j,il-gi) = v2_inner;
         // prim(IVZ,k,j,il-gi) = v3_inner;
         // currently assumes that inner velocities are given in same coordinate system
@@ -779,12 +945,22 @@ Real calc_v_radial_inner(ParameterInput *pin) {
   Real v_measure = pin->GetReal("problem", "v_measure");
   Real v_measure_extra = pin->GetOrAddReal("problem", "v_measure_extra", 1.0);
   Real vo = pin->GetReal("problem", "vo");
-  Real v_in = (std::sqrt(v_measure / 430.7) * 0.8231
+  Real v_in = (std::sqrt(v_measure / 430.7) * 0.8231 *0.6
                   * v_measure_extra * v_measure * 1000.0
                  )
                   / vo;
+
+  //Real t_o = pin->GetReal("problem", "t_o");
+  //Real CME_start = pin->GetReal("problem", "CME_timestart_hrs")*3600/t_o;
+  //Real CME_duration = pin->GetReal("problem", "CME_timespan_hrs")*3600/t_o;
+
+  //if (time > CME_start && time < CME_start + CME_duration)
+  //  v_in = pin->GetReal("problem", "CME_velocity")*1000/vo;
+
   return v_in;
 }
+
+
 
 // convert b_radial magnetic field to inner boundary 
 Real calc_b_radial_inner(ParameterInput *pin) {
@@ -815,7 +991,7 @@ Real calc_b_azimuthal_inner(ParameterInput *pin, Real _b1, Real _v1_inner) {
   Real b_extra = pin->GetOrAddReal("problem", "b_measure_extra", 1.0);
 
   Real ratio_inner = omega * AU * min_radius / v1_inner / vo;
-  Real _b_az = -1.0* _b1 * ratio_inner * b_extra;
+  Real _b_az = -1.0* _b1 * ratio_inner * b_extra * 0.73 ;
   return _b_az;
 }
 
@@ -827,7 +1003,7 @@ Real calc_n_inner(ParameterInput *pin, Real v1_inner) {
   Real n_measure = pin->GetReal("problem", "n_measure");
   Real vo = pin->GetReal("problem", "vo");
 
-  Real n_in = (n_measure * SQR((r_meas / min_radius)) * v_measure * 1000.0) / (v1_inner * vo);
+  Real n_in = (n_measure * SQR((r_meas / min_radius)) * v_measure * 1000.0) / (v1_inner * vo)*0.73;
   return n_in;
 }
 
@@ -850,6 +1026,6 @@ Real sign_radial_mag_field(Real theta, Real phi) {
   Real sign, theta_perturb;
   // theta_perturb = wave_rad*std::cos(phi - omega_sun*(time - radius/v1_inner));
   theta_perturb = wave_rad*std::cos(wave_mult*phi);
-  sign = std::copysign(1.0, std::cos(theta + theta_perturb));
+  sign = 1.; ////std::copysign(1.0, std::cos(theta + theta_perturb));
   return sign;
 }
