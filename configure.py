@@ -35,7 +35,7 @@
 #   --ode_solver=xxx  ode solver xxx for chemistry
 #   --cvode_path=path path to CVODE libraries (cvode solver requires the library)
 #   --chem_radiation=xxx  enable radiative transfer, use xxx for integrator
-#   --cxx=xxx         use xxx as the C++ compiler
+#   --cxx=xxx         use xxx as the C++ compiler (works w/ or w/o -mpi)
 #   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
 #   --mpiccmd=name    use name as the command to call the MPI C++ compiler
 #   --gcovcmd=name    use name as the command to call the gcov utility
