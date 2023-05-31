@@ -1,8 +1,8 @@
 <comment>
 problem   = post-processing TIGRESS simulations with chemistry
-reference =
-configure = --prob=read_vtk --chemistry=gow17 --chem_radiation=six_ray \
-  --ode_solver=cvode --cvode_path=$CVODE_PATH --cxx=icc -hdf5 -mpi
+reference = Section 4.4 in Gong et al. 2023, arXiv:2305.04965
+configure = --prob=read_vtk --chemistry=gow17 --chem_radiation=six_ray
+            --ode_solver=cvode --cvode_path=$CVODE_PATH --cxx=icc -hdf5 -mpi
 
 <job>
 problem_id = six_ray   # problem ID: basename of output filenames

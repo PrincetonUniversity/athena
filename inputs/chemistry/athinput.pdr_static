@@ -1,7 +1,8 @@
 <comment>
-problem   = Read C. G. Kim's MHD_32pc vtk output, single file.
-reference =
-configure = --prob=chem_gow17 --chemistry=gow17 --chem_radiation=const
+problem   = Static PDR test with chemistry
+reference = Section 4.2.1 in Gong et al. 2023, arXiv:2305.04965
+configure = --prob=chem_uniform_sixray --chemistry=gow17 --chem_radiation=six_ray
+            --ode_solver=cvode --cvode_path=$CVODE_PATH
 
 <job>
 problem_id = pdr_static   # problem ID: basename of output filenames

@@ -1,7 +1,8 @@
 <comment>
-problem   = Read C. G. Kim's MHD_32pc vtk output, single file.
-reference =
-configure = --prob=chem_gow17 --chemistry=gow17 --radiation=const
+problem   = Generate pressure-density grid for chemical equilibrium curve
+reference = Kim et al. 2023, ApJS, 264, 10
+configure = --prob=chem_Pn_grid --chemistry=gow17 --radiation=const
+            --ode_solver=cvode --cvode_path=$CVODE_PATH
 
 <job>
 problem_id = chem_gow17   # problem ID: basename of output filenames

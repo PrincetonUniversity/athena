@@ -30,11 +30,11 @@
 #   -fft              enable FFT (requires the FFTW library)
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --grav=xxx        use xxx as the self-gravity solver
-#   --chemistry=choice enable chemistry, use choice as chemical network
-#   --kida_rates=choice add special rates to kida network
-#   --ode_solver=choice ode solver for chemistry
-#   --cvode_path=path  path to CVODE libraries (cvode solver requires the library)
-#   --chem_radiation=choice  enable radiative transfer, use choice for integrator
+#   --chemistry=xxx   enable chemistry, use xxx as chemical network
+#   --kida_rates=xxx  add special rates xxx to kida network
+#   --ode_solver=xxx  ode solver xxx for chemistry
+#   --cvode_path=path path to CVODE libraries (cvode solver requires the library)
+#   --chem_radiation=xxx  enable radiative transfer, use xxx for integrator
 #   --cxx=xxx         use xxx as the C++ compiler
 #   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
 #   --mpiccmd=name    use name as the command to call the MPI C++ compiler
@@ -947,13 +947,12 @@ print('  Self-Gravity:               ' + self_grav_string)
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
 print('  Chemistry:                  ' + (args['chemistry'] if args['chemistry']
                                           is not None else 'OFF'))
-print('  kida_rates:                 ' + (args['kida_rates'] if args['kida_rates']
+print('  KIDA rates:                 ' + (args['kida_rates'] if args['kida_rates']
                                           is not None else 'OFF'))
 print('  ChemRadiation:              ' + (args['chem_radiation'] if args['chem_radiation']
                                           is not None else 'OFF'))
 print('  ode_solver:                 ' + (args['ode_solver'] if args['ode_solver']
                                           is not None else 'OFF'))
-print('  cvode_path:                 ' + args['cvode_path'])
 print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
 print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))
 print('  Linker flags:               ' + makefile_options['LINKER_FLAGS'] + ' '

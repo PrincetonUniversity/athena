@@ -1,7 +1,8 @@
 <comment>
-problem   = Read C. G. Kim's MHD_32pc vtk output, single file.
-reference =
-configure = --prob=chem_gow17 --chemistry=gow17 --chem_radiation=const
+problem   = Chemical network in Gong, Ostriker and Wolfire (2017)
+reference = Gong, Ostriker and Wolfire (2017), ApJ, 843, 38
+configure = --prob=chem_uniform --chemistry=gow17 --chem_radiation=const
+            --ode_solver=cvode --cvode_path=$CVODE_PATH
 
 <job>
 problem_id = chem_gow17   # problem ID: basename of output filenames

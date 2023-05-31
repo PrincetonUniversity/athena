@@ -1,6 +1,6 @@
 <comment>
-problem   = Read C. G. Kim's MHD_32pc vtk output, single file.
-reference =
+problem   = Read VTK file from Athena 4.2 output
+reference = Section 4.4 in Gong et al. 2023, arXiv:2305.04965
 configure = --prob=read_vtk 
 
 <job>

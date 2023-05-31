@@ -1,7 +1,7 @@
 <comment>
-problem   = Read C. G. Kim's MHD_32pc vtk output, single file.
-reference =
-configure = --prob=chem_uniform --chemistry=H2 
+problem   = H-H2 chemistry with analytic solution
+reference = Section 4.1 in Gong et al. 2023, arXiv:2305.04965
+configure = --prob=chem_uniform --chemistry=H2 --ode_solver=forward_euler --eos=isothermal
 
 <job>
 problem_id = chem_H2   # problem ID: basename of output filenames

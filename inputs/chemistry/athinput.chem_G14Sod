@@ -1,7 +1,8 @@
 <comment>
 problem   = Shock Tube Problem with H-He chem network
 reference = Grassi et al. (2014), MNRAS, Volume 439, issue 3, pp 2386-2419
-configure =  --prob chem_G14Sod --chemistry G14Sod --ode_solver=cvode --cvode_path=$YOUR_PATH --cflag=-std=c++14
+configure =  --prob=chem_G14Sod --chemistry=G14Sod
+             --ode_solver=cvode --cvode_path=$CVODE_PATH
 
 <job>
 problem_id = chem_G14Sod # problem ID: basename of output filenames
