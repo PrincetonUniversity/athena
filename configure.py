@@ -686,7 +686,7 @@ else:
     if args['cxx'] == 'cray':
         makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
     if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
-        or args['cxx'] == 'icpc-phi'):
+            or args['cxx'] == 'icpc-phi'):
         # suppressed messages:
         #   3180: pragma omp not recognized
         makefile_options['COMPILER_FLAGS'] += ' -diag-disable 3180'
