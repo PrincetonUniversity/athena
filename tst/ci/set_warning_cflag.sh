@@ -33,9 +33,10 @@ set_warning_cflag () {
 		     "-Wshorten-64-to-32" # (controlled by above flag; not avail in GCC)
 		    )
     elif [ "$1" == "icpc" ] || [ "$1" == "icc" ]; then
-	# TODO(felker): Intel compiler remarks, warnings, and errors are not well-documented.
-	# Intel's -Wall preset is minimalistic compared to GCC's. Elevate default -w1 to -w2 or -w3
-	# and add individual warnings (or just try "-w3 -diag-disable:remark"
+	# TODO(felker): Intel Classic C/++ compiler remarks, warnings, and errors are not
+	# well-documented.  Intel's -Wall preset is minimalistic compared to
+	# GCC's. Elevate default -w1 to -w2 or -w3 and add individual warnings (or just
+	# try "-w3 -diag-disable:remark"
 
 	# Does ICC have -pedantic?? will it error out?
 	warn_flags+=(#"-w3"
@@ -46,6 +47,20 @@ set_warning_cflag () {
 		     # "-Wconversion"
 		     "-Wshorten-64-to-32" # illegal narrowing warnings (#2259)
 	            )
+    elif [ "$1" == "icpx" ] || [ "$1" == "icx" ]; then
+	# oneAPI compiler drivers accept ALL Clang compiler options (interpreted directly)
+	# plus most Intel C++ Compiler Classic options (translated to Clang equiv)
+	# Undocumented options from Intel classic compilers are not implemented
+	warn_flags+=("-Wno-unused-private-field"
+		     "-Wno-unused-variable"
+		     "-Wno-unused-parameter"
+		     "-Wunknown-pragmas"
+		     #"-Wno-unknown-pragmas"  # only a subset of ICC pragmas supported in ICX
+		     "-Wno-unused-function"
+		     # Add even more warnings:
+		     # "-Wconversion"
+		     "-Wshorten-64-to-32"
+		    )
     else
 	echo "Unknown CXX=$1 compiler"
 	return 1
