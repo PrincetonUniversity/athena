@@ -38,7 +38,8 @@ cd ../regression/
 
 # Build step #1a: pgen_compile test using Intel compiler and MPI library
 module purge
-module load anaconda3/2020.11 intel/2021.1.2 intel-mpi/intel/2021.1.1 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
+module load anaconda3/2023.3 intel/2022.2.0 intel-mpi/intel/2021.7.0 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
+#module load anaconda3/2020.11 intel/2021.1.2 intel-mpi/intel/2021.1.1 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
 module list
 
 time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpx --config=--cflag="$(../ci/set_warning_cflag.sh clang++)"
@@ -95,7 +96,8 @@ time python -u ./run_tests.py pgen/hdf5_reader_parallel \ #--coverage="${lcov_ca
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
-module load anaconda3/2020.11 intel/2021.1.2 intel-mpi/intel/2021.1.1 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
+module
+module load anaconda3/2023.3 intel/2022.2.0 intel-mpi/intel/2021.7.0 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
 module list
 
 time python -u ./run_tests.py pgen/hdf5_reader_serial --silent --config=--cxx=icpx
