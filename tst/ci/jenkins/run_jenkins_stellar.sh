@@ -42,7 +42,7 @@ module load anaconda3/2023.3 intel/2022.2.0 intel-mpi/intel/2021.7.0 hdf5/intel-
 #module load anaconda3/2020.11 intel/2021.1.2 intel-mpi/intel/2021.1.1 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
 module list
 
-time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpx --config=--cflag="$(../ci/set_warning_cflag.sh icpx++)"
+time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpx --config=--cflag="$(../ci/set_warning_cflag.sh icpx)"
 
 # Build step #1b: pgen_compile test using GNU compiler and OpenMPI library
 module purge
