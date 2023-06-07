@@ -221,7 +221,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           SumRvy += rd*rvy;
 
           rval = amp*(ran2(&iseed) - 0.5);
-          // rvz = 0.4*rval*std::sqrt(pres/den);  // typo?
           rvz = (0.4/std::sqrt(3.0)) *rval*1e-3;
           SumRvz += rd*rvz;
           // no perturbations
