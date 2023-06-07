@@ -60,6 +60,9 @@ set_warning_cflag () {
 		     # Add even more warnings:
 		     # "-Wconversion"
 		     "-Wshorten-64-to-32"
+		     "-Wno-pass-failed"  # #pragma unroll (in mesh_refinement.cpp in ICX 2021.1.2), #pragma distribute_point (HLLC outside loop only)
+		     "-fp-model=precise"  # Or use -Wno-tautological-constant-compare
+	             # std::isnan() calls in default -fp-model=fast throw errors with -Wall,-Wextra,-Werror
 		    )
     else
 	echo "Unknown CXX=$1 compiler"
