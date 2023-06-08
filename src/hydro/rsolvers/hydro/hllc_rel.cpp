@@ -149,7 +149,7 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
 
   // Go through each interface
   // TODO(KGF): this pragma started causing SR regression test failures in 2023. See #518
- //#pragma omp simd simdlen(SIMD_WIDTH)  // issues with or without simdlen clause
+  //#pragma omp simd simdlen(SIMD_WIDTH)  // issues with or without simdlen clause
   for (int i=il; i<=iu; ++i) {
     // Extract left primitives
     Real rho_l = prim_l(IDN,i);
