@@ -70,7 +70,7 @@ Real HistorydVxVy(MeshBlock *pmb, int iout);
 // ===================================================================================
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   ipert = pin->GetOrAddInteger("problem","ipert", 1);
-  if (ipert > 0 || ipert < 5) { // ipert = 1-4
+  if (ipert > 0 && ipert < 5) { // ipert = 1-4
     AllocateUserHistoryOutput(2);
     EnrollUserHistoryOutput(0, HistoryBxBy, "-BxBy");
     EnrollUserHistoryOutput(1, HistorydVxVy, "dVxVy");

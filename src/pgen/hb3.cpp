@@ -155,7 +155,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real kx = (TWO_PI/x1size)*(static_cast<Real>(nwx));
   // Real kz = (TWO_PI/x2size)*(static_cast<Real>(nwy));
 
-  Real x1, x2; //, x3;
+  Real x1; //, x2, x3;
   Real rd, rp, rval;
   Real rvx, rvy, rvz;
   std::int64_t iseed = -1-gid; // Initialize on the first call to ran2
@@ -165,7 +165,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int j=js; j<=je; j++) {
     for (int i=is; i<=ie; i++) {
       x1 = pcoord->x1v(i);
-      x2 = pcoord->x2v(j);
       rd = d0;
       rp = p0;
       rvx = 0.0;
