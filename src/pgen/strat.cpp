@@ -124,9 +124,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   Real SumRd=0.0, SumRvx=0.0, SumRvy=0.0, SumRvz=0.0;
   // TODO(felker): tons of unused variables in this file: xmin, xmax, rbx, rby, Ly, ky,...
-  Real x1, x2, x3;
+  Real x1, x3;
   //Real xmin, xmax;
-  Real x1f, x2f, x3f;
+  //Real x1f, x2f, x3f;
   Real rd(0.0), rp(0.0);
   Real rvx, rvy, rvz;
   //Real rbx, rby, rbz;
@@ -194,11 +194,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
         x1 = pcoord->x1v(i);
-        x2 = pcoord->x2v(j);
+        //x2 = pcoord->x2v(j);
         x3 = pcoord->x3v(k);
-        x1f = pcoord->x1f(i);
-        x2f = pcoord->x2f(j);
-        x3f = pcoord->x3f(k);
+        // x1f = pcoord->x1f(i);
+        // x2f = pcoord->x2f(j);
+        // x3f = pcoord->x3f(k);
 
         // Initialize perturbations
         // ipert = 1 - random perturbations to P/d and V
@@ -221,7 +221,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           SumRvy += rd*rvy;
 
           rval = amp*(ran2(&iseed) - 0.5);
-          rvz = 0.4*rval*std::sqrt(pres/den);
           rvz = (0.4/std::sqrt(3.0)) *rval*1e-3;
           SumRvz += rd*rvz;
           // no perturbations
@@ -333,7 +332,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       MPI_Allreduce(MPI_IN_PLACE, &SumRvy, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
       MPI_Allreduce(MPI_IN_PLACE, &SumRvz, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
 #endif
-      int cell_num = pmy_mesh->GetTotalCells();
+      std::int64_t cell_num = pmy_mesh->GetTotalCells();
       SumRvx /= SumRd*cell_num;
       SumRvy /= SumRd*cell_num;
       SumRvz /= SumRd*cell_num;

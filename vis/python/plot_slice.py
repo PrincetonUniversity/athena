@@ -220,7 +220,7 @@ def main(**kwargs):
     # Make plot
     # should make the size editable?
     fig = plt.figure(1, figsize=(12, 12))
-    ax = fig.add_subplot(1,1,1,projection=projection_type)
+    ax = fig.add_subplot(1, 1, 1, projection=projection_type)
     if projection_type == 'polar':
         # switch axis for radial and azimuthal
         im = ax.pcolormesh(y_grid, x_grid, vals, cmap=kwargs['colormap'], norm=norm)
@@ -237,10 +237,10 @@ def main(**kwargs):
         if projection_type == 'polar':
             # switch axis for radial and azimuthal and Transpose
             ax.streamplot(y_stream.T, x_stream.T, vals_y.T, vals_x.T,
-                        density=kwargs['stream_density'], color='k')
+                          density=kwargs['stream_density'], color='k')
         else:
             ax.streamplot(x_stream, y_stream, vals_x, vals_y,
-                        density=kwargs['stream_density'], color='k')
+                          density=kwargs['stream_density'], color='k')
 
     if projection_type == 'polar':
         ax.set_rmin(x_min)
