@@ -28,7 +28,7 @@ def prepare(**kwargs):
 def run(**kwargs):
     # L-going fast wave (set by default in input)
     arguments = ['time/cfl_number=0.3'  # default =0.4, but tolerances measured w/ 0.3
-                ]
+                 ]
     athena.run('radiation/athinput.rad_linearwave_amr', arguments)
 
 
@@ -38,16 +38,14 @@ def analyze():
     filename = 'bin/linearwave-errors.dat'
     data = []
     with open(filename, 'r') as f:
-      raw_data = f.readlines()
-      for line in raw_data:
-        if line.split()[0][0] == '#':
-          continue
-        data.append([float(val) for val in line.split()])
-
+        raw_data = f.readlines()
+        for line in raw_data:
+            if line.split()[0][0] == '#':
+                continue
+            data.append([float(val) for val in line.split()])
 
     if data[0][4] > 1.05e-8:
-      print("error in regime 8: ", data[0][4])
-      return False
+        print("error in regime 8: ", data[0][4])
+        return False
 
     return True
-
