@@ -121,7 +121,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     std::cout << "Input internal energy (energy/volume): ";
     std::cin >> egas;
     while (rho > 0 && std::isfinite(rho) && egas >0 && std::isfinite(egas)) {
-      Real p, h, asq, perr;
+      Real p, asq, perr;  //, h;
       FaceField f;
       std::cout << "Density, internal energy: " << rho << ", " << egas << '\n';
       u(IDN,0,0,0) = rho;
@@ -132,7 +132,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       w2[IPR]=p;
       w2[IDN]=rho;
       asq = SQR(peos->SoundSpeed(w2));
-      h = p + egas;
+      //h = p + egas;
       perr = 1.0 - u(IEN)/egas;
       std::cout << "P(d, e)    , ASq(d, P)  , PErr\n";
       std::cout << p << ", " << asq  << ", " << perr << '\n' << std::endl;

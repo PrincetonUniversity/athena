@@ -873,9 +873,9 @@ void MultigridDriver::CalculateOctetCoordinates() {
   for (int o = 0; o < noctets_[0]; ++o) {
     MGCoordinates &coord = mgroot_->coord_[mgroot_->nlevel_-1];
     LogicalLocation &loc = octets_[0][o].loc;
-    int i = loc.lx1 + ngh;
-    int j = loc.lx2 + ngh;
-    int k = loc.lx3 + ngh;
+    int i = static_cast<int>(loc.lx1) + ngh;
+    int j = static_cast<int>(loc.lx2) + ngh;
+    int k = static_cast<int>(loc.lx3) + ngh;
     size.x1min = csize.x1min = coord.x1f(i);
     size.x1max = csize.x1max = coord.x1f(i+1);
     size.x2min = csize.x2min = coord.x2f(j);
@@ -896,9 +896,9 @@ void MultigridDriver::CalculateOctetCoordinates() {
       cloc.level = loc.level - 1;
       int oid = octetmap_[l-1][cloc];
       MGCoordinates &coord = octets_[l-1][oid].coord;
-      int i = (loc.lx1&1) + ngh;
-      int j = (loc.lx2&1) + ngh;
-      int k = (loc.lx3&1) + ngh;
+      int i = static_cast<int>(loc.lx1&1) + ngh;
+      int j = static_cast<int>(loc.lx2&1) + ngh;
+      int k = static_cast<int>(loc.lx3&1) + ngh;
       size.x1min = csize.x1min = coord.x1f(i);
       size.x1max = csize.x1max = coord.x1f(i+1);
       size.x2min = csize.x2min = coord.x2f(j);
@@ -1972,4 +1972,3 @@ void MultigridDriver::CalculateCenterOfMass() {
 
   return;
 }
-

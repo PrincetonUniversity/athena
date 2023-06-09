@@ -28,7 +28,7 @@ def main(**kwargs):
         size = int(os.environ['OMPI_COMM_WORLD_SIZE'])
         rank = int(os.environ['OMPI_COMM_WORLD_RANK'])
         num_files = len(file_nums)
-        num_files_per_rank = num_files/size
+        num_files_per_rank = num_files//size
         num_files_extra = num_files % size
         num_files_list = ([num_files_per_rank+1] * num_files_extra
                           + [num_files_per_rank] * (size-num_files_extra))

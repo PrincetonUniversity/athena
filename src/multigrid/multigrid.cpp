@@ -57,20 +57,24 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
     for (int i = 0; i < 6; ++i)
       mg_block_bcs_[i] = pmy_driver_->mg_mesh_bcs_[i];
   }
-  rdx_=(size_.x1max-size_.x1min)/static_cast<Real>(size_.nx1);
-  rdy_=(size_.x2max-size_.x2min)/static_cast<Real>(size_.nx2);
-  rdz_=(size_.x3max-size_.x3min)/static_cast<Real>(size_.nx3);
+  rdx_ = (size_.x1max-size_.x1min)/static_cast<Real>(size_.nx1);
+  rdy_ = (size_.x2max-size_.x2min)/static_cast<Real>(size_.nx2);
+  rdz_ = (size_.x3max-size_.x3min)/static_cast<Real>(size_.nx3);
 
   nlevel_=0;
   if (pmy_block_ == nullptr) { // root
     int nbx, nby, nbz;
-    for (int l = 0; l < 20; l++) {
+    //nbx = nby = nbz = 1;
+    nbx = size_.nx1;
+    nby = size_.nx2;
+    nbz = size_.nx3;
+    for (int l = 1; l < 20; l++) {
       if (size_.nx1%(1<<l) == 0 && size_.nx2%(1<<l) == 0 && size_.nx3%(1<<l) == 0) {
-        nbx=size_.nx1/(1<<l), nby=size_.nx2/(1<<l), nbz=size_.nx3/(1<<l);
-        nlevel_=l+1;
+        nbx = size_.nx1/(1<<l), nby = size_.nx2/(1<<l), nbz = size_.nx3/(1<<l);
+        nlevel_ = l+1;
       }
     }
-    int nmaxr=std::max(nbx, std::max(nby, nbz));
+    int nmaxr = std::max(nbx, std::max(nby, nbz));
     // int nminr=std::min(nbx, std::min(nby, nbz)); // unused variable
     if (nmaxr != 1 && Globals::my_rank == 0) {
       std::cout
@@ -1344,5 +1348,3 @@ void MGCoordinates::CalculateMGCoordinates(const RegionSize &size, int ll, int n
   for (int k = 0; k < ncz+2*ngh; ++k)
     x3v(k) = 0.5*(x3f(k)+x3f(k+1));
 }
-
-

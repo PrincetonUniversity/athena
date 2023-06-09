@@ -31,7 +31,14 @@
 //!
 //! REFERENCES:
 //! - J. Stone, T. Gardiner, P. Teuben, J. Hawley, & J. Simon "Athena: A new code for
-//!   astrophysical MHD", ApJS, (2008), Appendix A.  Equation numbers refer to this paper.
+//!   astrophysical MHD", ApJS, (2008), Appendix A. (Equation numbers refer to this paper)
+//!
+//! - Roe, Philip L., and Dinshaw S. Balsara. "Notes on the eigensystem of
+//!   magnetohydrodynamics." SIAM Journal on Applied Mathematics 56.1 (1996): 57-67.
+//!
+//! - Brio, Moysey, and Cheng Chin Wu. "An upwind differencing scheme for the equations of
+//!   ideal magnetohydrodynamics." Journal of computational physics 75.2 (1988): 400-422.
+
 
 void Reconstruction::LeftEigenmatrixDotVector(
     const int ivx, const int il, const int iu,
@@ -72,7 +79,10 @@ void Reconstruction::LeftEigenmatrixDotVector(
 
         // Compute beta(s) (eq A17)
         Real bt  = std::sqrt(btsq);
-        Real bet2 = 0.0;
+        // edge case when transverse fields disappear: they can be set arbitrarily, except
+        // cannot both be 0. this preserves orthonormality of the eigenvectors.
+        // See BW88 eq 45, Roe96 pg 60
+        Real bet2 = 1.0;
         Real bet3 = 0.0;
         if (bt != 0.0) {
           bet2 = w(IBY,i)/bt;
@@ -81,13 +91,17 @@ void Reconstruction::LeftEigenmatrixDotVector(
 
         // Compute alpha(s) (eq A16)
         Real alpha_f, alpha_s;
-        if ((cfsq - cssq) <= 0.0) {
+        // handle special cases in which bet2=be3=0
+        if ((cfsq - cssq) <= 0.0) { // Roe96 case V (the triple umbilic)
+          // degenerate case mentioned before A18
           alpha_f = 1.0;
           alpha_s = 0.0;
-        } else if ( (asq - cssq) <= 0.0) {
+        } else if ( (asq - cssq) <= 0.0) { // Roe96 case IV
+          // low beta; slow waves are regular acoustic waves
           alpha_f = 0.0;
           alpha_s = 1.0;
-        } else if ( (cfsq - asq) <= 0.0) {
+        } else if ( (cfsq - asq) <= 0.0) { // Roe96 case III
+          // high beta; fast waves are regular acoustic waves
           alpha_f = 1.0;
           alpha_s = 0.0;
         } else {
@@ -160,7 +174,7 @@ void Reconstruction::LeftEigenmatrixDotVector(
 
         // Compute beta(s) (eq A17)
         Real bt  = std::sqrt(btsq);
-        Real bet2 = 0.0;
+        Real bet2 = 1.0;  // see above note
         Real bet3 = 0.0;
         if (bt != 0.0) {
           bet2 = w(IBY,i)/bt;

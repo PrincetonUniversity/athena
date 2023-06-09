@@ -112,13 +112,13 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
   }
   nlist[j] = nb-slist[j];
 
-  if (Globals::my_rank == 0) {
-    for (int i=0; i<Globals::nranks; i++) {
-      double rcost = 0.0;
-      for(int n=slist[i]; n<slist[i]+nlist[i]; n++)
-        rcost += clist[n];
-    }
-  }
+  // if (Globals::my_rank == 0) {
+  //   for (int i=0; i<Globals::nranks; i++) {
+  //     double rcost = 0.0;
+  //     for(int n=slist[i]; n<slist[i]+nlist[i]; n++)
+  //       rcost += clist[n];
+  //   }
+  // }
 
 #ifdef MPI_PARALLEL
   if (nb % (Globals::nranks * num_mesh_threads_) != 0
