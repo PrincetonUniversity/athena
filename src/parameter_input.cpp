@@ -122,11 +122,12 @@ void ParameterInput::LoadFromStream(std::istream &is) {
   std::size_t first_char, last_char;
   std::stringstream msg;
   InputBlock *pib{};
-  int line_num{-1}, blocks_found{0};
+  //int line_num{-1}, blocks_found{0};
+  int blocks_found{0};
 
   while (is.good()) {
     std::getline(is, line);
-    line_num++;
+    //line_num++;
     if (line.find('\t') != std::string::npos) {
       line.erase(std::remove(line.begin(), line.end(), '\t'), line.end());
       // msg << "### FATAL ERROR in function [ParameterInput::LoadFromStream]"

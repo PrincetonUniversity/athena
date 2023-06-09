@@ -26,9 +26,9 @@ def prepare(**kwargs):
             _fluxes = [tmp[1]]
     for flux in _fluxes:
         athena.configure('b',
-            prob='quirk',
-            coord='cartesian',
-            flux=flux, **kwargs)
+                         prob='quirk',
+                         coord='cartesian',
+                         flux=flux, **kwargs)
         # to save time, reuse compiled .o files for all executables created in this test:
         athena.make(clean_first=False)
         move(_exec, _exec + '_' + flux)

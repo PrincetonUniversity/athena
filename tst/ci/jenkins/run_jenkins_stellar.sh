@@ -38,10 +38,11 @@ cd ../regression/
 
 # Build step #1a: pgen_compile test using Intel compiler and MPI library
 module purge
-module load anaconda3/2020.11 intel/2021.1.2 intel-mpi/intel/2021.1.1 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
+module load anaconda3/2023.3 intel/2022.2.0 intel-mpi/intel/2021.7.0 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
+#module load anaconda3/2020.11 intel/2021.1.2 intel-mpi/intel/2021.1.1 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
 module list
 
-time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpx --config=--cflag="$(../ci/set_warning_cflag.sh clang++)"
+time python -u ./run_tests.py pgen/pgen_compile --config=--cxx=icpx --config=--cflag="$(../ci/set_warning_cflag.sh icpx)"
 
 # Build step #1b: pgen_compile test using GNU compiler and OpenMPI library
 module purge
@@ -95,7 +96,8 @@ time python -u ./run_tests.py pgen/hdf5_reader_parallel \ #--coverage="${lcov_ca
 
 # Build step #2: regression tests using Intel compiler and MPI library
 module purge
-module load anaconda3/2020.11 intel/2021.1.2 intel-mpi/intel/2021.1.1 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
+module load anaconda3/2023.3 intel/2022.2.0 intel-mpi/intel/2021.7.0 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
+#module load anaconda3/2020.11 intel/2021.1.2 intel-mpi/intel/2021.1.1 hdf5/intel-2021.1/1.10.6 fftw/intel-2021.1/3.3.9
 module list
 
 time python -u ./run_tests.py pgen/hdf5_reader_serial --silent --config=--cxx=icpx
@@ -128,6 +130,11 @@ time python -u ./run_tests.py hydro4 --config=--cxx=icpx --silent
 module unload hdf5/intel-2021.1/1.10.6
 module load hdf5/intel-2021.1/intel-mpi/1.10.6
 mpi_hdf5_library_path='/usr/local/hdf5/intel-2021.1/intel-mpi/1.10.6/lib64'
+# TODO: get newer serial and parallel HDF5 libraries compiled with ICX 2022 or 2023
+# module unload hdf5/intel-2022.2/1.10.6
+# module load hdf5/intel-2022.2/intel-mpi/1.10.6
+# mpi_hdf5_library_path='/usr/local/hdf5/intel-2022.2/intel-mpi/1.10.6/lib64'
+
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
