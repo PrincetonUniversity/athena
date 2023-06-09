@@ -97,7 +97,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // initialize interface B
   if (MAGNETIC_FIELDS_ENABLED) {
     Real beta = pin->GetReal("problem","beta");
-    Real B0 = sqrt(2.0*iso_cs*iso_cs*nH/beta);
+    Real B0 = std::sqrt(2.0*iso_cs*iso_cs*nH/beta);
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
