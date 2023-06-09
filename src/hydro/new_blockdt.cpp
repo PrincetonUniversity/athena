@@ -17,13 +17,13 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../cr/cr.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
+#include "../mesh/mesh.hpp"
 #include "../nr_radiation/radiation.hpp"
 #include "../nr_radiation/implicit/radiation_implicit.hpp"
-#include "../cr/cr.hpp"
-#include "../mesh/mesh.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../scalars/scalars.hpp"
 #include "hydro.hpp"
@@ -98,7 +98,7 @@ void Hydro::NewBlockTimeStep() {
               wi[IBZ] = bcc(IB1,k,j,i);
               bx = bcc(IB2,k,j,i) + std::abs(b_x2f(k,j,i) - bcc(IB2,k,j,i));
               cf = pmb->peos->FastMagnetosonicSpeed(wi,bx);
-              speed = std::max(cspeed,(std::fabs(wi[IVY]) + cf));              
+              speed = std::max(cspeed,(std::fabs(wi[IVY]) + cf));
               dt2(i) /= (speed);
 
               wi[IBY] = bcc(IB1,k,j,i);
@@ -176,7 +176,7 @@ void Hydro::NewBlockTimeStep() {
   // in the future (with default = cfl_number).
   min_dt_parabolic *= pmb->pmy_mesh->cfl_number;
 
-  if(IM_RADIATION_ENABLED){
+  if (IM_RADIATION_ENABLED) {
     min_dt_hyperbolic *= pmb->pmy_mesh->pimrad->cfl_rad;
     min_dt_parabolic  *= pmb->pmy_mesh->pimrad->cfl_rad;
   }

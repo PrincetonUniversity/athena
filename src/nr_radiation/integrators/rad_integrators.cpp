@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -43,7 +43,7 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
   int nfreq=prad->nfreq;
   rad_xorder = pin->GetOrAddInteger("time","rad_xorder",2);
   if (rad_xorder == 3) {
-    if (NGHOST < 3){ 
+    if (NGHOST < 3) {
       std::stringstream msg;
       msg << "### FATAL ERROR in radiation reconstruction constructor" << std::endl
           << "rad_xorder=" << rad_xorder <<
@@ -53,14 +53,14 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
     }
   }
 
-  
-      // factor to separate the diffusion and advection part
+
+  // factor to separate the diffusion and advection part
   Real taucell = pin->GetOrAddReal("radiation","taucell",5);
   tau_flag_ = pin->GetOrAddInteger("radiation","tau_scheme",1);
   compton_flag_=pin->GetOrAddInteger("radiation","Compton",0);
   compton_t_=pin->GetOrAddInteger("radiation","Compton_t",0);
   split_compton_=pin->GetOrAddInteger("radiation","Split_compton",0);
-  if((!IM_RADIATION_ENABLED) || (compton_flag_ == 0))
+  if ((!IM_RADIATION_ENABLED) || (compton_flag_ == 0))
     split_compton_ = 0;
 
   adv_flag_=pin->GetOrAddInteger("radiation","Advection",1);
@@ -78,17 +78,17 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
   // maximum number of bins each frequency bin will map to, default is nfreq/2
   nmax_map_ = pin->GetOrAddInteger("radiation","max_map_bin",0);
 
-  int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2, 
-  ncells3 = pmb->ncells3; 
+  int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2,
+  ncells3 = pmb->ncells3;
 
- 
-  
+
+
   x1face_area_.NewAthenaArray(ncells1+1);
-  if(ncells2 > 1) {
+  if (ncells2 > 1) {
     x2face_area_.NewAthenaArray(ncells1);
     x2face_area_p1_.NewAthenaArray(ncells1);
   }
-  if(ncells3 > 1) {
+  if (ncells3 > 1) {
     x3face_area_.NewAthenaArray(ncells1);
     x3face_area_p1_.NewAthenaArray(ncells1);
   }
@@ -100,21 +100,21 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
 
   dflx_.NewAthenaArray(ncells1,prad->n_fre_ang);
 
-  // arrays for spatial recontruction 
+  // arrays for spatial recontruction
   il_.NewAthenaArray(ncells1,prad->n_fre_ang);
   ilb_.NewAthenaArray(ncells1,prad->n_fre_ang);
 
   ir_.NewAthenaArray(ncells1,prad->n_fre_ang);
 
   sfac1_x_.NewAthenaArray(ncells1,prad->n_fre_ang);
-  sfac2_x_.NewAthenaArray(ncells1,prad->n_fre_ang);  
-  if(ncells2 > 1){
+  sfac2_x_.NewAthenaArray(ncells1,prad->n_fre_ang);
+  if (ncells2 > 1) {
     sfac1_y_.NewAthenaArray(ncells2,ncells1,prad->n_fre_ang);
-    sfac2_y_.NewAthenaArray(ncells2,ncells1,prad->n_fre_ang);    
+    sfac2_y_.NewAthenaArray(ncells2,ncells1,prad->n_fre_ang);
   }
-  if(ncells3 > 1){
+  if (ncells3 > 1) {
     sfac1_z_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
-    sfac2_z_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);    
+    sfac2_z_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
   }
 
 
@@ -127,16 +127,16 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
   vel_im_r_.NewAthenaArray(prad->n_fre_ang);
 
   adv_vel.NewAthenaArray(3,ncells3,ncells2,ncells1);
-  
-  
-  if(IM_RADIATION_ENABLED){
+
+
+  if (IM_RADIATION_ENABLED) {
     limiter_.NewAthenaArray(ncells1,prad->n_fre_ang);
 
-    if(ncells2 > 1){
+    if (ncells2 > 1) {
       limiterj_.NewAthenaArray(ncells2,ncells1,prad->n_fre_ang);
 
     }
-    if(ncells3 > 1){
+    if (ncells3 > 1) {
       limiterk_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
 
     }
@@ -147,16 +147,16 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
     exp_coef_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
     const_coef1_l_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
     const_coef1_r_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
-    if(ncells2 > 1){
+    if (ncells2 > 1) {
       const_coef2_l_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
       const_coef2_r_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
     }
-    if(ncells3 > 1){
+    if (ncells3 > 1) {
       const_coef3_l_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
       const_coef3_r_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
     }
     divflx_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
-  
+
     left_coef1_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
     left_coef2_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
     left_coef3_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
@@ -171,7 +171,7 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
 
   tgas_.NewAthenaArray(ncells3,ncells2,ncells1);
   tgas_new_.NewAthenaArray(ncells3,ncells2,ncells1);
-  vel_source_.NewAthenaArray(ncells3,ncells2,ncells1,3); 
+  vel_source_.NewAthenaArray(ncells3,ncells2,ncells1,3);
   taufact.NewAthenaArray(ncells3,ncells2,ncells1);
 
 
@@ -183,7 +183,7 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
   velx_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
   vely_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
   velz_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
-  
+
   vncsigma_.NewAthenaArray(nang);
   vncsigma2_.NewAthenaArray(prad->n_fre_ang);
   wmu_cm_.NewAthenaArray(nang);
@@ -194,16 +194,16 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
   dxw2_.NewAthenaArray(ncells1);
 
   //----------------------------------------------------
-  // array for multi-group 
-  if(nfreq > 1){
+  // array for multi-group
+  if (nfreq > 1) {
     // put the angle index first when map in frequency space
 
     ir_buff_.NewAthenaArray(prad->n_fre_ang);
 
-    if(nmax_map_ == 0)  nmax_map_ = nfreq/2+1;
+    if (nmax_map_ == 0)  nmax_map_ = nfreq/2+1;
     split_ratio_.NewAthenaArray(nang,nfreq,nmax_map_);
     // this needs to be done for each angle, all frequency groups
-    fre_map_matrix_.NewAthenaArray(nfreq,nmax_map_); 
+    fre_map_matrix_.NewAthenaArray(nfreq,nmax_map_);
     delta_nu_n_.NewAthenaArray(nfreq);
     map_bin_start_.NewAthenaArray(nang,nfreq);
     map_bin_end_.NewAthenaArray(nang,nfreq);
@@ -231,33 +231,33 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
   eq_sol_.NewAthenaArray(nfreq);
 
   //----------------------------------------------------
-  // array for multi-group 
+  // array for multi-group
 
   // set the default taufact
-  for(int k=0; k<ncells3; ++k)
-    for(int j=0; j<ncells2; ++j)
-      for(int i=0; i<ncells1; ++i){
+  for (int k=0; k<ncells3; ++k)
+    for (int j=0; j<ncells2; ++j)
+      for (int i=0; i<ncells1; ++i) {
         taufact(k,j,i) = taucell;
       }
 
   // The angular grid coefficients
-  ang_flx_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);    
+  ang_flx_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
   imp_ang_coef_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
-  imp_ang_coef_r_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);   
-  imp_ang_psi_r_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang); 
-  imp_ang_psi_l_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);  
+  imp_ang_coef_r_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
+  imp_ang_psi_r_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
+  imp_ang_psi_l_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
 
-  if(prad->angle_flag == 1){
+  if (prad->angle_flag == 1) {
     int &nzeta = prad->nzeta;
     int &npsi = prad->npsi;
-    if(nzeta > 0){
+    if (nzeta > 0) {
       g_zeta_.NewAthenaArray(2*nzeta+1);
       q_zeta_.NewAthenaArray(2*nzeta+2*NGHOST);
       ql_zeta_.NewAthenaArray(2*nzeta+2*NGHOST);
       qr_zeta_.NewAthenaArray(2*nzeta+2*NGHOST);
-      
 
-      if(npsi > 0){
+
+      if (npsi > 0) {
         zeta_flux_.NewAthenaArray(ncells3,ncells2,ncells1,nfreq,(2*nzeta+1)*2*npsi);
         zeta_area_.NewAthenaArray(2*npsi,2*nzeta+1);
       }
@@ -270,23 +270,23 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
 
     }
 
-    if(npsi > 0){
+    if (npsi > 0) {
       g_psi_.NewAthenaArray(2*npsi+1);
       q_psi_.NewAthenaArray(2*npsi+2*NGHOST);
       ql_psi_.NewAthenaArray(2*npsi+2*NGHOST);
-      qr_psi_.NewAthenaArray(2*npsi+2*NGHOST);      
+      qr_psi_.NewAthenaArray(2*npsi+2*NGHOST);
 
 
-      if(nzeta > 0){
+      if (nzeta > 0) {
         psi_flux_.NewAthenaArray(ncells3,ncells2,ncells1,nfreq,2*nzeta*(2*npsi+1));
         psi_area_.NewAthenaArray(2*nzeta,2*npsi+1);
       }
       else{
-        psi_flux_.NewAthenaArray(ncells3,ncells2,ncells1,nfreq,2*npsi+1); 
+        psi_flux_.NewAthenaArray(ncells3,ncells2,ncells1,nfreq,2*npsi+1);
         psi_area_.NewAthenaArray(2*npsi+1);
       }
 
-      pco->PsiArea(prad, psi_area_); 
+      pco->PsiArea(prad, psi_area_);
 
     }
 
@@ -303,34 +303,34 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
   int il, iu, jl, ju, kl, ku;
   jl = js, ju=je, kl=ks, ku=ke;
 
-  if(ncells2 > 1)
+  if (ncells2 > 1)
   {
-    if(ncells3 == 1){
+    if (ncells3 == 1) {
       jl=js-1, ju=je+1, kl=ks, ku=ke;
     }else{
       jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
     }
- 
+
   }
 
   // calculate velx_
-  for (int k=kl; k<=ku; ++k){
-    for (int j=jl; j<=ju; ++j){
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
         // get the velocity at the interface
-      for(int i=is-1; i<=ie+1; ++i){
+      for (int i=is-1; i<=ie+1; ++i) {
         Real dxl = pco->x1f(i)-pco->x1v(i-1);
         Real dxr = pco->x1v(i) - pco->x1f(i);
         Real factl = dxr/(dxl+dxr);
         Real factr = dxl/(dxl+dxr);
-        for(int ifr=0; ifr<nfreq; ++ifr){
+        for (int ifr=0; ifr<nfreq; ++ifr) {
           Real *cosx = &(prad->mu(0,k,j,i-1,0));
           Real *cosx1 = &(prad->mu(0,k,j,i,0));
           Real *veln = &(velx_(k,j,i,ifr*nang));
 #pragma omp simd aligned(cosx,cosx1,veln:ALI_LEN)
-          for(int n=0; n<nang; ++n){
+          for (int n=0; n<nang; ++n) {
             // linear intepolation between x1v(i-1), x1f(i), x1v(i)
             veln[n] = prad->reduced_c *
-                                (factl * cosx[n] + factr * cosx1[n]);                       
+                                (factl * cosx[n] + factr * cosx1[n]);
           }// end n
         }// end ifr
       }// end i
@@ -338,25 +338,25 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
   }// end k
 
   // calculate vely_
-  if(ncells2 > 1){
+  if (ncells2 > 1) {
     il = is-1, iu = ie+1, kl = ks, ku = ke;
     if (ncells3 >  1) // 2D
       kl = ks-1, ku = ke+1;
 
-    for (int k=kl; k<=ku; ++k){
-      for (int j=js; j<=je+1; ++j){
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=js; j<=je+1; ++j) {
         // get the velocity at the interface
-        for(int i=il; i<=iu; ++i){
+        for (int i=il; i<=iu; ++i) {
           Real dxl = pco->x2f(j)-pco->x2v(j-1);
           Real dxr = pco->x2v(j) - pco->x2f(j);
           Real factl = dxr/(dxl+dxr);
           Real factr = dxl/(dxl+dxr);
-          for(int ifr=0; ifr<nfreq; ++ifr){
+          for (int ifr=0; ifr<nfreq; ++ifr) {
             Real *cosy = &(prad->mu(1,k,j-1,i,0));
             Real *cosy1 = &(prad->mu(1,k,j,i,0));
             Real *veln = &(vely_(k,j,i,ifr*nang));
 #pragma omp simd aligned(cosy,cosy1,veln:ALI_LEN)
-            for(int n=0; n<nang; ++n){
+            for (int n=0; n<nang; ++n) {
             // linear intepolation between x2v(j-1), x2f(j), x2v(j)
               veln[n] = prad->reduced_c *
                           (factl * cosy[n] + factr * cosy1[n]);
@@ -366,27 +366,27 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
           }// end ifr
         }// end i
       }
-    }// end k 
+    }// end k
   }// ncells2
 
   // calculate vely_
-  if(ncells3 > 1){
+  if (ncells3 > 1) {
     il =is-1, iu=ie+1, jl=js-1, ju=je+1;
 
-    for (int k=ks; k<=ke+1; ++k){
-      for (int j=jl; j<=ju; ++j){
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=jl; j<=ju; ++j) {
         // get the velocity at the interface
-        for(int i=il; i<=iu; ++i){
+        for (int i=il; i<=iu; ++i) {
           Real dxl = pco->x3f(k) - pco->x3v(k-1);
           Real dxr = pco->x3v(k) - pco->x3f(k);
           Real factl = dxr/(dxl+dxr);
           Real factr = dxl/(dxl+dxr);
-          for(int ifr=0; ifr<nfreq; ++ifr){
+          for (int ifr=0; ifr<nfreq; ++ifr) {
             Real *cosz = &(prad->mu(2,k-1,j,i,0));
             Real *cosz1 = &(prad->mu(2,k,j,i,0));
             Real *veln = &(velz_(k,j,i,ifr*nang));
 #pragma omp simd aligned(cosz,cosz1,veln:ALI_LEN)
-            for(int n=0; n<nang; ++n){
+            for (int n=0; n<nang; ++n) {
             // linear intepolation between x2v(j-1), x2f(j), x2v(j)
               veln[n] = prad->reduced_c *
                           (factl * cosz[n] + factr * cosz1[n]);
@@ -394,7 +394,7 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
           }// end ifr
         }// end i
       }// end j
-    }// end k 
+    }// end k
   }// ncells3
 
 }
@@ -402,13 +402,13 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
 
 RadIntegrator::~RadIntegrator()
 {
- 
+
   x1face_area_.DeleteAthenaArray();
-  if(pmy_rad->pmy_block->ncells2 > 1) {
+  if (pmy_rad->pmy_block->ncells2 > 1) {
     x2face_area_.DeleteAthenaArray();
     x2face_area_p1_.DeleteAthenaArray();
   }
-  if(pmy_rad->pmy_block->ncells3 > 1) {
+  if (pmy_rad->pmy_block->ncells3 > 1) {
     x3face_area_.DeleteAthenaArray();
     x3face_area_p1_.DeleteAthenaArray();
   }
@@ -418,19 +418,19 @@ RadIntegrator::~RadIntegrator()
   cwidth3_.DeleteAthenaArray();
 
   dflx_.DeleteAthenaArray();
-  
+
 
   il_.DeleteAthenaArray();
   ilb_.DeleteAthenaArray();
 
   ir_.DeleteAthenaArray();
-  
+
   vel_.DeleteAthenaArray();
   velx_.DeleteAthenaArray();
   vely_.DeleteAthenaArray();
   velz_.DeleteAthenaArray();
 
-  
+
   vncsigma_.DeleteAthenaArray();
   vncsigma2_.DeleteAthenaArray();
   wmu_cm_.DeleteAthenaArray();
@@ -439,14 +439,14 @@ RadIntegrator::~RadIntegrator()
   ir_cm_.DeleteAthenaArray();
 
   sfac1_x_.DeleteAthenaArray();
-  sfac2_x_.DeleteAthenaArray();  
-  if(pmy_rad->pmy_block->ncells2 > 1){
+  sfac2_x_.DeleteAthenaArray();
+  if (pmy_rad->pmy_block->ncells2 > 1) {
     sfac1_y_.DeleteAthenaArray();
-    sfac2_y_.DeleteAthenaArray();    
+    sfac2_y_.DeleteAthenaArray();
   }
-  if(pmy_rad->pmy_block->ncells3 > 1){
+  if (pmy_rad->pmy_block->ncells3 > 1) {
     sfac1_z_.DeleteAthenaArray();
-    sfac2_z_.DeleteAthenaArray();    
+    sfac2_z_.DeleteAthenaArray();
   }
 
   sm_diff1_.DeleteAthenaArray();
@@ -458,9 +458,9 @@ RadIntegrator::~RadIntegrator()
 
 
   adv_vel.DeleteAthenaArray();
-  
 
-  if(IM_RADIATION_ENABLED){
+
+  if (IM_RADIATION_ENABLED) {
 
     const_coef_.DeleteAthenaArray();
     exp_coef_.DeleteAthenaArray();
@@ -468,12 +468,12 @@ RadIntegrator::~RadIntegrator()
     const_coef1_r_.DeleteAthenaArray();
     limiter_.DeleteAthenaArray();
 
-    if(pmy_rad->pmy_block->ncells2 > 1){
+    if (pmy_rad->pmy_block->ncells2 > 1) {
       const_coef2_l_.DeleteAthenaArray();
       const_coef2_r_.DeleteAthenaArray();
       limiterj_.DeleteAthenaArray();
     }
-    if(pmy_rad->pmy_block->ncells3 > 1){
+    if (pmy_rad->pmy_block->ncells3 > 1) {
       const_coef3_l_.DeleteAthenaArray();
       const_coef3_r_.DeleteAthenaArray();
       limiterk_.DeleteAthenaArray();
@@ -494,7 +494,7 @@ RadIntegrator::~RadIntegrator()
     imp_ang_psi_r_.DeleteAthenaArray();
     adv_flx_.DeleteAthenaArray();
 
-    
+
   }
   implicit_coef_.DeleteAthenaArray();
 
@@ -509,10 +509,10 @@ RadIntegrator::~RadIntegrator()
   delta_source.DeleteAthenaArray();
 
 
-  if(pmy_rad->angle_flag == 1){
+  if (pmy_rad->angle_flag == 1) {
     int &nzeta = pmy_rad->nzeta;
     int &npsi = pmy_rad->npsi;
-    if(nzeta > 0){
+    if (nzeta > 0) {
       g_zeta_.DeleteAthenaArray();
       q_zeta_.DeleteAthenaArray();
       ql_zeta_.DeleteAthenaArray();
@@ -520,13 +520,13 @@ RadIntegrator::~RadIntegrator()
       zeta_flux_.DeleteAthenaArray();
       zeta_area_.DeleteAthenaArray();
     }
-    if(npsi > 0){
+    if (npsi > 0) {
       g_psi_.DeleteAthenaArray();
       q_psi_.DeleteAthenaArray();
       ql_psi_.DeleteAthenaArray();
       qr_psi_.DeleteAthenaArray();
-      psi_flux_.DeleteAthenaArray();     
-      psi_area_.DeleteAthenaArray(); 
+      psi_flux_.DeleteAthenaArray();
+      psi_area_.DeleteAthenaArray();
 
     }
     dflx_ang_.DeleteAthenaArray();
@@ -535,7 +535,7 @@ RadIntegrator::~RadIntegrator()
 
   // multi-group array
 
-  if(pmy_rad->nfreq > 1){
+  if (pmy_rad->nfreq > 1) {
     split_ratio_.DeleteAthenaArray();
     fre_map_matrix_.DeleteAthenaArray();
     delta_nu_n_.DeleteAthenaArray();
@@ -571,7 +571,7 @@ RadIntegrator::~RadIntegrator()
 
 
 void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
-    AthenaArray<Real> &u, AthenaArray<Real> &w, 
+    AthenaArray<Real> &u, AthenaArray<Real> &w,
     AthenaArray<Real> &bcc, AthenaArray<Real> &ir)
 {
 
@@ -580,7 +580,7 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
 
   Real rho_floor = pmb->peos->GetDensityFloor();
 
-  NRRadiation *prad=pmb->pnrrad;  
+  NRRadiation *prad=pmb->pnrrad;
   Coordinates *pco=pmb->pcoord;
 
   Real& prat = prad->prat;
@@ -592,13 +592,13 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
- 
-  for(int k=0; k<pmb->ncells3; ++k){
-    for(int j=0; j<pmb->ncells2; ++j){
-      for(int i=0; i<pmb->ncells1; ++i){
 
-        // for implicit update, using the quantities from the partially 
-        // updated u, not from w 
+  for (int k=0; k<pmb->ncells3; ++k) {
+    for (int j=0; j<pmb->ncells2; ++j) {
+      for (int i=0; i<pmb->ncells1; ++i) {
+
+        // for implicit update, using the quantities from the partially
+        // updated u, not from w
 
          Real rho = u(IDN,k,j,i);
          rho = std::max(rho,rho_floor);
@@ -606,7 +606,7 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
          Real vy = u(IM2,k,j,i)/rho;
          Real vz = u(IM3,k,j,i)/rho;
          Real pb = 0.0;
-         if(MAGNETIC_FIELDS_ENABLED)
+         if (MAGNETIC_FIELDS_ENABLED)
            pb = 0.5*(SQR(bcc(IB1,k,j,i))+SQR(bcc(IB2,k,j,i))
                 +SQR(bcc(IB3,k,j,i)));
 
@@ -622,18 +622,18 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
 
          // calculate radiation energy density
          Real er = 0.0;
-         for(int ifr=0; ifr<nfreq; ++ifr){ 
+         for (int ifr=0; ifr<nfreq; ++ifr) {
            Real *irn = &(ir(k,j,i,ifr*nang));
            Real *weight = &(prad->wmu(0));
            Real er_freq = 0.0;
 #pragma omp simd reduction(+:er_freq)
-           for(int n=0; n<nang; ++n){
+           for (int n=0; n<nang; ++n) {
              er_freq += weight[n] * irn[n];
            }
            er += er_freq;
-         }   
+         }
 
-         // now the velocity term, 
+         // now the velocity term,
          // using velocity from current stage
          vx = w(IVX,k,j,i);
          vy = w(IVY,k,j,i);
@@ -641,41 +641,41 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
 
          vel = vx * vx + vy * vy + vz * vz;
 
-         if(prat * er * invcrat * invcrat > rho){
+         if (prat * er * invcrat * invcrat > rho) {
 
             PredictVel(ir,k,j,i, 0.5 * dt, rho, &vx, &vy, &vz);
             vel = vx * vx + vy * vy + vz * vz;
 
          }
-        
+
          Real ratio = sqrt(vel) * invcrat;
          // Limit the velocity to be smaller than the speed of light
-         if(ratio > prad->vmax){
+         if (ratio > prad->vmax) {
            Real factor = prad->vmax/ratio;
            vx *= factor;
            vy *= factor;
            vz *= factor;
-           
+
          }
          vel_source_(k,j,i,0) = vx;
          vel_source_(k,j,i,1) = vy;
          vel_source_(k,j,i,2) = vz;
 
 
-   
+
       }// end i
     }// end j
-  }// end k  
+  }// end k
 
   // Now get interface velocity
 
   // vx
-  for(int k=ks; k<=ke; ++k){
-    for(int j=js; j<=je; ++j){
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
       pco->CenterWidth1(k,j,is-1,ie+1,dxw1_);
-      for(int i=is; i<=ie+1; ++i){
+      for (int i=is; i<=ie+1; ++i) {
         Real tau = 0.0;
-        for(int ifr=0; ifr<nfreq; ++ifr){
+        for (int ifr=0; ifr<nfreq; ++ifr) {
           Real sigmal = prad->sigma_a(k,j,i-1,ifr) + prad->sigma_s(k,j,i-1,ifr);
           sigmal *= taufact(k,j,i-1);
           Real sigmar = prad->sigma_a(k,j,i,ifr) + prad->sigma_s(k,j,i,ifr);
@@ -687,22 +687,22 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
         GetTaufactorAdv(tau,factor);
         Real vl = vel_source_(k,j,i-1,0);
         Real vr = vel_source_(k,j,i,0);
-        adv_vel(0,k,j,i) = factor*(vl + (pco->x1f(i) - pco->x1v(i-1)) * 
+        adv_vel(0,k,j,i) = factor*(vl + (pco->x1f(i) - pco->x1v(i-1)) *
                                (vr - vl)/(pco->x1v(i) - pco->x1v(i-1)));
 
       }
     }
   }
-  if(je > js){
-    for(int k=ks; k<=ke; ++k){
-      for(int j=js; j<=je+1; ++j){
+  if (je > js) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je+1; ++j) {
         Real ratio = (pco->x2f(j) - pco->x2v(j-1))/
                      (pco->x2v(j) - pco->x2v(j-1));
         pco->CenterWidth2(k,j-1,is,ie,dxw1_);
         pco->CenterWidth2(k,j,is,ie,dxw2_);
-        for(int i=is; i<=ie; ++i){
+        for (int i=is; i<=ie; ++i) {
           Real tau = 0.0;
-          for(int ifr=0; ifr<nfreq; ++ifr){
+          for (int ifr=0; ifr<nfreq; ++ifr) {
             Real sigmal = prad->sigma_a(k,j-1,i,ifr) + prad->sigma_s(k,j-1,i,ifr);
             sigmal *= taufact(k,j-1,i);
             Real sigmar = prad->sigma_a(k,j,i,ifr) + prad->sigma_s(k,j,i,ifr);
@@ -722,16 +722,16 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
 
   }// end je > js
 
-  if(ke > ks){
-    for(int k=ks; k<=ke+1; ++k){
+  if (ke > ks) {
+    for (int k=ks; k<=ke+1; ++k) {
       Real ratio = (pco->x3f(k) - pco->x3v(k-1))/
                    (pco->x3v(k) - pco->x3v(k-1));
-      for(int j=js; j<=je; ++j){
+      for (int j=js; j<=je; ++j) {
         pco->CenterWidth3(k-1,j,is,ie,dxw1_);
         pco->CenterWidth3(k,j,is,ie,dxw2_);
-        for(int i=is; i<=ie; ++i){
+        for (int i=is; i<=ie; ++i) {
           Real tau = 0.0;
-          for(int ifr=0; ifr<nfreq; ++ifr){
+          for (int ifr=0; ifr<nfreq; ++ifr) {
             Real sigmal = prad->sigma_a(k-1,j,i,ifr) + prad->sigma_s(k-1,j,i,ifr);
             sigmal *= taufact(k-1,j,i);
             Real sigmar = prad->sigma_a(k,j,i,ifr) + prad->sigma_s(k,j,i,ifr);
@@ -758,12 +758,12 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
 
 // f_l is the factor in the opposite direction of vel
 // f_r is the factor in the same direction of vel
-void RadIntegrator::SignalSpeed(const Real adv, const Real f_l, 
+void RadIntegrator::SignalSpeed(const Real adv, const Real f_l,
                  const Real f_r, Real *vel, Real *smax, Real *smin)
 {
 
-  for(int n=0; n<pmy_rad->nang; ++n){
-    if(vel[n] > 0.0){
+  for (int n=0; n<pmy_rad->nang; ++n) {
+    if (vel[n] > 0.0) {
       smax[n] = f_r * vel[n];
       smin[n] = -f_l * vel[n];
     }else{
@@ -772,38 +772,38 @@ void RadIntegrator::SignalSpeed(const Real adv, const Real f_l,
     }
 
   }
-  if(adv_flag_ == 0){
-    for(int n=0; n<pmy_rad->nang; ++n){
+  if (adv_flag_ == 0) {
+    for (int n=0; n<pmy_rad->nang; ++n) {
       smax[n] += std::fabs(adv);
-      smin[n] -= std::fabs(adv);   
+      smin[n] -= std::fabs(adv);
     }
 
   }// end adv_flag
 }
 
-void RadIntegrator::SplitVelocity(Real *vel_l, Real *vel_r, const Real advl, 
+void RadIntegrator::SplitVelocity(Real *vel_l, Real *vel_r, const Real advl,
             const Real advr, Real *smax_l, Real *smin_l, Real *smax_r, Real *smin_r)
 {
   int tot_ang = pmy_rad->n_fre_ang;
   int iteration = pmy_rad->pmy_block->pmy_mesh->pimrad->ite_scheme;
   // the left side
-  if(iteration == 0){
-    for(int n=0; n<tot_ang; ++n){
+  if (iteration == 0) {
+    for (int n=0; n<tot_ang; ++n) {
       Real vl = vel_l[n] - advl;
       vel_ex_l_(n) = 0.0;
       vel_im_l_(n) = smin_l[n] * (smax_l[n] - vl);
     }
-    for(int n=0; n<tot_ang; ++n){
+    for (int n=0; n<tot_ang; ++n) {
       Real vr = vel_r[n] - advr;
       vel_ex_r_(n) = 0.0;
-      vel_im_r_(n) = smax_r[n] * (vr - smin_r[n]);   
-    } 
+      vel_im_r_(n) = smax_r[n] * (vr - smin_r[n]);
+    }
 
   }// end iteration == 0
-  else if(iteration == 1){
-    for(int n=0; n<tot_ang; ++n){
+  else if (iteration == 1) {
+    for (int n=0; n<tot_ang; ++n) {
       Real vl = vel_l[n] - advl;
-      if(vl > 0.0){
+      if (vl > 0.0) {
         vel_ex_l_(n) = -smin_l[n] * vl;
         vel_im_l_(n) = smin_l[n] * smax_l[n];
       }else{
@@ -812,16 +812,16 @@ void RadIntegrator::SplitVelocity(Real *vel_l, Real *vel_r, const Real advl,
       }
     }// end n
 
-    for(int n=0; n<tot_ang; ++n){
+    for (int n=0; n<tot_ang; ++n) {
       Real vr = vel_r[n] - advr;
-      if(vr > 0.0){
+      if (vr > 0.0) {
         vel_ex_r_(n) = 0.0;
-        vel_im_r_(n) = smax_r[n] * (vr - smin_r[n]);  
+        vel_im_r_(n) = smax_r[n] * (vr - smin_r[n]);
       }else{
         vel_ex_r_(n) = smax_r[n] * vr;
         vel_im_r_(n) = -smax_r[n] * smin_r[n];
-      } 
-    } 
+      }
+    }
 
   }// end if iter == 1
   else{
@@ -839,19 +839,19 @@ void RadIntegrator::SplitVelocity(Real *vel_l, Real *vel_r, const Real advl,
 void RadIntegrator::GetTaufactor(const Real tau, Real &factor1, int dir)
 {
   std::stringstream msg;
-  
-  if(dir > 0){
-    if(tau_flag_ == 1){
+
+  if (dir > 0) {
+    if (tau_flag_ == 1) {
       Real tausq = tau * tau;
       factor1 = 1.0 - 0.5 * tausq;
-      if(tausq > 1.e-3){
+      if (tausq > 1.e-3) {
         factor1  = (1.0 - exp(-tausq))/tausq;
       }
       factor1 = sqrt(factor1);
 
-    }else if(tau_flag_ == 2){
+    }else if (tau_flag_ == 2) {
       Real tausq = tau;
-      if(tausq > 1)
+      if (tausq > 1)
         factor1 = 1.0/tausq;
       else
         factor1 = 1.0;
@@ -860,19 +860,19 @@ void RadIntegrator::GetTaufactor(const Real tau, Real &factor1, int dir)
         msg << "### FATAL ERROR in function [GetTaufactor]"
             << std::endl << "tau_flag_ '" << tau_flag_ << "' not allowed!";
         ATHENA_ERROR(msg);
-    }  
+    }
   }else{
-    if(tau_flag_ == 1){
+    if (tau_flag_ == 1) {
       Real tausq = tau * tau;
       factor1 = tausq;
-      if(tausq > 1.e-3){
+      if (tausq > 1.e-3) {
         factor1  = (1.0 - exp(-tausq*tausq))/tausq;
       }
       factor1 = sqrt(factor1);
 
-    }else if(tau_flag_ == 2){
+    }else if (tau_flag_ == 2) {
       Real tausq = tau;
-      if(tausq > 1)
+      if (tausq > 1)
         factor1 = 1.0/tausq;
       else
         factor1 = tausq;
@@ -881,10 +881,10 @@ void RadIntegrator::GetTaufactor(const Real tau, Real &factor1, int dir)
         msg << "### FATAL ERROR in function [GetTaufactor]"
             << std::endl << "tau_flag_ '" << tau_flag_ << "' not allowed!";
         ATHENA_ERROR(msg);
-    } 
+    }
 
   }
-  
+
 }
 
 // The tau factor for advection velocity
@@ -892,18 +892,18 @@ void RadIntegrator::GetTaufactorAdv(const Real tau, Real &factor)
 {
   Real tausq = tau * tau;
   factor = tausq - 0.5 * tausq * tausq;
-  if(tausq > 1.e-3)
+  if (tausq > 1.e-3)
     factor = (1.0 - exp(-tausq));
 
 }
 
 
 
-void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i, 
+void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i,
       Real dt, Real rho, Real *vx, Real *vy, Real *vz)
 {
     NRRadiation *prad = pmy_rad;
-  
+
     Real &prat = prad->prat;
     Real invcrat = 1.0/prad->crat;
     Real ct = dt * prad->reduced_c;
@@ -914,7 +914,7 @@ void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i,
          pr11=0.0,pr12=0.0,pr13=0.0,pr22=0.0,
          pr23=0.0,pr33=0.0;
     Real *weight = &(prad->wmu(0));
-    for(int ifr=0; ifr<nfreq; ++ifr){
+    for (int ifr=0; ifr<nfreq; ++ifr) {
       Real er_f = 0.0,fr1_f=0.0,fr2_f=0.0,fr3_f=0.0,
            pr11_f=0.0,pr12_f=0.0,pr13_f=0.0,pr22_f=0.0,
            pr23_f=0.0,pr33_f=0.0;
@@ -924,7 +924,7 @@ void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i,
       Real *cosy = &(prad->mu(1,k,j,i,0));
       Real *cosz = &(prad->mu(2,k,j,i,0));
 #pragma omp simd aligned(cosx,weight,irn,cosy,cosz:ALI_LEN) reduction(+:er_f,fr1_f,fr2_f,fr3_f,pr11_f,pr12_f,pr13_f,pr22_f,pr23_f,pr33_f)
-      for(int n=0; n<nang; ++n){
+      for (int n=0; n<nang; ++n) {
         Real irweight = weight[n] * irn[n];
         er_f   += irweight;
         fr1_f  += irweight * cosx[n];
@@ -955,23 +955,23 @@ void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i,
     Real grey_sigma_s = 0.0;
     Real grey_sigma_a = 0.0;
 
-    for(int ifr=0; ifr<nfreq; ++ifr){
+    for (int ifr=0; ifr<nfreq; ++ifr) {
       grey_sigma_s += prad->sigma_s(k,j,i,ifr);
       grey_sigma_a += prad->sigma_a(k,j,i,ifr);
 
     }
-  
+
     Real dtcsigma = ct * (grey_sigma_s + grey_sigma_a);
-  
+
     Real vx0 = (*vx);
     Real vy0 = (*vy);
     Real vz0 = (*vz);
-  
+
     Real m0x = prat * fr1 * invcrat + rho * vx0;
     Real m0y = prat * fr2 * invcrat + rho * vy0;
     Real m0z = prat * fr3 * invcrat + rho * vz0;
-  
-  
+
+
     Real vx11 = rho * (1.0 + dtcsigma) + prat * dtcsigma * (er + pr11)
                                        * invcrat * invcrat;
     Real vy11 = rho * (1.0 + dtcsigma) + prat * dtcsigma * (er + pr22)
@@ -984,22 +984,18 @@ void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i,
     Real rhs1 = rho * vx0 + dtcsigma * m0x;
     Real rhs2 = rho * vy0 + dtcsigma * m0y;
     Real rhs3 = rho * vz0 + dtcsigma * m0z;
-  
+
     Real factor = vx11 * vy11 * vz11 - vy11 * vx13 * vx13 + 2.0 * vx12 * vx13 * vy12
               - vx11 * vy12 * vy12 - vx12 * vx12 * vz11;
     factor = 1.0/factor;
 
     (*vx) = factor*(rhs3*(vx12*vy12 - vx13*vy11) + rhs2*(vy12*vx13
                 - vx12*vz11) + rhs1*(vy11*vz11 - vy12*vy12));
-          
+
     (*vy) = factor*(rhs3*(vx12*vx13 - vx11*vy12) + rhs2*(vx11*vz11
                 - vx13*vx13) + rhs1*(vx13*vy12 - vx12*vz11));
-          
+
     (*vz) = factor*(rhs3*(vx11*vy11 - vx12*vx12) + rhs2*(vx12*vx13
                 - vx11*vy12) + rhs1*(vx12*vy12 - vx13*vy11));
-  
+
 }
-
-
-
-

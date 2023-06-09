@@ -39,12 +39,12 @@
 #include "gravity/fft_gravity.hpp"
 #include "gravity/mg_gravity.hpp"
 #include "mesh/mesh.hpp"
+#include "nr_radiation/implicit/radiation_implicit.hpp"
+#include "nr_radiation/radiation.hpp"
 #include "outputs/io_wrapper.hpp"
 #include "outputs/outputs.hpp"
 #include "parameter_input.hpp"
 #include "utils/utils.hpp"
-#include "nr_radiation/implicit/radiation_implicit.hpp"
-#include "nr_radiation/radiation.hpp"
 
 // MPI/OpenMP headers
 #ifdef MPI_PARALLEL
@@ -468,11 +468,9 @@ int main(int argc, char *argv[]) {
         else if (SELF_GRAVITY_ENABLED == 2) // multigrid
           pmesh->pmgrd->Solve(stage);
       }
-      
-      if(IM_RADIATION_ENABLED){
+      if (IM_RADIATION_ENABLED) {
         pmesh->pimrad->Iteration(pmesh,ptlist,stage);
       }
-
     }
 
     if (STS_ENABLED && pmesh->sts_integrator == "rkl2") {
