@@ -79,6 +79,8 @@ time python -u ./run_tests.py mhd --silent  # (mhd/mhd_linwave.py is currenlty t
 time python -u ./run_tests.py shearingbox --silent
 time python -u ./run_tests.py diffusion --silent
 
+time python -u ./run_tests.py chemistry --silent
+
 # High-order solver regression tests w/ GCC
 time python -u ./run_tests.py hydro4 --silent
 
@@ -122,6 +124,8 @@ time python -u ./run_tests.py shearingbox --config=--cxx=icpx --silent
 time python -u ./run_tests.py symmetry --config=--cxx=icpx --silent
 time python -u ./run_tests.py eos --config=--cxx=icpx --silent
 time python -u ./run_tests.py scalars/mignone_radial_1d --config=--cxx=icpx --silent
+
+time python -u ./run_tests.py chemistry --config=--cxx=icpx --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python -u ./run_tests.py hydro4 --config=--cxx=icpx --silent
