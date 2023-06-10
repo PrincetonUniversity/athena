@@ -163,36 +163,35 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
-
 void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
-              const AthenaArray<Real> &prim_scalar, const AthenaArray<Real> &bcc,
-              AthenaArray<Real> &cons, AthenaArray<Real> &cons_scalar) {
- for (int k = pmb ->ks; k <=  pmb->ke; ++k) {
-    z = pmb -> pcoord -> x3v(k);
+            const AthenaArray<Real> &prim_scalar, const AthenaArray<Real> &bbc,
+            AthenaArray<Real> &cons, AthenaArray<Real> &cons_scalar) {
+  for (int k = pmb->ks; k <= pmb->ke; ++k) {
+    z = pmb->pcoord->x3v(k);
     for (int j = pmb->js; j <= pmb->je; ++j) {
-        phi = pmb -> pcoord -> x2v(j);
-        for (int i = pmb->is; i <= pmb->ie; ++i) {
-            r = pmb -> pcoord -> x1v(i);
-            Real period = sqrt(2*M_PI*(pow(rp,3)/(gm0)));
-            Real mean_anomaly = 2*(M_PI / period) * time;
-            phip = mean_anomaly;
-            Real d = sqrt(pow(rp,2) + pow(r,2) - 2*rp*r*cos(phi - phip));
-            Real dens = prim(IDN,k,j,i);
-            Real velocity_x = prim(IVX,k,j,i);
-            Real velocity_y = prim(IVY,k,j,i);
-            Real F_g = (dens)* (gm_planet/ (pow(d,2)));
-            Real cosine_term = (pow(r,2)*(pow(cos(phi),2)) - r*rp*cos(phi)*cos(phip) + pow(r,2)*(pow(sin(phi),2)) - r*rp*sin(phi)*sin(phip)) / (r*d);
-            Real sine_term = (-1*r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
-            Real Fg_x = - F_g * cosine_term;
-            Real Fg_y = F_g *sine_term;
-            Real delta_momentum_x = Fg_x * dt;
-            Real delta_momentum_y = Fg_y * dt;
-            cons(IM1, k,j,i) += delta_momentum_x;
-            cons(IM2, k,j,i) += delta_momentum_y;
-            cons(IEN,k,j,i) += (Fg_x * velocity_x + Fg_y * velocity_y) * dt;
-        }
+      phi = pmb->pcoord->x2v(j);
+      for (int i = pmb->is; i <= pmb->ie; ++i) {
+        r = pmb->pcoord->x1v(i);
+        Real period = 2*M_PI*sqrt(pow(rp,3)/gm0);
+        Real mean_anomaly = 2*(M_PI / period)*time;
+        phip = mean_anomaly;
+        Real d = sqrt(pow(rp,2) + pow(r,2) - 2*rp*r*cos(phi - phip));
+        Real dens = prim(IDN,k,j,i);
+        Real velocity_x = prim(IVX,k,j,i);
+        Real velocity_y = prim(IVY,k,j,i);
+        Real F_g = (dens)* (gm_planet / pow(d,2));
+        Real cosine_term = (pow(r,2)*(pow(cos(phi),2)) - r*rp*cos(phi)*cos(phip) + pow(r,2)*(pow(sin(phi),2)) - r*rp*sin(phi)*sin(phip)) / (r*d);
+        Real sine_term = (-1*r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
+        Real Fg_x = F_g*cosine_term;
+        Real Fg_y = F_g*sine_term;
+        Real delta_momentum_x = Fg_x * dt;
+        Real delta_momentum_y = Fg_y * dt;
+        cons(IM1, k,j,i) += delta_momentum_x;
+        cons(IM2, k,j,i) += delta_momentum_y;
+        cons(IEN,k,j,i) += (Fg_x * velocity_x + Fg_y * velocity_y) * dt;
+      }
     }
- }
+  }
 }
 
 
