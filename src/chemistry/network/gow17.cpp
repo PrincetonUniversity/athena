@@ -649,7 +649,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
     //Thermo::CoolingHotGas(nH_,  T, zdg_);
     // CO rotational lines
     // Calculate effective CO column density
-    vth = sqrt(2. * Constants::k_boltzmann_cgs * Tcool_nm / ChemistryUtility::mCO);
+    vth = std::sqrt(2. * Constants::k_boltzmann_cgs * Tcool_nm / ChemistryUtility::mCO);
     nCO = nH_ * yprev[iCO_];
     grad_small_ = vth/Leff_CO_max_;
     gradeff = std::max(gradv_, grad_small_);
@@ -769,8 +769,8 @@ Real ChemNetwork::CII_rec_rate_(const Real temp) {
   C = 0.1597;
   T2 = 4.955e4;
   BN = B + C * exp(-T2/temp);
-  term1 = sqrt(temp/T0);
-  term2 = sqrt(temp/T1);
+  term1 = std::sqrt(temp/T0);
+  term2 = std::sqrt(temp/T1);
   alpharr = A / ( term1*pow(1.0+term1, 1.0-BN) * pow(1.0+term2, 1.0+BN) );
   alphadr = pow( temp, -3.0/2.0 ) * ( 6.346e-9 * exp(-1.217e1/temp) +
         9.793e-09 * exp(-7.38e1/temp) + 1.634e-06 * exp(-1.523e+04/temp) );
@@ -808,7 +808,7 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
   Real psi; //H+ grain recombination parameter
   Real kcr_H_fac;//ratio of total rate to primary rate
   Real psi_gr_fac_;
-  const Real kida_fac = ( 0.62 + 45.41 / sqrt(T) ) * nH_;
+  const Real kida_fac = ( 0.62 + 45.41 / std::sqrt(T) ) * nH_;
   Real t1_CHx, t2_CHx;
   //cosmic ray reactions
   for (int i=0; i<n_cr_; i++) {
@@ -866,7 +866,7 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
   if (y[ige_] < small_) {
     h2oplus_ratio = 1.0e10;
   } else {
-    h2oplus_ratio = 6e-10 * y[iH2_] / ( 5.3e-6 / sqrt(T) * y[ige_] );
+    h2oplus_ratio = 6e-10 * y[iH2_] / ( 5.3e-6 / std::sqrt(T) * y[ige_] );
   }
   fac_H2Oplus_H2 = h2oplus_ratio / (h2oplus_ratio + 1.);
   fac_H2Oplus_e = 1. / (h2oplus_ratio + 1.);
@@ -891,7 +891,7 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
     //(15) H2 + *H -> 3 *H
     //(16) H2 + H2 -> H2 + 2 *H
     // --(9) Density dependent. See Glover+MacLow2007
-    k9l = 6.67e-12 * sqrt(Tcoll) * exp(-(1. + 63590./Tcoll));
+    k9l = 6.67e-12 * std::sqrt(Tcoll) * exp(-(1. + 63590./Tcoll));
     k9h = 3.52e-9 * exp(-43900.0 / Tcoll);
     k10l = 5.996e-30 * pow(Tcoll, 4.1881) / pow((1.0 + 6.761e-6 * Tcoll), 5.6881)
             * exp(-54657.4 / Tcoll);
@@ -944,7 +944,7 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
     if (GPE0 < GPE_limit) {
       GPE0 = GPE_limit;
     }
-    psi_gr_fac_ = 1.7 * GPE0 * sqrt(T) / nH_;
+    psi_gr_fac_ = 1.7 * GPE0 * std::sqrt(T) / nH_;
     psi = psi_gr_fac_ / y[ige_];
     kgr_[1] = 1.0e-14 * cHp_[0] /
                  (
@@ -1025,7 +1025,7 @@ Real ChemNetwork::GetStddev(Real arr[], const int len) {
   }
   avg = sum/Real(len);
   avg_sq = sum_sq/Real(len);
-  return sqrt(avg_sq - avg*avg);
+  return std::sqrt(avg_sq - avg*avg);
 }
 
 //----------------------------------------------------------------------------------------

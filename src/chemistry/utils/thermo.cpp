@@ -219,8 +219,8 @@ Real Thermo::HeatingCr(const Real xe, const Real nH,
   // Draine ISM book eq (30.1)
   Real qHI;
   if (xe > 1.0e-9) {
-    qHI = ( 6.5 + 26.4 * sqrt( xe / (xe+0.07) ) ) * eV_;
-  } else { //prevent sqrt of small negative number
+    qHI = ( 6.5 + 26.4 * std::sqrt( xe / (xe+0.07) ) ) * eV_;
+  } else { //prevent std::sqrt of small negative number
     qHI =  6.5 * eV_;
   }
 
@@ -263,7 +263,7 @@ Real Thermo::HeatingPE(const Real G, const Real Zd, const Real T,
   if (ne < small_) {
     return 0.;
   }
-  const Real x = 1.7 * G * sqrt(T)/ne + 50.;
+  const Real x = 1.7 * G * std::sqrt(T)/ne + 50.;
   const Real fac = ( CPE_[0] + CPE_[1]*pow(T, CPE_[4]) ) /
     (
      1. + CPE_[2]*pow(x, CPE_[5]) * ( 1. + CPE_[3]*pow(x, CPE_[6]) )
@@ -295,7 +295,7 @@ Real Thermo::HeatingPE_W03(const Real G, const Real Z_PAH, const Real T,
   if (phi_PAH < small_) {
     return 0.;
   }
-  const Real psi = (1.7 * G * sqrt(T)/ne + 50.)/phi_PAH;
+  const Real psi = (1.7 * G * std::sqrt(T)/ne + 50.)/phi_PAH;
   const Real fac = 4.9e-2/(1+4.0e-3*pow(psi, 0.73))
                     + 3.7e-2*pow(T/1e4, 0.7)/(1 + 2.0e-4*psi);
   const Real heating = 2.2e-24 * G * Z_PAH * fac;
@@ -376,7 +376,7 @@ Real Thermo::q10CII_(const Real nHI, const Real nH2, const Real ne,
                        const Real T) {
   //Draine (2011) ISM book eq (17.16) and (17.17)
   const Real T2 = T/100.;
-  const Real k10e = 4.53e-8 * sqrt(1.0e4/T);
+  const Real k10e = 4.53e-8 * std::sqrt(1.0e4/T);
   const Real k10HI = 7.58e-10 * pow(T2, 0.1281+0.0087*log(T2));
   Real k10oH2 = 0;
   Real k10pH2 = 0;
@@ -460,7 +460,7 @@ Real Thermo::CoolingCI(const Real xCI, const Real nHI,
   const Real lnT2 = log(T2);
   const Real lnT = log(T);
   //ke(u,l) = fac*gamma(u,l)/g(u)
-  const Real fac = 8.629e-8 * sqrt(1.0e4/T);
+  const Real fac = 8.629e-8 * std::sqrt(1.0e4/T);
   Real k10e, k20e, k21e;
   Real lngamma10e, lngamma20e, lngamma21e; //collisional strength
   if (T < 1.0e3) {
@@ -743,7 +743,7 @@ Real Thermo::CoolingDust(const Real Zd, const Real nH, const Real Tg,
   const Real L_CMB = (sigmad10_ * 0.01) * ca_ * pow(TCMB_, 6);
   const Real L_ISRF = 3.9e-24 * GISRF;
   const Real Td1 = pow( (L_CMB + L_ISRF) / (sigmad10_ * 0.01 * ca_), 1./6. );
-  const Real L1 = alpha_GD_ * nH * sqrt(Tg) * (Tg - Td1);
+  const Real L1 = alpha_GD_ * nH * std::sqrt(Tg) * (Tg - Td1);
   const Real LnoISRF = pow(10, - logpsi) * Zd;
   if (L1 < LnoISRF) {
     return L1;
@@ -766,7 +766,7 @@ Real Thermo::CoolingDust(const Real Zd, const Real nH, const Real Tg,
 //! Cooling rate for dust in erg H^-1 s^-1
 Real Thermo::CoolingDustTd(const Real Zd, const Real nH, const Real Tg,
                            const Real Td) {
-  const Real L1 = alpha_GD_ * nH * sqrt(Tg) * (Tg - Td);
+  const Real L1 = alpha_GD_ * nH * std::sqrt(Tg) * (Tg - Td);
   return L1;
 }
 
@@ -784,7 +784,7 @@ Real Thermo::CoolingDustTd(const Real Zd, const Real nH, const Real Tg,
 //! Cooling rate for  recombination of e on PAHs in erg H^-1 s^-1
 Real Thermo::CoolingRec(const Real Zd, const Real T, const Real ne,
                           const Real G) {
-  const Real x = 1.7 * G * sqrt(T)/(ne+1e-50) + 50.;
+  const Real x = 1.7 * G * std::sqrt(T)/(ne+1e-50) + 50.;
   const Real lnx = log(x);
   const Real cooling = 1.0e-28 * ne * pow(T, DPE_[0] + DPE_[1]/lnx)
                           * exp( DPE_[2] + (DPE_[3] - DPE_[4]*lnx)*lnx );
@@ -810,7 +810,7 @@ Real Thermo::CoolingRec_W03(const Real Z_PAH, const Real T, const Real ne,
   if (phi_PAH < small_) {
     return 0.;
   }
-  const Real psi = (1.7 * G * sqrt(T)/(ne+1e-50) + 50.)/phi_PAH;
+  const Real psi = (1.7 * G * std::sqrt(T)/(ne+1e-50) + 50.)/phi_PAH;
   const Real beta  = 0.74/pow(T, 0.068);
   const Real cooling = 4.65e-30 * pow(T, 0.94) * pow(psi, beta) * ne * phi_PAH;
   return cooling * Z_PAH;
@@ -868,7 +868,7 @@ Real Thermo::CoolingHotGas(const Real nH, const Real T, const Real Zg) {
   }
   if (T > 1.0e8) {
     //free-free ne/nH = 1.2
-    return (2.3e-24 * sqrt(T/1.0e6) * 1.2 * nH);
+    return (2.3e-24 * std::sqrt(T/1.0e6) * 1.2 * nH);
   }
   Real my_log_gamma_H_He, my_log_gamma_Z1;
   Real gamma_H_He, gamma_Z, gamma_tot;

@@ -354,7 +354,7 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
   }
 
   // (12) H2   + e   -> 2 H  + e
-  k2body_[11] = 5.6e-11*sqrt(T)*exp(-102124.0/T);
+  k2body_[11] = 5.6e-11*std::sqrt(T)*exp(-102124.0/T);
 
   // (13) H−   + e   -> H    + 2 e
   k2body_[12] = exp(-1.801849334273e1  +
@@ -375,7 +375,7 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
                     *lnTe)*lnTe);
   }
   // (15) H−   + H+  -> 2H  (+ γ)
-  k2body_[14] = 6.5e-9/sqrt(Te);
+  k2body_[14] = 6.5e-9/std::sqrt(Te);
 
   // (16) H−   + H+  -> H2+  + e
   k2body_[15] = 1e-8*pow(T,-0.4);
@@ -388,7 +388,7 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
   }
 
   // (18) H2+  + H-   -> H    + H2
-  k2body_[17]  = 5e-7*sqrt(1.0e2/T);
+  k2body_[17]  = 5e-7*std::sqrt(1.0e2/T);
 
   // (19) 3H → H2 + H
   if (T<=300) {

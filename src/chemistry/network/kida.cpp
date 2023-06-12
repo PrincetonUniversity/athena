@@ -718,7 +718,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
     if (ispec_map_.find("CO") != ispec_map_.end()) {
       // Calculate effective CO column density
       Real y_CO = y0[ispec_map_["CO"]];
-      vth = sqrt(2. * Constants::k_boltzmann_cgs * Tcool_nm / ChemistryUtility::mCO);
+      vth = std::sqrt(2. * Constants::k_boltzmann_cgs * Tcool_nm / ChemistryUtility::mCO);
       nCO = nH_ * y_CO;
       grad_small = vth/Leff_CO_max_;
       gradeff = std::max(gradv_, grad_small);
@@ -1311,7 +1311,8 @@ void ChemNetwork::InitializeReactions() {
         frml_gr_(igr) = pr->formula_;
         kgr_(igr) = 0.;
         TDgr_(igr) = pr->gamma_;
-        nu0gr_(igr) = sqrt( 3.0e15*pr->gamma_*Constants::k_boltzmann_cgs/(M_PI*M_PI*mi) );
+        nu0gr_(igr) = std::sqrt( 3.0e15*pr->gamma_*Constants::k_boltzmann_cgs
+                                  /(M_PI*M_PI*mi) );
         igr++;
       } else {
         error = true;
@@ -1375,7 +1376,8 @@ void ChemNetwork::InitializeReactions() {
           ATHENA_ERROR(msg);
         }
         nu_gc_(igc) = species_[ispec_map_[pr->reactants_[0]]].charge_ / q_charge;
-        r1_gc_(igc) = br*se* M_PI *ag*ag * sqrt(8.*Constants::k_boltzmann_cgs/(M_PI*mi));
+        r1_gc_(igc) = br*se* M_PI *ag*ag
+                      * std::sqrt(8.*Constants::k_boltzmann_cgs/(M_PI*mi));
         t1_gc_(igc) = ag * Constants::k_boltzmann_cgs / (qi*qi);
         igc++;
       } else if (pr->formula_ == 9) { //neutral freeze-out
@@ -1397,7 +1399,7 @@ void ChemNetwork::InitializeReactions() {
         }
         kgc_(igc) = 0.;
         nu_gc_(igc) = 9; //flag for freeze-out reaction
-        r1_gc_(igc) = M_PI *ag*ag * sqrt( 8.*Constants::k_boltzmann_cgs/(M_PI*mi) );
+        r1_gc_(igc) = M_PI *ag*ag * std::sqrt( 8.*Constants::k_boltzmann_cgs/(M_PI*mi) );
         t1_gc_(igc) = 0.;
         igc++;
       } else {
@@ -1474,12 +1476,12 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
   if (flag_T_rates_) {
     for (int i=0; i<n_gc_; i++) {
       if (nu_gc_(i) == 0) { //polarisation
-        kgc_(i) = r1_gc_(i) * sqrt(T) * (1. + sqrt( M_PI/(2*t1_gc_(i)*T) ) );
+        kgc_(i) = r1_gc_(i) * std::sqrt(T) * (1. + std::sqrt( M_PI/(2*t1_gc_(i)*T) ) );
       } else if (nu_gc_(i) == -1) { //Coloumn focusing
-        kgc_(i) = r1_gc_(i) * sqrt(T) * (1. + 1./(t1_gc_(i)*T) )
-                  * (1. + sqrt( 2./(2. + t1_gc_(i)*T) ) );
+        kgc_(i) = r1_gc_(i) * std::sqrt(T) * (1. + 1./(t1_gc_(i)*T) )
+                  * (1. + std::sqrt( 2./(2. + t1_gc_(i)*T) ) );
       } else if (nu_gc_(i) == 9) { //freeze-out
-        kgc_(i) = r1_gc_(i) * sqrt(T);
+        kgc_(i) = r1_gc_(i) * std::sqrt(T);
       } else {
         std::stringstream msg;
         msg << "### fatal error in chemnetwork UpdateRates() [chemnetwork]: "
@@ -1533,9 +1535,9 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
           k2body_(i) = a2body_(i)*pow(Tcap/300., b2body_(i))*exp(-c2body_(i)/Tcap);
         } else if (frml_2body_(i) == 4) {
           k2body_(i) = a2body_(i)*b2body_(i)*( 0.62
-                                            + 0.4767*c2body_(i)*sqrt(300./Tcap) );
+                                            + 0.4767*c2body_(i)*std::sqrt(300./Tcap) );
         } else if (frml_2body_(i) == 5) {
-          k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*sqrt(300./Tcap)
+          k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*std::sqrt(300./Tcap)
                                              + 28.501*c2body_(i)*c2body_(i)/Tcap );
         }
       }
@@ -1545,9 +1547,9 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
           k2body_(i) = a2body_(i)*pow(T/300., b2body_(i))*exp(-c2body_(i)/T);
         } else if (frml_2body_(i) == 4) {
           k2body_(i) = a2body_(i)*b2body_(i)*( 0.62
-                                              + 0.4767*c2body_(i)*sqrt(300./T) );
+                                              + 0.4767*c2body_(i)*std::sqrt(300./T) );
         } else if (frml_2body_(i) == 5) {
-          k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*sqrt(300./T)
+          k2body_(i) = a2body_(i)*b2body_(i)*( 1 + 0.0967*c2body_(i)*std::sqrt(300./T)
                                                + 28.501*c2body_(i)*c2body_(i)/T );
         }
       }
@@ -1606,10 +1608,10 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
                       *exp(-c2bodytr_(i,irange1)/Tcap);
         } else if (frml_2bodytr_(i,irange1) == 4) {
           rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62
-                                 + 0.4767*c2bodytr_(i,irange1)*sqrt(300./Tcap) );
+                                 + 0.4767*c2bodytr_(i,irange1)*std::sqrt(300./Tcap) );
         } else if (frml_2bodytr_(i,irange1) == 5) {
           rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*(
-              1 + 0.0967*c2bodytr_(i,irange1)*sqrt(300./Tcap)
+              1 + 0.0967*c2bodytr_(i,irange1)*std::sqrt(300./Tcap)
                 + 28.501*c2bodytr_(i,irange1)*c2bodytr_(i,irange1)/Tcap );
         }
         if (irange1 == irange2) {
@@ -1620,10 +1622,10 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
                         *exp(-c2bodytr_(i,irange2)/Tcap);
           } else if (frml_2bodytr_(i,irange2) == 4) {
             rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62
-                                   + 0.4767*c2bodytr_(i,irange2)*sqrt(300./Tcap) );
+                                   + 0.4767*c2bodytr_(i,irange2)*std::sqrt(300./Tcap) );
           } else if (frml_2bodytr_(i,irange2) == 5) {
             rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*(
-                1 + 0.0967*c2bodytr_(i,irange2)*sqrt(300./Tcap)
+                1 + 0.0967*c2bodytr_(i,irange2)*std::sqrt(300./Tcap)
                   + 28.501*c2bodytr_(i,irange2)*c2bodytr_(i,irange2)/Tcap );
           }
         }
@@ -1673,10 +1675,10 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
                       *exp(-c2bodytr_(i,irange1)/T);
         } else if (frml_2bodytr_(i,irange1) == 4) {
           rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62
-                                 + 0.4767*c2bodytr_(i,irange1)*sqrt(300./T) );
+                                 + 0.4767*c2bodytr_(i,irange1)*std::sqrt(300./T) );
         } else if (frml_2bodytr_(i,irange1) == 5) {
           rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*(
-              1 + 0.0967*c2bodytr_(i,irange1)*sqrt(300./T)
+              1 + 0.0967*c2bodytr_(i,irange1)*std::sqrt(300./T)
                 + 28.501*c2bodytr_(i,irange1)*c2bodytr_(i,irange1)/T );
         }
         if (irange1 == irange2) {
@@ -1687,10 +1689,10 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
                         *exp(-c2bodytr_(i,irange2)/T);
           } else if (frml_2bodytr_(i,irange2) == 4) {
             rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62
-                                   + 0.4767*c2bodytr_(i,irange2)*sqrt(300./T) );
+                                   + 0.4767*c2bodytr_(i,irange2)*std::sqrt(300./T) );
           } else if (frml_2bodytr_(i,irange2) == 5) {
             rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*(
-                1 + 0.0967*c2bodytr_(i,irange2)*sqrt(300./T)
+                1 + 0.0967*c2bodytr_(i,irange2)*std::sqrt(300./T)
                   + 28.501*c2bodytr_(i,irange2)*c2bodytr_(i,irange2)/T );
           }
         }

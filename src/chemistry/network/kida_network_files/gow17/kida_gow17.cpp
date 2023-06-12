@@ -53,7 +53,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   const Real kcr_H_fac = 2.3*y_H2 + 1.5 * y_H; //ratio of total to primary rate
   //grain assisted reactions
   const Real GPE0 = rad_(index_gpe_);
-  const Real psi_gr_fac = 1.7 * GPE0 * sqrt(T) / nH_;
+  const Real psi_gr_fac = 1.7 * GPE0 * std::sqrt(T) / nH_;
   const Real psi = psi_gr_fac / y_e;
   const Real cHp[7] = {12.25, 8.074e-6, 1.378, 5.087e2, 1.586e-2, 0.4723, 1.102e-5};
   const Real cCp[7] = {45.58, 6.089e-3, 1.128, 4.331e2, 4.845e-2, 0.8120, 1.333e-4};
@@ -127,7 +127,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   const Real temp_coll = 7.0e2;
   if (T > temp_coll) {
     // Density dependent. See Glover+MacLow2007
-    k9l = 6.67e-12 * sqrt(T) * exp(-(1. + 63590./T));
+    k9l = 6.67e-12 * std::sqrt(T) * exp(-(1. + 63590./T));
     k9h = 3.52e-9 * exp(-43900.0 / T);
     k10l = 5.996e-30 * pow(T, 4.1881) / pow((1.0 + 6.761e-6 * T), 5.6881)
             * exp(-54657.4 / T);
@@ -186,7 +186,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   if (y_e < small) {
     h2oplus_ratio = 1.0e10;
   } else {
-    h2oplus_ratio = 6e-10 * y_H2 / ( 5.3e-6 / sqrt(T) * y_e );
+    h2oplus_ratio = 6e-10 * y_H2 / ( 5.3e-6 / std::sqrt(T) * y_e );
   }
   fac_H2Oplus_H2 = h2oplus_ratio / (h2oplus_ratio + 1.);
   fac_H2Oplus_e = 1. / (h2oplus_ratio + 1.);
@@ -246,8 +246,8 @@ Real CII_rec_rate(const Real temp) {
   C = 0.1597;
   T2 = 4.955e4;
   BN = B + C * exp(-T2/temp);
-  term1 = sqrt(temp/T0);
-  term2 = sqrt(temp/T1);
+  term1 = std::sqrt(temp/T0);
+  term2 = std::sqrt(temp/T1);
   alpharr = A / ( term1*pow(1.0+term1, 1.0-BN) * pow(1.0+term2, 1.0+BN) );
   alphadr = pow( temp, -3.0/2.0 ) * ( 6.346e-9 * exp(-1.217e1/temp) +
         9.793e-09 * exp(-7.38e1/temp) + 1.634e-06 * exp(-1.523e+04/temp) );
