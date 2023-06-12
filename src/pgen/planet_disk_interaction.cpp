@@ -182,7 +182,7 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
         Real F_g = (dens)* (gm_planet / pow(d,2));
         Real cosine_term = (pow(r,2)*(pow(cos(phi),2)) - r*rp*cos(phi)*cos(phip) + pow(r,2)*(pow(sin(phi),2)) - r*rp*sin(phi)*sin(phip)) / (r*d);
         Real sine_term = (-1*r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
-        Real Fg_x = F_g*cosine_term;
+        Real Fg_x = -1*F_g*cosine_term;
         Real Fg_y = F_g*sine_term;
         Real delta_momentum_x = Fg_x * dt;
         Real delta_momentum_y = Fg_y * dt;
