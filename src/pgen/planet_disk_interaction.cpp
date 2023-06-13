@@ -30,7 +30,7 @@ Real DenProfileCyl(const Real rad, const Real phi, const Real z);
 Real PoverR(const Real rad, const Real phi, const Real z);
 Real VelProfileCyl(const Real rad, const Real phi, const Real z);
 // problem parameters which are useful to make global to this file
-Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, z, phi, r, rp, phip;
+Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, z, phi, r, rp, phip, F_g;
 Real dfloor;
 Real Omega0;
 } // namespace
@@ -179,7 +179,12 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
         Real dens = prim(IDN,k,j,i);
         Real velocity_x = prim(IVX,k,j,i);
         Real velocity_y = prim(IVY,k,j,i);
-        Real F_g = (dens)* (gm_planet / pow(d,2));
+        if (d > 0.05) {
+          F_g = (dens)*(gm_planet / pow(d,2));
+        }
+        else {
+          F_g = (dens)*((gm_planet*d) / pow(0.05,3));
+        }
         Real cosine_term = (pow(r,2)*(pow(cos(phi),2)) - r*rp*cos(phi)*cos(phip) + pow(r,2)*(pow(sin(phi),2)) - r*rp*sin(phi)*sin(phip)) / (r*d);
         Real sine_term = (-1*r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
         Real Fg_x = -1*F_g*cosine_term;
@@ -188,7 +193,7 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
         Real delta_momentum_y = Fg_y * dt;
         cons(IM1, k,j,i) += delta_momentum_x;
         cons(IM2, k,j,i) += delta_momentum_y;
-        cons(IEN,k,j,i) += (Fg_x * velocity_x + Fg_y * velocity_y) * dt;
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += (Fg_x * velocity_x + Fg_y * velocity_y) * dt;
       }
     }
   }
