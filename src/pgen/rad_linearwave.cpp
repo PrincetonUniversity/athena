@@ -74,8 +74,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   }
   Real knum = 2.0 * PI;
 
-
-  MeshBlock *pmb = my_blocks(0);
   for(int nb=0; nb<nblocal; ++nb){
     pmb = my_blocks(nb);
     if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
@@ -85,7 +83,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int j=pmb->js; j<=pmb->je; j++) {
       for (int i=pmb->is; i<=pmb->ie; i++) {
         // get the initial solution
-        Real &x1 = pmb->pcoord->x1v(i);
+        Real const &x1 = pmb->pcoord->x1v(i);
         Real theta = knum * x1;
         Real delrho = amp * cos(theta);
         Real delv = amp* (v_r * cos(theta) + v_i * sin(theta));
@@ -99,20 +97,20 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         Real differ= (pmb->pnrrad->rad_mom(IER,k,j,i) - 1.0) - der*exp(-omegaimg*time);
         Real difffr= pmb->pnrrad->rad_mom(IFR1,k,j,i) -  dfr *exp(-omegaimg*time);
 
-        l1_err[0] += fabs(diffrho);
-        max_err[0] = std::max(fabs(diffrho),max_err[0]);
+        l1_err[0] += std::abs(diffrho);
+        max_err[0] = std::max(std::abs(diffrho), max_err[0]);
 
-        l1_err[1] += fabs(diffvel);
-        max_err[1] = std::max(fabs(diffvel),max_err[1]);
+        l1_err[1] += std::abs(diffvel);
+        max_err[1] = std::max(std::abs(diffvel), max_err[1]);
 
-        l1_err[2] += fabs(diffpre);
-        max_err[2] = std::max(fabs(diffpre),max_err[2]);
+        l1_err[2] += std::abs(diffpre);
+        max_err[2] = std::max(std::abs(diffpre), max_err[2]);
 
-        l1_err[3] += fabs(differ);
-        max_err[3] = std::max(fabs(differ),max_err[3]);
+        l1_err[3] += std::abs(differ);
+        max_err[3] = std::max(std::abs(differ), max_err[3]);
 
-        l1_err[4] += fabs(difffr);
-        max_err[4] = std::max(fabs(difffr),max_err[4]);
+        l1_err[4] += std::abs(difffr);
+        max_err[4] = std::max(std::abs(difffr), max_err[4]);
 
       }
       }
@@ -183,15 +181,15 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     fprintf(pfile,"\n");
     fclose(pfile);
   }
-    
-    
+
+
 }
 
 
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-    
+
   int regime = pin->GetOrAddInteger("problem","regime",8);
   Real sigma0;
 
@@ -208,7 +206,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       omegareal= 8.111557926068842;
       omegaimg=  0.0005399950114077836;
       sigma0 = 0.01;
-      break;    
+      break;
     case 2:
       v_r= 1.2910035706152658;
       v_i= 0.0008586435251690642;
@@ -221,7 +219,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       omegareal= 8.111614666406222;
       omegaimg=  0.00539501638144715;
       sigma0 = 0.1;
-      break;    
+      break;
     case 3:
       v_r= 1.2917695143401924;
       v_i= 0.00787279209054369;
@@ -234,7 +232,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       omegareal= 8.116427232764806;
       omegaimg=  0.04946621158978377;
       sigma0 = 1.0;
-      break;    
+      break;
     case 4:
       v_r= 1.2920340482874326;
       v_i= 0.009218020632790785;
@@ -247,7 +245,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       omegareal= 8.11808934857535;
       omegaimg=  0.057918531801229335;
       sigma0 = 10.0;
-      break;  
+      break;
     case 5:
       v_r= 1.2909668031826855;
       v_i= 0.001045499271992685;
@@ -260,7 +258,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       omegareal= 8.11138364981405;
       omegaimg=  0.006569065664451391;
       sigma0 = 100.0;
-      break;  
+      break;
     case 6:
       v_r= 1.290810912416655;
       v_i= 0.008591414402392937;
@@ -273,7 +271,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       omegareal= 8.110404159243402;
       omegaimg=  0.05398144874100638;
       sigma0 = 0.01;
-      break; 
+      break;
     case 7:
       v_r= 1.2728792327581575;
       v_i= 0.08294778800855061;
@@ -286,7 +284,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       omegareal= 7.997736093080079;
       omegaimg=  0.5211763228783722;
       sigma0 = 0.1;
-      break; 
+      break;
     case 8:
       v_r= 1.0183496112257058;
       v_i= 0.1121215711780068;
@@ -322,7 +320,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       er_i= 0.17440949185811563;
       fr_r= 0.18330452762195915;
       fr_i= 0.038269237092134034;
-      omegareal= 8.792428775567739; 
+      omegareal= 8.792428775567739;
       omegaimg=  0.21678904841106914;
       sigma0 = 100.0;
       break;
@@ -335,7 +333,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       er_i= 0.0023794592885675314;
       fr_r= -0.0014238164476813107;
       fr_i= 0.004188456336444625;
-      omegareal= 7.991803762700347; 
+      omegareal= 7.991803762700347;
       omegaimg=  0.5194196623360917;
       sigma0 = 0.01;
       break;
@@ -348,7 +346,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       er_i= 0.007369404109744249;
       fr_r= -0.010447571816544906;
       fr_i= 0.0022692464424416106;
-      omegareal= 6.376759503452208; 
+      omegareal= 6.376759503452208;
       omegaimg=  0.5640173083760487;
       sigma0 = 0.1;
       break;
@@ -388,7 +386,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       fr_r= 0.3038178476543796;
       fr_i= 0.032551125836846495 ;
       omegareal= 14.391367986265605;
-      omegaimg=  0.37974582290015857; 
+      omegaimg=  0.37974582290015857;
       sigma0 = 100.0;
       break;
     default:
@@ -403,56 +401,53 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
   Real rho0 = 1.0, p0 = 1.0;
   Real e0 = p0/(gamma-1.0);
 
-
-  
   // Initialize hydro variable
   for(int k=0; k<ncells3; ++k) {
     for (int j=0; j<ncells2; ++j) {
       for (int i=0; i<ncells1; ++i) {
-        Real &x1 = pcoord->x1v(i);
-        Real &x2 = pcoord->x2v(j);
-        Real &x3 = pcoord->x3v(k);
+        Real const &x1 = pcoord->x1v(i);
+        Real const &x2 = pcoord->x2v(j);
+        Real const &x3 = pcoord->x3v(k);
         Real theta = knum * x1;
         Real delv = amp* (v_r * cos(theta) + v_i * sin(theta));
         Real delp = amp * (p_r * cos(theta) + p_i * sin(theta));
-      
+
         phydro->u(IDN,k,j,i) = rho0 + amp * cos(theta);
         phydro->u(IM1,k,j,i) = delv;
         phydro->u(IM2,k,j,i) = 0.0;
         phydro->u(IM3,k,j,i) = 0.0;
-        if (NON_BAROTROPIC_EOS){
-
+        if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = (p0 + delp)/(gamma-1.0);
           phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM1,k,j,i))/phydro->u(IDN,k,j,i);
           phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM2,k,j,i))/phydro->u(IDN,k,j,i);
           phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
         }
-        
+
         if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
           Real der = amp * (er_r * cos(theta) + er_i * sin(theta));
           Real dfr = amp * (fr_r * cos(theta) + fr_i * sin(theta));
-        
+
           Real jr = (1.0+der);
           Real hr = dfr;
           for(int ifr=0; ifr<pnrrad->nfreq; ++ifr){
             for(int n=0; n<pnrrad->nang; ++n){
-               Real& weight = pnrrad->wmu(n);
-               Real& miux = pnrrad->mu(0,k,j,i,n);
+               Real const &weight = pnrrad->wmu(n);
+               Real const &miux = pnrrad->mu(0,k,j,i,n);
                pnrrad->ir(k,j,i,ifr*pnrrad->nang+n)=(jr/(4.0*weight) + hr/(4.0*weight*miux));
             }
-            
+
             pnrrad->sigma_s(k,j,i,ifr) = 0.0;
             pnrrad->sigma_a(k,j,i,ifr) = sigma0;
             pnrrad->sigma_pe(k,j,i,ifr) = sigma0;
             pnrrad->sigma_p(k,j,i,ifr) = sigma0;
 
           }
-        
+
         }// End rad
       }// end i
     }
   }
-  
+
   return;
 }
 
@@ -480,5 +475,3 @@ int RefinementCondition(MeshBlock *pmb) {
   if (dmax-1.0 > 0.9*amp) return 1;
   return -1;
 }
-
-
