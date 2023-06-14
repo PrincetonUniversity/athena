@@ -550,7 +550,7 @@ void Reconstruction::PiecewiseParabolicX1(
         qr(i  ,n) = qr_imh(n,i);
       }
     }
-  
+
   }// End array Ordering
   return;
 }
@@ -1008,7 +1008,7 @@ void Reconstruction::PiecewiseParabolicX2(
             // Limit smooth extrema
               qminus(i) = tmp_m; // (CS eq 23)
               qplus(i) = tmp_p;
-            }  
+            }
           // No extrema detected
           } else {
            // Overshoot j-1/2,R / j,(-) state
@@ -1564,4 +1564,3 @@ void Reconstruction::PiecewiseParabolicX3(
   }// end array_order
   return;
 }
-

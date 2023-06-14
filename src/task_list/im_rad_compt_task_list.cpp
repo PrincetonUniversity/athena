@@ -31,21 +31,21 @@ IMRadComptTaskList::IMRadComptTaskList(Mesh *pm) {
   // Now assemble list of tasks for each stage of time integrator
   {using namespace IMRadComptTaskNames; // NOLINT (build/namespace)
     // compute hydro fluxes, integrate hydro variables
-    AddTask(CAL_COMPT,NONE);  
+    AddTask(CAL_COMPT,NONE);
     AddTask(SEND_RAD_BND,CAL_COMPT);
     AddTask(RECV_RAD_BND,CAL_COMPT);
     AddTask(SETB_RAD_BND,(RECV_RAD_BND|SEND_RAD_BND));
-    if(pm->shear_periodic){
+    if (pm->shear_periodic) {
       AddTask(SEND_RAD_SH,SETB_RAD_BND);
       AddTask(RECV_RAD_SH,SEND_RAD_SH|RECV_RAD_BND);
     }
     TaskID setb = SETB_RAD_BND;
-    if(pm->shear_periodic)
+    if (pm->shear_periodic)
       setb=(setb|RECV_RAD_SH);
-    if(pm->multilevel){
+    if (pm->multilevel) {
       AddTask(PRLN_RAD_BND,setb);
       AddTask(RAD_PHYS_BND,PRLN_RAD_BND);
-    }else{
+    } else {
       AddTask(RAD_PHYS_BND,setb);
     }
     AddTask(CLEAR_RAD, RAD_PHYS_BND);
@@ -83,7 +83,7 @@ void IMRadComptTaskList::AddTask(const TaskID& id, const TaskID& dep) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadComptTaskList::PhysicalBoundary);
-   }else if (id == PRLN_RAD_BND) {
+   } else if (id == PRLN_RAD_BND) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadComptTaskList::ProlongateBoundary);
@@ -114,12 +114,12 @@ TaskStatus IMRadComptTaskList::CalComptTerms(MeshBlock *pmb) {
 
   NRRadiation *prad = pmb->pnrrad;
   Hydro *ph = pmb->phydro;
-  
+
   prad->pradintegrator->AddMultiGroupCompt(pmb, dt, ph->u, prad->ir);
 
 
   return TaskStatus::success;
-  
+
 }
 
 
@@ -149,10 +149,10 @@ TaskStatus IMRadComptTaskList::ReceiveRadBoundary(MeshBlock *pmb) {
 
 TaskStatus IMRadComptTaskList::ReceiveRadBoundaryShear(MeshBlock *pmb) {
   bool ret = pmb->pnrrad->rad_bvar.ReceiveShearingBoxBoundaryBuffers();
-  if(ret){
+  if (ret) {
     pmb->pnrrad->rad_bvar.SetShearingBoxBoundaryBuffers();
     return TaskStatus::success;
-  }else{
+  } else {
     return TaskStatus::fail;
   }
 }
@@ -167,9 +167,8 @@ TaskStatus IMRadComptTaskList::SetRadBoundary(MeshBlock *pmb) {
 
 void IMRadComptTaskList::StartupTaskList(MeshBlock *pmb) {
   pmb->pnrrad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);
-  if(pmy_mesh->shear_periodic)
+  if (pmy_mesh->shear_periodic) {
     pmb->pnrrad->rad_bvar.StartReceivingShear(BoundaryCommSubset::radiation);
+  }
   return;
 }
-
-

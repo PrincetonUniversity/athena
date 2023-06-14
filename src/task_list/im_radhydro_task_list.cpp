@@ -40,24 +40,23 @@ IMRadHydroTaskList::IMRadHydroTaskList(Mesh *pm) {
     AddTask(SEND_HYD_BND,ADD_RAD_SCR);
     AddTask(RECV_HYD_BND,NONE);
     AddTask(SETB_HYD_BND,(RECV_HYD_BND|SEND_HYD_BND));
-    if(pm->shear_periodic){
+    if (pm->shear_periodic){
       AddTask(SEND_HYD_SH,SETB_HYD_BND);
       AddTask(RECV_HYD_SH,SEND_HYD_SH|RECV_HYD_BND);
     }
     TaskID setb = SETB_HYD_BND;
-    if(pm->shear_periodic)
+    if (pm->shear_periodic)
       setb=(setb|RECV_HYD_SH);
-    if(pm->multilevel){
+    if (pm->multilevel) {
       AddTask(PRLN_HYD_BND,setb);
       AddTask(CONS_TO_PRIM,PRLN_HYD_BND);
-    }else{
+    } else {
       AddTask(CONS_TO_PRIM,setb);
     }
     AddTask(HYD_PHYS_BND,CONS_TO_PRIM);
     AddTask(CLEAR_HYD, HYD_PHYS_BND);
     AddTask(UPD_OPA,HYD_PHYS_BND);
   } // end of using namespace block
-
 }
 
 //----------------------------------------------------------------------------------------
@@ -151,10 +150,10 @@ TaskStatus IMRadHydroTaskList::ReceiveHydroBoundary(MeshBlock *pmb) {
 
 TaskStatus IMRadHydroTaskList::ReceiveHydroBoundaryShear(MeshBlock *pmb) {
   bool ret = pmb->phydro->hbvar.ReceiveShearingBoxBoundaryBuffers();
-  if(ret){
+  if (ret){
     pmb->phydro->hbvar.SetShearingBoxBoundaryBuffers();
     return TaskStatus::success;
-  }else{
+  }else {
     return TaskStatus::fail;
   }
 }
@@ -209,15 +208,16 @@ TaskStatus IMRadHydroTaskList::UpdateOpacity(MeshBlock *pmb) {
 }
 
 TaskStatus IMRadHydroTaskList::AddRadSource(MeshBlock *pmb) {
-  if(pmb->pnrrad->set_source_flag > 0)
+  if (pmb->pnrrad->set_source_flag > 0) {
     pmb->pnrrad->pradintegrator->AddSourceTerms(pmb, pmb->phydro->u);
+  }
   return TaskStatus::success;
 }
 
 void IMRadHydroTaskList::StartupTaskList(MeshBlock *pmb) {
   pmb->phydro->hbvar.StartReceiving(BoundaryCommSubset::radhydro);
-  if(pmy_mesh->shear_periodic)
+  if (pmy_mesh->shear_periodic) {
     pmb->phydro->hbvar.StartReceivingShear(BoundaryCommSubset::radhydro);
+  }
   return;
 }
-

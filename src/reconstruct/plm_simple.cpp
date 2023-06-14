@@ -109,7 +109,7 @@ void Reconstruction::PiecewiseLinearX1(
 
 void Reconstruction::PiecewiseLinearX1(
     const int k, const int j, const int il, const int iu,
-    AthenaArray<Real> &q, const int array_order, 
+    AthenaArray<Real> &q, const int array_order,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
   Coordinates *pco = pmy_block_->pcoord;
   if(array_order < 0){
@@ -194,7 +194,7 @@ void Reconstruction::PiecewiseLinearX1(
       }
     }
 
-  }// End array ordering 
+  }// End array ordering
   return;
 }
 
@@ -544,7 +544,7 @@ void Reconstruction::PiecewiseLinearX3(
 // q, ql and qr can change
 void Reconstruction::PiecewiseLinearZeta(
     NRRadiation *prad, const int zs, const int ze,
-    AthenaArray<Real> &q, 
+    AthenaArray<Real> &q,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
 
   // set work arrays to shallow copies of scratch arrays
@@ -562,7 +562,7 @@ void Reconstruction::PiecewiseLinearZeta(
 
 
     for(int n=zs; n<=ze; ++n){
-      Real cf = prad->dzeta_v(n)/(prad->zeta_f_full(n+1) 
+      Real cf = prad->dzeta_v(n)/(prad->zeta_f_full(n+1)
                 - prad->zeta_v_full(n)); // (Mignone eq 33)
       Real cb = prad->dzeta_v(n-1)/(prad->zeta_v_full(n) - prad->zeta_f_full(n));
       Real dqF =  dqr(n)*prad->dzeta_f(n)/prad->dzeta_v(n);
@@ -579,7 +579,7 @@ void Reconstruction::PiecewiseLinearZeta(
       //dqm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
     }
 
-   
+
 
     for(int n=zs; n<=ze; ++n){
       Real ratio_l=(prad->zeta_f_full(n+1) - prad->zeta_v_full(n))/prad->dzeta_f(n);
@@ -595,7 +595,7 @@ void Reconstruction::PiecewiseLinearZeta(
 
 void Reconstruction::PiecewiseLinearPsi(
     NRRadiation *prad, const int ps, const int pe,
-    AthenaArray<Real> &q, 
+    AthenaArray<Real> &q,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
 
   // set work arrays to shallow copies of scratch arrays
@@ -610,13 +610,13 @@ void Reconstruction::PiecewiseLinearPsi(
       dqr(m) = (q(m+1) - q(m));
       qc(m) = q(m);
     }
-    
+
 
 
 
 #pragma omp simd
     for (int m=ps; m<=pe; ++m) {
-      Real cf = prad->dpsi_v(m)/(prad->psi_f_full(m+1) 
+      Real cf = prad->dpsi_v(m)/(prad->psi_f_full(m+1)
                   - prad->psi_v_full(m)); // (Mignone eq 33)
       Real cb = prad->dpsi_v(m-1)/(prad->psi_v_full(m) - prad->psi_f_full(m));
       Real dqF =  dqr(m)*prad->dpsi_f(m)/prad->dpsi_v(m);
@@ -632,8 +632,8 @@ void Reconstruction::PiecewiseLinearPsi(
       // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
       //dqm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
     }
-    
-   
+
+
 
 #pragma omp simd
     for (int m=ps; m<=pe; ++m) {
@@ -644,8 +644,7 @@ void Reconstruction::PiecewiseLinearPsi(
       ql(m+1) = qc(m) + ratio_l*dqm(m);
       qr(m  ) = qc(m) - ratio_r*dqm(m);
     }
-    
+
 
   return;
 }
-

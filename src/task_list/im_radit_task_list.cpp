@@ -31,28 +31,27 @@ IMRadITTaskList::IMRadITTaskList(Mesh *pm) {
   // Now assemble list of tasks for each stage of time integrator
   {using namespace IMRadITTaskNames; // NOLINT (build/namespace)
     // compute hydro fluxes, integrate hydro variables
-    AddTask(FLX_AND_SCR,NONE); 
+    AddTask(FLX_AND_SCR,NONE);
     AddTask(SEND_RAD_BND,FLX_AND_SCR);
     AddTask(RECV_RAD_BND,FLX_AND_SCR);
     AddTask(SETB_RAD_BND,(RECV_RAD_BND|SEND_RAD_BND));
-    if(pm->shear_periodic){
+    if (pm->shear_periodic) {
       AddTask(SEND_RAD_SH,SETB_RAD_BND);
       AddTask(RECV_RAD_SH,SEND_RAD_SH|RECV_RAD_BND);
     }
     TaskID setb = SETB_RAD_BND;
-    if(pm->shear_periodic)
+    if (pm->shear_periodic)
       setb=(setb|RECV_RAD_SH);
-    if(pm->multilevel){
+    if (pm->multilevel) {
       AddTask(PRLN_RAD_BND,setb);
       AddTask(RAD_PHYS_BND,PRLN_RAD_BND);
-    }else{
+    } else {
       AddTask(RAD_PHYS_BND,setb);
     }
     AddTask(CLEAR_RAD, RAD_PHYS_BND);
     // check residual does not need ghost zones
     AddTask(CHK_RAD_RES,FLX_AND_SCR);
   } // end of using namespace block
-
 }
 
 //----------------------------------------------------------------------------------------
@@ -85,7 +84,7 @@ void IMRadITTaskList::AddTask(const TaskID& id, const TaskID& dep) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadITTaskList::PhysicalBoundary);
-   }else if (id == PRLN_RAD_BND) {
+  } else if (id == PRLN_RAD_BND) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadITTaskList::ProlongateBoundary);
@@ -115,13 +114,7 @@ void IMRadITTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   return;
 }
 
-
-
-
-
-
 TaskStatus IMRadITTaskList::AddFluxAndSourceTerms(MeshBlock *pmb) {
-
   NRRadiation *prad = pmb->pnrrad;
   Hydro *ph = pmb->phydro;
   int &rb_or_not = pmy_mesh->pimrad->rb_or_not;
@@ -130,78 +123,76 @@ TaskStatus IMRadITTaskList::AddFluxAndSourceTerms(MeshBlock *pmb) {
   int js=pmb->js, je=pmb->je;
   int ks=pmb->ks, ke=pmb->ke;
 
-  if(rb_or_not == 0){
-    for(int k=ks; k<=ke; ++k)
-      for(int j=js; j<=je; ++j)
-        for(int i=is; i<=ie; ++i){
-          prad->pradintegrator->FirstOrderFluxDivergence(k, j, i, 
+  if (rb_or_not == 0) {
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          prad->pradintegrator->FirstOrderFluxDivergence(k, j, i,
                                                    prad->ir_old);
 
         // add angular flux
-          if(prad->angle_flag == 1){
-            prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);  
+          if (prad->angle_flag == 1) {
+            prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);
           }// end angular flux
 
         // add the source terms together
-          prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u, 
+          prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u,
                                           prad->ir1, prad->ir);
 
-    }// end k,j,i
-  }else if(rb_or_not == 1){
-
+    }
+      }
+    }
+  } else if (rb_or_not == 1) {
     // first the red points
-    for(int k=ks; k<=ke; ++k)
-      for(int j=js; j<=je; ++j)
-        for(int i=is; i<=ie; ++i){
-          if(((i-is)+(j-js)+(k-ks))%2 == 0){
-            prad->pradintegrator->FirstOrderFluxDivergence(k, j, i, 
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          if (((i-is)+(j-js)+(k-ks))%2 == 0) {
+            prad->pradintegrator->FirstOrderFluxDivergence(k, j, i,
                                                        prad->ir);
 
         // add angular flux
-            if(prad->angle_flag == 1){
-              prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);  
-            }// end angular flux
+            if (prad->angle_flag == 1) {
+              prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);
+            }
 
         // add the source terms together
-            prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u, 
+            prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u,
                                                  prad->ir1, prad->ir);
-          }// end even number
-    }// end k,j,i
-  }else if(rb_or_not == 2){
+          }
+    }
+      }
+    }
+  } else if (rb_or_not == 2) {
     // now the black points
-    for(int k=ks; k<=ke; ++k)
-      for(int j=js; j<=je; ++j)
-        for(int i=is; i<=ie; ++i){
-          if(((i-is)+(j-js)+(k-ks))%2 == 1){
-            prad->pradintegrator->FirstOrderFluxDivergence(k, j, i, 
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          if (((i-is)+(j-js)+(k-ks))%2 == 1) {
+            prad->pradintegrator->FirstOrderFluxDivergence(k, j, i,
                                                        prad->ir);
 
         // add angular flux
-            if(prad->angle_flag == 1){
-              prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);  
-            }// end angular flux
+            if (prad->angle_flag == 1) {
+              prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);
+            }
 
         // add the source terms together
-            prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u, 
+            prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u,
                                           prad->ir1, prad->ir);
 
-          }// end odd number
-    }// end k,j,i
-
-
-  }else{
+          }
+    }
+  }
+}
+  } else{
     std::stringstream msg;
     msg << "### FATAL ERROR in function [Iteration]"
         << std::endl << "red_or_black '" << rb_or_not << "' not allowed!";
     ATHENA_ERROR(msg);
-
-  }  
-
+  }
   return TaskStatus::success;
-  
 }
-
-
 
 TaskStatus IMRadITTaskList::ClearRadBoundary(MeshBlock *pmb) {
   pmb->pnrrad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);
@@ -218,30 +209,28 @@ TaskStatus IMRadITTaskList::SendRadBoundaryShear(MeshBlock *pmb) {
   return TaskStatus::success;
 }
 
-
 TaskStatus IMRadITTaskList::ReceiveRadBoundary(MeshBlock *pmb) {
   bool ret = pmb->pnrrad->rad_bvar.ReceiveBoundaryBuffers();
-  if (!ret)
+  if (!ret) {
     return TaskStatus::fail;
+  }
   return TaskStatus::success;
 }
 
 TaskStatus IMRadITTaskList::ReceiveRadBoundaryShear(MeshBlock *pmb) {
   bool ret = pmb->pnrrad->rad_bvar.ReceiveShearingBoxBoundaryBuffers();
-  if(ret){
+  if (ret) {
     pmb->pnrrad->rad_bvar.SetShearingBoxBoundaryBuffers();
     return TaskStatus::success;
-  }else{
+  } else {
     return TaskStatus::fail;
   }
 }
-
 
 TaskStatus IMRadITTaskList::SetRadBoundary(MeshBlock *pmb) {
   pmb->pnrrad->rad_bvar.SetBoundaries();
   return TaskStatus::success;
 }
-
 
 TaskStatus IMRadITTaskList::CheckResidual(MeshBlock *pmb) {
   pmy_mesh->pimrad->CheckResidual(pmb, pmb->pnrrad->ir_old,pmb->pnrrad->ir);
@@ -250,9 +239,8 @@ TaskStatus IMRadITTaskList::CheckResidual(MeshBlock *pmb) {
 
 void IMRadITTaskList::StartupTaskList(MeshBlock *pmb) {
   pmb->pnrrad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);
-  if(pmy_mesh->shear_periodic)
+  if (pmy_mesh->shear_periodic) {
     pmb->pnrrad->rad_bvar.StartReceivingShear(BoundaryCommSubset::radiation);
+  }
   return;
 }
-
-

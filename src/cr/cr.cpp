@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -17,21 +17,23 @@
 //  \brief implementation of functions in class Radiation
 //======================================================================================
 
+// C headers
 
-#include <sstream>  // msg
+// C++ headers
 #include <iostream>  // cout
+#include <sstream>  // msg
 #include <stdexcept> // runtime erro
 #include <stdio.h>  // fopen and fwrite
 
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../athena_arrays.hpp" 
-#include "cr.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../globals.hpp"
+#include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../globals.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
+#include "cr.hpp"
 #include "integrators/cr_integrators.hpp"
 
 // constructor, initializes data structures and parameters
@@ -39,10 +41,9 @@
 // The default opacity function.
 
 // This function also needs to set the streaming velocity
-// This is needed to calculate the work term 
-inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr, 
-              AthenaArray<Real> &prim, AthenaArray<Real> &bcc)
-{
+// This is needed to calculate the work term
+inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
+              AthenaArray<Real> &prim, AthenaArray<Real> &bcc) {
   // set the default opacity to be a large value in the default hydro case
   CosmicRay *pcr=pmb->pcr;
   int kl=pmb->ks, ku=pmb->ke;
@@ -56,43 +57,30 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
     kl -= 1;
     ku += 1;
   }
-
-
   Real invlim = 1.0/pcr->vmax;
-
-
   for(int k=kl; k<=ku; ++k){
     for(int j=jl; j<=ju; ++j){
 #pragma omp simd
       for(int i=il; i<=iu; ++i){
         pcr->sigma_diff(0,k,j,i) = pcr->max_opacity;
         pcr->sigma_diff(1,k,j,i) = pcr->max_opacity;
-        pcr->sigma_diff(2,k,j,i) = pcr->max_opacity;  
+        pcr->sigma_diff(2,k,j,i) = pcr->max_opacity;
 
       }
     }
   }
 
-  // Need to calculate the rotation matrix 
+  // Need to calculate the rotation matrix
   // We need this to determine the direction of rotation velocity
 
-
-  // The information stored in the array
-  // b_angle is
-  // b_angle[0]=sin_theta_b
-  // b_angle[1]=cos_theta_b
-  // b_angle[2]=sin_phi_b
-  // b_angle[3]=cos_phi_b
- 
-
-  if(MAGNETIC_FIELDS_ENABLED && (pcr->stream_flag > 0)){
+  if (MAGNETIC_FIELDS_ENABLED && (pcr->stream_flag > 0)) {
     //First, calculate B_dot_grad_Pc
     for(int k=kl; k<=ku; ++k){
       for(int j=jl; j<=ju; ++j){
       // diffusion coefficient is calculated with respect to B direction
       // Use a simple estimate of Grad Pc
 
-    // x component
+        // x component
         pmb->pcoord->CenterWidth1(k,j,il-1,iu+1,pcr->cwidth);
         for(int i=il; i<=iu; ++i){
           Real distance = 0.5*(pcr->cwidth(i-1) + pcr->cwidth(i+1))
@@ -101,8 +89,8 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           dprdx /= distance;
           pcr->sigma_adv(0,k,j,i) = dprdx;
         }
-    // y component
-        pmb->pcoord->CenterWidth2(k,j-1,il,iu,pcr->cwidth1);       
+        // y component
+        pmb->pcoord->CenterWidth2(k,j-1,il,iu,pcr->cwidth1);
         pmb->pcoord->CenterWidth2(k,j,il,iu,pcr->cwidth);
         pmb->pcoord->CenterWidth2(k,j+1,il,iu,pcr->cwidth2);
 
@@ -113,9 +101,9 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           dprdy /= distance;
           pcr->sigma_adv(1,k,j,i) = dprdy;
 
-        } 
-// z component
-        pmb->pcoord->CenterWidth3(k-1,j,il,iu,pcr->cwidth1);       
+        }
+        // z component
+        pmb->pcoord->CenterWidth3(k-1,j,il,iu,pcr->cwidth1);
         pmb->pcoord->CenterWidth3(k,j,il,iu,pcr->cwidth);
         pmb->pcoord->CenterWidth3(k+1,j,il,iu,pcr->cwidth2);
 
@@ -125,17 +113,16 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           Real dprdz=(u_cr(CRE,k+1,j,i) -  u_cr(CRE,k-1,j,i))/3.0;
           dprdz /= distance;
           pcr->sigma_adv(2,k,j,i) = dprdz;
-        }       
-
+        }
 
         for(int i=il; i<=iu; ++i){
           // Now calculate the angles of B
           Real bxby = sqrt(bcc(IB1,k,j,i)*bcc(IB1,k,j,i) +
                            bcc(IB2,k,j,i)*bcc(IB2,k,j,i));
           Real btot = sqrt(bcc(IB1,k,j,i)*bcc(IB1,k,j,i) +
-                           bcc(IB2,k,j,i)*bcc(IB2,k,j,i) + 
+                           bcc(IB2,k,j,i)*bcc(IB2,k,j,i) +
                            bcc(IB3,k,j,i)*bcc(IB3,k,j,i));
-          
+
           if(btot > TINY_NUMBER){
             pcr->b_angle(0,k,j,i) = bxby/btot;
             pcr->b_angle(1,k,j,i) = bcc(IB3,k,j,i)/btot;
@@ -148,7 +135,7 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
             pcr->b_angle(3,k,j,i) = bcc(IB1,k,j,i)/bxby;
           }else{
             pcr->b_angle(2,k,j,i) = 0.0;
-            pcr->b_angle(3,k,j,i) = 1.0;            
+            pcr->b_angle(3,k,j,i) = 1.0;
           }
 
           Real va = sqrt(btot*btot/prim(IDN,k,j,i));
@@ -158,57 +145,47 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
             Real b_grad_pc = bcc(IB1,k,j,i) * pcr->sigma_adv(0,k,j,i)
                            + bcc(IB2,k,j,i) * pcr->sigma_adv(1,k,j,i)
                            + bcc(IB3,k,j,i) * pcr->sigma_adv(2,k,j,i);
-            pcr->sigma_adv(0,k,j,i) = fabs(b_grad_pc)/(btot * va * (1.0 + 1.0/3.0) 
+            pcr->sigma_adv(0,k,j,i) = fabs(b_grad_pc)/(btot * va * (1.0 + 1.0/3.0)
                                                * invlim * u_cr(CRE,k,j,i));
           }
           pcr->sigma_adv(1,k,j,i) = pcr->max_opacity;
           pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;
-
-        }//end i        
-
-      }// end j
-    }// end k
-
-  }// End MHD  
+        }
+      }
+    }
+  }
   else{
-
     for(int k=kl; k<=ku; ++k){
       for(int j=jl; j<=ju; ++j){
 #pragma omp simd
         for(int i=il; i<=iu; ++i){
-
           pcr->sigma_adv(0,k,j,i) = pcr->max_opacity;
           pcr->sigma_adv(1,k,j,i) = pcr->max_opacity;
-          pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;  
+          pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;
 
-          pcr->v_adv(0,k,j,i) = 0.0;   
+          pcr->v_adv(0,k,j,i) = 0.0;
           pcr->v_adv(1,k,j,i) = 0.0;
           pcr->v_adv(2,k,j,i) = 0.0;
         }
       }
     }
-
   }// end MHD and stream flag
-
 }
 
-inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr, 
-             AthenaArray<Real> &prim, AthenaArray<Real> &bcc, 
-             AthenaArray<Real> &grad_pc, int k, int j, int is, int ie)
-{
+inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
+             AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
+             AthenaArray<Real> &grad_pc, int k, int j, int is, int ie) {
   CosmicRay *pcr=pmb->pcr;
   Real invlim = 1.0/pcr->vmax;
 
   for(int i=is; i<=ie; ++i){
-
     Real inv_sqrt_rho = 1.0/sqrt(prim(IDN,k,j,i));
-
     Real pb= bcc(IB1,k,j,i)*bcc(IB1,k,j,i)
             +bcc(IB2,k,j,i)*bcc(IB2,k,j,i)
             +bcc(IB3,k,j,i)*bcc(IB3,k,j,i);
 
-    Real b_grad_pc = bcc(IB1,k,j,i) * grad_pc(0,k,j,i) 
-                   + bcc(IB2,k,j,i) * grad_pc(1,k,j,i) 
+    Real b_grad_pc = bcc(IB1,k,j,i) * grad_pc(0,k,j,i)
+                   + bcc(IB2,k,j,i) * grad_pc(1,k,j,i)
                    + bcc(IB3,k,j,i) * grad_pc(2,k,j,i);
 
     Real va1 = bcc(IB1,k,j,i) * inv_sqrt_rho;
@@ -227,7 +204,7 @@ inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
       pcr->v_adv(2,k,j,i) = -va3 * dpc_sign;
 
       if(va > TINY_NUMBER){
-        pcr->sigma_adv(0,k,j,i) = fabs(b_grad_pc)/(sqrt(pb) * va * 
+        pcr->sigma_adv(0,k,j,i) = fabs(b_grad_pc)/(sqrt(pb) * va *
                                (4.0/3.0) * invlim * u_cr(CRE,k,j,i));
         pcr->sigma_adv(1,k,j,i) = pcr->max_opacity;
         pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;
@@ -240,12 +217,8 @@ inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
       pcr->sigma_adv(0,k,j,i)  = pcr->max_opacity;
       pcr->sigma_adv(1,k,j,i)  = pcr->max_opacity;
       pcr->sigma_adv(2,k,j,i)  = pcr->max_opacity;
-
     }
-
   }// end i
-
-
 }// end function
 
 CosmicRay::CosmicRay(MeshBlock *pmb, ParameterInput *pin):
@@ -280,54 +253,37 @@ CosmicRay::CosmicRay(MeshBlock *pmb, ParameterInput *pin):
 
   cr_bvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&cr_bvar);
-  pmb->pbval->bvars_main_int.push_back(&cr_bvar);      
+  pmb->pbval->bvars_main_int.push_back(&cr_bvar);
 
   vmax = pin->GetOrAddReal("cr","vmax",1.0);
   vlim = pin->GetOrAddReal("cr","vlim",0.9);
   max_opacity = pin->GetOrAddReal("cr","max_opacity",1.e10);
-  stream_flag = pin->GetOrAddInteger("cr","vs_flag",1);  
+  stream_flag = pin->GetOrAddInteger("cr","vs_flag",1);
   src_flag = pin->GetOrAddInteger("cr","src_flag",1);
-  
 
   int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
-
   b_grad_pc.NewAthenaArray(nc3,nc2,nc1);
   b_angle.NewAthenaArray(4,nc3,nc2,nc1);
-  
 
   cwidth.NewAthenaArray(nc1);
   cwidth1.NewAthenaArray(nc1);
   cwidth2.NewAthenaArray(nc1);
-  
+
   // set a default opacity function
   UpdateOpacity = DefaultOpacity;
-
   UpdateStreaming = DefaultStreaming;
-
   pcrintegrator = new CRIntegrator(this, pin);
-
 }
 
-
-
-//Enrol the function to update opacity
-
-void CosmicRay::EnrollOpacityFunction(CROpacityFunc MyOpacityFunction)
-{
+void CosmicRay::EnrollOpacityFunction(CROpacityFunc MyOpacityFunction) {
   UpdateOpacity = MyOpacityFunction;
-  
 }
 
-void CosmicRay::EnrollStreamingFunction(CRStreamingFunc MyStreamingFunction)
-{
+void CosmicRay::EnrollStreamingFunction(CRStreamingFunc MyStreamingFunction) {
   UpdateStreaming = MyStreamingFunction;
-  
 }
 
-void CosmicRay::EnrollUserCRSource(CRSrcTermFunc my_func)
-{
+void CosmicRay::EnrollUserCRSource(CRSrcTermFunc my_func) {
   UserSourceTerm_ = my_func;
   cr_source_defined = true;
-  
 }
-

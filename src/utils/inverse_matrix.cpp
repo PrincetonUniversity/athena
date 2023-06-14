@@ -20,33 +20,26 @@
 // a: input matrix; n: matrix size, b: return matrix
 // Note: the input matrix will be DESTROYED
 
-void InverseMatrix(int n, AthenaArray<Real> &a, AthenaArray<Real> &b)
-{
+void InverseMatrix(int n, AthenaArray<Real> &a, AthenaArray<Real> &b) {
   AthenaArray<int> indx;
   AthenaArray<Real> col;
   Real d;
-  
+
   indx.NewAthenaArray(n);
   col.NewAthenaArray(n);
-  
-  
-  
   Ludcmp_nr(n,a,indx,&d);
-  
+
   for (int j=0; j<n; ++j) {
-    for (int i=0; i<n; ++i) col(i)=0.0;
-    col(j)=1.0;
+    for (int i=0; i<n; ++i) {
+      col(i)=0.0;
+    }
+    col(j) = 1.0;
     Lubksb_nr(n, a, indx, col);
-    for (int i=0; i<n; i++)    b(i,j) = col(i);
+    for (int i=0; i<n; i++) {
+      b(i,j) = col(i);
+    }
   }
-  
-  
   indx.DeleteAthenaArray();
   col.DeleteAthenaArray();
-  
   return;
-  
 }
-
-
-

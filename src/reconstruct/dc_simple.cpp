@@ -146,9 +146,9 @@ void Reconstruction::DonorCellX3(const int k, const int j, const int il, const i
 
 void Reconstruction::DonorCellZeta(
     NRRadiation *prad, const int zs, const int ze,
-    AthenaArray<Real> &q, 
+    AthenaArray<Real> &q,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
-  
+
     Real *qln = &(ql(zs+1));
     Real *qrn = &(qr(zs));
     Real *qn = &(q(zs));
@@ -163,7 +163,7 @@ void Reconstruction::DonorCellZeta(
 
 void Reconstruction::DonorCellPsi(
     NRRadiation *prad, const int ps, const int pe,
-    AthenaArray<Real> &q, 
+    AthenaArray<Real> &q,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
 
     Real *qln = &(ql(ps+1));
@@ -174,7 +174,7 @@ void Reconstruction::DonorCellPsi(
       // renamed dw* -> dq* from plm.cpp
       qln[m] =  qrn[m] = qn[m];
     }
-    
+
 
   return;
 }

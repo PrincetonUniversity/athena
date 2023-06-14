@@ -129,7 +129,7 @@ class Reconstruction {
                             const AthenaArray<Real> &q,
                             AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  // overloads for cell centered variables with different ordering 
+  // overloads for cell centered variables with different ordering
   void DonorCellX1(const int k, const int j, const int il, const int iu,
                    AthenaArray<Real> &q, const int array_order,
                    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
@@ -167,20 +167,20 @@ class Reconstruction {
                             AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
   void DonorCellZeta(NRRadiation *prad, const int zs, const int ze,
-      AthenaArray<Real> &q, 
+      AthenaArray<Real> &q,
       AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
   void DonorCellPsi(NRRadiation *prad, const int ps, const int pe,
-      AthenaArray<Real> &q, 
+      AthenaArray<Real> &q,
       AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void PiecewiseLinearZeta(NRRadiation *prad, 
-      const int zs, const int ze, AthenaArray<Real> &q, 
+  void PiecewiseLinearZeta(NRRadiation *prad,
+      const int zs, const int ze, AthenaArray<Real> &q,
       AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
 
-  void PiecewiseLinearPsi(NRRadiation *prad, 
-      const int zs, const int ze, AthenaArray<Real> &q, 
+  void PiecewiseLinearPsi(NRRadiation *prad,
+      const int zs, const int ze, AthenaArray<Real> &q,
       AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
  private:
@@ -199,6 +199,6 @@ class Reconstruction {
   AthenaArray<Real> scr1_in2_, scr2_in2_, scr3_in2_, scr4_in2_;
   AthenaArray<Real> scr1_nn_, scr2_nn_, scr3_nn_, scr4_nn_;
   AthenaArray<Real> scr6_in_, scr7_in_, scr8_in_;
-    
+
 };
 #endif // RECONSTRUCT_RECONSTRUCTION_HPP_

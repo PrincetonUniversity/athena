@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -17,18 +17,21 @@
 //  \brief Add radiation source terms to both radiation and gas
 //======================================================================================
 
+// C headers
+
+// C++ headers
 
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 #include "../../parameter_input.hpp"
 #include "../../mesh/mesh.hpp"
-#include "../cr.hpp"
-#include "../../coordinates/coordinates.hpp" //
+#include "../../coordinates/coordinates.hpp"
 #include "../../hydro/hydro.hpp"
 #include "../../field/field.hpp"
 #include "../../eos/eos.hpp"
 #include "../../utils/utils.hpp"
+#include "../cr.hpp"
 
 // class header
 #include "cr_integrators.hpp"
@@ -44,35 +47,20 @@
 #include <omp.h>
 #endif
 
-//add the source terms implicitly
-
-
-
+// add the source terms implicitly
 void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Real> &u,
         AthenaArray<Real> &w, AthenaArray<Real> &bcc,
-        AthenaArray<Real> &u_cr)
-{
+        AthenaArray<Real> &u_cr) {
   CosmicRay *pcr=pmb->pcr;
-
   Real vlim = pcr->vmax;
   Real invlim = 1.0/vlim;
-
   Real rho_floor = pmb->peos->GetDensityFloor();
 
-// The information stored in the array
-// b_angle is
-// b_angle[0]=sin_theta_b
-// b_angle[1]=cos_theta_b
-// b_angle[2]=sin_phi_b
-// b_angle[3]=cos_phi_b
-  
-    
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
- 
-  for(int k=ks; k<=ke; ++k){
-    for(int j=js; j<=je; ++j){
 
+  for(int k=ks; k<=ke; ++k) {
+    for(int j=js; j<=je; ++j) {
          Real fxx = 1.0/3.0;
          Real fyy = 1.0/3.0;
          Real fzz = 1.0/3.0;
@@ -136,18 +124,18 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
          Real sigma_z = pcr->sigma_diff(2,k,j,i);
 
          if(pcr->stream_flag){
-           sigma_x = 1.0/(1.0/pcr->sigma_diff(0,k,j,i) + 
+           sigma_x = 1.0/(1.0/pcr->sigma_diff(0,k,j,i) +
                              1.0/pcr->sigma_adv(0,k,j,i));
 
            sigma_y = 1.0/(1.0/pcr->sigma_diff(1,k,j,i) +
                              1.0/pcr->sigma_adv(1,k,j,i));
 
-           sigma_z = 1.0/(1.0/pcr->sigma_diff(2,k,j,i) + 
+           sigma_z = 1.0/(1.0/pcr->sigma_diff(2,k,j,i) +
                              1.0/pcr->sigma_adv(2,k,j,i));
          }
 
          // Now update the momentum equation
-         //\partial F/\partial t=-V_m\sigma (F-v(E+Pc_)/v_m)) 
+         //\partial F/\partial t=-V_m\sigma (F-v(E+Pc_)/v_m))
          // And the energy equation
          //\partial E_c/\partial t = -vtot sigma (F- v(E_c+P_c)/v_m)
 
@@ -178,35 +166,35 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
         // coef11 - coef21 * coef12 /coef22 - coef13 * coef31 /coef33 - coef41 * coef14 /coef44)* newec
         //    =rhs1 - coef12 *rhs2/coef22 - coef13 * rhs3/coef33 - coef14 * rhs4/coef44
 
-        Real e_coef = coef_11 - coef_12 * coef_21/coef_22 - coef_13 * coef_31/coef_33 
+        Real e_coef = coef_11 - coef_12 * coef_21/coef_22 - coef_13 * coef_31/coef_33
                        - coef_14 * coef_41/coef_44;
-        Real new_ec = rhs1 - coef_12 * rhs2/coef_22 - coef_13 * rhs3/coef_33 
+        Real new_ec = rhs1 - coef_12 * rhs2/coef_22 - coef_13 * rhs3/coef_33
                       - coef_14 * rhs4/coef_44;
         new_ec /= e_coef;
 
         Real newfr1 = (rhs2 - coef_21 * new_ec)/coef_22;
         Real newfr2 = (rhs3 - coef_31 * new_ec)/coef_33;
         Real newfr3 = (rhs4 - coef_41 * new_ec)/coef_44;
-   
+
 
         // Now apply the invert rotation
         if(MAGNETIC_FIELDS_ENABLED){
          // Apply rotation of the vectors
-          InvRotateVec(sint_b[i],cost_b[i],sinp_b[i],cosp_b[i], 
+          InvRotateVec(sint_b[i],cost_b[i],sinp_b[i],cosp_b[i],
                                          newfr1,newfr2,newfr3);
           new_ec += dt * ec_source_(k,j,i);
-        }        
+        }
 
          // Add the energy source term
          if (NON_BAROTROPIC_EOS && (pcr->src_flag > 0)){
-           Real new_eg = u(IEN,k,j,i) - (new_ec - ec[i]); 
+           Real new_eg = u(IEN,k,j,i) - (new_ec - ec[i]);
            if(new_eg < 0.0) new_eg = u(IEN,k,j,i);
-           u(IEN,k,j,i) = new_eg;       
-         }         
+           u(IEN,k,j,i) = new_eg;
+         }
 
          if(new_ec < 0.0) new_ec = ec[i];
-         
-         if(pcr->src_flag > 0){ 
+
+         if(pcr->src_flag > 0){
            u(IM1,k,j,i) += (-(newfr1 - fc1[i]) * invlim);
            u(IM2,k,j,i) += (-(newfr2 - fc2[i]) * invlim);
            u(IM3,k,j,i) += (-(newfr3 - fc3[i]) * invlim);
@@ -218,8 +206,8 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
          u_cr(CRF2,k,j,i) = newfr2;
          u_cr(CRF3,k,j,i) = newfr3;
 
-         
-      }// end 
+
+      }// end
 
     }// end j
   }// end k
@@ -228,7 +216,5 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
   // Add user defined source term for cosmic rays
   if(pcr->cr_source_defined)
     pcr->UserSourceTerm_(pmb, pmb->pmy_mesh->time, dt, w,pmb->pfield->b, u_cr);
-      
+
 }
-
-
