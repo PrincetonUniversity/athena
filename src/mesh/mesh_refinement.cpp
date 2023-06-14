@@ -178,12 +178,12 @@ void MeshRefinement::RestrictCellCenteredValues(
 // over load function  for radiation variables
 
 void MeshRefinement::RestrictCellCenteredValues(
-    const AthenaArray<Real> &fine, AthenaArray<Real> &coarse, int array_order, 
+    const AthenaArray<Real> &fine, AthenaArray<Real> &coarse, int array_order,
     int sn, int en, int csi, int cei, int csj, int cej, int csk, int cek) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
   int si = (csi - pmb->cis)*2 + pmb->is, ei = (cei - pmb->cis)*2 + pmb->is + 1;
- 
+
   // reverse order for radiation variables
   if(array_order < 0){
 
@@ -252,7 +252,7 @@ void MeshRefinement::RestrictCellCenteredValues(
         }
       }
     }
-  }// end array_order < 0 
+  }// end array_order < 0
 }
 
 
@@ -605,14 +605,14 @@ void MeshRefinement::ProlongateCellCenteredValues(
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::ProlongateCellCenteredValues(
-//        const AthenaArray<Real> &coarse,AthenaArray<Real> &fine, 
+//        const AthenaArray<Real> &coarse,AthenaArray<Real> &fine,
 //      int array_order, int sn, int en,,
 //        int si, int ei, int sj, int ej, int sk, int ek)
 //  \brief Prolongate cell centered values for radiation variables
 
 void MeshRefinement::ProlongateCellCenteredValues(
     const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
-    int array_order, 
+    int array_order,
     int sn, int en, int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
@@ -719,7 +719,7 @@ void MeshRefinement::ProlongateCellCenteredValues(
             Real gx2p = (coarse(k,j+1,i,n) - ccval)/dx2p;
             Real gx2c = 0.5*(SIGN(gx2m) + SIGN(gx2p))*
                         std::min(std::abs(gx2m), std::abs(gx2p));
- 
+
           // KGF: add the off-centered quantities first to preserve FP symmetry
           // interpolate onto the finer grid
             fine(fk  ,fj  ,fi  ,n) = ccval - (gx1c*dx1fm + gx2c*dx2fm);

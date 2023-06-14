@@ -266,7 +266,7 @@ class Mesh {
   MGGravityDriver *pmgrd;
 
   // implicit radiation iteration
-  IMRadiation *pimrad;  
+  IMRadiation *pimrad;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;
