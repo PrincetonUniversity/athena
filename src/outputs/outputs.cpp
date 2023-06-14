@@ -610,7 +610,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   }
 
 
-  // The following radiation/cosmic ray/thermal conduction are all 
+  // The following radiation/cosmic ray/thermal conduction are all
   // cell centered variable
   if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
     if(prad->nfreq == 1){
@@ -662,7 +662,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->data.InitWithShallowSlice(prad->rad_mom,4,IFR1,1);
         AppendOutputDataNode(pod);
         num_vars_++;
-      }   
+      }
 
      if (ContainVariable(output_params.variable, "Fry") ||
         ContainVariable(output_params.variable, "Fr2")) {
@@ -672,7 +672,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->data.InitWithShallowSlice(prad->rad_mom,4,IFR2,1);
         AppendOutputDataNode(pod);
         num_vars_++;
-      } 
+      }
 
      if (ContainVariable(output_params.variable, "Frz") ||
         ContainVariable(output_params.variable, "Fr3")) {
@@ -709,7 +709,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         AppendOutputDataNode(pod);
         num_vars_++;
       }
-      
+
 
 
     // comoving frame fram radiation flux vector
@@ -744,7 +744,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->data.InitWithShallowSlice(prad->rad_mom_cm,4,IFR1,1);
         AppendOutputDataNode(pod);
         num_vars_++;
-      }   
+      }
 
      if (ContainVariable(output_params.variable, "Fr0y") ||
         ContainVariable(output_params.variable, "Fr02")) {
@@ -754,7 +754,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->data.InitWithShallowSlice(prad->rad_mom_cm,4,IFR2,1);
         AppendOutputDataNode(pod);
         num_vars_++;
-      } 
+      }
 
      if (ContainVariable(output_params.variable, "Fr0z") ||
         ContainVariable(output_params.variable, "Fr03")) {
@@ -764,21 +764,21 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->data.InitWithShallowSlice(prad->rad_mom_cm,4,IFR3,1);
         AppendOutputDataNode(pod);
         num_vars_++;
-      }  
+      }
     }else{
-    //--------/--------/--------/--------/--------/--------/--------  
+    //--------/--------/--------/--------/--------/--------/--------
       for(int ifr=0; ifr<prad->nfreq; ++ifr){
 
         std::string er_ifr = "Er_" + std::to_string(ifr);
-        std::string fr_ifr = "Fr_" + std::to_string(ifr)+"_";        
-        std::string frxyz_ifr = "Frxyz_" + std::to_string(ifr)+"_"; 
+        std::string fr_ifr = "Fr_" + std::to_string(ifr)+"_";
+        std::string frxyz_ifr = "Frxyz_" + std::to_string(ifr)+"_";
         std::string frx_ifr = "Frx_" + std::to_string(ifr)+"_";
         std::string fry_ifr = "Fry_" + std::to_string(ifr)+"_";
         std::string frz_ifr = "Frz_" + std::to_string(ifr)+"_";
         std::string pr_ifr = "Pr_" + std::to_string(ifr)+"_";
         std::string er0_ifr = "Er0_" + std::to_string(ifr);
         std::string fr0_ifr = "Fr0_" + std::to_string(ifr)+"_";
-        std::string fr0xyz_ifr = "Fr0xyz_" + std::to_string(ifr)+"_";  
+        std::string fr0xyz_ifr = "Fr0xyz_" + std::to_string(ifr)+"_";
         std::string fr0x_ifr = "Fr0x_" + std::to_string(ifr)+"_";
         std::string fr0y_ifr = "Fr0y_" + std::to_string(ifr)+"_";
         std::string fr0z_ifr = "Fr0z_" + std::to_string(ifr)+"_";
@@ -928,8 +928,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 
     for(int ifr=0; ifr<prad->nfreq; ++ifr){
       std::string sigmaa_ifr = "Sigma_a_" + std::to_string(ifr);
-      std::string sigmas_ifr = "Sigma_s_" + std::to_string(ifr);        
-      std::string sigmap_ifr = "Sigma_p_" + std::to_string(ifr); 
+      std::string sigmas_ifr = "Sigma_s_" + std::to_string(ifr);
+      std::string sigmap_ifr = "Sigma_p_" + std::to_string(ifr);
 
       if (ContainVariable(output_params.variable, sigmas_ifr) ||
           ContainVariable(output_params.variable, "prim") ||
@@ -949,10 +949,10 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->type = "SCALARS";
         pod->name = sigmaa_ifr;
         pod->data.InitWithShallowSlice(prad->output_sigma,4,3*ifr+OPAA,1);
-        AppendOutputDataNode(pod);      
+        AppendOutputDataNode(pod);
         num_vars_ += 1;
       }
-    
+
       if (ContainVariable(output_params.variable, sigmap_ifr) ||
           ContainVariable(output_params.variable, "prim") ||
           ContainVariable(output_params.variable, "cons")) {
@@ -960,10 +960,10 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->type = "SCALARS";
         pod->name = sigmap_ifr;
         pod->data.InitWithShallowSlice(prad->output_sigma,4,3*ifr+OPAP,1);
-        AppendOutputDataNode(pod); 
+        AppendOutputDataNode(pod);
         num_vars_ += 1;
       }
-    }// end ifr loop 
+    }// end ifr loop
   }// End (RADIATION_ENABLED)
 
 
@@ -1043,7 +1043,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->type = "VECTORS";
         pod->name = "Vc_xyz";
         pod->data.NewAthenaArray(3,pcr->v_adv.GetDim3(),
-                                   pcr->v_adv.GetDim2(), 
+                                   pcr->v_adv.GetDim2(),
                                    pcr->v_adv.GetDim1());
         CalculateCartesianVector(src, pod->data, pmb->pcoord);
         AppendOutputDataNode(pod);
@@ -1254,9 +1254,9 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
           pmb = pm->my_blocks(b);
          // Calculate Com-moving moments and grey opacity for dump
           pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
-          pmb->pnrrad->CalculateComMoment();          
+          pmb->pnrrad->CalculateComMoment();
         }
-        rad_mom = false;           
+        rad_mom = false;
       }
 
 

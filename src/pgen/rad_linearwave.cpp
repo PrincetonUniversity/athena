@@ -74,14 +74,15 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   }
   Real knum = 2.0 * PI;
 
-  for(int nb=0; nb<nblocal; ++nb){
+  for(int nb=0; nb<nblocal; ++nb) {
     pmb = my_blocks(nb);
-    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+    if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
       pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
+    }
     //  Compute errors
     for (int k=pmb->ks; k<=pmb->ke; k++) {
-    for (int j=pmb->js; j<=pmb->je; j++) {
-      for (int i=pmb->is; i<=pmb->ie; i++) {
+      for (int j=pmb->js; j<=pmb->je; j++) {
+        for (int i=pmb->is; i<=pmb->ie; i++) {
         // get the initial solution
         Real const &x1 = pmb->pcoord->x1v(i);
         Real theta = knum * x1;
@@ -118,7 +119,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   }
 
   // normalize errors by number of cells
-  for (int i=0; i<totnum; ++i) l1_err[i] = l1_err[i]/(float)GetTotalCells();
+  for (int i=0; i<totnum; ++i) {
+    l1_err[i] = l1_err[i]/ (double) GetTotalCells();
+  }
   Real rms_err = 0.0, max_max_over_l1=0.0;
 
 #ifdef MPI_PARALLEL
@@ -142,7 +145,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
        rms_err += SQR(l1_err[i]);
        max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
     }
-    rms_err = sqrt(rms_err);
+    rms_err = std::sqrt(rms_err);
 
     // open output file and write out errors
     std::string fname;
@@ -181,18 +184,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     fprintf(pfile,"\n");
     fclose(pfile);
   }
-
-
 }
 
 
 
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
-
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   int regime = pin->GetOrAddInteger("problem","regime",8);
   Real sigma0;
-
   switch(regime) {
     case 1:
       v_r= 1.2909945401100994;
@@ -422,8 +420,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
           phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM2,k,j,i))/phydro->u(IDN,k,j,i);
           phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM3,k,j,i))/phydro->u(IDN,k,j,i);
         }
-
-        if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
+        if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
           Real der = amp * (er_r * cos(theta) + er_i * sin(theta));
           Real dfr = amp * (fr_r * cos(theta) + fr_i * sin(theta));
 
@@ -435,33 +432,29 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
                Real const &miux = pnrrad->mu(0,k,j,i,n);
                pnrrad->ir(k,j,i,ifr*pnrrad->nang+n)=(jr/(4.0*weight) + hr/(4.0*weight*miux));
             }
-
             pnrrad->sigma_s(k,j,i,ifr) = 0.0;
             pnrrad->sigma_a(k,j,i,ifr) = sigma0;
             pnrrad->sigma_pe(k,j,i,ifr) = sigma0;
             pnrrad->sigma_p(k,j,i,ifr) = sigma0;
-
           }
 
-        }// End rad
-      }// end i
+        }
+      }
     }
   }
-
   return;
 }
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
-
-  if (adaptive)
+  if (adaptive) {
     EnrollUserRefinementCondition(RefinementCondition);
-
+  }
 }
 
 
 // refinement condition: density curvature
 int RefinementCondition(MeshBlock *pmb) {
-  AthenaArray<Real> &w = pmb->phydro->w;
+  AthenaArray<Real> const &w = pmb->phydro->w;
   Real dmax = 0.0, dmin = 2.0;  // max and min densities
   for (int k=pmb->ks; k<=pmb->ke; k++) {
     for (int j=pmb->js; j<=pmb->je; j++) {

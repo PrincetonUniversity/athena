@@ -26,51 +26,42 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../parameter_input.hpp"
-#include "../hydro/hydro.hpp"
-#include "../eos/eos.hpp"
 #include "../bvals/bvals.hpp"
-#include "../hydro/srcterms/hydro_srcterms.hpp"
-#include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/srcterms/hydro_srcterms.hpp"
+#include "../mesh/mesh.hpp"
 #include "../nr_radiation/radiation.hpp"
 #include "../nr_radiation/integrators/rad_integrators.hpp"
-
-
-//======================================================================================
-/*! \file beam.cpp
- *  \brief Beam test for the radiative transfer module
- *
- *====================================================================================*/
-
-
+#include "../parameter_input.hpp"
 
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief beam test
+//  \brief
 //======================================================================================
-void MeshBlock::ProblemGenerator(ParameterInput *pin)
-{
-
-  Real tgas, er1,er2,er3, sigma1,sigma2,sigma3, kappa_es, bd_flag;
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
+  Real tgas, er1, er2, er3;
+  Real sigma1,sigma2,sigma3;
+  Real kappa_es, bd_flag;
 
   er1 = pin->GetOrAddReal("problem","er_1",10.0);
   er2 = pin->GetOrAddReal("problem","er_2",20.0);
-  er3 = pin->GetOrAddReal("problem","er_3",30.0);    
+  er3 = pin->GetOrAddReal("problem","er_3",30.0);
   tgas = pin->GetOrAddReal("problem","tgas",1.0);
   sigma1 = pin->GetOrAddReal("problem","sigma_1",100.0);
   sigma2 = pin->GetOrAddReal("problem","sigma_2",200.0);
   sigma3 = pin->GetOrAddReal("problem","sigma_3",300.0);
   kappa_es = pin->GetOrAddReal("problem","kappa_es",0.0);
   bd_flag = pin->GetOrAddInteger("problem","black_body",0.0);
-  
+
   Real gamma = peos->GetGamma();
   Real tr_ini = pow(er1,0.25);
-  
+
   // Initialize hydro variable
-  for(int k=ks; k<=ke; ++k) {
+  for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         phydro->u(IDN,k,j,i) = 1.0;
@@ -87,9 +78,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       }
     }
   }
-  
-  //Now initialize opacity and specific intensity
-  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
+
+  // Now initialize opacity and specific intensity
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
     int nfreq = pnrrad->nfreq;
     int nang = pnrrad->nang;
     AthenaArray<Real> ir_cm;
@@ -98,101 +89,87 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
     pnrrad->kappa_es=kappa_es;
 
     Real *ir_lab;
-    
-    for(int k=ks; k<=ke; ++k) {
+
+    for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-         
-
           Real vx = phydro->u(IM1,k,j,i)/phydro->u(IDN,k,j,i);
           Real vy = phydro->u(IM2,k,j,i)/phydro->u(IDN,k,j,i);
           Real vz = phydro->u(IM3,k,j,i)/phydro->u(IDN,k,j,i);
-          Real *mux = &(pnrrad->mu(0,k,j,i,0));
-          Real *muy = &(pnrrad->mu(1,k,j,i,0));
-          Real *muz = &(pnrrad->mu(2,k,j,i,0));
-          for(int ifr=0; ifr<pnrrad->nfreq; ++ifr){
+          for (int ifr=0; ifr<pnrrad->nfreq; ++ifr){
             ir_lab = &(pnrrad->ir(k,j,i,ifr*nang));
-            if(bd_flag == 0){
+            if (bd_flag == 0){
               Real er_ini=1.0;
-              if(ifr == 0)
+              if (ifr == 0)
                 er_ini = er1;
-              else if(ifr == 1)
+              else if (ifr == 1)
                 er_ini = er2;
               else
-                er_ini = er3;          
+                er_ini = er3;
 
-              for(int n=0; n<pnrrad->nang; n++){
+              for (int n=0; n<pnrrad->nang; n++){
                 ir_lab[n] = er_ini;
               }
-            }// end bd_flag == 0
+            }
             else{
               Real emission = er1;
               // Initialize with blackbody spectrum
-              if(ifr == nfreq-1){
+              if (ifr == nfreq-1){
                 emission *= (1.0-pnrrad->FitBlackBody(pnrrad->nu_grid(ifr)/tr_ini));
-              }else{
+              } else {
                 emission *= pnrrad->BlackBodySpec(pnrrad->nu_grid(ifr)/tr_ini,
                                       pnrrad->nu_grid(ifr+1)/tr_ini);
-              }// end ifr
-
-              for(int n=0; n<pnrrad->nang; n++){
+              }
+              for (int n=0; n<pnrrad->nang; n++){
                 ir_lab[n] = emission;
               }
 
             }// end black body spectrum
 
           }// end ifr
-          
+
         }
       }
     }
 
-    for(int k=0; k<ncells3; ++k)
-     for(int j=0; j<ncells2; ++j)
-       for(int i=0; i<ncells1; ++i){
+    for (int k=0; k<ncells3; ++k)
+     for (int j=0; j<ncells2; ++j)
+       for (int i=0; i<ncells1; ++i){
           for (int ifr=0; ifr < nfreq; ++ifr){
-            if(ifr == 0){
+            if (ifr == 0){
               pnrrad->sigma_s(k,j,i,ifr) = kappa_es;
               pnrrad->sigma_a(k,j,i,ifr) = sigma1;
               pnrrad->sigma_pe(k,j,i,ifr) = sigma1;
               pnrrad->sigma_p(k,j,i,ifr) = sigma1;
-            }else if(ifr == 1){
+            } else if (ifr == 1){
               pnrrad->sigma_s(k,j,i,ifr) = kappa_es;
               pnrrad->sigma_a(k,j,i,ifr) = sigma2;
               pnrrad->sigma_pe(k,j,i,ifr) = sigma2;
               pnrrad->sigma_p(k,j,i,ifr) = sigma2;
-            }else{
+            } else {
               pnrrad->sigma_s(k,j,i,ifr) = kappa_es;
               pnrrad->sigma_a(k,j,i,ifr) = sigma3;
-              pnrrad->sigma_pe(k,j,i,ifr) = sigma3;   
-              pnrrad->sigma_p(k,j,i,ifr) = sigma3;          
+              pnrrad->sigma_pe(k,j,i,ifr) = sigma3;
+              pnrrad->sigma_p(k,j,i,ifr) = sigma3;
             }
-
           }
-
        }
-    
     ir_cm.DeleteAthenaArray();
-    
-  }// End Rad
-  
+  }
   return;
 }
 
 
 // calculate the sum of radiation energy density across the mesh for each frequency groups
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
-
-
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   MeshBlock *pmb = my_blocks(0);
   int  totnum = pmb->pnrrad->nfreq+1;
   AthenaArray<Real> sum_var;
   sum_var.NewAthenaArray(totnum);
 
-  for(int nb=0; nb<nblocal; ++nb){
+  for (int nb=0; nb<nblocal; ++nb){
     pmb = my_blocks(nb);
-    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+    if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
       pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
     //  Compute the sum
     for (int k=pmb->ks; k<=pmb->ke; k++) {
@@ -202,15 +179,14 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
         Real dx = pmb->pcoord->x1f(i+1) - pmb->pcoord->x1f(i);
 
         sum_var(0) += dx*pmb->phydro->w(IPR,k,j,i)/pmb->phydro->w(IDN,k,j,i);
-   
-        for(int ifr=0; ifr<pmb->pnrrad->nfreq; ++ifr)
-          sum_var(ifr+1) += pmb->pnrrad->rad_mom_nu(ifr*13+IER,k,j,i) * dx; 
 
-      }// end i
-      }// end j
-    }// end k
+        for (int ifr=0; ifr<pmb->pnrrad->nfreq; ++ifr) {
+          sum_var(ifr+1) += pmb->pnrrad->rad_mom_nu(ifr*13+IER,k,j,i) * dx;
+        }
+      }
+      }
+    }
   }
-
 
 #ifdef MPI_PARALLEL
   if (Globals::my_rank == 0) {
@@ -229,8 +205,6 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     for (int i=0; i<totnum; ++i) {
        sum_var(i) /= (mesh_size.x1max - mesh_size.x1min);
     }
-
-
     // open output file and write out errors
     std::string fname;
     fname.assign("Averaged_quantity.dat");
@@ -238,8 +212,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     FILE *pfile;
 
     // The file exists -- reopen the file in append mode
-    if((pfile = fopen(fname.c_str(),"r")) != NULL){
-      if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+    if ((pfile = fopen(fname.c_str(),"r")) != NULL){
+      if ((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
@@ -247,7 +221,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
     // The file does not exist -- open the file in write mode and add headers
     } else {
-      if((pfile = fopen(fname.c_str(),"w")) == NULL){
+      if ((pfile = fopen(fname.c_str(),"w")) == NULL){
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
@@ -257,15 +231,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     }
 
     // write errors
-    for(int n=0; n<totnum; ++n)
+    for (int n=0; n<totnum; ++n)
       fprintf(pfile,"%e  ",sum_var(n));
     fprintf(pfile,"\n");
     fclose(pfile);
   }
-    
-
   sum_var.DeleteAthenaArray();
-    
 }
-
-

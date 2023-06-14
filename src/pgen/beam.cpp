@@ -48,7 +48,7 @@ int RefinementCondition(MeshBlock *pmb);
  *
  *====================================================================================*/
 
-void TwoBeams(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad, 
+void TwoBeams(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad,
             const AthenaArray<Real> &w, FaceField &b,
             AthenaArray<Real> &ir,
             Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
@@ -64,7 +64,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin)
     EnrollUserRefinementCondition(RefinementCondition);
 
   EnrollUserBoundaryFunction(BoundaryFace::inner_x2, TwoBeamHydro);
-  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
     EnrollUserRadBoundaryFunction(BoundaryFace::inner_x2, TwoBeams);
 }
 
@@ -72,7 +72,7 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 {
   ang = pin->GetOrAddInteger("problem","ang",0);
   octnum = pin->GetOrAddInteger("problem","octnum",0);
-  
+
 
 
   return;
@@ -85,18 +85,18 @@ void MeshBlock::InitUserMeshBlockData(ParameterInput *pin)
 //======================================================================================
 void MeshBlock::ProblemGenerator(ParameterInput *pin)
 {
-  
+
   Real gamma = peos->GetGamma();
-  
+
   // Initialize hydro variable
-  for(int k=ks; k<=ke; ++k) {
+  for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         phydro->u(IDN,k,j,i) = 1.0;
         phydro->u(IM1,k,j,i) = 0.0;
         phydro->u(IM2,k,j,i) = 0.0;
         phydro->u(IM3,k,j,i) = 0.0;
-        if (NON_BAROTROPIC_EOS){
+        if (NON_BAROTROPIC_EOS) {
 
           phydro->u(IEN,k,j,i) = 1.0/(gamma-1.0);
           phydro->u(IEN,k,j,i) += 0.5*SQR(phydro->u(IM1,k,j,i))/phydro->u(IDN,k,j,i);
@@ -106,39 +106,38 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin)
       }
     }
   }
-  
+
   //Now initialize opacity and specific intensity
-  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
     int nfreq = pnrrad->nfreq;
     int nang = pnrrad->nang;
-    for(int k=ks; k<=ke; ++k) {
+    for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          for (int ifr=0; ifr < nfreq; ++ifr){
+          for (int ifr=0; ifr < nfreq; ++ifr) {
             pnrrad->sigma_s(k,j,i,ifr) = 0.0;
             pnrrad->sigma_a(k,j,i,ifr) = 0.0;
             pnrrad->sigma_pe(k,j,i,ifr) = 0.0;
             pnrrad->sigma_p(k,j,i,ifr) = 0.0;
           }
-          for(int n=0; n<pnrrad->n_fre_ang; ++n){
+          for (int n=0; n<pnrrad->n_fre_ang; ++n) {
               pnrrad->ir(k,j,i,n) = 0.0;
           }
         }
       }
     }
   }
-  
+
   return;
 }
 
 
 
 
-void TwoBeams(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad, 
-          const AthenaArray<Real> &w, FaceField &b, 
+void TwoBeams(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad,
+          const AthenaArray<Real> &w, FaceField &b,
           AthenaArray<Real> &ir,
-          Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh)
-{
+          Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh) {
 
   int nang=prad->nang;
   int noct=prad->noct;
@@ -149,41 +148,41 @@ void TwoBeams(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad,
   for (int k=ks; k<=ke; ++k) {
     for (int j=1; j<=ngh; ++j) {
       for (int i=is; i<=ie; ++i) {
-        Real &x1 = pco->x1v(i);
-        Real &x2 = pco->x2v(js-j);
-        for(int ifr=0; ifr<nfreq; ++ifr){
-        for(int l=0; l<noct; ++l){
-        for(int n=0; n<ang_oct; ++n){
+        Real const &x1 = pco->x1v(i);
+        Real const &x2 = pco->x2v(js-j);
+        for (int ifr=0; ifr<nfreq; ++ifr) {
+        for (int l=0; l<noct; ++l) {
+        for (int n=0; n<ang_oct; ++n) {
           int n_ang=l*ang_oct + n;
 
           Real slope1=-prad->mu(1,k,js-j,i,0)/prad->mu(0,k,js-j,i,0);
           Real slope2=prad->mu(1,k,js-j,i,0)/prad->mu(0,k,js-j,i,0);
-          Real dis1=fabs(slope1*(x1-0.1)+(x2+2.0));
-          Real dis2=fabs(slope2*(x1+0.1)+(x2+2.0));
-          if(ifr == 0){
-            if(((l==0)&&(n==0)&&(dis1<pco->dx1v(i))) ||
-                 ((l==1)&&(n==0)&&(dis2<pco->dx1v(i)))){
+          Real dis1=std::abs(slope1*(x1-0.1)+(x2+2.0));
+          Real dis2=std::abs(slope2*(x1+0.1)+(x2+2.0));
+          if (ifr == 0) {
+            if (((l==0)&&(n==0)&&(dis1<pco->dx1v(i))) ||
+                 ((l==1)&&(n==0)&&(dis2<pco->dx1v(i)))) {
               ir(k,js-j,i,n_ang+ifr*nang) = 10.0;
-            }else{
+            } else {
               ir(k,js-j,i,n_ang+ifr*nang) = 0.0;
             }
-          }// end ifr
-          else{
-            if(((l==0)&&(n==1)&&(dis1<pco->dx1v(i))) ||
-                 ((l==1)&&(n==1)&&(dis2<pco->dx1v(i)))){
+          } // end ifr
+          else {
+            if (((l==0)&&(n==1)&&(dis1<pco->dx1v(i))) ||
+                 ((l==1)&&(n==1)&&(dis2<pco->dx1v(i)))) {
               ir(k,js-j,i,n_ang+ifr*nang) = 10.0;
-            }else{
+            } else {
               ir(k,js-j,i,n_ang+ifr*nang) = 0.0;
-            }            
+            }
           }
         }
         }
         }
-
-    }}
+      }
+    }
   }
 
- 
+
 
   return;
 }
@@ -221,6 +220,3 @@ int RefinementCondition(MeshBlock *pmb) {
   if (ymin > -1 && ymax < 1) return 1;
   return 0;
 }
-
-
-
