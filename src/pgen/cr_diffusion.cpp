@@ -15,13 +15,13 @@
  *====================================================================================*/
 
 // C++ headers
-#include <iostream>   // endl
+#include <algorithm>  // min
+#include <cmath>      // sqrt
 #include <fstream>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>      // sqrt
-#include <algorithm>  // min
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -77,7 +77,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             dist_sq=(x2-vy*time)*(x2-vy*time);
           else if (direction == 2)
             dist_sq=(x3-vz*time)*(x3-vz*time);
-          Real sol = std::exp(-40.0*dist_sq/(4*diff_coef*time*40.0+1))/std::sqrt(4*diff_coef*time*40+1);
+          Real sol = std::exp(-40.0*dist_sq/(4*diff_coef*time*40.0
+                                             + 1.0))/std::sqrt(4*diff_coef*time*40+1);
           sum_error += std::abs(pmb->pcr->u_cr(CRE,k,j,i)-sol);
           num_cell++;
         }
@@ -146,7 +147,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for(int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-
         Real x1 = pcoord->x1v(i);
         Real x2 = pcoord->x2v(j);
         Real x3 = pcoord->x3v(k);
@@ -273,11 +273,9 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
     for(int j=jl; j<=ju; ++j) {
 #pragma omp simd
       for(int i=il; i<=iu; ++i) {
-
         pcr->sigma_diff(0,k,j,i) = sigma;
         pcr->sigma_diff(1,k,j,i) = sigma;
         pcr->sigma_diff(2,k,j,i) = sigma;
-
       }
     }
   }
@@ -317,7 +315,6 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           Real dprdy=(u_cr(CRE,k,j+1,i) - u_cr(CRE,k,j-1,i))/3.0;
           dprdy /= distance;
           pcr->b_grad_pc(k,j,i) += bcc(IB2,k,j,i) * dprdy;
-
         }
         // z component
         pmb->pcoord->CenterWidth3(k-1,j,il,iu,pcr->cwidth1);
@@ -346,12 +343,12 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           Real pb= bcc(IB1,k,j,i)*bcc(IB1,k,j,i)
                   +bcc(IB2,k,j,i)*bcc(IB2,k,j,i)
                   +bcc(IB3,k,j,i)*bcc(IB3,k,j,i);
-          Real inv_sqrt_rho = 1.0/sqrt(prim(IDN,k,j,i));
+          Real inv_sqrt_rho = 1.0/std::sqrt(prim(IDN,k,j,i));
           Real va1 = bcc(IB1,k,j,i)*inv_sqrt_rho;
           Real va2 = bcc(IB2,k,j,i)*inv_sqrt_rho;
           Real va3 = bcc(IB3,k,j,i)*inv_sqrt_rho;
 
-          Real va = sqrt(pb/prim(IDN,k,j,i));
+          Real va = std::sqrt(pb/prim(IDN,k,j,i));
 
           Real dpc_sign = 0.0;
           if (pcr->b_grad_pc(k,j,i) > TINY_NUMBER) dpc_sign = 1.0;
@@ -365,9 +362,9 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
 
           if (va < TINY_NUMBER) {
             pcr->sigma_adv(0,k,j,i) = pcr->max_opacity;
-          } else{
+          } else {
             pcr->sigma_adv(0,k,j,i) = std::abs(pcr->b_grad_pc(k,j,i))
-                          /(sqrt(pb)* va * (1.0 + 1.0/3.0)
+                          /(std::sqrt(pb)* va * (1.0 + 1.0/3.0)
                                     * invlim * u_cr(CRE,k,j,i));
           }
 
@@ -375,28 +372,27 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;
 
           // Now calculate the angles of B
-          Real bxby = sqrt(bcc(IB1,k,j,i)*bcc(IB1,k,j,i) +
+          Real bxby = std::sqrt(bcc(IB1,k,j,i)*bcc(IB1,k,j,i) +
                            bcc(IB2,k,j,i)*bcc(IB2,k,j,i));
-          Real btot = sqrt(pb);
+          Real btot = std::sqrt(pb);
           if (btot > TINY_NUMBER) {
             pcr->b_angle(0,k,j,i) = bxby/btot;
             pcr->b_angle(1,k,j,i) = bcc(IB3,k,j,i)/btot;
-          } else{
+          } else {
             pcr->b_angle(0,k,j,i) = 1.0;
             pcr->b_angle(1,k,j,i) = 0.0;
           }
           if (bxby > TINY_NUMBER) {
             pcr->b_angle(2,k,j,i) = bcc(IB2,k,j,i)/bxby;
             pcr->b_angle(3,k,j,i) = bcc(IB1,k,j,i)/bxby;
-          } else{
+          } else {
             pcr->b_angle(2,k,j,i) = 0.0;
             pcr->b_angle(3,k,j,i) = 1.0;
           }
         }
       }
     }
-  }
-  else{
+  } else {
   for(int k=kl; k<=ku; ++k) {
     for(int j=jl; j<=ju; ++j) {
   // x component
@@ -410,13 +406,13 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
          if (va < TINY_NUMBER) {
            pcr->sigma_adv(0,k,j,i) = pcr->max_opacity;
            pcr->v_adv(0,k,j,i) = 0.0;
-         } else{
+         } else {
            Real sigma2 = std::abs(grad_pr)/(va * (1.0 + 1.0/3.0)
                              * invlim * u_cr(CRE,k,j,i));
            if (std::abs(grad_pr) < TINY_NUMBER) {
              pcr->sigma_adv(0,k,j,i) = 0.0;
              pcr->v_adv(0,k,j,i) = 0.0;
-           } else{
+           } else {
              pcr->sigma_adv(0,k,j,i) = sigma2;
              pcr->v_adv(0,k,j,i) = -va * grad_pr/std::abs(grad_pr);
            }
@@ -429,6 +425,5 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
       }
     }
   }
-
   }
 }

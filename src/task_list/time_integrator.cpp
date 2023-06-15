@@ -18,6 +18,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../bvals/bvals.hpp"
+#include "../cr/cr.hpp"
+#include "../cr/integrators/cr_integrators.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
@@ -26,14 +28,12 @@
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../mesh/mesh.hpp"
+#include "../nr_radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
-#include "../cr/cr.hpp"
-#include "../cr/integrators/cr_integrators.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
-#include "../nr_radiation/radiation.hpp"
-#include "../nr_radiation/integrators/rad_integrators.hpp"
 #include "task_list.hpp"
 
 //----------------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   //! - validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
   integrator = pin->GetOrAddString("time", "integrator", "vl2");
 
-  bool radiation_flag = ((bool)NR_RADIATION_ENABLED) && ((bool)(!IM_RADIATION_ENABLED));
+  bool radiation_flag = (NR_RADIATION_ENABLED && (!IM_RADIATION_ENABLED));
 
   // Read a flag for orbital advection
   ORBITAL_ADVECTION = (pm->orbital_advection != 0)? true : false;
@@ -938,14 +938,14 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     if (radiation_flag) {
       AddTask(CALC_RADFLX,NONE);
-      if (pm->multilevel || SHEAR_PERIODIC) { // SMR or AMR or shear periodic 
+      if (pm->multilevel || SHEAR_PERIODIC) { // SMR or AMR or shear periodic
         AddTask(SEND_RADFLX,CALC_RADFLX);
         AddTask(RECV_RADFLX,CALC_RADFLX);
-        if(SHEAR_PERIODIC){
+        if (SHEAR_PERIODIC) {
           AddTask(SEND_RADFLXSH,RECV_RADFLX);
           AddTask(RECV_RADFLXSH,(SEND_RADFLX|RECV_RADFLX));
           AddTask(INT_RAD,RECV_RADFLXSH);
-        }else{
+        } else {
           AddTask(INT_RAD,RECV_RADFLX);
         }
       } else {
@@ -980,10 +980,10 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     // Hydro will also be updated with radiation source term
     TaskID src_aterm = SRC_TERM;
-    if(radiation_flag)
+    if (radiation_flag)
       src_aterm = (src_aterm | SRCTERM_RAD);
 
-    if(CR_ENABLED)
+    if (CR_ENABLED)
       src_aterm = (src_aterm | SRCTERM_CRTC);
 
     if (ORBITAL_ADVECTION) {
@@ -1003,13 +1003,12 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       AddTask(SEND_HYDSH,SETB_HYD);
       AddTask(RECV_HYDSH,SEND_HYDSH);
 
-      if(radiation_flag){
+      if (radiation_flag) {
         AddTask(SEND_RADSH,SETB_RAD);
-        // shearing periodic boundary of radiation requires 
+        // shearing periodic boundary of radiation requires
         // shearing velocity to be set first
         AddTask(RECV_RADSH,SEND_RADSH|RECV_HYDSH);
       }
-
     }
 
     if (NSCALARS > 0) {
@@ -1076,30 +1075,28 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
       // prolongate, compute new primitives
       if (pm->multilevel) { // SMR or AMR
-
        TaskID setb=(SEND_HYD|SEND_FLD);
-
-        if(SHEAR_PERIODIC){
-          if(NSCALARS > 0){
+        if (SHEAR_PERIODIC) {
+          if (NSCALARS > 0) {
             setb=(setb|RECV_HYDSH|SEND_SCLR|RECV_SCLRSH|RECV_FLDSH);
-          }else{
+          } else {
             setb=(setb|RECV_HYDSH|RECV_FLDSH);
           }
-        }else{
-          if(NSCALARS > 0){
+        } else {
+          if (NSCALARS > 0) {
             setb=(setb|SETB_HYD|SETB_FLD|SEND_SCLR|SETB_SCLR);
-          }else{
+          } else {
             setb=(setb|SETB_HYD|SETB_FLD);
           }
         }
 
-        if(radiation_flag){
+        if (radiation_flag) {
           setb=(setb|SEND_RAD|SETB_RAD);
-          if(SHEAR_PERIODIC)
+          if (SHEAR_PERIODIC)
             setb=(setb|RECV_RADSH);
         }
 
-        if(CR_ENABLED)
+        if (CR_ENABLED)
           setb=(setb|SEND_CRTC|SETB_CRTC);
 
 
@@ -1124,27 +1121,27 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       // prolongate, compute new primitives
       if (pm->multilevel) { // SMR or AMR
         TaskID setb=(SEND_HYD);
-        if(SHEAR_PERIODIC){
-          if(NSCALARS > 0){
+        if (SHEAR_PERIODIC) {
+          if (NSCALARS > 0) {
             setb=(setb|RECV_HYDSH|SEND_SCLR|RECV_SCLRSH);
-          }else{
+          } else {
             setb=(setb|RECV_HYDSH);
           }
-        }else{
-          if(NSCALARS > 0){
+        } else {
+          if (NSCALARS > 0) {
             setb=(setb|SETB_HYD|SEND_SCLR|SETB_SCLR);
-          }else{
+          } else {
             setb=(setb|SETB_HYD);
           }
         }
 
-        if(radiation_flag){
+        if (radiation_flag) {
           setb=(setb|SEND_RAD|SETB_RAD);
-          if(SHEAR_PERIODIC)
+          if (SHEAR_PERIODIC)
             setb=(setb|RECV_RADSH);
         }
 
-        if(CR_ENABLED)
+        if (CR_ENABLED)
           setb=(setb|SEND_CRTC|SETB_CRTC);
 
         AddTask(PROLONG,setb);
@@ -1170,25 +1167,25 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
 
     TaskID before_bval = CONS2PRIM;
     TaskID before_userwork = PHY_BVAL;
-    if(radiation_flag){
+    if (radiation_flag) {
       before_bval = (before_bval|SETB_RAD|SEND_RAD);
-      if(SHEAR_PERIODIC)
+      if (SHEAR_PERIODIC)
         before_bval = (before_bval|RECV_RADSH);
-      
+
       before_userwork = (before_userwork|RAD_MOMOPACITY);
     }
 
-    if(CR_ENABLED){
+    if (CR_ENABLED) {
       before_bval = (before_bval|SETB_CRTC|SEND_CRTC);
       before_userwork = (before_userwork|CRTC_OPACITY);
     }
 
     AddTask(PHY_BVAL,before_bval);
 
-    if(radiation_flag)
+    if (radiation_flag)
       AddTask(RAD_MOMOPACITY,PHY_BVAL);
 
-    if(CR_ENABLED)
+    if (CR_ENABLED)
       AddTask(CRTC_OPACITY,PHY_BVAL);
 
     if (!STS_ENABLED || pm->sts_integrator == "rkl1") {
@@ -1481,11 +1478,11 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CalculateRadFlux);
     task_list_[ntasks].lb_time = true;
-  } else if(id == INT_RAD){
+  } else if (id == INT_RAD) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::IntegrateRad);
-    task_list_[ntasks].lb_time = true;    
+    task_list_[ntasks].lb_time = true;
   } else if (id == SEND_RADFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -1526,66 +1523,66 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::SendRadFluxShear);
     task_list_[ntasks].lb_time = true;
-  }else if (id == RECV_RADFLXSH) {
+  } else if (id == RECV_RADFLXSH) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::ReceiveRadFluxShear);
     task_list_[ntasks].lb_time = false;
-  }else if (id == SEND_RADSH) {
+  } else if (id == SEND_RADSH) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::SendRadShear);
     task_list_[ntasks].lb_time = true;
-  }else if (id == RECV_RADSH) {
+  } else if (id == RECV_RADSH) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::ReceiveRadShear);
     task_list_[ntasks].lb_time = false;
-  }else if (id == CALC_CRTCFLX){
+  } else if (id == CALC_CRTCFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CalculateCRTCFlux);
-    task_list_[ntasks].lb_time = true;  
-  }else if(id == INT_CRTC){
+    task_list_[ntasks].lb_time = true;
+  } else if (id == INT_CRTC) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::IntegrateCRTC);
-    task_list_[ntasks].lb_time = true;  
-  }else if(id == SEND_CRTCFLX){
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SEND_CRTCFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::SendCRTCFlux);
-    task_list_[ntasks].lb_time = true;      
-  }else if(id == RECV_CRTCFLX){
+    task_list_[ntasks].lb_time = true;
+  } else if (id == RECV_CRTCFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::ReceiveAndCorrectCRTCFlux);
-    task_list_[ntasks].lb_time = true;     
-  }else if(id == SEND_CRTC){
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SEND_CRTC) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::SendCRTC);
-    task_list_[ntasks].lb_time = true;      
-  }else if(id == RECV_CRTC){
+    task_list_[ntasks].lb_time = true;
+  } else if (id == RECV_CRTC) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::ReceiveCRTC);
-    task_list_[ntasks].lb_time = true;       
-  }else if(id == SRCTERM_CRTC){
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SRCTERM_CRTC) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::AddSourceTermsCRTC);
-    task_list_[ntasks].lb_time = true;        
-  }else if(id == SETB_CRTC){
+    task_list_[ntasks].lb_time = true;
+  } else if (id == SETB_CRTC) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::SetBoundariesCRTC);
-    task_list_[ntasks].lb_time = true;     
-  }else if(id == CRTC_OPACITY){
+    task_list_[ntasks].lb_time = true;
+  } else if (id == CRTC_OPACITY) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::CRTCOpacity);
-    task_list_[ntasks].lb_time = true;    
+    task_list_[ntasks].lb_time = true;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in AddTask" << std::endl
@@ -1601,9 +1598,7 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 //! \brief Initialize time abscissae
 
 void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
-
-  bool radiation_flag = ((bool)NR_RADIATION_ENABLED) && ((bool)(!IM_RADIATION_ENABLED));
-
+  bool radiation_flag = (NR_RADIATION_ENABLED && (!IM_RADIATION_ENABLED));
   if (stage == 1) {
     // Initialize storage registers
     Hydro *ph = pmb->phydro;
@@ -1631,18 +1626,17 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
         ps->s2 = ps->s;
     }
 
-    if(radiation_flag){
+    if (radiation_flag) {
       pmb->pnrrad->ir1.ZeroClear();
-      if(integrator == "ssprk5_4")
+      if (integrator == "ssprk5_4")
         pmb->pnrrad->ir2 = pmb->pnrrad->ir;
     }
 
-    if(CR_ENABLED){
+    if (CR_ENABLED) {
       pmb->pcr->u_cr1.ZeroClear();
-      if(integrator == "ssprk5_4")
+      if (integrator == "ssprk5_4")
         pmb->pcr->u_cr2 = pmb->pcr->u_cr;
     }
-
   }
 
   if (SHEAR_PERIODIC) {
@@ -1814,10 +1808,11 @@ TaskStatus TimeIntegratorTaskList::IntegrateHydro(MeshBlock *pmb, int stage) {
       ave_wghts[0] = stage_wghts[stage-1].gamma_1;
       ave_wghts[1] = stage_wghts[stage-1].gamma_2;
       ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
+      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0) {
         ph->u.SwapAthenaArray(ph->u1);
-      else
+      } else {
         pmb->WeightedAve(ph->u, ph->u1, ph->u2, ph->u0, ph->fl_div, ave_wghts);
+      }
 
       const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
       ph->AddFluxDivergence(wght, ph->u);
@@ -2390,10 +2385,11 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
       ave_wghts[0] = stage_wghts[stage-1].gamma_1;
       ave_wghts[1] = stage_wghts[stage-1].gamma_2;
       ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
+      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0) {
         ps->s.SwapAthenaArray(ps->s1);
-      else
+      } else {
         pmb->WeightedAve(ps->s, ps->s1, ps->s2, ps->s0, ps->s_fl_div, ave_wghts);
+      }
 
       const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
       ps->AddFluxDivergence(wght, ps->s);
@@ -2649,24 +2645,24 @@ TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
   NRRadiation *prad = pmb->pnrrad;
 
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage){
+    if (stage_wghts[stage-1].main_stage) {
       Real ave_wghts[3];
       ave_wghts[0] = 1.0;
       ave_wghts[1] = stage_wghts[stage-1].delta;
       ave_wghts[2] = 0.0;
       pmb->WeightedAve(prad->ir1, prad->ir, prad->ir2, ave_wghts,1);
 
-
       ave_wghts[0] = stage_wghts[stage-1].gamma_1;
       ave_wghts[1] = stage_wghts[stage-1].gamma_2;
       ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0)
+      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0) {
         prad->ir.SwapAthenaArray(prad->ir1);
-      else
+      } else {
         pmb->WeightedAve(prad->ir, prad->ir1, prad->ir2, ave_wghts,1);
-
-        const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
-        prad->pradintegrator->FluxDivergence(wght, prad->ir, prad->ir); //ir is already partially updated
+      }
+      const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
+      // ir is already partially updated
+      prad->pradintegrator->FluxDivergence(wght, prad->ir, prad->ir);
 
       // no geometric source term for radiation
 
@@ -2678,11 +2674,10 @@ TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
         ave_wghts[1] = 0.0;
         ave_wghts[2] = 0.0;
         const Real beta = 0.063692468666290; // F(u^(3)) coeff.
-        const Real wght = beta*pmb->pmy_mesh->dt;
+        const Real wght_ssp = beta*pmb->pmy_mesh->dt;
         // writing out to u2 register
         pmb->WeightedAve(prad->ir2, prad->ir1, prad->ir2, ave_wghts,1);
-        prad->pradintegrator->FluxDivergence(wght, prad->ir2, prad->ir2);
-
+        prad->pradintegrator->FluxDivergence(wght_ssp, prad->ir2, prad->ir2);
       }
     }
     return TaskStatus::next;
@@ -2690,28 +2685,26 @@ TaskStatus TimeIntegratorTaskList::IntegrateRad(MeshBlock *pmb, int stage) {
   return TaskStatus::fail;
 }
 
-
-
 // tasks for radiation transport
 TaskStatus TimeIntegratorTaskList::CalculateRadFlux(MeshBlock *pmb, int stage) {
   Hydro *phydro = pmb->phydro;
   NRRadiation *prad = pmb->pnrrad;
-  if(stage_wghts[stage-1].main_stage){
+  if (stage_wghts[stage-1].main_stage) {
     Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
     prad->pradintegrator->GetTgasVel(pmb,dt,phydro->u,phydro->w,
                                    pmb->pfield->bcc,prad->ir);
   }
 
   if (stage <= nstages) {
-    if(stage_wghts[stage-1].main_stage){
+    if (stage_wghts[stage-1].main_stage) {
       if ((stage == 1) && (integrator == "vl2")) {
         prad->pradintegrator->CalculateFluxes(phydro->w,  prad->ir, 1);
       } else {
-        prad->pradintegrator->CalculateFluxes(phydro->w,  prad->ir, 
+        prad->pradintegrator->CalculateFluxes(phydro->w,  prad->ir,
                                      prad->pradintegrator->rad_xorder);
       }
     }
-    return TaskStatus::next;    
+    return TaskStatus::next;
   }
   return TaskStatus::fail;
 }
@@ -2723,39 +2716,36 @@ TaskStatus TimeIntegratorTaskList::CalculateRadFlux(MeshBlock *pmb, int stage) {
 TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) {
   Hydro *ph = pmb->phydro;
   NRRadiation *prad = pmb->pnrrad;
-  Field *pf = pmb->pfield;
 
   int is=pmb->is, ie=pmb->ie;
   int js=pmb->js, je=pmb->je;
   int ks=pmb->ks, ke=pmb->ke;
 
   if (stage <= nstages) {
-    if(stage_wghts[stage-1].main_stage){
-      Real t_start_stage = pmb->pmy_mesh->time
-                           + stage_wghts[(stage-1)].sbeta*pmb->pmy_mesh->dt;
+    if (stage_wghts[stage-1].main_stage) {
+      // Real t_start_stage = pmb->pmy_mesh->time
+      //                      + stage_wghts[(stage-1)].sbeta*pmb->pmy_mesh->dt;
+
       // Scaled coefficient for RHS update
       Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
 
-    // Evaluate the time-dependent source terms
-    // Both u and ir are partially updated, only w is from the beginning of the step
-
+      // Evaluate the time-dependent source terms
+      // Both u and ir are partially updated, only w is from the beginning of the step
       prad->ir_old = prad->ir;
 
       for(int k=ks; k<=ke; ++k)
         for(int j=js; j<=je; ++j)
-          for(int i=is; i<=ie; ++i){
-
-            prad->pradintegrator->CalSourceTerms(pmb, dt, k, j, i, ph->u, 
+          for(int i=is; i<=ie; ++i) {
+            prad->pradintegrator->CalSourceTerms(pmb, dt, k, j, i, ph->u,
                                                        prad->ir, prad->ir);
           }
 
-
-      if(prad->set_source_flag > 0){
+      if (prad->set_source_flag > 0) {
         prad->pradintegrator->GetHydroSourceTerms(pmb, prad->ir_old, prad->ir);
         prad->pradintegrator->AddSourceTerms(pmb, ph->u);
       }
     }
-    return TaskStatus::next;  
+    return TaskStatus::next;
   }
   return TaskStatus::fail;
 }
@@ -2765,9 +2755,9 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsRad(MeshBlock *pmb, int stage) 
 // Functions to communicate fluxes between MeshBlocks for flux correction with AMR
 
 TaskStatus TimeIntegratorTaskList::SendRadFlux(MeshBlock *pmb, int stage) {
-  if(stage <= nstages){
-    if(stage_wghts[stage-1].main_stage){
-      pmb->pnrrad->rad_bvar.SendFluxCorrection();      
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage) {
+      pmb->pnrrad->rad_bvar.SendFluxCorrection();
     }
     return TaskStatus::success;
   }
@@ -2776,14 +2766,14 @@ TaskStatus TimeIntegratorTaskList::SendRadFlux(MeshBlock *pmb, int stage) {
 
 
 TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectRadFlux(MeshBlock *pmb, int stage) {
-  if(stage <= nstages){
-    if(stage_wghts[stage-1].main_stage){
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage) {
       if (pmb->pnrrad->rad_bvar.ReceiveFluxCorrection()) {
         return TaskStatus::next;
       } else {
         return TaskStatus::fail;
       }
-    }else {
+    } else {
       return TaskStatus::next;
     }
   }
@@ -2825,8 +2815,7 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesRad(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::RadMomOpacity(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-   // only need 
-//    pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
+    // pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
     pmb->pnrrad->UpdateOpacity(pmb,pmb->phydro->w);
     return TaskStatus::success;
   }
@@ -2850,7 +2839,7 @@ TaskStatus TimeIntegratorTaskList::SendRadFluxShear(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::ReceiveRadFluxShear(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if (stage_wghts[stage-1].main_stage){
+    if (stage_wghts[stage-1].main_stage) {
       if (pmb->pnrrad->rad_bvar.ReceiveFluxShearingBoxBoundaryBuffers()) {
         pmb->pnrrad->rad_bvar.SetFluxShearingBoxBoundaryBuffers();
         return TaskStatus::success;
@@ -2900,14 +2889,14 @@ TaskStatus TimeIntegratorTaskList::CalculateCRTCFlux(MeshBlock *pmb, int stage) 
   Field *pf = pmb->pfield;
 
   if (stage <= nstages) {
-    if(stage_wghts[stage-1].main_stage){
+    if (stage_wghts[stage-1].main_stage) {
       if ((stage == 1) && (integrator == "vl2")) {
-        if(CR_ENABLED)
+        if (CR_ENABLED)
           pcr->pcrintegrator->CalculateFluxes(phydro->w, pf->bcc, pcr->u_cr, 1);
       } else {
-        if(CR_ENABLED)
-          pcr->pcrintegrator->CalculateFluxes(phydro->w, pf->bcc, pcr->u_cr, 
-                                           pcr->pcrintegrator->cr_xorder);      
+        if (CR_ENABLED)
+          pcr->pcrintegrator->CalculateFluxes(phydro->w, pf->bcc, pcr->u_cr,
+                                           pcr->pcrintegrator->cr_xorder);
       }
     }
     return TaskStatus::next;
@@ -2924,31 +2913,31 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
   CosmicRay *pcr = pmb->pcr;
 
   if (stage <= nstages) {
-    if(stage_wghts[stage-1].main_stage){
+    if (stage_wghts[stage-1].main_stage) {
       Real ave_wghts[3];
       ave_wghts[0] = 1.0;
       ave_wghts[1] = stage_wghts[stage-1].delta;
       ave_wghts[2] = 0.0;
-      if(CR_ENABLED)
-        pmb->WeightedAve(pcr->u_cr1, pcr->u_cr, pcr->u_cr2, ave_wghts,2);    
-
+      if (CR_ENABLED) {
+        pmb->WeightedAve(pcr->u_cr1, pcr->u_cr, pcr->u_cr2, ave_wghts,2);
+      }
 
       ave_wghts[0] = stage_wghts[stage-1].gamma_1;
       ave_wghts[1] = stage_wghts[stage-1].gamma_2;
       ave_wghts[2] = stage_wghts[stage-1].gamma_3;
-      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0){
-        if(CR_ENABLED)
-          pcr->u_cr1.SwapAthenaArray(pcr->u_cr);      
-      }else{
-        if(CR_ENABLED)
-          pmb->WeightedAve(pcr->u_cr, pcr->u_cr1, pcr->u_cr2, ave_wghts,2);      
+      if (ave_wghts[0] == 0.0 && ave_wghts[1] == 1.0 && ave_wghts[2] == 0.0) {
+        if (CR_ENABLED)
+          pcr->u_cr1.SwapAthenaArray(pcr->u_cr);
+      } else {
+        if (CR_ENABLED)
+          pmb->WeightedAve(pcr->u_cr, pcr->u_cr1, pcr->u_cr2, ave_wghts,2);
       }
 
       const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
-  
-      if(CR_ENABLED)
-       pcr->pcrintegrator->FluxDivergence(wght, pcr->u_cr); 
 
+      if (CR_ENABLED) {
+        pcr->pcrintegrator->FluxDivergence(wght, pcr->u_cr);
+      }
       // no geometric source term for radiation
 
       // Hardcode an additional flux divergence weighted average for the penultimate
@@ -2959,11 +2948,11 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
         ave_wghts[1] = 0.0;
         ave_wghts[2] = 0.0;
         const Real beta = 0.063692468666290; // F(u^(3)) coeff.
-        const Real wght = beta*pmb->pmy_mesh->dt;
+        const Real wght_ssp = beta*pmb->pmy_mesh->dt;
         // writing out to u2 register
-        if(CR_ENABLED){
+        if (CR_ENABLED) {
           pmb->WeightedAve(pcr->u_cr2, pcr->u_cr1, pcr->u_cr2, ave_wghts,2);
-          pcr->pcrintegrator->FluxDivergence(wght, pcr->u_cr2);
+          pcr->pcrintegrator->FluxDivergence(wght_ssp, pcr->u_cr2);
         }
       }
     }
@@ -2972,12 +2961,10 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
   return TaskStatus::fail;
 }
 
-
-
 TaskStatus TimeIntegratorTaskList::SendCRTCFlux(MeshBlock *pmb, int stage) {
-  if(stage <= nstages){
-    if(stage_wghts[stage-1].main_stage){
-      if(CR_ENABLED)
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage) {
+      if (CR_ENABLED)
         pmb->pcr->cr_bvar.SendFluxCorrection();
     }
     return TaskStatus::success;
@@ -2985,28 +2972,23 @@ TaskStatus TimeIntegratorTaskList::SendCRTCFlux(MeshBlock *pmb, int stage) {
   return TaskStatus::fail;
 }
 
-
-
-
 //----------------------------------------------------------------------------------------
 // Functions to receive fluxes between MeshBlocks
 
 TaskStatus TimeIntegratorTaskList::ReceiveAndCorrectCRTCFlux(MeshBlock *pmb, int stage) {
-
-  if(stage <= nstages){
-    if(stage_wghts[stage-1].main_stage){
-  
+  if (stage <= nstages) {
+    if (stage_wghts[stage-1].main_stage) {
       bool flag_cr = true;
-      bool flag_tc = true;
-      if(CR_ENABLED)
+      if (CR_ENABLED) {
         flag_cr = pmb->pcr->cr_bvar.ReceiveFluxCorrection();
+      }
 
       if (flag_cr) {
         return TaskStatus::next;
       } else {
         return TaskStatus::fail;
       }
-    }else {
+    } else {
       return TaskStatus::next;
     }
   }
@@ -3018,7 +3000,7 @@ TaskStatus TimeIntegratorTaskList::SendCRTC(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     // Swap Hydro quantity in BoundaryVariable interface back to conserved var formulation
     // (also needed in SetBoundariesHydro(), since the tasks are independent)
-    if(CR_ENABLED)
+    if (CR_ENABLED)
       pmb->pcr->cr_bvar.SendBoundaryBuffers();
   } else {
     return TaskStatus::fail;
@@ -3031,14 +3013,13 @@ TaskStatus TimeIntegratorTaskList::SendCRTC(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::ReceiveCRTC(MeshBlock *pmb, int stage) {
   bool ret_cr = true;
-  bool ret_tc = true;
   if (stage <= nstages) {
-    if(CR_ENABLED)
+    if (CR_ENABLED)
       ret_cr = pmb->pcr->cr_bvar.ReceiveBoundaryBuffers();
   } else {
     return TaskStatus::fail;
   }
-  if ((ret_cr) && (ret_tc)) {
+  if (ret_cr) {
     return TaskStatus::success;
   } else {
     return TaskStatus::fail;
@@ -3050,7 +3031,7 @@ TaskStatus TimeIntegratorTaskList::ReceiveCRTC(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::SetBoundariesCRTC(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
-    if(CR_ENABLED)
+    if (CR_ENABLED)
       pmb->pcr->cr_bvar.SetBoundaries();
     return TaskStatus::success;
   }
@@ -3063,8 +3044,8 @@ TaskStatus TimeIntegratorTaskList::CRTCOpacity(MeshBlock *pmb, int stage) {
   CosmicRay *pcr = pmb->pcr;
   Field *pf = pmb->pfield;
   if (stage <= nstages) {
-    if(stage_wghts[stage-1].main_stage){
-      if(CR_ENABLED)
+    if (stage_wghts[stage-1].main_stage) {
+      if (CR_ENABLED)
         pcr->UpdateOpacity(pmb, pcr->u_cr, ph->w, pf->bcc);
     }
     return TaskStatus::success;
@@ -3079,20 +3060,18 @@ TaskStatus TimeIntegratorTaskList::AddSourceTermsCRTC(MeshBlock *pmb, int stage)
   Field *pf = pmb->pfield;
 
   if (stage <= nstages) {
-    if(stage_wghts[stage-1].main_stage){
-      Real t_start_stage = pmb->pmy_mesh->time
-                           + stage_wghts[(stage-1)].sbeta*pmb->pmy_mesh->dt;
+    if (stage_wghts[stage-1].main_stage) {
+      // Real t_start_stage = pmb->pmy_mesh->time
+      //                      + stage_wghts[(stage-1)].sbeta*pmb->pmy_mesh->dt;
       // Scaled coefficient for RHS update
       Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
 
       // Evaluate the time-dependent source terms
       // Both u and ir are partially updated, only w is from the beginning of the step
-      if(CR_ENABLED)
+      if (CR_ENABLED)
         pcr->pcrintegrator->AddSourceTerms(pmb, dt, ph->u, ph->w, pf->bcc, pcr->u_cr);
     }
-    return TaskStatus::next;    
-  } 
+    return TaskStatus::next;
+  }
   return TaskStatus::fail;
 }
-
-

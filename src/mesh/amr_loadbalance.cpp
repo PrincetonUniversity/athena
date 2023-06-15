@@ -112,14 +112,6 @@ void Mesh::CalculateLoadBalance(double *clist, int *rlist, int *slist, int *nlis
   }
   nlist[j] = nb-slist[j];
 
-  // if (Globals::my_rank == 0) {
-  //   for (int i=0; i<Globals::nranks; i++) {
-  //     double rcost = 0.0;
-  //     for(int n=slist[i]; n<slist[i]+nlist[i]; n++)
-  //       rcost += clist[n];
-  //   }
-  // }
-
 #ifdef MPI_PARALLEL
   if (nb % (Globals::nranks * num_mesh_threads_) != 0
       && !adaptive && !lb_flag_ && maxcost == mincost && Globals::my_rank == 0) {
@@ -178,7 +170,7 @@ void Mesh::UpdateCostList() {
 
 void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   // compute nleaf= number of leaf MeshBlocks per refined block
-  int nleaf = 2, dim = 1;
+  int nleaf = 2; // dim = 1;
   if (mesh_size.nx2 > 1) nleaf = 4, dim = 2;
   if (mesh_size.nx3 > 1) nleaf = 8, dim = 3;
 
@@ -402,10 +394,6 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   int nbs = nslist[Globals::my_rank];
   int nbe = nbs + nblist[Globals::my_rank] - 1;
 
-  int bnx1 = my_blocks(0)->block_size.nx1;
-  int bnx2 = my_blocks(0)->block_size.nx2;
-  int bnx3 = my_blocks(0)->block_size.nx3;
-
 #ifdef MPI_PARALLEL
   // Step 3. count the number of the blocks to be sent / received
   int nsend = 0, nrecv = 0;
@@ -451,7 +439,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     nx4_tot += var_cc.GetDim4();
   }
   // radiation variables are not included in vars_cc as they need different order
-  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
     nx4_tot += my_blocks(0)->pnrrad->ir.GetDim1();
   }
 
@@ -479,8 +467,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     int rb_idx = 0;     // recv buffer index
     for (int n=nbs; n<=nbe; n++) {
       int on = newtoold[n];
-      LogicalLocation &oloc = loclist[on];
-      LogicalLocation &nloc = newloc[n];
+      LogicalLocation const &oloc = loclist[on];
+      LogicalLocation const &nloc = newloc[n];
       if (oloc.level > nloc.level) { // f2c
         for (int l=0; l<nleaf; l++) {
           if (ranklist[on+l] == Globals::my_rank) continue;
@@ -517,7 +505,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     for (int n=gids_; n<=gide_; n++) {
       int nn = oldtonew[n];
       LogicalLocation &oloc = loclist[n];
-      LogicalLocation &nloc = newloc[nn];
+      LogicalLocation const &nloc = newloc[nn];
       MeshBlock* pb = FindMeshBlock(n);
       if (nloc.level == oloc.level) { // same level
         if (newrank[nn] == Globals::my_rank) continue;
@@ -610,8 +598,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     int rb_idx = 0;     // recv buffer index
     for (int n=nbs; n<=nbe; n++) {
       int on = newtoold[n];
-      LogicalLocation &oloc = loclist[on];
-      LogicalLocation &nloc = newloc[n];
+      LogicalLocation const &oloc = loclist[on];
+      LogicalLocation const &nloc = newloc[n];
       MeshBlock *pb = FindMeshBlock(n);
       if (oloc.level == nloc.level) { // same
         if (ranklist[on] == Globals::my_rank) continue;
@@ -695,7 +683,7 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
     BufferUtility::PackData(var_cc, sendbuf, 0, nu,
                             pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
   }
-  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
     int nu = pb->pnrrad->ir.GetDim1() - 1;
     BufferUtility::PackData(pb->pnrrad->ir, sendbuf, pb->ks, pb->ke,
                             0,  nu, pb->is, pb->ie, pb->js, pb->je, p);
@@ -744,7 +732,7 @@ void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
     BufferUtility::PackData(*var_cc, sendbuf, 0, nu,
                             il, iu, jl, ju, kl, ku, p);
   }
-  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
     int nu = pb->pnrrad->ir.GetDim1() - 1;
     BufferUtility::PackData(pb->pnrrad->ir, sendbuf, kl, ku,
                             0,  nu, il, iu, jl, ju, p);
@@ -787,7 +775,7 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
                             pb->cks, pb->cke, p);
   }
 
-  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
     AthenaArray<Real> &var_cc = pb->pnrrad->ir;
     AthenaArray<Real> &coarse_cc = pb->pnrrad->coarse_ir_;
     int nu = var_cc.GetDim1() - 1;
@@ -797,9 +785,9 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
                                     pb->cis, pb->cie,
                                     pb->cjs, pb->cje,
                                     pb->cks, pb->cke);
-    BufferUtility::PackData(coarse_cc, sendbuf, 
+    BufferUtility::PackData(coarse_cc, sendbuf,
                             pb->cks, pb->cke,
-                            0, nu, 
+                            0, nu,
                             pb->cis, pb->cie,
                             pb->cjs, pb->cje, p);
 
@@ -863,8 +851,8 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
                                     pob->cjs, pob->cje,
                                     pob->cks, pob->cke);
     // copy from old/original/other MeshBlock (pob) to newly created block (pmb)
-    AthenaArray<Real> &src = *coarse_cc;
-    AthenaArray<Real> &dst = *std::get<0>(*pmb_cc_it); // pmb->phydro->u;
+    AthenaArray<Real> const &src = *coarse_cc;
+    AthenaArray<Real> const &dst = *std::get<0>(*pmb_cc_it); // pmb->phydro->u;
     for (int nv=0; nv<=nu; nv++) {
       for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
         for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
@@ -877,7 +865,7 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
   }
 
 
-  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
     // restrict from pob block
     AthenaArray<Real> &var_cc = pob->pnrrad->ir;
     AthenaArray<Real> &coarse_cc = pob->pnrrad->coarse_ir_;
@@ -890,15 +878,15 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
                                     pob->cks, pob->cke);
 
     // now copy from pob to new pmb
-    AthenaArray<Real> &src = coarse_cc;
-    AthenaArray<Real> &dst = pmb->pnrrad->ir;  
+    AthenaArray<Real> const &src = coarse_cc;
+    AthenaArray<Real> const &dst = pmb->pnrrad->ir;
 
     for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
       for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
-        for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++){
-          for (int nv=0; nv<=nu; nv++) 
+        for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++) {
+          for (int nv=0; nv<=nu; nv++)
             dst(k, j, i, nv) = src(fk, fj, fi, nv);
-          
+
         }
       }
     }
@@ -983,8 +971,8 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
 
-    AthenaArray<Real> &src = *std::get<0>(*pob_cc_it);
-    AthenaArray<Real> &dst = *coarse_cc;
+    AthenaArray<Real> const &src = *std::get<0>(*pob_cc_it);
+    AthenaArray<Real> const &dst = *coarse_cc;
     // fill the coarse buffer
     for (int nv=0; nv<=nu; nv++) {
       for (int k=kl, ck=cks; k<=ku; k++, ck++) {
@@ -1000,7 +988,7 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
     pob_cc_it++;
   }
 
-  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
     // copy from pmb block
     AthenaArray<Real> &var_cc = pmb->pnrrad->ir;
     AthenaArray<Real> &coarse_cc = pmb->pnrrad->coarse_ir_;
@@ -1008,12 +996,12 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
 
     // fill the coarse buffer
     AthenaArray<Real> &src = pob->pnrrad->ir;
-    AthenaArray<Real> &dst = coarse_cc;  
+    AthenaArray<Real> &dst = coarse_cc;
 
     for (int k=kl, ck=cks; k<=ku; k++, ck++) {
       for (int j=jl, cj=cjs; j<=ju; j++, cj++) {
-        for (int i=il, ci=cis; i<=iu; i++, ci++){
-          for (int nv=0; nv<=nu; nv++) 
+        for (int i=il, ci=cis; i<=iu; i++, ci++) {
+          for (int nv=0; nv<=nu; nv++)
             dst(k, j, i, nv) = src(ck, cj, ci, nv);
         }
       }
@@ -1079,7 +1067,7 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
                               pb->is, pb->ie, pb->js, pb->je, pb->ks, pb->ke, p);
   }
 
-  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
     int nu = pb->pnrrad->ir.GetDim1() - 1;
     BufferUtility::UnpackData(recvbuf, pb->pnrrad->ir, pb->ks, pb->ke, 0, nu,
                               pb->is, pb->ie, pb->js, pb->je, p);
@@ -1139,7 +1127,7 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
                               il, iu, jl, ju, kl, ku, p);
   }
 
-  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
     int nu = pb->pnrrad->ir.GetDim1() - 1;
     BufferUtility::UnpackData(recvbuf, pb->pnrrad->ir, kl, ku, 0, nu,
                               il, iu, jl, ju, p);
@@ -1191,7 +1179,7 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
   }
 
 
-  if((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)){
+  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
     // copy from pmb block
     AthenaArray<Real> &var_cc = pb->pnrrad->ir;
     AthenaArray<Real> &coarse_cc = pb->pnrrad->coarse_ir_;
@@ -1203,11 +1191,7 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
     pmr->ProlongateCellCenteredValues(
         coarse_cc, var_cc, -1, 0, nu,
         pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
-
-  }// end radiation
-
-
-
+  }
 
   for (auto fc_pair : pb->pmr->pvars_fc_) {
     FaceField *var_fc = std::get<0>(fc_pair);
@@ -1246,5 +1230,5 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
 
 int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3) {
   // former "AthenaTagMPI" AthenaTagMPI::amr=8 redefined to 0
-  return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5) | 0;
+  return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5);
 }
