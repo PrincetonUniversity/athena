@@ -14,29 +14,31 @@
  * distribution.  If not see <http://www.gnu.org/licenses/>.
  *====================================================================================*/
 
+// C headers
+
 // C++ headers
-#include <iostream>   // endl
+#include <algorithm>  // min
+#include <cmath>      // sqrt
 #include <fstream>
+#include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
-#include <cmath>      // sqrt
-#include <algorithm>  // min
 
 // Athena++ headers
-#include "../globals.hpp"
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../mesh/mesh.hpp"
-#include "../parameter_input.hpp"
-#include "../hydro/hydro.hpp"
-#include "../eos/eos.hpp"
 #include "../bvals/bvals.hpp"
-#include "../hydro/srcterms/hydro_srcterms.hpp"
-#include "../field/field.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../nr_radiation/radiation.hpp"
+#include "../eos/eos.hpp"
+#include "../field/field.hpp"
+#include "../globals.hpp"
+#include "../hydro/hydro.hpp"
+#include "../hydro/srcterms/hydro_srcterms.hpp"
+#include "../mesh/mesh.hpp"
 #include "../nr_radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../parameter_input.hpp"
 
 static Real amp = 1.e-6;
 
@@ -61,8 +63,7 @@ int RefinementCondition(MeshBlock *pmb);
 //  \brief beam test
 //======================================================================================
 
-void Mesh::UserWorkAfterLoop(ParameterInput *pin)
-{
+void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem","compute_error",false)) return;
 
   int totnum=5;
@@ -74,8 +75,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
   }
   Real knum = 2.0 * PI;
 
-  for(int nb=0; nb<nblocal; ++nb) {
-    pmb = my_blocks(nb);
+  for (int nb=0; nb<nblocal; ++nb) {
+    MeshBlock *pmb = my_blocks(nb);
     if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
       pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
     }
@@ -112,15 +113,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
         l1_err[4] += std::abs(difffr);
         max_err[4] = std::max(std::abs(difffr), max_err[4]);
-
-      }
+        }
       }
     }
   }
-
   // normalize errors by number of cells
   for (int i=0; i<totnum; ++i) {
-    l1_err[i] = l1_err[i]/ (double) GetTotalCells();
+    l1_err[i] = l1_err[i]/ static_cast<Real>(GetTotalCells());
   }
   Real rms_err = 0.0, max_max_over_l1=0.0;
 
@@ -154,8 +153,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
     FILE *pfile;
 
     // The file exists -- reopen the file in append mode
-    if((pfile = fopen(fname.c_str(),"r")) != NULL){
-      if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL){
+    if((pfile = fopen(fname.c_str(),"r")) != NULL) {
+      if((pfile = freopen(fname.c_str(),"a",pfile)) == NULL) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
@@ -163,7 +162,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 
     // The file does not exist -- open the file in write mode and add headers
     } else {
-      if((pfile = fopen(fname.c_str(),"w")) == NULL){
+      if((pfile = fopen(fname.c_str(),"w")) == NULL) {
         msg << "### FATAL ERROR in function [Mesh::UserWorkAfterLoop]"
             << std::endl << "Error output file could not be opened" <<std::endl;
         throw std::runtime_error(msg.str().c_str());
@@ -382,7 +381,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_r= 1.3776131567434966;
       er_i= 0.10314648118800326;
       fr_r= 0.3038178476543796;
-      fr_i= 0.032551125836846495 ;
+      fr_i= 0.032551125836846495;
       omegareal= 14.391367986265605;
       omegaimg=  0.37974582290015857;
       sigma0 = 100.0;
@@ -397,15 +396,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gamma = peos->GetGamma();
   Real knum = 2.0 * PI;
   Real rho0 = 1.0, p0 = 1.0;
-  Real e0 = p0/(gamma-1.0);
+  //Real e0 = p0/(gamma-1.0);
 
   // Initialize hydro variable
-  for(int k=0; k<ncells3; ++k) {
+  for (int k=0; k<ncells3; ++k) {
     for (int j=0; j<ncells2; ++j) {
       for (int i=0; i<ncells1; ++i) {
         Real const &x1 = pcoord->x1v(i);
-        Real const &x2 = pcoord->x2v(j);
-        Real const &x3 = pcoord->x3v(k);
+        // Real const &x2 = pcoord->x2v(j);
+        // Real const &x3 = pcoord->x3v(k);
         Real theta = knum * x1;
         Real delv = amp* (v_r * cos(theta) + v_i * sin(theta));
         Real delp = amp * (p_r * cos(theta) + p_i * sin(theta));
@@ -426,18 +425,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
           Real jr = (1.0+der);
           Real hr = dfr;
-          for(int ifr=0; ifr<pnrrad->nfreq; ++ifr){
-            for(int n=0; n<pnrrad->nang; ++n){
+          for (int ifr=0; ifr<pnrrad->nfreq; ++ifr) {
+            for (int n=0; n<pnrrad->nang; ++n) {
                Real const &weight = pnrrad->wmu(n);
                Real const &miux = pnrrad->mu(0,k,j,i,n);
-               pnrrad->ir(k,j,i,ifr*pnrrad->nang+n)=(jr/(4.0*weight) + hr/(4.0*weight*miux));
+               pnrrad->ir(k,j,i,ifr*pnrrad->nang+n) = (jr/(4.0*weight)
+                                                       + hr/(4.0*weight*miux));
             }
             pnrrad->sigma_s(k,j,i,ifr) = 0.0;
             pnrrad->sigma_a(k,j,i,ifr) = sigma0;
             pnrrad->sigma_pe(k,j,i,ifr) = sigma0;
             pnrrad->sigma_p(k,j,i,ifr) = sigma0;
           }
-
         }
       }
     }

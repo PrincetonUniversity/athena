@@ -18,14 +18,13 @@
 // \brief perform a(m,n)*b(n)=c(m)
 
 void MatrixMult(int m, int n, AthenaArray<Real> &a,
-                AthenaArray<Real> &b, AthenaArray<Real> &c)
-{
-  
-  for(int i=0; i<m; ++i) {
+                AthenaArray<Real> &b, AthenaArray<Real> &c) {
+  for (int i=0; i<m; ++i) {
     c(i) = 0.0;
-    for(int j=0; j<n; ++j){
+    for (int j=0; j<n; ++j) {
       Real& ap = a(i,j);
       Real& bp = b(j);
       c(i) += ap * bp;
-    }}
+    }
+  }
 }
