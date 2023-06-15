@@ -173,8 +173,7 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
       for (int i = pmb->is; i <= pmb->ie; ++i) {
         r = pmb->pcoord->x1v(i);
         Real period = 2*M_PI*sqrt(pow(rp,3)/gm0);
-        Real mean_anomaly = 2*(M_PI / period)*time;
-        phip = mean_anomaly;
+        phip = 2*(M_PI / period)*time;
         Real d = sqrt(pow(rp,2) + pow(r,2) - 2*rp*r*cos(phi - phip));
         Real dens = prim(IDN,k,j,i);
         Real velocity_x = prim(IVX,k,j,i);
