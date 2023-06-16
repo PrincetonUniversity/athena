@@ -90,16 +90,16 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "../field/field.hpp"
-#include "../nr_radiation/radiation.hpp"
 #include "../cr/cr.hpp"
+#include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
-#include "outputs.hpp"
+#include "./outputs.hpp"
 
 //----------------------------------------------------------------------------------------
 //! OutputType constructor
@@ -237,7 +237,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0 ||
             std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
           op.cartesian_vector = pin->GetOrAddBoolean(op.block_name, "cartesian_vector",
-                                                   false);
+                                                     false);
         else
           op.cartesian_vector = false;
 
@@ -387,8 +387,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "Etot";
-      if(porb->orbital_advection_defined
-         && !output_params.orbital_system_output) {
+      if (porb->orbital_advection_defined
+          && !output_params.orbital_system_output) {
         porb->ConvertOrbitalSystem(phyd->w, phyd->u, OrbitalTransform::cons);
         pod->data.InitWithShallowSlice(porb->u_orb, 4, IEN, 1);
       } else {
@@ -416,8 +416,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "VECTORS";
     pod->name = "mom";
-    if(porb->orbital_advection_defined
-       && !output_params.orbital_system_output) {
+    if (porb->orbital_advection_defined
+        && !output_params.orbital_system_output) {
       porb->ConvertOrbitalSystem(phyd->w, phyd->u, OrbitalTransform::cons);
       pod->data.InitWithShallowSlice(porb->u_orb, 4, IM1, 3);
     } else {
@@ -427,8 +427,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     num_vars_ += 3;
     if (output_params.cartesian_vector) {
       AthenaArray<Real> src;
-      if(porb->orbital_advection_defined
-         && !output_params.orbital_system_output) {
+      if (porb->orbital_advection_defined
+          && !output_params.orbital_system_output) {
         src.InitWithShallowSlice(porb->u_orb, 4, IM1, 3);
       } else {
         src.InitWithShallowSlice(phyd->u, 4, IM1, 3);
@@ -457,9 +457,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "mom2";
-    if(porb->orbital_advection_defined
-       && !output_params.orbital_system_output
-       && porb->orbital_direction == 1) {
+    if (porb->orbital_advection_defined
+        && !output_params.orbital_system_output
+        && porb->orbital_direction == 1) {
       porb->ConvertOrbitalSystem(phyd->w, phyd->u, OrbitalTransform::cons);
       pod->data.InitWithShallowSlice(porb->u_orb, 4, IM2, 1);
     } else {
@@ -472,9 +472,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "mom3";
-    if(porb->orbital_advection_defined
-       && !output_params.orbital_system_output
-       && porb->orbital_direction == 2) {
+    if (porb->orbital_advection_defined
+        && !output_params.orbital_system_output
+        && porb->orbital_direction == 2) {
       porb->ConvertOrbitalSystem(phyd->w, phyd->u, OrbitalTransform::cons);
       pod->data.InitWithShallowSlice(porb->u_orb, 4, IM3, 1);
     } else {
@@ -490,8 +490,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "VECTORS";
     pod->name = "vel";
-    if(porb->orbital_advection_defined
-       && !output_params.orbital_system_output) {
+    if (porb->orbital_advection_defined
+        && !output_params.orbital_system_output) {
       porb->ConvertOrbitalSystem(phyd->w, phyd->u, OrbitalTransform::prim);
       pod->data.InitWithShallowSlice(porb->w_orb, 4, IVX, 3);
     } else {
@@ -501,8 +501,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     num_vars_ += 3;
     if (output_params.cartesian_vector) {
       AthenaArray<Real> src;
-      if(porb->orbital_advection_defined
-         && !output_params.orbital_system_output) {
+      if (porb->orbital_advection_defined
+          && !output_params.orbital_system_output) {
         src.InitWithShallowSlice(porb->w_orb, 4, IVX, 3);
       } else {
         src.InitWithShallowSlice(phyd->w, 4, IVX, 3);
@@ -533,9 +533,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "vel2";
-    if(porb->orbital_advection_defined
-       && !output_params.orbital_system_output
-       && porb->orbital_direction == 1) {
+    if (porb->orbital_advection_defined
+        && !output_params.orbital_system_output
+        && porb->orbital_direction == 1) {
       porb->ConvertOrbitalSystem(phyd->w, phyd->u, OrbitalTransform::prim);
       pod->data.InitWithShallowSlice(porb->w_orb, 4, IVY, 1);
     } else {
@@ -549,9 +549,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     pod = new OutputData;
     pod->type = "SCALARS";
     pod->name = "vel3";
-    if(porb->orbital_advection_defined
-       && !output_params.orbital_system_output
-       && porb->orbital_direction == 2) {
+    if (porb->orbital_advection_defined
+        && !output_params.orbital_system_output
+        && porb->orbital_direction == 2) {
       porb->ConvertOrbitalSystem(phyd->w, phyd->u, OrbitalTransform::prim);
       pod->data.InitWithShallowSlice(porb->w_orb, 4, IVZ, 1);
     } else {
@@ -612,11 +612,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 
   // The following radiation/cosmic ray/thermal conduction are all
   // cell centered variable
-  if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
-    if(prad->nfreq == 1){
-
-    // (lab-frame) radiation energy density
-
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+    if (prad->nfreq == 1) {
+      // (lab-frame) radiation energy density
       if (ContainVariable(output_params.variable, "Er") ||
           ContainVariable(output_params.variable, "prim") ||
           ContainVariable(output_params.variable, "cons")) {
@@ -628,24 +626,24 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         num_vars_++;
       }
 
-   // comoving frame fram radiation flux vector
+      // comoving frame fram radiation flux vector
       if (ContainVariable(output_params.variable, "Fr") ||
-        ContainVariable(output_params.variable, "prim") ||
-        ContainVariable(output_params.variable, "cons")) {
+          ContainVariable(output_params.variable, "prim") ||
+          ContainVariable(output_params.variable, "cons")) {
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "Fr";
         pod->data.InitWithShallowSlice(prad->rad_mom,4,IFR1,3);
         AppendOutputDataNode(pod);
         num_vars_+=3;
-        if(output_params.cartesian_vector) {
+        if (output_params.cartesian_vector) {
           AthenaArray<Real> src;
           src.InitWithShallowSlice(prad->rad_mom,4,IFR1,3);
           pod = new OutputData;
           pod->type = "VECTORS";
           pod->name = "Fr_xyz";
           pod->data.NewAthenaArray(3,prad->rad_mom.GetDim3(),prad->rad_mom.GetDim2(),
-                                    prad->rad_mom.GetDim1());
+                                   prad->rad_mom.GetDim1());
           CalculateCartesianVector(src, pod->data, pmb->pcoord);
           AppendOutputDataNode(pod);
           num_vars_+=3;
@@ -653,9 +651,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       }
 
 
-  // each component of radiation flux
-     if (ContainVariable(output_params.variable, "Frx") ||
-        ContainVariable(output_params.variable, "Fr1")) {
+      // each component of radiation flux
+      if (ContainVariable(output_params.variable, "Frx") ||
+          ContainVariable(output_params.variable, "Fr1")) {
         pod = new OutputData;
         pod->type = "SCALARS";
         pod->name = "Fr1";
@@ -664,8 +662,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         num_vars_++;
       }
 
-     if (ContainVariable(output_params.variable, "Fry") ||
-        ContainVariable(output_params.variable, "Fr2")) {
+      if (ContainVariable(output_params.variable, "Fry") ||
+          ContainVariable(output_params.variable, "Fr2")) {
         pod = new OutputData;
         pod->type = "SCALARS";
         pod->name = "Fr2";
@@ -674,8 +672,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         num_vars_++;
       }
 
-     if (ContainVariable(output_params.variable, "Frz") ||
-        ContainVariable(output_params.variable, "Fr3")) {
+      if (ContainVariable(output_params.variable, "Frz") ||
+          ContainVariable(output_params.variable, "Fr3")) {
         pod = new OutputData;
         pod->type = "SCALARS";
         pod->name = "Fr3";
@@ -684,21 +682,21 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         num_vars_++;
       }
 
-    // lab frame radiation pressure
+      // lab frame radiation pressure
       if (ContainVariable(output_params.variable, "Pr") ||
           ContainVariable(output_params.variable, "prim") ||
           ContainVariable(output_params.variable, "cons")) {
-          pod = new OutputData;
-          pod->type = "TENSORS";
-          pod->name = "Pr";
-          pod->data.InitWithShallowSlice(prad->rad_mom,4,IPR11,9);
-          AppendOutputDataNode(pod);
-          num_vars_ += 9;
-        }
+        pod = new OutputData;
+        pod->type = "TENSORS";
+        pod->name = "Pr";
+        pod->data.InitWithShallowSlice(prad->rad_mom,4,IPR11,9);
+        AppendOutputDataNode(pod);
+        num_vars_ += 9;
+      }
 
 
 
-    // (comoving-frame) radiation energy density
+      // (comoving-frame) radiation energy density
       if (ContainVariable(output_params.variable, "Er0") ||
           ContainVariable(output_params.variable, "prim") ||
           ContainVariable(output_params.variable, "cons")) {
@@ -712,7 +710,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 
 
 
-    // comoving frame fram radiation flux vector
+      // comoving frame fram radiation flux vector
       if (ContainVariable(output_params.variable, "Fr0") ||
           ContainVariable(output_params.variable, "prim") ||
           ContainVariable(output_params.variable, "cons")) {
@@ -722,22 +720,23 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         pod->data.InitWithShallowSlice(prad->rad_mom_cm,4,IFR1,3);
         AppendOutputDataNode(pod);
         num_vars_+=3;
-        if(output_params.cartesian_vector) {
+        if (output_params.cartesian_vector) {
           AthenaArray<Real> src;
           src.InitWithShallowSlice(prad->rad_mom_cm,4,IFR1,3);
           pod = new OutputData;
           pod->type = "VECTORS";
           pod->name = "Fr0_xyz";
-          pod->data.NewAthenaArray(3,prad->rad_mom_cm.GetDim3(),prad->rad_mom_cm.GetDim2(),
-                                    prad->rad_mom_cm.GetDim1());
+          pod->data.NewAthenaArray(3, prad->rad_mom_cm.GetDim3(),
+                                   prad->rad_mom_cm.GetDim2(),
+                                   prad->rad_mom_cm.GetDim1());
           CalculateCartesianVector(src, pod->data, pmb->pcoord);
           AppendOutputDataNode(pod);
           num_vars_+=3;
         }
       }
 
-     if (ContainVariable(output_params.variable, "Fr0x") ||
-        ContainVariable(output_params.variable, "Fr01")) {
+      if (ContainVariable(output_params.variable, "Fr0x") ||
+          ContainVariable(output_params.variable, "Fr01")) {
         pod = new OutputData;
         pod->type = "SCALARS";
         pod->name = "Fr01";
@@ -746,8 +745,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         num_vars_++;
       }
 
-     if (ContainVariable(output_params.variable, "Fr0y") ||
-        ContainVariable(output_params.variable, "Fr02")) {
+      if (ContainVariable(output_params.variable, "Fr0y") ||
+          ContainVariable(output_params.variable, "Fr02")) {
         pod = new OutputData;
         pod->type = "SCALARS";
         pod->name = "Fr02";
@@ -756,8 +755,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         num_vars_++;
       }
 
-     if (ContainVariable(output_params.variable, "Fr0z") ||
-        ContainVariable(output_params.variable, "Fr03")) {
+      if (ContainVariable(output_params.variable, "Fr0z") ||
+          ContainVariable(output_params.variable, "Fr03")) {
         pod = new OutputData;
         pod->type = "SCALARS";
         pod->name = "Fr03";
@@ -765,10 +764,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         AppendOutputDataNode(pod);
         num_vars_++;
       }
-    }else{
-    //--------/--------/--------/--------/--------/--------/--------
-      for(int ifr=0; ifr<prad->nfreq; ++ifr){
-
+    } else {
+      //--------/--------/--------/--------/--------/--------/--------
+      for(int ifr=0; ifr<prad->nfreq; ++ifr) {
         std::string er_ifr = "Er_" + std::to_string(ifr);
         std::string fr_ifr = "Fr_" + std::to_string(ifr)+"_";
         std::string frxyz_ifr = "Frxyz_" + std::to_string(ifr)+"_";
@@ -785,9 +783,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
 
 
         if (ContainVariable(output_params.variable, er_ifr) ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
-
+            ContainVariable(output_params.variable, "prim") ||
+            ContainVariable(output_params.variable, "cons")) {
           pod = new OutputData;
           pod->type = "SCALARS";
           pod->name = er_ifr;
@@ -796,24 +793,25 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
           num_vars_++;
         }
 
-   // comoving frame fram radiation flux vector
+        // comoving frame fram radiation flux vector
         if (ContainVariable(output_params.variable, fr_ifr) ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
+            ContainVariable(output_params.variable, "prim") ||
+            ContainVariable(output_params.variable, "cons")) {
           pod = new OutputData;
           pod->type = "VECTORS";
           pod->name = fr_ifr;
           pod->data.InitWithShallowSlice(prad->rad_mom_nu,4,ifr*13+IFR1,3);
           AppendOutputDataNode(pod);
           num_vars_+=3;
-          if(output_params.cartesian_vector) {
+          if (output_params.cartesian_vector) {
             AthenaArray<Real> src;
             src.InitWithShallowSlice(prad->rad_mom_nu,4,ifr*13+IFR1,3);
             pod = new OutputData;
             pod->type = "VECTORS";
             pod->name = frxyz_ifr;
-            pod->data.NewAthenaArray(3,prad->rad_mom_nu.GetDim3(),prad->rad_mom_nu.GetDim2(),
-                                    prad->rad_mom_nu.GetDim1());
+            pod->data.NewAthenaArray(3, prad->rad_mom_nu.GetDim3(),
+                                     prad->rad_mom_nu.GetDim2(),
+                                     prad->rad_mom_nu.GetDim1());
             CalculateCartesianVector(src, pod->data, pmb->pcoord);
             AppendOutputDataNode(pod);
             num_vars_+=3;
@@ -821,7 +819,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         }
 
 
-        if (ContainVariable(output_params.variable, frx_ifr)){
+        if (ContainVariable(output_params.variable, frx_ifr)) {
           pod = new OutputData;
           pod->type = "SCALARS";
           pod->name = frx_ifr;
@@ -830,7 +828,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
           num_vars_++;
         }
 
-        if (ContainVariable(output_params.variable, fry_ifr)){
+        if (ContainVariable(output_params.variable, fry_ifr)) {
           pod = new OutputData;
           pod->type = "SCALARS";
           pod->name = fry_ifr;
@@ -839,7 +837,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
           num_vars_++;
         }
 
-        if (ContainVariable(output_params.variable, frz_ifr)){
+        if (ContainVariable(output_params.variable, frz_ifr)) {
           pod = new OutputData;
           pod->type = "SCALARS";
           pod->name = frz_ifr;
@@ -849,8 +847,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         }
 
         if (ContainVariable(output_params.variable, pr_ifr) ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
+            ContainVariable(output_params.variable, "prim") ||
+            ContainVariable(output_params.variable, "cons")) {
           pod = new OutputData;
           pod->type = "TENSORS";
           pod->name = pr_ifr;
@@ -860,8 +858,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         }
 
         if (ContainVariable(output_params.variable, er0_ifr) ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
+            ContainVariable(output_params.variable, "prim") ||
+            ContainVariable(output_params.variable, "cons")) {
           pod = new OutputData;
           pod->type = "SCALARS";
           pod->name = er0_ifr;
@@ -871,22 +869,23 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         }
 
         if (ContainVariable(output_params.variable, fr0_ifr) ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
+            ContainVariable(output_params.variable, "prim") ||
+            ContainVariable(output_params.variable, "cons")) {
           pod = new OutputData;
           pod->type = "VECTORS";
           pod->name = fr0_ifr;
           pod->data.InitWithShallowSlice(prad->rad_mom_cm_nu,4,ifr*4+IFR1,3);
           AppendOutputDataNode(pod);
           num_vars_+=3;
-          if(output_params.cartesian_vector) {
+          if (output_params.cartesian_vector) {
             AthenaArray<Real> src;
             src.InitWithShallowSlice(prad->rad_mom_cm_nu,4,ifr*4+IFR1,3);
             pod = new OutputData;
             pod->type = "VECTORS";
             pod->name = fr0xyz_ifr;
-            pod->data.NewAthenaArray(3,prad->rad_mom_cm_nu.GetDim3(),prad->rad_mom_cm_nu.GetDim2(),
-                                    prad->rad_mom_cm_nu.GetDim1());
+            pod->data.NewAthenaArray(3, prad->rad_mom_cm_nu.GetDim3(),
+                                     prad->rad_mom_cm_nu.GetDim2(),
+                                     prad->rad_mom_cm_nu.GetDim1());
             CalculateCartesianVector(src, pod->data, pmb->pcoord);
             AppendOutputDataNode(pod);
             num_vars_+=3;
@@ -894,7 +893,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         }
 
 
-        if (ContainVariable(output_params.variable, fr0x_ifr)){
+        if (ContainVariable(output_params.variable, fr0x_ifr)) {
           pod = new OutputData;
           pod->type = "SCALARS";
           pod->name = fr0x_ifr;
@@ -903,7 +902,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
           num_vars_++;
         }
 
-        if (ContainVariable(output_params.variable, fr0y_ifr)){
+        if (ContainVariable(output_params.variable, fr0y_ifr)) {
           pod = new OutputData;
           pod->type = "SCALARS";
           pod->name = fr0y_ifr;
@@ -912,7 +911,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
           num_vars_++;
         }
 
-        if (ContainVariable(output_params.variable, fr0z_ifr)){
+        if (ContainVariable(output_params.variable, fr0z_ifr)) {
           pod = new OutputData;
           pod->type = "SCALARS";
           pod->name = fr0z_ifr;
@@ -920,17 +919,13 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
           AppendOutputDataNode(pod);
           num_vars_++;
         }
-
-      }// end loop over frequency
-
-    }// end multi-group output
+      }
+    }
     //-------------------------------------------------------
-
-    for(int ifr=0; ifr<prad->nfreq; ++ifr){
+    for(int ifr=0; ifr<prad->nfreq; ++ifr) {
       std::string sigmaa_ifr = "Sigma_a_" + std::to_string(ifr);
       std::string sigmas_ifr = "Sigma_s_" + std::to_string(ifr);
       std::string sigmap_ifr = "Sigma_p_" + std::to_string(ifr);
-
       if (ContainVariable(output_params.variable, sigmas_ifr) ||
           ContainVariable(output_params.variable, "prim") ||
           ContainVariable(output_params.variable, "cons")) {
@@ -967,11 +962,10 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   }// End (RADIATION_ENABLED)
 
 
-  if(CR_ENABLED){
-
-      if (ContainVariable(output_params.variable, "Ec") ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
+  if (CR_ENABLED) {
+    if (ContainVariable(output_params.variable, "Ec") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
       pod = new OutputData;
       pod->type = "SCALARS";
       pod->name = "Ec";
@@ -980,33 +974,33 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       num_vars_++;
     }
 
-   // comoving frame fram radiation flux vector
-      if (ContainVariable(output_params.variable, "Fc") ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
+    // comoving frame fram radiation flux vector
+    if (ContainVariable(output_params.variable, "Fc") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "Fc";
       pod->data.InitWithShallowSlice(pcr->u_cr,4,CRF1,3);
       AppendOutputDataNode(pod);
       num_vars_+=3;
-      if(output_params.cartesian_vector) {
+      if (output_params.cartesian_vector) {
         AthenaArray<Real> src;
         src.InitWithShallowSlice(pcr->u_cr,4,CRF1,3);
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "Fr_xyz";
         pod->data.NewAthenaArray(3,pcr->u_cr.GetDim3(),pcr->u_cr.GetDim2(),
-                                    pcr->u_cr.GetDim1());
+                                 pcr->u_cr.GetDim1());
         CalculateCartesianVector(src, pod->data, pmb->pcoord);
         AppendOutputDataNode(pod);
         num_vars_+=3;
       }
     }
 
-      if (ContainVariable(output_params.variable, "Sigma_diff") ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
+    if (ContainVariable(output_params.variable, "Sigma_diff") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "Sigma_diff";
@@ -1015,9 +1009,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       num_vars_+=3;
     }
 
-      if (ContainVariable(output_params.variable, "Sigma_adv") ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
+    if (ContainVariable(output_params.variable, "Sigma_adv") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "Sigma_adv";
@@ -1027,24 +1021,24 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
 
     // The streaming velocity
-      if (ContainVariable(output_params.variable, "Vc") ||
-          ContainVariable(output_params.variable, "prim") ||
-          ContainVariable(output_params.variable, "cons")) {
+    if (ContainVariable(output_params.variable, "Vc") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
       pod = new OutputData;
       pod->type = "VECTORS";
       pod->name = "Vc";
       pod->data.InitWithShallowSlice(pcr->v_adv,4,0,3);
       AppendOutputDataNode(pod);
       num_vars_+=3;
-      if(output_params.cartesian_vector) {
+      if (output_params.cartesian_vector) {
         AthenaArray<Real> src;
         src.InitWithShallowSlice(pcr->v_adv,4,0,3);
         pod = new OutputData;
         pod->type = "VECTORS";
         pod->name = "Vc_xyz";
         pod->data.NewAthenaArray(3,pcr->v_adv.GetDim3(),
-                                   pcr->v_adv.GetDim2(),
-                                   pcr->v_adv.GetDim1());
+                                 pcr->v_adv.GetDim2(),
+                                 pcr->v_adv.GetDim1());
         CalculateCartesianVector(src, pod->data, pmb->pcoord);
         AppendOutputDataNode(pod);
         num_vars_+=3;
@@ -1244,21 +1238,19 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
   while (ptype != nullptr) {
     if (((pm->time == pm->start_time) // output initial conditions, unless next_time set
          && (ptype->output_params.next_time <= pm->start_time ))
-      || (ptype->output_params.dt > 0.0 && pm->time >= ptype->output_params.next_time)
-      || (ptype->output_params.dcycle > 0 && pm->ncycle%ptype->output_params.dcycle == 0)
-      || (pm->time >= pm->tlim)
-      || (wtflag && ptype->output_params.file_type == "rst")) {
-
-      if(rad_mom && (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)){
-        for(int b=0; b<pm->nblocal; ++b){
+        || (ptype->output_params.dt > 0.0 && pm->time >= ptype->output_params.next_time)
+        || (ptype->output_params.dcycle > 0 && pm->ncycle%ptype->output_params.dcycle == 0)
+        || (pm->time >= pm->tlim)
+        || (wtflag && ptype->output_params.file_type == "rst")) {
+      if (rad_mom && (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)) {
+        for(int b=0; b<pm->nblocal; ++b) {
           pmb = pm->my_blocks(b);
-         // Calculate Com-moving moments and grey opacity for dump
+          // Calculate Com-moving moments and grey opacity for dump
           pmb->pnrrad->CalculateMoment(pmb->pnrrad->ir);
           pmb->pnrrad->CalculateComMoment();
         }
         rad_mom = false;
       }
-
 
       if (first && ptype->output_params.file_type != "hst") {
         pm->ApplyUserWorkBeforeOutput(pin);
@@ -1418,7 +1410,6 @@ bool OutputType::SliceOutputData(MeshBlock *pmb, int dim) {
 void OutputType::SumOutputData(MeshBlock* pmb, int dim) {
   // For each node in OutputData doubly linked list, sum arrays containing output data
   OutputData *pdata = pfirst_data_;
-
   while (pdata != nullptr) {
     OutputData *pnew = new OutputData;
     pnew->type = pdata->type;
@@ -1553,7 +1544,7 @@ bool OutputType::ContainVariable(const std::string &haystack, const std::string 
   if (haystack.find(needle + ',') == 0)
     return true;
   if (haystack.find(',' + needle) != std::string::npos
-    && haystack.find(',' + needle) == haystack.length() - needle.length() - 1)
+      && haystack.find(',' + needle) == haystack.length() - needle.length() - 1)
     return true;
   return false;
 }

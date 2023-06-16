@@ -23,8 +23,7 @@
 #include <iostream>  // cout
 #include <sstream>  // msg
 #include <stdexcept> // runtime erro
-#include <stdio.h>  // fopen and fwrite
-
+//#include <stdio.h>  // fopen and fwrite
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -33,8 +32,8 @@
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "cr.hpp"
-#include "integrators/cr_integrators.hpp"
+#include "./cr.hpp"
+#include "./integrators/cr_integrators.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -49,40 +48,38 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
   int kl=pmb->ks, ku=pmb->ke;
   int jl=pmb->js, ju=pmb->je;
   int il=pmb->is-1, iu=pmb->ie+1;
-  if(pmb->block_size.nx2 > 1){
+  if (pmb->block_size.nx2 > 1) {
     jl -= 1;
     ju += 1;
   }
-  if(pmb->block_size.nx3 > 1){
+  if (pmb->block_size.nx3 > 1) {
     kl -= 1;
     ku += 1;
   }
   Real invlim = 1.0/pcr->vmax;
-  for(int k=kl; k<=ku; ++k){
-    for(int j=jl; j<=ju; ++j){
+  for(int k=kl; k<=ku; ++k) {
+    for(int j=jl; j<=ju; ++j) {
 #pragma omp simd
-      for(int i=il; i<=iu; ++i){
+      for(int i=il; i<=iu; ++i) {
         pcr->sigma_diff(0,k,j,i) = pcr->max_opacity;
         pcr->sigma_diff(1,k,j,i) = pcr->max_opacity;
         pcr->sigma_diff(2,k,j,i) = pcr->max_opacity;
-
       }
     }
   }
 
   // Need to calculate the rotation matrix
   // We need this to determine the direction of rotation velocity
-
   if (MAGNETIC_FIELDS_ENABLED && (pcr->stream_flag > 0)) {
     //First, calculate B_dot_grad_Pc
-    for(int k=kl; k<=ku; ++k){
-      for(int j=jl; j<=ju; ++j){
+    for(int k=kl; k<=ku; ++k) {
+      for(int j=jl; j<=ju; ++j) {
       // diffusion coefficient is calculated with respect to B direction
       // Use a simple estimate of Grad Pc
 
         // x component
         pmb->pcoord->CenterWidth1(k,j,il-1,iu+1,pcr->cwidth);
-        for(int i=il; i<=iu; ++i){
+        for(int i=il; i<=iu; ++i) {
           Real distance = 0.5*(pcr->cwidth(i-1) + pcr->cwidth(i+1))
                          + pcr->cwidth(i);
           Real dprdx=(u_cr(CRE,k,j,i+1) - u_cr(CRE,k,j,i-1))/3.0;
@@ -94,20 +91,19 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
         pmb->pcoord->CenterWidth2(k,j,il,iu,pcr->cwidth);
         pmb->pcoord->CenterWidth2(k,j+1,il,iu,pcr->cwidth2);
 
-        for(int i=il; i<=iu; ++i){
+        for(int i=il; i<=iu; ++i) {
           Real distance = 0.5*(pcr->cwidth1(i) + pcr->cwidth2(i))
                          + pcr->cwidth(i);
           Real dprdy=(u_cr(CRE,k,j+1,i) - u_cr(CRE,k,j-1,i))/3.0;
           dprdy /= distance;
           pcr->sigma_adv(1,k,j,i) = dprdy;
-
         }
         // z component
         pmb->pcoord->CenterWidth3(k-1,j,il,iu,pcr->cwidth1);
         pmb->pcoord->CenterWidth3(k,j,il,iu,pcr->cwidth);
         pmb->pcoord->CenterWidth3(k+1,j,il,iu,pcr->cwidth2);
 
-        for(int i=il; i<=iu; ++i){
+        for(int i=il; i<=iu; ++i) {
           Real distance = 0.5*(pcr->cwidth1(i) + pcr->cwidth2(i))
                           + pcr->cwidth(i);
           Real dprdz=(u_cr(CRE,k+1,j,i) -  u_cr(CRE,k-1,j,i))/3.0;
@@ -115,33 +111,33 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           pcr->sigma_adv(2,k,j,i) = dprdz;
         }
 
-        for(int i=il; i<=iu; ++i){
+        for(int i=il; i<=iu; ++i) {
           // Now calculate the angles of B
-          Real bxby = sqrt(bcc(IB1,k,j,i)*bcc(IB1,k,j,i) +
+          Real bxby = std::sqrt(bcc(IB1,k,j,i)*bcc(IB1,k,j,i) +
                            bcc(IB2,k,j,i)*bcc(IB2,k,j,i));
-          Real btot = sqrt(bcc(IB1,k,j,i)*bcc(IB1,k,j,i) +
+          Real btot = std::sqrt(bcc(IB1,k,j,i)*bcc(IB1,k,j,i) +
                            bcc(IB2,k,j,i)*bcc(IB2,k,j,i) +
                            bcc(IB3,k,j,i)*bcc(IB3,k,j,i));
 
-          if(btot > TINY_NUMBER){
+          if (btot > TINY_NUMBER) {
             pcr->b_angle(0,k,j,i) = bxby/btot;
             pcr->b_angle(1,k,j,i) = bcc(IB3,k,j,i)/btot;
-          }else{
+          } else {
             pcr->b_angle(0,k,j,i) = 1.0;
             pcr->b_angle(1,k,j,i) = 0.0;
           }
-          if(bxby > TINY_NUMBER){
+          if (bxby > TINY_NUMBER) {
             pcr->b_angle(2,k,j,i) = bcc(IB2,k,j,i)/bxby;
             pcr->b_angle(3,k,j,i) = bcc(IB1,k,j,i)/bxby;
-          }else{
+          } else {
             pcr->b_angle(2,k,j,i) = 0.0;
             pcr->b_angle(3,k,j,i) = 1.0;
           }
 
-          Real va = sqrt(btot*btot/prim(IDN,k,j,i));
-          if(va < TINY_NUMBER){
+          Real va = std::sqrt(btot*btot/prim(IDN,k,j,i));
+          if (va < TINY_NUMBER) {
             pcr->sigma_adv(0,k,j,i) = pcr->max_opacity;
-          }else{
+          } else {
             Real b_grad_pc = bcc(IB1,k,j,i) * pcr->sigma_adv(0,k,j,i)
                            + bcc(IB2,k,j,i) * pcr->sigma_adv(1,k,j,i)
                            + bcc(IB3,k,j,i) * pcr->sigma_adv(2,k,j,i);
@@ -155,10 +151,10 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
     }
   }
   else{
-    for(int k=kl; k<=ku; ++k){
-      for(int j=jl; j<=ju; ++j){
+    for(int k=kl; k<=ku; ++k) {
+      for(int j=jl; j<=ju; ++j) {
 #pragma omp simd
-        for(int i=il; i<=iu; ++i){
+        for(int i=il; i<=iu; ++i) {
           pcr->sigma_adv(0,k,j,i) = pcr->max_opacity;
           pcr->sigma_adv(1,k,j,i) = pcr->max_opacity;
           pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;
@@ -169,7 +165,7 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
         }
       }
     }
-  }// end MHD and stream flag
+  }
 }
 
 inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
@@ -178,8 +174,8 @@ inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
   CosmicRay *pcr=pmb->pcr;
   Real invlim = 1.0/pcr->vmax;
 
-  for(int i=is; i<=ie; ++i){
-    Real inv_sqrt_rho = 1.0/sqrt(prim(IDN,k,j,i));
+  for(int i=is; i<=ie; ++i) {
+    Real inv_sqrt_rho = 1.0/std::sqrt(prim(IDN,k,j,i));
     Real pb= bcc(IB1,k,j,i)*bcc(IB1,k,j,i)
             +bcc(IB2,k,j,i)*bcc(IB2,k,j,i)
             +bcc(IB3,k,j,i)*bcc(IB3,k,j,i);
@@ -192,25 +188,23 @@ inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
     Real va2 = bcc(IB2,k,j,i) * inv_sqrt_rho;
     Real va3 = bcc(IB3,k,j,i) * inv_sqrt_rho;
 
-    Real va = sqrt(pb) * inv_sqrt_rho;
+    Real va = std::sqrt(pb) * inv_sqrt_rho;
     Real dpc_sign = 0.0;
 
-    if(b_grad_pc > TINY_NUMBER) dpc_sign = 1.0;
-    else if(-b_grad_pc > TINY_NUMBER) dpc_sign = -1.0;
+    if (b_grad_pc > TINY_NUMBER) dpc_sign = 1.0;
+    else if (-b_grad_pc > TINY_NUMBER) dpc_sign = -1.0;
 
-    if(pcr->stream_flag > 0){
+    if (pcr->stream_flag > 0) {
       pcr->v_adv(0,k,j,i) = -va1 * dpc_sign;
       pcr->v_adv(1,k,j,i) = -va2 * dpc_sign;
       pcr->v_adv(2,k,j,i) = -va3 * dpc_sign;
-
-      if(va > TINY_NUMBER){
-        pcr->sigma_adv(0,k,j,i) = fabs(b_grad_pc)/(sqrt(pb) * va *
+      if (va > TINY_NUMBER) {
+        pcr->sigma_adv(0,k,j,i) = fabs(b_grad_pc)/(std::sqrt(pb) * va *
                                (4.0/3.0) * invlim * u_cr(CRE,k,j,i));
         pcr->sigma_adv(1,k,j,i) = pcr->max_opacity;
         pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;
       }
-
-    }else{
+    } else {
       pcr->v_adv(0,k,j,i) = 0.0;
       pcr->v_adv(1,k,j,i) = 0.0;
       pcr->v_adv(2,k,j,i) = 0.0;
@@ -218,39 +212,36 @@ inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
       pcr->sigma_adv(1,k,j,i)  = pcr->max_opacity;
       pcr->sigma_adv(2,k,j,i)  = pcr->max_opacity;
     }
-  }// end i
-}// end function
+  }
+}
 
 CosmicRay::CosmicRay(MeshBlock *pmb, ParameterInput *pin):
     pmy_block(pmb), u_cr(NCR,pmb->ncells3,pmb->ncells2,pmb->ncells1),
     u_cr1(NCR,pmb->ncells3,pmb->ncells2,pmb->ncells1),
+    coarse_cr_(NCR,pmb->ncc3, pmb->ncc2, pmb->ncc1,
+               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+                AthenaArray<Real>::DataStatus::empty)),
     sigma_diff(3,pmb->ncells3,pmb->ncells2,pmb->ncells1),
     sigma_adv(3,pmb->ncells3,pmb->ncells2,pmb->ncells1),
     v_adv(3,pmb->ncells3,pmb->ncells2,pmb->ncells1),
     v_diff(3,pmb->ncells3,pmb->ncells2,pmb->ncells1),
-// constructor overload resolution of non-aggregate class type AthenaArray<Real>
+    // constructor overload resolution of non-aggregate class type AthenaArray<Real>
     flux{ {NCR, pmb->ncells3, pmb->ncells2, pmb->ncells1+1},
       {NCR,pmb->ncells3, pmb->ncells2+1, pmb->ncells1,
        (pmb->pmy_mesh->f2 ? AthenaArray<Real>::DataStatus::allocated :
         AthenaArray<Real>::DataStatus::empty)},
       {NCR,pmb->ncells3+1, pmb->ncells2, pmb->ncells1,
        (pmb->pmy_mesh->f3 ? AthenaArray<Real>::DataStatus::allocated :
-        AthenaArray<Real>::DataStatus::empty)}}, UserSourceTerm_{},
-    coarse_cr_(NCR,pmb->ncc3, pmb->ncc2, pmb->ncc1,
-             (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
-              AthenaArray<Real>::DataStatus::empty)),
-    cr_bvar(pmb, &u_cr, &coarse_cr_, flux, true){
-
+        AthenaArray<Real>::DataStatus::empty)}},
+    cr_bvar(pmb, &u_cr, &coarse_cr_, flux, true),
+    UserSourceTerm_{} {
   Mesh *pm = pmy_block->pmy_mesh;
-
   pmb->RegisterMeshBlockData(u_cr);
   // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
   if (pm->multilevel) {
     refinement_idx = pmy_block->pmr->AddToRefinement(&u_cr, &coarse_cr_);
   }
-
   cr_source_defined = false;
-
   cr_bvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&cr_bvar);
   pmb->pbval->bvars_main_int.push_back(&cr_bvar);

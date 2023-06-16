@@ -21,15 +21,15 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../cr/cr.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
-#include "../nr_radiation/radiation.hpp"
-#include "../cr/cr.hpp"
-#include "outputs.hpp"
+#include "./outputs.hpp"
 
 
 //----------------------------------------------------------------------------------------
@@ -179,17 +179,15 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
       pdata += pmb->pfield->b.x3f.GetSizeInBytes();
     }
 
-    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
+    if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
       std::memcpy(pdata,pmb->pnrrad->ir.data(),pmb->pnrrad->ir.GetSizeInBytes());
-      pdata += pmb->pnrrad->ir.GetSizeInBytes();      
+      pdata += pmb->pnrrad->ir.GetSizeInBytes();
     }
 
-    if(CR_ENABLED){
+    if (CR_ENABLED) {
       std::memcpy(pdata,pmb->pcr->u_cr.data(),pmb->pcr->u_cr.GetSizeInBytes());
-      pdata += pmb->pcr->u_cr.GetSizeInBytes(); 
-
+      pdata += pmb->pcr->u_cr.GetSizeInBytes();
     }
-
 
     // (conserved variable) Passive scalars:
     if (NSCALARS > 0) {
