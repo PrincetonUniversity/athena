@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file polarwedge.cpp
-//  \brief implementation of polar wedge BCs in x2 direction
+//! \file polarwedge_rad.cpp
+//  \brief implementation of polar wedge radiation BCs in x2 direction
 
 // C headers
 
@@ -25,7 +25,6 @@
 // do not flip the sign of specific intensity
 void RadBoundaryVariable::PolarWedgeInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
-
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
       for (int i=il; i<=iu; ++i) {
@@ -46,7 +45,6 @@ void RadBoundaryVariable::PolarWedgeInnerX2(
 
 void RadBoundaryVariable::PolarWedgeOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
- 
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
       for (int i=il; i<=iu; ++i) {

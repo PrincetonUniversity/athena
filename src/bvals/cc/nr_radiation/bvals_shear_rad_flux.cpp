@@ -52,7 +52,7 @@
 void RadBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
                                AthenaArray<Real> &src, Real *buf, int nb) {
   MeshBlock *pmb = pmy_block_;
-  Mesh *pmesh = pmb->pmy_mesh;
+  // Mesh *pmesh = pmb->pmy_mesh;
   int sj, sk, ej, ek;
   int jo = pbval_->joverlap_flux_;
   int *jmin1 = pbval_->sb_flux_data_[0].jmin_send;
@@ -130,7 +130,7 @@ void RadBoundaryVariable::SetFluxShearingBoxBoundarySameLevel(
 
 void RadBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
-  Mesh *pmesh = pmb->pmy_mesh;
+  // Mesh *pmesh = pmb->pmy_mesh;
   OrbitalAdvection *porb = pmb->porb;
   AthenaArray<Real> &pflux = pflux_;
   int &xgh = pbval_->xgh_;
@@ -150,17 +150,16 @@ void RadBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
                                           k, 0, js, je+1, nl_, nu_, xgh);
         } else {
            printf("3 order shearing box Not supported yet!\n");
-//            porb->RemapFluxPpm(pflux, pbuf, eps, 1-upper, k, 0, js, je+1, xgh);
+           // porb->RemapFluxPpm(pflux, pbuf, eps, 1-upper, k, 0, js, je+1, xgh);
         }
         const int shift = xgh+1-upper;
         for (int j=js; j<=je; j++) {
           for (int n=nl_; n<=nu_; n++) {
             x1flux(k,j,ii,n) = 0.5*(x1flux(k,j,ii,n)+shear_map_flx_[upper](k,0,j+shift,n)
                                - (pflux(j+1,n) - pflux(j,n)));
-          }// end n
-        }// end j
-
-      }// end k
+          }
+        }
+      }
     }
   }
   return;
@@ -168,8 +167,6 @@ void RadBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
 
 
 void RadBoundaryVariable::SendFluxShearingBoxBoundaryBuffers() {
-  MeshBlock *pmb = pmy_block_;
-  Mesh *pmesh = pmb->pmy_mesh;
   int ssize = nu_ + 1;
   int offset[2]{0, 3};
   for (int upper=0; upper<2; upper++) {

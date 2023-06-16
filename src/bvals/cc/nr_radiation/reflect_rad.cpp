@@ -55,8 +55,8 @@ void RadBoundaryVariable::ReflectInnerX1(Real time, Real dt, int il, int jl, int
     for (int j=jl; j<=ju; ++j) {
       for (int i=1; i<=ngh; ++i) {
         for (int ifr=0; ifr<nfreq; ++ifr) {
-          Real *iri = &((*var_cc)(k,j,(il+i-1),ifr*pmy_block_->pnrrad->nang));
-          Real *iro = &((*var_cc)(k,j, il-i, ifr*pmy_block_->pnrrad->nang));
+          Real *iri = &(*(var_cc)(k,j,(il+i-1),ifr*pmy_block_->pnrrad->nang));
+          Real *iro = &(*(var_cc)(k,j, il-i, ifr*pmy_block_->pnrrad->nang));
           CopyIntensity(iri, iro, 0, 1, n_ang);
           if (noct > 2) {
             CopyIntensity(iri, iro, 2, 3, n_ang);

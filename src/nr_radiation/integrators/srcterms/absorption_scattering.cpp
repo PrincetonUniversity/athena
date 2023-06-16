@@ -13,9 +13,14 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file absorption.cpp
-//  \brief  Add absorption source terms
+//! \file
+//  \brief
 //======================================================================================
+
+// C headers
+
+// C++ headers
+#include <cmath>
 
 // Athena++ headers
 #include "../../../athena.hpp"
@@ -42,9 +47,9 @@
 // This function updates normal absorption plus scattering opacity together
 
 Real RadIntegrator::AbsorptionScattering(
-          AthenaArray<Real> &wmu_cm, AthenaArray<Real> &tran_coef, Real *sigma_a,
-          Real *sigma_p, Real *sigma_pe, Real *sigma_s, Real dt, Real lorz,
-          Real rho, Real &tgas, AthenaArray<Real> &implicit_coef, AthenaArray<Real> &ir_cm) {
+    AthenaArray<Real> &wmu_cm, AthenaArray<Real> &tran_coef, Real *sigma_a,
+    Real *sigma_p, Real *sigma_pe, Real *sigma_s, Real dt, Real lorz,
+    Real rho, Real &tgas, AthenaArray<Real> &implicit_coef, AthenaArray<Real> &ir_cm) {
   Real& prat = pmy_rad->prat;
   Real ct = dt * pmy_rad->crat;
   Real redfactor=pmy_rad->reduced_c/pmy_rad->crat;
@@ -53,7 +58,7 @@ Real RadIntegrator::AbsorptionScattering(
   Real gamma = pmy_rad->pmy_block->peos->GetGamma();
 
   // Temporary array
-  AthenaArray<Real> &vncsigma = vncsigma_;
+  //AthenaArray<Real> &vncsigma = vncsigma_;
   AthenaArray<Real> &vncsigma2 = vncsigma2_;
 
   int badcell=0;
@@ -65,8 +70,7 @@ Real RadIntegrator::AbsorptionScattering(
 
   Real tgasnew = tgas;
 
-  for(int ifr=0; ifr<nfreq; ++ifr){
-
+  for (int ifr=0; ifr<nfreq; ++ifr) {
     Real suma1=0.0, suma2=0.0, suma3=0.0;
     Real jr_cm=0.0;
 
@@ -86,13 +90,13 @@ Real RadIntegrator::AbsorptionScattering(
     Real *tcoef = &(tran_coef(0));
     Real *wmu = &(wmu_cm(0));
     Real *imcoef = &(implicit_coef(0));
-    for(int n=0; n<nang; n++){
-       Real vn = 1.0/(imcoef[n] + (rdtcsigmar + rdtcsigmas) * tcoef[n]);
-       vn2[n] = tcoef[n] * vn;
-       Real ir_weight = ircm[n] * wmu[n];
+    for (int n=0; n<nang; n++) {
+      Real vn = 1.0/(imcoef[n] + (rdtcsigmar + rdtcsigmas) * tcoef[n]);
+      vn2[n] = tcoef[n] * vn;
+      Real ir_weight = ircm[n] * wmu[n];
 
-       suma1 += (wmu[n] * vn2[n]);
-       suma2 += (ir_weight * vn);
+      suma1 += (wmu[n] * vn2[n]);
+      suma2 += (ir_weight * vn);
     }
     suma3 = suma1 * (rdtcsigmas + rdtcsigmar - rdtcsigmae);
     suma1 *= (rdtcsigmap);
@@ -103,45 +107,41 @@ Real RadIntegrator::AbsorptionScattering(
 
     // No need to do this if already in thermal equilibrium
     coef[1] = prat * (dtcsigmap - dtcsigmae * suma1/(1.0-suma3))
-                   * (gamma - 1.0)/rho;
+              * (gamma - 1.0)/rho;
     coef[0] = -tgas - dtcsigmae * prat * suma2 * (gamma - 1.0)/(rho*(1.0-suma3));
 
-    if(fabs(coef[1]) > TINY_NUMBER){
+    if (std::abs(coef[1]) > TINY_NUMBER) {
       int flag = FouthPolyRoot(coef[1], coef[0], tgasnew);
-      if(flag == -1 || tgasnew != tgasnew){
+      if (flag == -1 || tgasnew != tgasnew) {
         badcell = 1;
         tgasnew = tgas;
       }
-    }else{
+    } else {
       tgasnew = -coef[0];
     }
     // even if tr=told, there can be change for intensity, making them isotropic
-    if(!badcell){
-
-
-
+    if (!badcell) {
       Real emission = tgasnew * tgasnew * tgasnew * tgasnew;
 
       // get update jr_cm
       jr_cm = (suma1 * emission + suma2)/(1.0-suma3);
 
-    // Update the co-moving frame specific intensity
+      // Update the co-moving frame specific intensity
       Real *irn = &(ir_cm(nang*ifr));
       Real *vn2 = &(vncsigma2(0));
       Real *imcoef = &(implicit_coef(nang*ifr));
       Real *tcoef = &(tran_coef(0));
-      for(int n=0; n<nang; n++){
+      for (int n=0; n<nang; n++) {
         irn[n] +=  ((rdtcsigmas + rdtcsigmar - rdtcsigmae) * jr_cm + rdtcsigmap * emission
-                      - ((imcoef[n]-1.0)/tcoef[n] + rdtcsigmas + rdtcsigmar) * irn[n]) * vn2[n];
+                    - ((imcoef[n]-1.0)/tcoef[n] + rdtcsigmas
+                       + rdtcsigmar) * irn[n]) * vn2[n];
         irn[n] = std::max(irn[n],TINY_NUMBER);
       }
-    }// end badcell
-  }// End Frequency
+    }
+  }
 
   // Update gas temperature
   // Do not update gas temperature
-//  tgas = tgasnew;
+  //  tgas = tgasnew;
   return tgasnew;
-
-
 }

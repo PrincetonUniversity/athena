@@ -147,8 +147,9 @@ void RadIntegrator::CalSourceTerms(MeshBlock *pmb, const Real dt,
   if (nfreq == 1) {
   // Add absorption and scattering opacity source
     tgas_new_(k,j,i) = AbsorptionScattering(wmu_cm,tran_coef, sigma_at, sigma_p,
-                                            sigma_pe, sigma_s, dt, lorz, rho, tgas_(k,j,i),
-                                            implicit_coef_,ir_cm);
+                                            sigma_pe, sigma_s, dt, lorz, rho,
+                                            tgas_(k,j,i),
+                                            implicit_coef_, ir_cm);
     // Add compton scattering
     if (compton_flag_ > 0) {
       Compton(wmu_cm,tran_coef, sigma_s, dt, lorz, rho, tgas_new_(k,j,i), ir_cm);

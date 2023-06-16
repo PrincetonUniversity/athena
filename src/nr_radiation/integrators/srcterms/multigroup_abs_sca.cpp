@@ -43,10 +43,10 @@
 // ir_cm here is the frequency shifted array
 // emission in each frequency bin is assumed to b T^4 emission_spec[ifr]
 
-Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
-          AthenaArray<Real> &tran_coef, Real *sigma_a, Real *sigma_p,
-          Real *sigma_pe, Real *sigma_s, Real dt, Real lorz, Real rho, Real &tgas,
-          AthenaArray<Real> &implicit_coef, AthenaArray<Real> &ir_cm) {
+Real RadIntegrator::MultiGroupAbsScat(
+    AthenaArray<Real> &wmu_cm, AthenaArray<Real> &tran_coef, Real *sigma_a, Real *sigma_p,
+    Real *sigma_pe, Real *sigma_s, Real dt, Real lorz, Real rho, Real &tgas,
+    AthenaArray<Real> &implicit_coef, AthenaArray<Real> &ir_cm) {
   Real& prat = pmy_rad->prat;
   Real ct = dt * pmy_rad->crat;
   Real redfactor=pmy_rad->reduced_c/pmy_rad->crat;
@@ -55,14 +55,10 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
   Real gamma = pmy_rad->pmy_block->peos->GetGamma();
 
   // Temporary array
-
   AthenaArray<Real> &vncsigma2 = vncsigma2_;
 
   bool badcell=false;
-
-
   Real coef[2];
-
 
   Real *suma1 = &(sum_nu1_(0));
   Real *suma2 = &(sum_nu2_(0));
@@ -75,7 +71,7 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
 
   // first, calculate the coefficients that are independnet of emission_spec
   coef[0] = 0.0;
-  for(int ifr=0; ifr<nfreq; ++ifr){
+  for (int ifr=0; ifr<nfreq; ++ifr) {
     suma1[ifr]=0.0;
     suma2[ifr]=0.0;
     suma3[ifr]=0.0;
@@ -90,85 +86,75 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
     Real rdtcsigmae = redfactor * dtcsigmae;
     Real rdtcsigmap = redfactor * dtcsigmap;
 
-
     Real *ircm = &(ir_cm(ifr*nang));
     Real *vn2 = &(vncsigma2(ifr*nang));
     Real *tcoef = &(tran_coef(0));
     Real *wmu = &(wmu_cm(0));
     Real *imcoef = &(implicit_coef(ifr*nang));
-    for(int n=0; n<nang; n++){
-       Real vn = 1.0/(imcoef[n] + (rdtcsigmar + rdtcsigmas) * tcoef[n]);
-       vn2[n] = tcoef[n] * vn;
-       Real ir_weight = ircm[n] * wmu[n];
-       suma1[ifr] += (wmu[n] * vn2[n]);
-       suma2[ifr] += (ir_weight * vn);
+    for (int n=0; n<nang; n++) {
+      Real vn = 1.0/(imcoef[n] + (rdtcsigmar + rdtcsigmas) * tcoef[n]);
+      vn2[n] = tcoef[n] * vn;
+      Real ir_weight = ircm[n] * wmu[n];
+      suma1[ifr] += (wmu[n] * vn2[n]);
+      suma2[ifr] += (ir_weight * vn);
     }
     suma3[ifr] = suma1[ifr] * (rdtcsigmas + rdtcsigmar - rdtcsigmae);
     suma1[ifr] *= (rdtcsigmap);
 
     coef[0] += - dtcsigmae * prat * suma2[ifr]
                * (gamma - 1.0)/(rho*(1.0-suma3[ifr]));
-
-  }// end frequency groups
+  }
   coef[0] += -tgas;
 
   Real tgas_diff = 1.0;
 
-  while((count_iteration <= iteration_tgas_) && (tgas_diff > tgas_error_)){
-
+  while ((count_iteration <= iteration_tgas_) && (tgas_diff > tgas_error_)) {
     coef[1] = 0.0;
 
     // update emission spectrum
     pmy_rad->UserEmissionSpec(pmy_rad,tgasnew);
 
-    for(int ifr=0; ifr<nfreq; ++ifr){
-      Real dtcsigmar = ct * sigma_a[ifr];
+    for (int ifr=0; ifr<nfreq; ++ifr) {
+      // Real dtcsigmar = ct * sigma_a[ifr];
       Real dtcsigmae = ct * sigma_pe[ifr];
-//      Real dtcsigmas = ct * sigma_s[ifr];
-      Real rdtcsigmar = redfactor * dtcsigmar;
-      Real rdtcsigmae = redfactor * dtcsigmae;
-//      Real rdtcsigmas = redfactor * dtcsigmas;
+      //      Real dtcsigmas = ct * sigma_s[ifr];
+      // Real rdtcsigmar = redfactor * dtcsigmar;
+      // Real rdtcsigmae = redfactor * dtcsigmae;
+      //      Real rdtcsigmas = redfactor * dtcsigmas;
       Real dtcsigmap = ct * sigma_p[ifr];
-      Real rdtcsigmap = redfactor * dtcsigmap;
-
+      // Real rdtcsigmap = redfactor * dtcsigmap;
 
       // No need to do this if already in thermal equilibrium
       coef[1] += prat * (dtcsigmap - dtcsigmae * suma1[ifr]/(1.0-suma3[ifr]))
                  * pmy_rad->emission_spec(ifr) * (gamma - 1.0)/rho;
+    }
 
-    }// end frequency nfreq
+    // The polynomial is
+    // coef[1] * x^4 + x + coef[0] == 0
 
-
-  // The polynomial is
-  // coef[1] * x^4 + x + coef[0] == 0
-
-    if(fabs(coef[1]) > TINY_NUMBER){
+    if (fabs(coef[1]) > TINY_NUMBER) {
       int flag = FouthPolyRoot(coef[1], coef[0], tgasnew);
-      if(flag == -1 || tgasnew != tgasnew){
+      if (flag == -1 || tgasnew != tgasnew) {
         badcell = true;
         tgasnew = tgas;
       }
-    }else{
+    } else {
       tgasnew = -coef[0];
     }
 
-    if(badcell) break;
+    if (badcell) break;
     tgas_diff = fabs(tgas_last - tgasnew)/tgas_last;
     count_iteration++;
     tgas_last = tgasnew;
-
-  }// end iteration
-    // even if tr=told, there can be change for intensity, making them isotropic
-  if(!badcell){
-
+  }
+  // even if tr=told, there can be change for intensity, making them isotropic
+  if (!badcell) {
     Real emission = tgasnew * tgasnew * tgasnew * tgasnew;
-
-    for(int ifr=0; ifr<nfreq; ++ifr){
+    for (int ifr=0; ifr<nfreq; ++ifr) {
       Real dtcsigmar = ct * sigma_a[ifr];
       Real dtcsigmae = ct * sigma_pe[ifr];
       Real dtcsigmas = ct * sigma_s[ifr];
       Real dtcsigmap = ct * sigma_p[ifr];
-
 
       Real rdtcsigmar = redfactor * dtcsigmar;
       Real rdtcsigmae = redfactor * dtcsigmae;
@@ -180,24 +166,21 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
       // get update jr_cm
       Real jr_cm = (suma1[ifr] * emi_nu + suma2[ifr])/(1.0-suma3[ifr]);
 
-    // Update the co-moving frame specific intensity
+      // Update the co-moving frame specific intensity
       Real *irn = &(ir_cm(ifr*nang));
       Real *vn2 = &(vncsigma2(ifr*nang));
       Real *imcoef = &(implicit_coef(nang*ifr));
       Real *tcoef = &(tran_coef(0));
-      for(int n=0; n<nang; n++){
+      for (int n=0; n<nang; n++) {
         irn[n] +=  ((rdtcsigmas + rdtcsigmar - rdtcsigmae) * jr_cm + rdtcsigmap * emi_nu
-                      - ((imcoef[n]-1.0)/tcoef[n] + rdtcsigmas + rdtcsigmar) * irn[n]) * vn2[n];
+                    - ((imcoef[n]-1.0)/tcoef[n] + rdtcsigmas
+                       + rdtcsigmar) * irn[n]) * vn2[n];
         irn[n] = std::max(irn[n],TINY_NUMBER);
       }
-    }// end badcell
-
-  }// End Frequency
-
+    }
+  }
   // Update gas temperature
   // Do not update gas temperature
-//  tgas = tgasnew;
+  //  tgas = tgasnew;
   return tgasnew;
-
-
 }
