@@ -574,7 +574,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd reduction(max: norm)
         for (int i=is; i<=ie; ++i)
-          norm = std::max(norm, std::fabs(def(n,k,j,i)));
+          norm = std::max(norm, std::abs(def(n,k,j,i)));
       }
     }
     return norm;
@@ -583,7 +583,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd reduction(+: norm)
         for (int i=is; i<=ie; ++i)
-          norm += std::fabs(def(n,k,j,i));
+          norm += std::abs(def(n,k,j,i));
       }
     }
   } else { // L2 norm
