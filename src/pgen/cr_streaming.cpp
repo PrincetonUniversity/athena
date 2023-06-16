@@ -84,17 +84,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-
         Real x1 = pcoord->x1v(i);
-        Real x2 = pcoord->x2v(j);
-        Real x3 = pcoord->x3v(k);
 
-        Real dist_sq=x1*x1;
-        if (direction ==1) {
-          dist_sq=x2*x2;
-        } else if (direction == 2) {
-          dist_sq=x3*x3;
-        }
+        // Real dist_sq=x1*x1;
+        // if (direction ==1) {
+        //   dist_sq=x2*x2;
+        // } else if (direction == 2) {
+        //   dist_sq=x3*x3;
+        // }
 
         phydro->u(IDN,k,j,i) = 1.0;
         phydro->u(IM1,k,j,i) = vx;
@@ -103,7 +100,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN,k,j,i) = 0.5*(vx*vx+vy*vy+vz*vz)+1.0/(gamma-1.0);
         }
-
         if (CR_ENABLED) {
             pcr->u_cr(CRE,k,j,i) = exp(-40.0*x1*x1);
             if (direction == 0) {
@@ -215,7 +211,6 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
         pcr->sigma_diff(0,k,j,i) = sigma;
         pcr->sigma_diff(1,k,j,i) = sigma;
         pcr->sigma_diff(2,k,j,i) = sigma;
-
       }
     }
   }
@@ -242,7 +237,7 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           dprdx /= distance;
           pcr->b_grad_pc(k,j,i) = bcc(IB1,k,j,i) * dprdx;
         }
-    // y component
+        // y component
         pmb->pcoord->CenterWidth2(k,j-1,il,iu,pcr->cwidth1);
         pmb->pcoord->CenterWidth2(k,j,il,iu,pcr->cwidth);
         pmb->pcoord->CenterWidth2(k,j+1,il,iu,pcr->cwidth2);
@@ -253,9 +248,8 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           Real dprdy=(u_cr(CRE,k,j+1,i) - u_cr(CRE,k,j-1,i))/3.0;
           dprdy /= distance;
           pcr->b_grad_pc(k,j,i) += bcc(IB2,k,j,i) * dprdy;
-
         }
-    // z component
+        // z component
         pmb->pcoord->CenterWidth3(k-1,j,il,iu,pcr->cwidth1);
         pmb->pcoord->CenterWidth3(k,j,il,iu,pcr->cwidth);
         pmb->pcoord->CenterWidth3(k+1,j,il,iu,pcr->cwidth2);

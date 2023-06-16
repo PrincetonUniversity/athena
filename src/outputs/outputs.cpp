@@ -1239,7 +1239,8 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
     if (((pm->time == pm->start_time) // output initial conditions, unless next_time set
          && (ptype->output_params.next_time <= pm->start_time ))
         || (ptype->output_params.dt > 0.0 && pm->time >= ptype->output_params.next_time)
-        || (ptype->output_params.dcycle > 0 && pm->ncycle%ptype->output_params.dcycle == 0)
+        || (ptype->output_params.dcycle > 0
+            && pm->ncycle%ptype->output_params.dcycle == 0)
         || (pm->time >= pm->tlim)
         || (wtflag && ptype->output_params.file_type == "rst")) {
       if (rad_mom && (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)) {

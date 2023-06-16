@@ -302,22 +302,19 @@ void Reconstruction::PiecewiseParabolicX1(
     const AthenaArray<Real> &q, const int array_order,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
 
-  if(array_order < 0){
-
+  if (array_order < 0) {
     const int nu = q.GetDim1() - 1;
-
-  // CS08 constant used in second derivative limiter, >1 , independent of h
+    // CS08 constant used in second derivative limiter, >1 , independent of h
     const Real C2 = 1.25;
+    // TODO(felker): renumber scratch array references; not using 2x from ppm.cpp
+    // bx (MHD) and wc (characteristic projection)
 
-  // TODO(felker): renumber scratch array references; not using 2x from ppm.cpp
-  // bx (MHD) and wc (characteristic projection)
-
-  // set work arrays used for primitive/characterstic cell-averages to scratch
+    // set work arrays used for primitive/characterstic cell-averages to scratch
     AthenaArray<Real> &q_im2 = scr2_in_, &q_im1 = scr3_in_,
                     &q_i = scr4_in_, &q_ip1 = scr5_in_, &q_ip2 = scr6_in_,
                     &qr_imh = scr7_in_, &ql_iph = scr8_in_;
 
-  // set work PPM work arrays to shallow copies of scratch arrays:
+    // set work PPM work arrays to shallow copies of scratch arrays:
     AthenaArray<Real> &dd = scr02_i_, &dd_im1 = scr03_i_, &dd_ip1 = scr04_i_,
                    &dph = scr05_i_, &dph_ip1 = scr06_i_;
 
@@ -327,7 +324,7 @@ void Reconstruction::PiecewiseParabolicX1(
     AthenaArray<Real> &qplus = scr11_i_, &qminus = scr12_i_, &dqf_plus = scr13_i_,
                 &dqf_minus = scr14_i_;
 
-  // cache the x1-sliced primitive states for eigensystem calculation
+    // cache the x1-sliced primitive states for eigensystem calculation
     for (int i=il; i<=iu; ++i) {
 #pragma omp simd
       for (int n=0; n<=nu; ++n) {
@@ -540,9 +537,9 @@ void Reconstruction::PiecewiseParabolicX1(
         ql_iph(n,i ) = qplus(i);
         qr_imh(n,i ) = qminus(i);
       }
-    } // end char PPM loop over =nu
+    }
 
-  // compute ql_(i+1/2) and qr_(i-1/2)
+    // compute ql_(i+1/2) and qr_(i-1/2)
     for (int i=il; i<=iu; ++i) {
 #pragma omp simd
       for (int n=0; n<=nu; ++n) {
@@ -550,8 +547,7 @@ void Reconstruction::PiecewiseParabolicX1(
         qr(i  ,n) = qr_imh(n,i);
       }
     }
-
-  }// End array Ordering
+  }
   return;
 }
 
@@ -817,9 +813,7 @@ void Reconstruction::PiecewiseParabolicX2(
     const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &q, const int array_order,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
-
-  if(array_order < 0){
-
+  if (array_order < 0) {
     const int nu = q.GetDim1() - 1;
   // CS08 constant used in second derivative limiter, >1 , independent of h
     const Real C2 = 1.25;
@@ -1062,8 +1056,7 @@ void Reconstruction::PiecewiseParabolicX2(
         qr(i,n) = qr_jmh(n,i);
       }
     }
-
-  }// end array ordering
+  }
   return;
 }
 
@@ -1324,18 +1317,16 @@ void Reconstruction::PiecewiseParabolicX3(
     const AthenaArray<Real> &q, const int array_order,
     AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
 
-  if(array_order < 0){
-
+  if (array_order < 0) {
     const int nu = q.GetDim1() - 1;
-  // CS08 constant used in second derivative limiter, >1 , independent of h
+    // CS08 constant used in second derivative limiter, >1 , independent of h
     const Real C2 = 1.25;
-
-  // set work arrays used for primitive/characterstic cell-averages to scratch
+    // set work arrays used for primitive/characterstic cell-averages to scratch
     AthenaArray<Real> &q_km2 = scr2_in_, &q_km1 = scr3_in_,
                     &q_k = scr4_in_, &q_kp1 = scr5_in_, &q_kp2 = scr6_in_,
                     &qr_kmh = scr7_in_, &ql_kph = scr8_in_;
 
-  // set work PPM work arrays to shallow copies of scratch arrays:
+    // set work PPM work arrays to shallow copies of scratch arrays:
     AthenaArray<Real> &dd = scr02_i_, &dd_km1 = scr03_i_, &dd_kp1 = scr04_i_,
                    &dph = scr05_i_, &dph_kp1 = scr06_i_;
 
@@ -1560,7 +1551,6 @@ void Reconstruction::PiecewiseParabolicX3(
         qr(i,n) = qr_kmh(n,i);
       }
     }
-
-  }// end array_order
+  }
   return;
 }

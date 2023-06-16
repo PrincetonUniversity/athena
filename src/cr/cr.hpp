@@ -1,5 +1,5 @@
-#ifndef CR_CR_HPP
-#define CR_CR_HPP
+#ifndef CR_CR_HPP_
+#define CR_CR_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
@@ -78,4 +78,4 @@ class CosmicRay {
   CRSrcTermFunc UserSourceTerm_;
 };
 
-#endif // CR_CR_HPP
+#endif // CR_CR_HPP_

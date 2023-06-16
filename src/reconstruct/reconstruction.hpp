@@ -199,6 +199,5 @@ class Reconstruction {
   AthenaArray<Real> scr1_in2_, scr2_in2_, scr3_in2_, scr4_in2_;
   AthenaArray<Real> scr1_nn_, scr2_nn_, scr3_nn_, scr4_nn_;
   AthenaArray<Real> scr6_in_, scr7_in_, scr8_in_;
-
 };
 #endif // RECONSTRUCT_RECONSTRUCTION_HPP_

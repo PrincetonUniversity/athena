@@ -24,12 +24,12 @@
 // Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
-#include "../../parameter_input.hpp"
-#include "../../mesh/mesh.hpp"
 #include "../../coordinates/coordinates.hpp"
-#include "../../hydro/hydro.hpp"
-#include "../../field/field.hpp"
 #include "../../eos/eos.hpp"
+#include "../../field/field.hpp"
+#include "../../hydro/hydro.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../../parameter_input.hpp"
 #include "../../utils/utils.hpp"
 #include "../cr.hpp"
 
@@ -59,14 +59,14 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-  for(int k=ks; k<=ke; ++k) {
-    for(int j=js; j<=je; ++j) {
-         Real fxx = 1.0/3.0;
-         Real fyy = 1.0/3.0;
-         Real fzz = 1.0/3.0;
-         Real fxy = 0.0;
-         Real fxz = 0.0;
-         Real fyz = 0.0;
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je; ++j) {
+         // Real fxx = 1.0/3.0;
+         // Real fyy = 1.0/3.0;
+         // Real fzz = 1.0/3.0;
+         // Real fxy = 0.0;
+         // Real fxz = 0.0;
+         // Real fyz = 0.0;
 
          Real *ec = &(u_cr(CRE,k,j,0));
          Real *fc1 = &(u_cr(CRF1,k,j,0));
@@ -79,9 +79,9 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
          Real *sinp_b = &(pcr->b_angle(2,k,j,0));
          Real *cosp_b = &(pcr->b_angle(3,k,j,0));
 
- // adv1 is dPc/dx, adv2 is dPc/dy, adv3 is dPc/dz
+         // adv1 is dPc/dx, adv2 is dPc/dy, adv3 is dPc/dz
 
-      for(int i=is; i<=ie; ++i){
+      for (int i=is; i<=ie; ++i) {
          Real rho = u(IDN,k,j,i);
          rho = std::max(rho,rho_floor);
          Real v1 = u(IM1,k,j,i)/rho;
@@ -92,7 +92,7 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
          Real vtot3 = v3;
 
          // add the streaming velocity
-         if(pcr->stream_flag){
+         if (pcr->stream_flag) {
            vtot1 += pcr->v_adv(0,k,j,i);
            vtot2 += pcr->v_adv(1,k,j,i);
            vtot3 += pcr->v_adv(2,k,j,i);
@@ -104,7 +104,7 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
 
          // in the case with magnetic field
         // rotate the vectors to oriante to the B direction
-         if(MAGNETIC_FIELDS_ENABLED){
+         if (MAGNETIC_FIELDS_ENABLED) {
            // Apply rotation of the vectors
            RotateVec(sint_b[i],cost_b[i],sinp_b[i],cosp_b[i],v1,v2,v3);
 
@@ -123,7 +123,7 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
          Real sigma_y = pcr->sigma_diff(1,k,j,i);
          Real sigma_z = pcr->sigma_diff(2,k,j,i);
 
-         if(pcr->stream_flag){
+         if (pcr->stream_flag) {
            sigma_x = 1.0/(1.0/pcr->sigma_diff(0,k,j,i) +
                              1.0/pcr->sigma_adv(0,k,j,i));
 
@@ -163,7 +163,8 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
         //newfr1 = (rhs2 - coef21 * newEc)/coef22
         // newfr2= (rhs3 - coef31 * newEc)/coef33
         // newfr3 = (rhs4 - coef41 * newEc)/coef44
-        // coef11 - coef21 * coef12 /coef22 - coef13 * coef31 /coef33 - coef41 * coef14 /coef44)* newec
+        // coef11 - coef21 * coef12 /coef22 - coef13 * coef31 /
+         //              coef33 - coef41 * coef14 /coef44)* newec
         //    =rhs1 - coef12 *rhs2/coef22 - coef13 * rhs3/coef33 - coef14 * rhs4/coef44
 
         Real e_coef = coef_11 - coef_12 * coef_21/coef_22 - coef_13 * coef_31/coef_33
@@ -178,7 +179,7 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
 
 
         // Now apply the invert rotation
-        if(MAGNETIC_FIELDS_ENABLED){
+        if (MAGNETIC_FIELDS_ENABLED) {
          // Apply rotation of the vectors
           InvRotateVec(sint_b[i],cost_b[i],sinp_b[i],cosp_b[i],
                                          newfr1,newfr2,newfr3);
@@ -186,35 +187,27 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
         }
 
          // Add the energy source term
-         if (NON_BAROTROPIC_EOS && (pcr->src_flag > 0)){
+         if (NON_BAROTROPIC_EOS && (pcr->src_flag > 0)) {
            Real new_eg = u(IEN,k,j,i) - (new_ec - ec[i]);
-           if(new_eg < 0.0) new_eg = u(IEN,k,j,i);
+           if (new_eg < 0.0) new_eg = u(IEN,k,j,i);
            u(IEN,k,j,i) = new_eg;
          }
 
-         if(new_ec < 0.0) new_ec = ec[i];
+         if (new_ec < 0.0) new_ec = ec[i];
 
-         if(pcr->src_flag > 0){
+         if (pcr->src_flag > 0) {
            u(IM1,k,j,i) += (-(newfr1 - fc1[i]) * invlim);
            u(IM2,k,j,i) += (-(newfr2 - fc2[i]) * invlim);
            u(IM3,k,j,i) += (-(newfr3 - fc3[i]) * invlim);
          }
-
-
          u_cr(CRE,k,j,i) = new_ec;
          u_cr(CRF1,k,j,i) = newfr1;
          u_cr(CRF2,k,j,i) = newfr2;
          u_cr(CRF3,k,j,i) = newfr3;
-
-
-      }// end
-
-    }// end j
-  }// end k
-
-
+      }
+    }
+  }
   // Add user defined source term for cosmic rays
-  if(pcr->cr_source_defined)
+  if (pcr->cr_source_defined)
     pcr->UserSourceTerm_(pmb, pmb->pmy_mesh->time, dt, w,pmb->pfield->b, u_cr);
-
 }
