@@ -431,7 +431,6 @@ else:
 # -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
 definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
-definitions['FRAME_TRANSFORMATIONS'] = '1' if args['t'] else '0'
 if args['s']:
     makefile_options['EOS_FILE'] += '_sr'
     if definitions['GENERAL_EOS'] != '0':
