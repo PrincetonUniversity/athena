@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -17,34 +17,31 @@
 //  \brief iterations to solve the transport equation implicitly
 //======================================================================================
 
+// C headers
+
+// C++ headers
+#include <sstream>    // stringstream
 
 // Athena++ headers
-#include <sstream>    // stringstream
-#include "../radiation.hpp"
-#include "../../globals.hpp"
-#include "../integrators/rad_integrators.hpp"
-#include "radiation_implicit.hpp"
-#include "../../mesh/mesh.hpp"
-#include "../../hydro/hydro.hpp"
-#include "../../field/field.hpp"
 #include "../../defs.hpp"
+#include "../../field/field.hpp"
+#include "../../globals.hpp"
+#include "../../hydro/hydro.hpp"
+#include "../../mesh/mesh.hpp"
 #include "../../task_list/task_list.hpp"
+#include "../integrators/rad_integrators.hpp"
+#include "../radiation.hpp"
+#include "radiation_implicit.hpp"
 
 //--------------------------------------------------------------------------------------
 // \!fn void CalculateMoment()
-
 // \brief function to create the radiation moments
-
-
 // calculate the frequency integrated moments of the radiation field
 // including the ghost zones
-
-
-
-void IMRadiation::Iteration(Mesh *pm, 
+void IMRadiation::Iteration(Mesh *pm,
              TimeIntegratorTaskList *ptlist, int stage){
    // perform Jacobi iteration including both source and flux terms
-   // The iteration step is: calculate flux, calculate source term, 
+   // The iteration step is: calculate flux, calculate source term,
    // update specific intensity, compute error
   MeshBlock *pmb = pm->my_blocks(0);
   std::stringstream msg;
@@ -79,8 +76,8 @@ void IMRadiation::Iteration(Mesh *pm,
 
 
       // Calculate advection flux due to flow velocity explicitly
-      // advection velocity uses the partially updated velocity and ir from half 
-      // time step 
+      // advection velocity uses the partially updated velocity and ir from half
+      // time step
       if(prad->pradintegrator->adv_flag_ > 0){
         if(stage == 1)
           prad->pradintegrator->CalculateFluxes(prad->ir, 1);
@@ -92,11 +89,11 @@ void IMRadiation::Iteration(Mesh *pm,
       }
 
       // prepare the coefficients
-      prad->pradintegrator->FirstOrderFluxDivergenceCoef(wght);      
+      prad->pradintegrator->FirstOrderFluxDivergenceCoef(wght);
 
       // prepare coefficients for angular fluxes
       if(prad->angle_flag == 1){
-        prad->pradintegrator->ImplicitAngularFluxesCoef(wght);  
+        prad->pradintegrator->ImplicitAngularFluxesCoef(wght);
       }
 
       // always use initial guess from last step to keep the balance
@@ -128,7 +125,7 @@ void IMRadiation::Iteration(Mesh *pm,
       sum_full_ = 0.0;
       sum_diff_ = 0.0;
 
-      // using TaskList to handle 
+      // using TaskList to handle
       // operations during each iteration
       if(rb_or_not > 0)
         rb_or_not = 1;
@@ -138,7 +135,7 @@ void IMRadiation::Iteration(Mesh *pm,
       if(rb_or_not > 0){
         rb_or_not = 2;
         // black cells
-        pimraditlist->DoTaskListOneStage(wght);        
+        pimraditlist->DoTaskListOneStage(wght);
       }
 
 
@@ -157,12 +154,12 @@ void IMRadiation::Iteration(Mesh *pm,
       Real global_sum = 0.0;
       Real global_diff = 0.0;
       MPI_Allreduce(&sum_full_, &global_sum, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
-      MPI_Allreduce(&sum_diff_, &global_diff, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD); 
+      MPI_Allreduce(&sum_diff_, &global_diff, 1, MPI_ATHENA_REAL, MPI_SUM, MPI_COMM_WORLD);
 
       sum_full_ = global_sum;
       sum_diff_ = global_diff;
 
-#endif  
+#endif
 
       niter++;
       Real tot_res = sum_diff_/sum_full_;
@@ -208,7 +205,7 @@ void IMRadiation::Iteration(Mesh *pm,
         prad->pradintegrator->GetHydroSourceTerms(pmb, prad->ir1, prad->ir);
     }
 
-    if((pm->my_blocks(0)->pnrrad->nfreq > 1) && 
+    if((pm->my_blocks(0)->pnrrad->nfreq > 1) &&
       (pm->my_blocks(0)->pnrrad->pradintegrator->compton_flag_ > 0) &&
        pm->my_blocks(0)->pnrrad->pradintegrator->split_compton_ > 0)
       pimradcomptlist->DoTaskListOneStage(wght);
@@ -226,12 +223,12 @@ void IMRadiation::Iteration(Mesh *pm,
 
 
 
- void IMRadiation::CheckResidual(MeshBlock *pmb, 
+ void IMRadiation::CheckResidual(MeshBlock *pmb,
              AthenaArray<Real> &ir_old, AthenaArray<Real> &ir_new)
  {
 
    NRRadiation *prad = pmb->pnrrad;
-  
+
    int &nang =prad->nang;
    int &nfreq=prad->nfreq;
 
@@ -256,9 +253,5 @@ void IMRadiation::Iteration(Mesh *pm,
        }// end i
      }// end j
    }// end k
-  
+
  }
-
-
-
-

@@ -1,12 +1,12 @@
-#ifndef IMRADIATION_HPP_
-#define IMRADIATION_HPP_
+#ifndef NR_RADIATION_IMPLICIT_RADIATION_IMPLICIT_HPP_
+#define NR_RADIATION_IMPLICIT_RADIATION_IMPLICIT_HPP_
 //======================================================================================
 // Athena++ astrophysical MHD code
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file radiation.hpp
-//  \brief definitions for Radiation class
+//! \file
+//  \brief
 //======================================================================================
 
 
@@ -21,8 +21,6 @@
 #include "../../athena_arrays.hpp"
 #include "../../task_list/im_rad_task_list.hpp"
 
-
-
 class Mesh;
 class ParameterInput;
 class NRRadiation;
@@ -32,19 +30,17 @@ class TimeIntegratorTaskList;
 class IMRadiation {
   friend class NRRadiation;
   friend class RadIntegrator;
-public:
+ public:
   IMRadiation(Mesh *pm, ParameterInput *pin);
-//  ~Radiation();
+  //  ~Radiation();
 
-  void Iteration(Mesh *pm, 
+  void Iteration(Mesh *pm,
              TimeIntegratorTaskList *ptlist, int stage);
-
-
-  void CheckResidual(MeshBlock *pmb,  
+  void CheckResidual(MeshBlock *pmb,
         AthenaArray<Real> &ir_old, AthenaArray<Real> &ir_new);
 
-  Real cfl_rad; // the additional CFL number. 
-                // Small cfl_rad is good for convergence, 
+  Real cfl_rad; // the additional CFL number.
+                // Small cfl_rad is good for convergence,
                 // but with smaller time step
 
   int ite_scheme;
@@ -60,7 +56,7 @@ public:
   int srj_p; // <= 9; 0 means off.
   int srj_q[9]; // repetitions
   Real srj_w[9]; // omegas
-  
+
   // internal data
   int srj_level, srj_cnt; // internal counts
 
@@ -69,15 +65,11 @@ public:
   void EnrollSRJFunction(SRJFunc MySRJFunction);
 
 
-private:
-
+ private:
   Real sum_diff_;
   Real sum_full_;
   int nlimit_;       // threadhold for the number of iterations
-  Real error_limit_; // 
-
-  
-
+  Real error_limit_;
 };
 
-#endif // IMRADIATION_HPP_
+#endif // NR_RADIATION_IMPLICIT_RADIATION_IMPLICIT_HPP_

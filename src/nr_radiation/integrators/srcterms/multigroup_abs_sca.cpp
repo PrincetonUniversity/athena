@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -20,19 +20,18 @@
 // Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
-#include "../../radiation.hpp"
-#include "../../../hydro/hydro.hpp"
-#include "../../../eos/eos.hpp"
-#include "../../../mesh/mesh.hpp"
 #include "../../../coordinates/coordinates.hpp"
+#include "../../../eos/eos.hpp"
+#include "../../../hydro/hydro.hpp"
+#include "../../../mesh/mesh.hpp"
 #include "../../../utils/utils.hpp"
-
+#include "../../radiation.hpp"
 // this class header
 #include "../rad_integrators.hpp"
 
 //--------------------------------------------------------------------------------------
 //! \fn RadIntegrator::AbsorptionScattering()
-//  \brief 
+//  \brief
 
 // wmu_cm is the weight in the co-moving frame
 // wmu_cm=wmu * 1/(1-vdotn/Crat)^2 / Lorz^2
@@ -46,31 +45,29 @@
 
 Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
           AthenaArray<Real> &tran_coef, Real *sigma_a, Real *sigma_p,
-          Real *sigma_pe, Real *sigma_s, Real dt, Real lorz, Real rho, Real &tgas, 
-          AthenaArray<Real> &implicit_coef, AthenaArray<Real> &ir_cm)
-{
-
+          Real *sigma_pe, Real *sigma_s, Real dt, Real lorz, Real rho, Real &tgas,
+          AthenaArray<Real> &implicit_coef, AthenaArray<Real> &ir_cm) {
   Real& prat = pmy_rad->prat;
   Real ct = dt * pmy_rad->crat;
   Real redfactor=pmy_rad->reduced_c/pmy_rad->crat;
   int& nang=pmy_rad->nang;
   int& nfreq=pmy_rad->nfreq;
   Real gamma = pmy_rad->pmy_block->peos->GetGamma();
-  
+
   // Temporary array
 
   AthenaArray<Real> &vncsigma2 = vncsigma2_;
 
   bool badcell=false;
-  
-  
+
+
   Real coef[2];
 
 
   Real *suma1 = &(sum_nu1_(0));
   Real *suma2 = &(sum_nu2_(0));
   Real *suma3 = &(sum_nu3_(0));
-  
+
   Real tgasnew = tgas;
   Real tgas_last = tgas;
 
@@ -92,13 +89,13 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
     Real rdtcsigmas = redfactor * dtcsigmas;
     Real rdtcsigmae = redfactor * dtcsigmae;
     Real rdtcsigmap = redfactor * dtcsigmap;
-    
+
 
     Real *ircm = &(ir_cm(ifr*nang));
     Real *vn2 = &(vncsigma2(ifr*nang));
     Real *tcoef = &(tran_coef(0));
-    Real *wmu = &(wmu_cm(0));  
-    Real *imcoef = &(implicit_coef(ifr*nang));   
+    Real *wmu = &(wmu_cm(0));
+    Real *imcoef = &(implicit_coef(ifr*nang));
     for(int n=0; n<nang; n++){
        Real vn = 1.0/(imcoef[n] + (rdtcsigmar + rdtcsigmas) * tcoef[n]);
        vn2[n] = tcoef[n] * vn;
@@ -108,8 +105,8 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
     }
     suma3[ifr] = suma1[ifr] * (rdtcsigmas + rdtcsigmar - rdtcsigmae);
     suma1[ifr] *= (rdtcsigmap);
-    
-    coef[0] += - dtcsigmae * prat * suma2[ifr] 
+
+    coef[0] += - dtcsigmae * prat * suma2[ifr]
                * (gamma - 1.0)/(rho*(1.0-suma3[ifr]));
 
   }// end frequency groups
@@ -123,7 +120,7 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
 
     // update emission spectrum
     pmy_rad->UserEmissionSpec(pmy_rad,tgasnew);
-  
+
     for(int ifr=0; ifr<nfreq; ++ifr){
       Real dtcsigmar = ct * sigma_a[ifr];
       Real dtcsigmae = ct * sigma_pe[ifr];
@@ -133,7 +130,7 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
 //      Real rdtcsigmas = redfactor * dtcsigmas;
       Real dtcsigmap = ct * sigma_p[ifr];
       Real rdtcsigmap = redfactor * dtcsigmap;
-    
+
 
       // No need to do this if already in thermal equilibrium
       coef[1] += prat * (dtcsigmap - dtcsigmae * suma1[ifr]/(1.0-suma3[ifr]))
@@ -144,7 +141,7 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
 
   // The polynomial is
   // coef[1] * x^4 + x + coef[0] == 0
-    
+
     if(fabs(coef[1]) > TINY_NUMBER){
       int flag = FouthPolyRoot(coef[1], coef[0], tgasnew);
       if(flag == -1 || tgasnew != tgasnew){
@@ -157,7 +154,7 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
 
     if(badcell) break;
     tgas_diff = fabs(tgas_last - tgasnew)/tgas_last;
-    count_iteration++;    
+    count_iteration++;
     tgas_last = tgasnew;
 
   }// end iteration
@@ -177,9 +174,9 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
       Real rdtcsigmae = redfactor * dtcsigmae;
       Real rdtcsigmas = redfactor * dtcsigmas;
       Real rdtcsigmap = redfactor * dtcsigmap;
-          
+
       Real emi_nu = emission * pmy_rad->emission_spec(ifr);
-      
+
       // get update jr_cm
       Real jr_cm = (suma1[ifr] * emi_nu + suma2[ifr])/(1.0-suma3[ifr]);
 
@@ -196,11 +193,11 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
     }// end badcell
 
   }// End Frequency
-  
+
   // Update gas temperature
   // Do not update gas temperature
 //  tgas = tgasnew;
   return tgasnew;
-  
+
 
 }

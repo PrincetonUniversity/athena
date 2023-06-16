@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -20,19 +20,19 @@
 // Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../athena_arrays.hpp"
-#include "../../radiation.hpp"
-#include "../../../hydro/hydro.hpp"
-#include "../../../eos/eos.hpp"
-#include "../../../mesh/mesh.hpp"
 #include "../../../coordinates/coordinates.hpp"
+#include "../../../eos/eos.hpp"
+#include "../../../hydro/hydro.hpp"
+#include "../../../mesh/mesh.hpp"
 #include "../../../utils/utils.hpp"
+#include "../../radiation.hpp"
 
 // this class header
 #include "../rad_integrators.hpp"
 
 //--------------------------------------------------------------------------------------
 //! \fn RadIntegrator::Absorption()
-//  \brief 
+//  \brief
 
 // wmu_cm is the weight in the co-moving frame
 // wmu_cm=wmu * 1/(1-vdotn/Crat)^2 / Lorz^2
@@ -43,9 +43,7 @@
 
 void RadIntegrator::Compton(AthenaArray<Real> &wmu_cm,
           AthenaArray<Real> &tran_coef, Real *sigma_s,
-          Real dt, Real lorz, Real rho, Real &tgas, AthenaArray<Real> &ir_cm)
-{
-
+          Real dt, Real lorz, Real rho, Real &tgas, AthenaArray<Real> &ir_cm) {
   Real& prat = pmy_rad->prat;
   Real ct = dt * pmy_rad->crat;
   Real redfactor=pmy_rad->reduced_c/pmy_rad->crat;
@@ -54,18 +52,18 @@ void RadIntegrator::Compton(AthenaArray<Real> &wmu_cm,
   int& nfreq=pmy_rad->nfreq;
   Real gamma = pmy_rad->pmy_block->peos->GetGamma();
   Real telectron = 1.0/pmy_rad->telectron;
-  
-  
+
+
   // Polynomial coefficients for Compton
   Real coef[2];
   for (int i=0; i<2; ++i)
     coef[i] = 0.0;
 
-  
+
   Real tgasnew = tgas;
-  
+
   for(int ifr=0; ifr<nfreq; ++ifr){
-  
+
     Real dtcsigma = ct * sigma_s[ifr];
     Real rdtcsigma = redfactor * dtcsigma;
 
@@ -73,7 +71,7 @@ void RadIntegrator::Compton(AthenaArray<Real> &wmu_cm,
     // Add Simple Compton scattering using the partically updated jr and ir
 
     if(rdtcsigma > TINY_NUMBER){
-    
+
      // Calculate the sum \int gamma (1-vdotn/c) dw_0 4 dt csigma_s /T_e
       Real suma1 = 0.0, suma2 = 0.0, jr_cm=0.0, source=0.0;
       Real *irn = &(ir_cm(nang*ifr));
@@ -84,23 +82,23 @@ void RadIntegrator::Compton(AthenaArray<Real> &wmu_cm,
          suma1 += tcoef[n] * wmun[n] * 4.0 * rdtcsigma * telectron;
       }
       suma2 = 4.0 * lorz * prat * dtcsigma*(gamma-1.0)*telectron/rho;
-      
+
       Real tr = sqrt(sqrt(jr_cm));
       Real trnew;
-      
+
       if(fabs(tr - tgas) > 1.e-12){
         coef[1] = (1.0 + suma2* jr_cm)/(suma1 * jr_cm);
         coef[0] = -(1.0+suma2*jr_cm)/suma1-tgas;
-        
+
         int flag = FouthPolyRoot(coef[1], coef[0], trnew);
         if(flag == -1){
           trnew = tr;
           tgasnew = tgas;
           source = 0.0;
         }else{
-        
+
           Real jrnew = trnew * trnew * trnew * trnew;
-    
+
           tgasnew = (jrnew - jr_cm)/(suma1*jr_cm) + trnew;
           source = rdtcsigma * 4.0 * jr_cm * telectron * (tgasnew - trnew);
         }
@@ -110,11 +108,11 @@ void RadIntegrator::Compton(AthenaArray<Real> &wmu_cm,
       for(int n=0; n<nang; n++){
         irn[n] += source * tcoef[n];
       }
-      
+
     }// End Compton
-    
+
   }// End Frequency
-  
+
   // Update gas temperature
   tgas = tgasnew;
 
@@ -123,7 +121,7 @@ void RadIntegrator::Compton(AthenaArray<Real> &wmu_cm,
 
 
 void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
-          AthenaArray<Real> &tran_coef, Real dt, Real lorz, Real rho, 
+          AthenaArray<Real> &tran_coef, Real dt, Real lorz, Real rho,
           Real &tgas_ini, Real &tgas, AthenaArray<Real> &ir_cm)
 {
 
@@ -141,7 +139,7 @@ void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
   // f_theta is 1 when kT/m_ec^2 -->0
   Real f_theta=ComptCorrection(tgas);
 
-  //Compton scattering coefficient always use the frequency 
+  //Compton scattering coefficient always use the frequency
   // independent kappa_es
   // rho * kappa_es=sigma_es
 
@@ -211,7 +209,7 @@ void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
   // calculate the integral \int (J_nu/nu)^2 d\nu
     Real sum_jonu_sq = 0.0;
     for(int ifr=0; ifr<nfreq-1; ++ifr){
-      sum_jonu_sq += j_nu[ifr] * j_nu[ifr]/(nu_cen[ifr] * nu_cen[ifr] 
+      sum_jonu_sq += j_nu[ifr] * j_nu[ifr]/(nu_cen[ifr] * nu_cen[ifr]
                      * delta_nu[ifr]);
     }
   // the last bin
@@ -220,7 +218,7 @@ void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
   // construct the coefficients
     Real coef_r4 = sum_jnu + coef_a2 * sum_jnu * sum_jnu;
     Real coef_r5 = 0.25*coef_a1*sum_nu_jnu+coef_a1*PI_FOUR_POWER*sum_jonu_sq/60.0;
-    Real coef_rhs = sum_jnu + coef_a1 * sum_jnu * tgas 
+    Real coef_rhs = sum_jnu + coef_a1 * sum_jnu * tgas
                   + coef_a2 * sum_jnu * sum_jnu;
 
     Real r_ini = 1.0;
@@ -230,18 +228,18 @@ void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
     while((count < 10) && (fabs(r_ini-r_four_sol)/r_four_sol > 1.e-6)){
       r_ini = r_four_sol;
       r_four_sol = coef_rhs/(coef_r4 + coef_r5 * r_ini);
-      r_four_sol = pow(r_four_sol,0.25);    
+      r_four_sol = pow(r_four_sol,0.25);
       count++;
     }
 
-     tgas_new = tgas + ((gamma-1.0)*prat/(redfactor*rho)) * sum_jnu * 
+     tgas_new = tgas + ((gamma-1.0)*prat/(redfactor*rho)) * sum_jnu *
                  (1.0 - r_four_sol * r_four_sol * r_four_sol * r_four_sol);
   }
   //--------------------------------------------------------------------
   Real n_nusq_last_bin = 0.0;
   Real nf_last = 0.0;
 // update
-  pmy_rad->ConvertBBJWien2(j_nu[nfreq-1], nu_grid[nfreq-1], tgas_new, 
+  pmy_rad->ConvertBBJWien2(j_nu[nfreq-1], nu_grid[nfreq-1], tgas_new,
                           n_nusq_last_bin,  nf_last);
 
 
@@ -249,7 +247,7 @@ void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
   // now solve the Kompaneets equation
 
   // frequency centers are: [0] [1] [2]....| [f-2] | [f-1]
-  // frequency faces are: [0] [1] [2]... [f-2]   [f-1]  
+  // frequency faces are: [0] [1] [2]... [f-2]   [f-1]
   // do not calculate flux for the last face
 
   // calculate the photon number density
@@ -260,13 +258,13 @@ void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
                /(nu_cen[ifr]*nu_cen[ifr]*nu_cen[ifr]*delta_nu[ifr]);
 
   // get the conserved total number density n \nu^2 d\nu
-  // if we assume blackbody spectrum, \int n \nu^2 d\nu 
+  // if we assume blackbody spectrum, \int n \nu^2 d\nu
   // = T^3 \int x^2/(exp(x)-1) dx
 //  Real n_nusq_last_bin = pmy_rad->ConvertBBJNNu2(j_nu[nfreq-1],nu_grid[nfreq-1]);
 
   Real sum_n_nusq = n_nusq_last_bin;
   for(int ifr=0; ifr<nfreq-1; ++ifr)
-    sum_n_nusq += n_nu[ifr] * nu_cen[ifr] * nu_cen[ifr] * delta_nu[ifr];     
+    sum_n_nusq += n_nu[ifr] * nu_cen[ifr] * nu_cen[ifr] * delta_nu[ifr];
 
   // determine the quasi-equilibrium solution
   Real eq_sol_c  = QuasiEqSol(tgas_new, sum_n_nusq);
@@ -349,7 +347,7 @@ void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
   // -B_r * n_f+1 + (1 - D_r + B_l) * n_f + D_l * n_f-1 = n_f^old
   // now solve the matrix from the left boundary
   // relate the right variable with the left variable
-  // using Gauss elimination 
+  // using Gauss elimination
 
   // each variable at nf is related to nf+1 as
   // n_f =  nf_n0 * n_{f+1} + nf_rhs
@@ -413,7 +411,7 @@ void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
                      (nu_cen[nfreq-2]*nu_cen[nfreq-2]*delta_nu[nfreq-2]);
 
   n_nusq_last_bin = std::max(n_nusq_last_bin,TINY_NUMBER);
- 
+
   //-------------------------------------------------------------------------
   // now go from update n_nu to new_j_nu
   if(bd_cell_flag == 0){
@@ -426,7 +424,7 @@ void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
 
 
 
-    new_j_nu[nfreq-1] = pmy_rad->InverseConvertBBJNNu2Wien(n_nusq_last_bin, 
+    new_j_nu[nfreq-1] = pmy_rad->InverseConvertBBJNNu2Wien(n_nusq_last_bin,
                       nu_grid[nfreq-1], tgas_new);
 
   //now calculate the total j
@@ -438,7 +436,7 @@ void RadIntegrator::MultiGroupCompton(AthenaArray<Real> &wmu_cm,
   // now apply energy conservation
 
   // Update intensity in each frequency bin
-  // rho * tgas/(gamma-1) + (prat/redfactor)* sum_jnu = 
+  // rho * tgas/(gamma-1) + (prat/redfactor)* sum_jnu =
   // rho * tgas_new/(gamma-1) + (prat/redfactor) * sum_new_jnu
 
   // now update tgas_new via energy conservation
@@ -473,7 +471,7 @@ Real RadIntegrator::QuasiEqSol(Real &tgas, Real &tot_n)
   }else if(n_t3 <= 0.6932){
     eq_sol_c = (1.0 + sqrt(1.0 + 0.25 * n_t3))/n_t3;
 
-  }   
+  }
 
   return eq_sol_c;
 
@@ -487,6 +485,3 @@ Real RadIntegrator::ComptCorrection(Real &tgas)
   Real f_theta = 1.0;
   return f_theta;
 }
-
-
-

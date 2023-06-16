@@ -20,8 +20,8 @@
 // C headers
 
 // C++ headers
-#include <stdexcept>  // runtime_error
 #include <sstream>  // msg
+#include <stdexcept>  // runtime_error
 
 // Athena++ headers
 #include "../../athena.hpp"
@@ -219,7 +219,7 @@ void RadIntegrator::MapIrcmFrequency( AthenaArray<Real> &split_ratio,
 
   // map intensity to the desired bin
   for (int ifr=0; ifr<nfreq; ++ifr) {
-   // map shifted intensity to the nu_grid
+    // map shifted intensity to the nu_grid
     int &fre_start=map_start(ifr);
     int &fre_end = map_end(ifr);
     for (int m=fre_start; m<=fre_end; ++m) {
@@ -377,7 +377,7 @@ void RadIntegrator::MapCmToLabFrequency(Real &tran_coef,
                     AthenaArray<Real> &split_ratio,
                     AthenaArray<int> &map_start, AthenaArray<int> &map_end,
                     AthenaArray<Real> &ir_shift, AthenaArray<Real> &ir_cm) {
-  Real *nu_fixed = &(pmy_rad->nu_grid(0));
+  //Real *nu_fixed = &(pmy_rad->nu_grid(0));
   AthenaArray<Real> &delta_nu = pmy_rad->delta_nu;
   // now call the function to get value at frequency face
   GetCmMCIntensity(ir_shift, delta_nu, ir_face_);
@@ -397,10 +397,8 @@ void RadIntegrator::MapCmToLabFrequency(Real &tran_coef,
 void RadIntegrator::BackwardSplitting(Real &tran_coef,
                       AthenaArray<Real> &ir_cm, AthenaArray<Real> &ir_face,
                       AthenaArray<Real> &split_ratio,
-                      AthenaArray<int> &map_start,AthenaArray<int> &map_end)
-{
+                      AthenaArray<int> &map_start,AthenaArray<int> &map_end) {
   int &nfreq = pmy_rad->nfreq;
-
   Real *nu_lab = &(pmy_rad->nu_grid(0));
   Real *nu_shift = &(nu_shift_(0));
   // check to make sure nfreq > 2

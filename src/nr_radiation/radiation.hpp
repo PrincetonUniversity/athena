@@ -45,6 +45,7 @@ class NRRadiation {
   NRRadiation(MeshBlock *pmb, ParameterInput *pin);
   ~NRRadiation();
 
+  MeshBlock* pmy_block;    // ptr to MeshBlock containing this Fluid
   AthenaArray<Real> ir, ir1, ir2, ir_old; // radiation specific intensity
   AthenaArray<Real> ir_gray;
   AthenaArray<Real> rad_mom; // frequency integrated radiation moments
@@ -99,13 +100,11 @@ class NRRadiation {
   EmissionFunc UserEmissionSpec;
   void EnrollEmissionFunction(EmissionFunc MyEmissionSpec);
 
-//  int ir_output; // the number of specific intensity to dump
-//  AthenaArray<int> ir_index; // the array
-//  AthenaArray<Real> dump_ir;
+  //  int ir_output; // the number of specific intensity to dump
+  //  AthenaArray<int> ir_index; // the array
+  //  AthenaArray<Real> dump_ir;
 
-  MeshBlock* pmy_block;    // ptr to MeshBlock containing this Fluid
   RadBoundaryVariable rad_bvar;
-
 
   RadIntegrator *pradintegrator;
 

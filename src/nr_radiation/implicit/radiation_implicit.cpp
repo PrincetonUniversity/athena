@@ -34,7 +34,7 @@
 #include "../../parameter_input.hpp"
 #include "../integrators/rad_integrators.hpp"
 #include "../radiation.hpp"
-#include "./radiation_implicit.hpp"
+#include "radiation_implicit.hpp"
 
 
 // set the default parameters for SRJ

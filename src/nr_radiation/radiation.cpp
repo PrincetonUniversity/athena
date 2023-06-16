@@ -34,7 +34,7 @@
 #include "../parameter_input.hpp"
 #include "implicit/radiation_implicit.hpp"
 #include "integrators/rad_integrators.hpp"
-#include "./radiation.hpp"
+#include "radiation.hpp"
 // constructor, initializes data structures and parameters
 
 // The default opacity function.
@@ -50,7 +50,7 @@ inline void DefaultEmission(NRRadiation *prad, Real tgas) {
   if (nfreq > 1) {
     for(int ifr=0; ifr<nfreq-1; ++ifr) {
       prad->emission_spec(ifr) =
-            prad->BlackBodySpec(prad->nu_grid(ifr)/tgas, prad->nu_grid(ifr+1)/tgas);
+          prad->BlackBodySpec(prad->nu_grid(ifr)/tgas, prad->nu_grid(ifr+1)/tgas);
     }
     prad->emission_spec(nfreq-1) = 1.0 - prad->FitBlackBody(prad->nu_grid(nfreq-1)/tgas);
   }
@@ -68,19 +68,18 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &prim) {
 NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     pmy_block(pmb), ir(pmb->ncells3,pmb->ncells2,pmb->ncells1,pmb->nfre_ang),
     ir1(pmb->ncells3,pmb->ncells2,pmb->ncells1,pmb->nfre_ang),
-// constructor overload resolution of non-aggregate class type AthenaArray<Real>
+    // constructor overload resolution of non-aggregate class type AthenaArray<Real>
     flux{ {pmb->ncells3, pmb->ncells2, pmb->ncells1+1, pmb->nfre_ang},
-      {pmb->ncells3, pmb->ncells2+1, pmb->ncells1, pmb->nfre_ang,
-       (pmb->pmy_mesh->f2 ? AthenaArray<Real>::DataStatus::allocated :
-        AthenaArray<Real>::DataStatus::empty)},
-      {pmb->ncells3+1, pmb->ncells2, pmb->ncells1, pmb->nfre_ang,
-       (pmb->pmy_mesh->f3 ? AthenaArray<Real>::DataStatus::allocated :
-        AthenaArray<Real>::DataStatus::empty)}},
+          {pmb->ncells3, pmb->ncells2+1, pmb->ncells1, pmb->nfre_ang,
+           (pmb->pmy_mesh->f2 ? AthenaArray<Real>::DataStatus::allocated :
+            AthenaArray<Real>::DataStatus::empty)},
+          {pmb->ncells3+1, pmb->ncells2, pmb->ncells1, pmb->nfre_ang,
+           (pmb->pmy_mesh->f3 ? AthenaArray<Real>::DataStatus::allocated :
+            AthenaArray<Real>::DataStatus::empty)}},
     coarse_ir_(pmb->ncc3, pmb->ncc2, pmb->ncc1,pmb->nfre_ang,
-             (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
-              AthenaArray<Real>::DataStatus::empty)),
+               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
+                AthenaArray<Real>::DataStatus::empty)),
     rad_bvar(pmb, &ir, &coarse_ir_, flux) {
-
   // universal constants we need
   // https://physics.info/constants/
   // arad = 4 * sigma/c
@@ -111,13 +110,12 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   if (user_unit_ == 0) {
     prat = pin->GetReal("radiation","Prat");
     crat = pin->GetReal("radiation","Crat");
-  }else if (user_unit_ == 1) {
-   // calculate prat and crat based on user provided unit
+  } else if (user_unit_ == 1) {
+    // calculate prat and crat based on user provided unit
     Real r_ideal = 8.314462618e7/mol_weight;
     prat = arad * tunit * tunit * tunit/(rhounit * r_ideal);
     Real cs_iso = std::sqrt(r_ideal * tunit);
     crat = c_speed/cs_iso;
-
   }
 
   // equivalent temperature for electron
@@ -149,46 +147,43 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
       if (npsi > 0) {
         std::stringstream msg;
         msg << "### FATAL ERROR in radiation class" << std::endl
-        << "1D problem cannot have npsi > 0"   << std::endl;
+            << "1D problem cannot have npsi > 0"   << std::endl;
         ATHENA_ERROR(msg);
       }
-
-    }else if (ndim == 2) {
+    } else if (ndim == 2) {
       if (npsi <= 1) {
         n_ang = nzeta;
-      }else if (nzeta == 0) {
+      } else if (nzeta == 0) {
         n_ang = npsi/2;
-      }else{
+      } else {
         n_ang = nzeta*npsi;
       }
       if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
         noct = 8;
         n_ang = nzeta*npsi/2;
-      }
-      else
+      } else {
         noct = 4;
-    }else if (ndim == 3) {
+      }
+    } else if (ndim == 3) {
       n_ang = nzeta*npsi/2;
       noct = 8;
     }
-
-  }else{
-
+  } else {
     if (ndim == 1) {
       n_ang = nmu;
       noct = 2;
-    }else if (ndim == 2) {
+    } else if (ndim == 2) {
       noct = 4;
       if (angle_flag == 0) {
         n_ang = nmu * (nmu + 1)/2;
-      }else if (angle_flag == 10) {
+      } else if (angle_flag == 10) {
         n_ang = nmu;
       }
-    }else if (ndim == 3) {
+    } else if (ndim == 3) {
       noct = 8;
       if (angle_flag == 0) {
         n_ang = nmu * (nmu + 1)/2;
-      }else if (angle_flag == 10) {
+      } else if (angle_flag == 10) {
         n_ang = nmu * nmu/2;
       }
     }// end 3D
@@ -201,7 +196,7 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   //frequency grid covers -infty to infty, default nfreq=1, means gray
   // integrated over all frequency
 
-   // the number of frequeny bins
+  // the number of frequeny bins
   nfreq  = pin->GetOrAddInteger("radiation","n_frequency",1);
   // when the emission spectrum depends on tgas, we perform
 
@@ -228,11 +223,11 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
 
 
   n_fre_ang = nang * nfreq;
- //co-moving frame frequency grid depends on angels
+  //co-moving frame frequency grid depends on angels
 
- // do not add radiation to vars_cc, which needs to be done in different order for
- // restriction/prolongation in AMR
-//  pmb->RegisterMeshBlockData(ir);
+  // do not add radiation to vars_cc, which needs to be done in different order for
+  // restriction/prolongation in AMR
+  //  pmb->RegisterMeshBlockData(ir);
 
   // If user-requested time integrator is type 3S*, allocate additional memory registers
   std::string integrator = pin->GetOrAddString("time", "integrator", "vl2");
@@ -248,11 +243,11 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     ir_gray.NewAthenaArray(nc3,nc2,nc1,nang);
   }
 
- // Do not add to cell-centered refinement, as
-// radiation variables need to be done in different order
-//  if (pm->multilevel) {
-//    refinement_idx = pmy_block->pmr->AddToRefinement(&ir, &coarse_ir_);
-//  }
+  // Do not add to cell-centered refinement, as
+  // radiation variables need to be done in different order
+  //  if (pm->multilevel) {
+  //    refinement_idx = pmy_block->pmr->AddToRefinement(&ir, &coarse_ir_);
+  //  }
 
   rad_mom.NewAthenaArray(13,nc3,nc2,nc1);
   rad_mom_cm.NewAthenaArray(4,nc3,nc2,nc1);
@@ -291,10 +286,9 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
       for(int i=0; i<nc2; ++i)
         cot_theta(i) = cos(pmb->pcoord->x2v(i))/sin(pmb->pcoord->x2v(i));
     }
-  }
-  else
+  } else {
     AngularGrid(angle_flag, nmu);
-
+  }
 
   // set a default opacity function
   UpdateOpacity = DefaultOpacity;
@@ -304,7 +298,7 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
 
   rad_bvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&rad_bvar);
-// enroll radiation boundary value object
+  // enroll radiation boundary value object
   if (NR_RADIATION_ENABLED) {
     pmb->pbval->bvars_main_int.push_back(&rad_bvar);
   }
@@ -334,11 +328,11 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     FILE *pfile;
     std::stringstream msg;
     if ((pfile = fopen("Rad_angles.txt","w")) == NULL) {
-        msg << "### FATAL ERROR in Radiation Class" << std::endl
-            << "Output file Rad_angles.txt could not be opened";
-        throw std::runtime_error(msg.str().c_str());
+      msg << "### FATAL ERROR in Radiation Class" << std::endl
+          << "Output file Rad_angles.txt could not be opened";
+      throw std::runtime_error(msg.str().c_str());
     }
-      // damp the angular grid in one cell
+    // damp the angular grid in one cell
 
     fprintf(pfile,"Prat          %4.2e \n",prat);
     fprintf(pfile,"Crat          %4.2e \n",crat);
@@ -358,16 +352,16 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     fprintf(pfile,"nu_min:       %e  \n",nu_min);
     fprintf(pfile,"nu_max:       %e  \n",nu_max);
     if (IM_RADIATION_ENABLED) {
-    fprintf(pfile,"iteration:    %d  \n",pmb->pmy_mesh->pimrad->ite_scheme);
-    fprintf(pfile,"red_or_black: %d  \n",pmb->pmy_mesh->pimrad->rb_or_not);
-    fprintf(pfile,"err_limit:    %e  \n",pmb->pmy_mesh->pimrad->error_limit_);
-    fprintf(pfile,"n_limit:      %d  \n",pmb->pmy_mesh->pimrad->nlimit_);
-    fprintf(pfile,"tau_scheme    %d  \n",pradintegrator->tau_flag_);
+      fprintf(pfile,"iteration:    %d  \n",pmb->pmy_mesh->pimrad->ite_scheme);
+      fprintf(pfile,"red_or_black: %d  \n",pmb->pmy_mesh->pimrad->rb_or_not);
+      fprintf(pfile,"err_limit:    %e  \n",pmb->pmy_mesh->pimrad->error_limit_);
+      fprintf(pfile,"n_limit:      %d  \n",pmb->pmy_mesh->pimrad->nlimit_);
+      fprintf(pfile,"tau_scheme    %d  \n",pradintegrator->tau_flag_);
     }
 
     for(int n=0; n<nang; ++n) {
       fprintf(pfile,"%2d   %e   %e   %e    %e\n",n,mu(0,0,0,0,n),mu(1,0,0,0,n),
-             mu(2,0,0,0,n), wmu(n));
+              mu(2,0,0,0,n), wmu(n));
     }
     if (nfreq > 1) {
       fprintf(pfile,"fre   spec\n");
@@ -375,13 +369,8 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
         fprintf(pfile,"%e   %e\n",nu_grid(ifr),emission_spec(ifr));
       }
     }
-
     fclose(pfile);
-
   }
-
-
-
 }
 
 // destructor
