@@ -136,7 +136,7 @@ void RadBoundaryVariable::VacuumInnerX2(
 //----------------------------------------------------------------------------------------
 //! \fn void RadBoundaryVariable::VacuumOuterX2(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief VACUUM boundary conditions, inner x1 boundary
+//  \brief VACUUM boundary conditions, outer x2 boundary
 
 void RadBoundaryVariable::VacuumOuterX2(
     Real time, Real dt, int il, int iu, int ju,  int kl, int ku, int ngh) {
@@ -174,7 +174,7 @@ void RadBoundaryVariable::VacuumOuterX2(
 //----------------------------------------------------------------------------------------
 //! \fn void RadBoundaryVariable::VacuumInnerX2(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief VACUUM boundary conditions, inner x1 boundary
+//  \brief VACUUM boundary conditions, inner x2 boundary
 
 void RadBoundaryVariable::VacuumInnerX3(
     Real time, Real dt, int il, int iu, int jl,  int ju, int kl, int ngh) {
@@ -208,9 +208,9 @@ void RadBoundaryVariable::VacuumInnerX3(
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadBoundaryVariable::VacuumInnerX2(
+//! \fn void RadBoundaryVariable::VacuumOuterX3(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief VACUUM boundary conditions, inner x1 boundary
+//  \brief VACUUM boundary conditions, outer X3 boundary
 
 void RadBoundaryVariable::VacuumOuterX3(
     Real time, Real dt, int il, int iu, int jl,  int ju, int ku, int ngh) {

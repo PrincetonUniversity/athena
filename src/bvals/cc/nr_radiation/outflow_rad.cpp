@@ -3,7 +3,7 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file reflect.cpp
+//! \file outflow_rad.cpp
 //  \brief implementation of reflecting BCs in each dimension
 
 // C headers
@@ -31,12 +31,11 @@
 //----------------------------------------------------------------------------------------
 //! \fn void RadBoundaryVariable::OutflowInnerX1(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief VACUUM boundary conditions, inner x1 boundary
+//  \brief outflow boundary conditions, inner x1 boundary
 
 void RadBoundaryVariable::OutflowInnerX1(Real time, Real dt, int il, int jl, int ju,
                                          int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones,
-  // reflect rays along angles with opposite nx
   int &nang = pmy_block_->pnrrad->nang; // angles per octant
   int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
@@ -58,12 +57,11 @@ void RadBoundaryVariable::OutflowInnerX1(Real time, Real dt, int il, int jl, int
 //----------------------------------------------------------------------------------------
 //! \fn void RadBoundaryVariable::OutflowOuterX1(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief VACUUM boundary conditions, outer x1 boundary
+//  \brief Outflow boundary conditions, outer x1 boundary
 
 void RadBoundaryVariable::OutflowOuterX1(Real time, Real dt, int iu, int jl, int ju,
                                          int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones,
-  // reflect rays along angles with opposite nx
   int &nang = pmy_block_->pnrrad->nang; // angles per octant
   int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
@@ -85,12 +83,11 @@ void RadBoundaryVariable::OutflowOuterX1(Real time, Real dt, int iu, int jl, int
 //----------------------------------------------------------------------------------------
 //! \fn void RadBoundaryVariable::OutflowInnerX2(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, inner x2 boundary
+//  \brief Outflow boundary conditions, inner x2 boundary
 
 void RadBoundaryVariable::OutflowInnerX2(Real time, Real dt, int il, int iu, int jl,
                                          int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones,
-  // reflect rays along angles with opposite nx
   int nang = pmy_block_->pnrrad->nang;
   int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
@@ -112,12 +109,11 @@ void RadBoundaryVariable::OutflowInnerX2(Real time, Real dt, int il, int iu, int
 //----------------------------------------------------------------------------------------
 //! \fn void RadBoundaryVariable::OutflowOuterX2(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief VACUUM boundary conditions, inner x1 boundary
+//  \brief Outflow boundary conditions, outer x2 boundary
 
 void RadBoundaryVariable::OutflowOuterX2(Real time, Real dt, int il, int iu, int ju,
                                          int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones,
-  // reflect rays along angles with opposite nx
   int &nang = pmy_block_->pnrrad->nang; // angles per octant
   int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
@@ -138,14 +134,12 @@ void RadBoundaryVariable::OutflowOuterX2(Real time, Real dt, int il, int iu, int
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadBoundaryVariable::OutflowInnerX2(
+//! \fn void RadBoundaryVariable::OutflowInnerX3(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief VACUUM boundary conditions, inner x1 boundary
 
 void RadBoundaryVariable::OutflowInnerX3(Real time, Real dt, int il, int iu, int jl,
                                          int ju, int kl, int ngh) {
   // copy radiation variables into ghost zones,
-  // reflect rays along angles with opposite nx
 
   int &nang = pmy_block_->pnrrad->nang;
   int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
@@ -166,14 +160,13 @@ void RadBoundaryVariable::OutflowInnerX3(Real time, Real dt, int il, int iu, int
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadBoundaryVariable::OutflowInnerX2(
+//! \fn void RadBoundaryVariable::OutflowInnerX3(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief VACUUM boundary conditions, inner x1 boundary
+//  \brief Outflow boundary conditions, outer x3 boundary
 
 void RadBoundaryVariable::OutflowOuterX3(Real time, Real dt, int il, int iu, int jl,
                                          int ju, int ku, int ngh) {
   // copy radiation variables into ghost zones,
-  // reflect rays along angles with opposite nx
 
   int &nang = pmy_block_->pnrrad->nang; // angles per octant
   int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands

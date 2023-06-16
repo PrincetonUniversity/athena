@@ -157,9 +157,9 @@ void RadBoundaryVariable::ReflectInnerX2(
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void RadBoundaryVariable::ReflectInnerX2(
+//! \fn void RadBoundaryVariable::ReflectOuterX2(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, inner x2 boundary
+//  \brief REFLECTING boundary conditions, outer x2 boundary
 
 void RadBoundaryVariable::ReflectOuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
@@ -197,7 +197,7 @@ void RadBoundaryVariable::ReflectOuterX2(
 //----------------------------------------------------------------------------------------
 //! \fn void RadBoundaryVariable::ReflectInnerX3(
 //          Real time, Real dt, int il, int jl, int ju, int kl, int ku, int ngh)
-//  \brief REFLECTING boundary conditions, inner x2 boundary
+//  \brief REFLECTING boundary conditions, inner x3 boundary
 
 void RadBoundaryVariable::ReflectInnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
