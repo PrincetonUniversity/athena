@@ -99,7 +99,6 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
     Real *tcoef = &(tran_coef(0));
     Real *wmu = &(wmu_cm(0));  
     Real *imcoef = &(implicit_coef(ifr*nang));   
-//#pragma omp simd reduction(+:jr_cm,suma1,suma2) aligned(vn,vn2,tcoef,ircm,wmu:ALI_LEN)
     for(int n=0; n<nang; n++){
        Real vn = 1.0/(imcoef[n] + (rdtcsigmar + rdtcsigmas) * tcoef[n]);
        vn2[n] = tcoef[n] * vn;
@@ -189,7 +188,6 @@ Real RadIntegrator::MultiGroupAbsScat(AthenaArray<Real> &wmu_cm,
       Real *vn2 = &(vncsigma2(ifr*nang));
       Real *imcoef = &(implicit_coef(nang*ifr));
       Real *tcoef = &(tran_coef(0));
-#pragma omp simd aligned(irn,vn2:ALI_LEN)
       for(int n=0; n<nang; n++){
         irn[n] +=  ((rdtcsigmas + rdtcsigmar - rdtcsigmae) * jr_cm + rdtcsigmap * emi_nu
                       - ((imcoef[n]-1.0)/tcoef[n] + rdtcsigmas + rdtcsigmar) * irn[n]) * vn2[n];

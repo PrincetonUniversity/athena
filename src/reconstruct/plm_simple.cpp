@@ -126,7 +126,6 @@ void Reconstruction::PiecewiseLinearX1(
       Real *q1n = &(q(k,j,i+1,0));
       Real *q2n = &(q(k,j,i-1,0));
       Real *qcn = &(qc(i,0));
-#pragma omp simd aligned(dqln,dqrn,qn,q1n,q2n,qcn:ALI_LEN)
       for (int n=0; n<=nu; ++n) {
         dqln[n] = (qn[n] - q2n[n]);
         dqrn[n] = (q1n[n] - qn[n]);
@@ -160,7 +159,6 @@ void Reconstruction::PiecewiseLinearX1(
           Real *dqrn = &(dqr(i,0));
           Real *dqln = &(dql(i,0));
           Real *dqmn = &(dqm(i,0));
-#pragma omp simd simdlen(SIMD_WIDTH) aligned(dqrn,dqln,dqmn:ALI_LEN)
         for (int n=0; n<=nu; ++n) {
           Real dqF =  dqrn[n]*dxF;
           Real dqB =  dqln[n]*dxB;
@@ -186,7 +184,6 @@ void Reconstruction::PiecewiseLinearX1(
       Real *qrn = &(qr(i,0));
       Real *qcn = &(qc(i,0));
       Real *dqmn = &(dqm(i,0));
-#pragma omp simd simdlen(SIMD_WIDTH) aligned(qln,qrn,qcn,dqmn:ALI_LEN)
       for (int n=0; n<=nu; ++n) {
       // Mignone equation 30
         qln[n] = qcn[n] + ratio_l*dqmn[n];
@@ -300,7 +297,6 @@ void Reconstruction::PiecewiseLinearX2(
       Real *qn  = &(q(k,j  ,i,0));
       Real *q1n = &(q(k,j+1,i,0));
       Real *q2n = &(q(k,j-1,i,0));
-#pragma omp simd aligned(dqln,dqrn,qcn,q1n,q2n:ALI_LEN)
       for (int n=0; n<=nu; ++n) {
       // renamed dw* -> dq* from plm.cpp
         dqln[n] = (qn[n] - q2n[n]);
@@ -316,7 +312,6 @@ void Reconstruction::PiecewiseLinearX2(
         Real *dqln = &(dql(i,0));
         Real *dqrn = &(dqr(i,0));
         Real *dqmn = &(dqm(i,0));
-#pragma omp simd simdlen(SIMD_WIDTH) aligned(dqln,dqrn,dqmn:ALI_LEN)
         for (int n=0; n<=nu; ++n) {
           Real dq2 = dqln[n]*dqrn[n];
           dqmn[n] = 2.0*dq2/(dqln[n] + dqrn[n]);
@@ -336,7 +331,6 @@ void Reconstruction::PiecewiseLinearX2(
         Real *dqrn = &(dqr(i,0));
         Real *dqln = &(dql(i,0));
         Real *dqmn = &(dqm(i,0));
-#pragma omp simd simdlen(SIMD_WIDTH) aligned(dqrn,dqln,dqmn:ALI_LEN)
         for (int n=0; n<=nu; ++n) {
           Real dqF =  dqrn[n]*dxF;
           Real dqB =  dqln[n]*dxB;
@@ -363,7 +357,6 @@ void Reconstruction::PiecewiseLinearX2(
       Real *qrn = &(qr(i,0));
       Real *dqmn = &(dqm(i,0));
       Real *qcn = &(qc(i,0));
-#pragma omp simd simdlen(SIMD_WIDTH) aligned(qln,qrn,qcn,dqmn:ALI_LEN)
       for (int n=0; n<=nu; ++n) {
         qln[n] = qcn[n] + dxp*dqmn[n];
         qrn[n] = qcn[n] - dxm*dqmn[n];
@@ -468,7 +461,6 @@ void Reconstruction::PiecewiseLinearX3(
       Real *qn  = &(q(k,j  ,i,0));
       Real *q1n = &(q(k+1,j,i,0));
       Real *q2n = &(q(k-1,j,i,0));
-#pragma omp simd aligned(dqln,dqrn,qn,qcn,q1n,q2n:ALI_LEN)
       for (int n=0; n<=nu; ++n) {
       // renamed dw* -> dq* from plm.cpp
         dqln[n] = (qn[n] - q2n[n]);
@@ -484,7 +476,6 @@ void Reconstruction::PiecewiseLinearX3(
         Real *dqln = &(dql(i,0));
         Real *dqrn = &(dqr(i,0));
         Real *dqmn = &(dqm(i,0));
-#pragma omp simd simdlen(SIMD_WIDTH) aligned(dqln,dqrn,dqmn:ALI_LEN)
         for (int n=0; n<=nu; ++n) {
           Real dq2 = dqln[n]*dqrn[n];
           dqmn[n] = 2.0*dq2/(dqln[n] + dqrn[n]);
@@ -502,7 +493,6 @@ void Reconstruction::PiecewiseLinearX3(
         Real *dqmn = &(dqm(i,0));
         Real *dqrn = &(dqr(i,0));
         Real *dqln = &(dql(i,0));
-#pragma omp simd simdlen(SIMD_WIDTH) aligned(dqmn,dqrn,dqln:ALI_LEN)
         for (int n=0; n<=nu; ++n) {
           Real dqF =  dqrn[n]*dxF;
           Real dqB =  dqln[n]*dxB;
@@ -525,7 +515,6 @@ void Reconstruction::PiecewiseLinearX3(
       Real *qrn = &(qr(i,0));
       Real *qcn = &(qc(i,0));
       Real *dqmn = &(dqm(i,0));
-#pragma omp simd simdlen(SIMD_WIDTH) aligned(qln,qrn,qcn,dqmn:ALI_LEN)
       for (int n=0; n<=nu; ++n) {
         qln[n] = qcn[n] + dxp*dqmn[n];
         qrn[n] = qcn[n] - dxm*dqmn[n];

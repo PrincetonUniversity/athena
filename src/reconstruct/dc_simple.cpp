@@ -51,7 +51,6 @@ void Reconstruction::DonorCellX1(const int k, const int j, const int il, const i
       Real *qn = &(q(k,j,i,0));
       Real *qln = &(ql(i+1,0));
       Real *qrn = &(qr(i,0));
-#pragma omp simd aligned(qn,qln,qrn:ALI_LEN)
       for (int n=0; n<=nu; ++n) {
         qln[n] =  qrn[n] = qn[n];
       }
@@ -94,7 +93,6 @@ void Reconstruction::DonorCellX2(const int k, const int j, const int il, const i
       Real *qln = &(ql(i,0));
       Real *qrn = &(qr(i,0));
       Real *qn = &(q(k,j,i,0));
-#pragma omp simd aligned(qln,qrn,qn:ALI_LEN)
       for (int n=0; n<=nu; ++n) {
       qln[n] = qrn[n] = qn[n];
     }
@@ -136,7 +134,6 @@ void Reconstruction::DonorCellX3(const int k, const int j, const int il, const i
     Real *qln = &(ql(i,0));
     Real *qrn = &(qr(i,0));
     Real *qn = &(q(k,j,i,0));
-#pragma omp simd aligned(qln,qrn,qn:ALI_LEN)
     for (int n=0; n<=nu; ++n) {
       qln[n] = qrn[n] = qn[n];
     }
@@ -152,7 +149,6 @@ void Reconstruction::DonorCellZeta(
     Real *qln = &(ql(zs+1));
     Real *qrn = &(qr(zs));
     Real *qn = &(q(zs));
-#pragma omp simd aligned(qln,qrn,qn:ALI_LEN)
     for (int n=0; n<=ze-zs; ++n) {
       qln[n] =  qrn[n] = qn[n];
     }
@@ -169,7 +165,6 @@ void Reconstruction::DonorCellPsi(
     Real *qln = &(ql(ps+1));
     Real *qrn = &(qr(ps));
     Real *qn = &(q(ps));
-#pragma omp simd aligned(qln,qrn,qn:ALI_LEN)
     for(int m=0; m<=pe-ps; ++m){
       // renamed dw* -> dq* from plm.cpp
       qln[m] =  qrn[m] = qn[m];

@@ -79,7 +79,6 @@ void RadIntegrator::Compton(AthenaArray<Real> &wmu_cm,
       Real *irn = &(ir_cm(nang*ifr));
       Real *wmun = &(wmu_cm(0));
       Real *tcoef = &(tran_coef(0));
-#pragma omp simd reduction(+:jr_cm,suma1) aligned(irn,wmun,tcoef:ALI_LEN)
       for(int n=0; n<nang; n++){
          jr_cm += irn[n] * wmun[n];
          suma1 += tcoef[n] * wmun[n] * 4.0 * rdtcsigma * telectron;
@@ -108,7 +107,6 @@ void RadIntegrator::Compton(AthenaArray<Real> &wmu_cm,
       }
 
       // Update the co-moving frame specific intensity
-#pragma omp simd aligned(irn,tcoef:ALI_LEN)
       for(int n=0; n<nang; n++){
         irn[n] += source * tcoef[n];
       }

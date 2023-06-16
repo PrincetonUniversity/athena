@@ -326,7 +326,6 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
           Real *cosx = &(prad->mu(0,k,j,i-1,0));
           Real *cosx1 = &(prad->mu(0,k,j,i,0));
           Real *veln = &(velx_(k,j,i,ifr*nang));
-#pragma omp simd aligned(cosx,cosx1,veln:ALI_LEN)
           for (int n=0; n<nang; ++n) {
             // linear intepolation between x1v(i-1), x1f(i), x1v(i)
             veln[n] = prad->reduced_c *
@@ -355,7 +354,6 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
             Real *cosy = &(prad->mu(1,k,j-1,i,0));
             Real *cosy1 = &(prad->mu(1,k,j,i,0));
             Real *veln = &(vely_(k,j,i,ifr*nang));
-#pragma omp simd aligned(cosy,cosy1,veln:ALI_LEN)
             for (int n=0; n<nang; ++n) {
             // linear intepolation between x2v(j-1), x2f(j), x2v(j)
               veln[n] = prad->reduced_c *
@@ -385,7 +383,6 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin)
             Real *cosz = &(prad->mu(2,k-1,j,i,0));
             Real *cosz1 = &(prad->mu(2,k,j,i,0));
             Real *veln = &(velz_(k,j,i,ifr*nang));
-#pragma omp simd aligned(cosz,cosz1,veln:ALI_LEN)
             for (int n=0; n<nang; ++n) {
             // linear intepolation between x2v(j-1), x2f(j), x2v(j)
               veln[n] = prad->reduced_c *
@@ -923,7 +920,6 @@ void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i,
       Real *cosx = &(prad->mu(0,k,j,i,0));
       Real *cosy = &(prad->mu(1,k,j,i,0));
       Real *cosz = &(prad->mu(2,k,j,i,0));
-#pragma omp simd aligned(cosx,weight,irn,cosy,cosz:ALI_LEN) reduction(+:er_f,fr1_f,fr2_f,fr3_f,pr11_f,pr12_f,pr13_f,pr22_f,pr23_f,pr33_f)
       for (int n=0; n<nang; ++n) {
         Real irweight = weight[n] * irn[n];
         er_f   += irweight;

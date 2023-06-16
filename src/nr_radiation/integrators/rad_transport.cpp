@@ -433,7 +433,6 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
             for(int n=0; n<zeta_limit; ++n){
               Real *qpsi = &(q_psi_(NGHOST));
               Real *irm = &(ir(k,j,i,ifr*nang+n*2*npsi));
-#pragma omp simd aligned(qpsi,irm:ALI_LEN)
               for(int m=0; m<npsi*2; ++m){
                 qpsi[m] = irm[m];
               }// end nzeta
@@ -763,7 +762,6 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
         Real *flxr = &(x1flux(k,j,i+1,0));
         Real *flxl = &(x1flux(k,j,i,0));
         Real *flxn = &(dflx(i,0));
-#pragma omp simd aligned(flxn,flxr,flxl:ALI_LEN)
         for(int n=0; n<prad->n_fre_ang; ++n){
           flxn[n] = (x1area(i+1) *flxr[n] - x1area(i)*flxl[n]);
         }// end n
@@ -777,7 +775,6 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
         Real *flxr = &(x2flux(k,j+1,i,0));
         Real *flxl = &(x2flux(k,j,i,0));
         Real *flxn = &(dflx(i,0));
-#pragma omp simd aligned(flxr,flxl,flxn:ALI_LEN) 
         for(int n=0; n<prad->n_fre_ang; ++n){
             flxn[n] += (x2area_p1(i)*flxr[n] - x2area(i)*flxl[n]);
           }
@@ -792,7 +789,6 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
         Real *flxr = &(x3flux(k+1,j,i,0));
         Real *flxl = &(x3flux(k,j,i,0));
         Real *flxn = &(dflx(i,0));
-#pragma omp simd aligned(flxn,flxr,flxl:ALI_LEN) 
         for(int n=0; n<prad->n_fre_ang; ++n){
             flxn[n] += (x3area_p1(i)*flxr[n] - x3area(i)*flxl[n]);
           }
@@ -804,7 +800,6 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
         Real *irin = &(ir_in(k,j,i,0));
         Real *iro = &(ir_out(k,j,i,0));
         Real *flxn = &(dflx(i,0));
-#pragma omp simd aligned(irin,iro,flxn:ALI_LEN)
         for(int n=0; n<prad->n_fre_ang; ++n){
           iro[n] = std::max(irin[n]-wght*flxn[n]/vol(i), TINY_NUMBER);
         }
@@ -831,7 +826,6 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
                 Real *flxn = &(dflx_ang(n*2*npsi));
                 Real *areapsi = &(area_psi(n,0));
                 Real *psiflx = &(psi_flux_(k,j,i,ifr,n*2*npsi));
-#pragma omp simd aligned(flxn,areapsi,psiflx:ALI_LEN)
                 for(int m=0; m<2*npsi; ++m){
                   flxn[m] += (areapsi[m+1] * psiflx[m+1]
                             - areapsi[m] * psiflx[m]);                
@@ -841,7 +835,6 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
               Real *flxn = &(dflx_ang(0));
               Real *areazeta = &(area_zeta(0));
               Real *zetaflx = &(zeta_flux_(k,j,i,ifr,0));
-#pragma omp simd aligned(flxn,areazeta,zetaflx:ALI_LEN)
               for(int n=0; n<2*nzeta; ++n){         
                 flxn[n] += (areazeta[n+1] * zetaflx[n+1]
                           - areazeta[n] * zetaflx[n]);
@@ -850,7 +843,6 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
               Real *flxn = &(dflx_ang(0));
               Real *areapsi = &(area_psi(0));
               Real *psiflx = &(psi_flux_(k,j,i,ifr,0));
-#pragma omp simd aligned(flxn,areapsi,psiflx:ALI_LEN) 
               for(int m=0; m<2*npsi; ++m){
                 flxn[m] += (areapsi[m+1] * psiflx[m+1] 
                           - areapsi[m] * psiflx[m]);              
@@ -861,7 +853,6 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
             Real *iro = &(ir_out(k,j,i,ifr*nang));
             Real *flxn = &(dflx_ang(0));
             Real *angv = &(ang_vol(0));
-#pragma omp simd aligned(iro,flxn,angv:ALI_LEN)
             for(int n=0; n<prad->nang; ++n){
               iro[n] = std::max(iro[n]-wght*flxn[n]/angv[n], TINY_NUMBER);
             }// end angle
