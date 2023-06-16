@@ -25,8 +25,8 @@
 #include "../bvals/bvals.hpp"
 #include "../outputs/io_wrapper.hpp"
 #include "../parameter_input.hpp"
-#include "../task_list/task_list.hpp"
 #include "../task_list/im_rad_task_list.hpp"
+#include "../task_list/task_list.hpp"
 #include "../utils/interp_table.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
@@ -411,7 +411,6 @@ class Mesh {
   void EnrollOrbitalVelocityDerivative(int i, OrbitalVelocityFunc my_func);
   void SetGravitationalConstant(Real g) { four_pi_G_=4.0*PI*g; }
   void SetFourPiG(Real fpg) { four_pi_G_=fpg; }
-
 };
 
 

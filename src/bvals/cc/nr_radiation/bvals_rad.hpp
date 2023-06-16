@@ -1,5 +1,5 @@
-#ifndef BVALS_CC_RAD_BVALS_RAD_HPP_
-#define BVALS_CC_RAD_BVALS_RAD_HPP_
+#ifndef BVALS_CC_NR_RADIATION_BVALS_RAD_HPP_
+#define BVALS_CC_NR_RADIATION_BVALS_RAD_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -31,7 +31,7 @@ class RadBoundaryVariable : public CellCenteredBoundaryVariable {
                                                 // AthenaArray<Real> &prim);
   virtual ~RadBoundaryVariable() = default;
 
-// functions unique implementation to radiation class
+  // functions unique implementation to radiation class
   void SendFluxCorrection() override;
   bool ReceiveFluxCorrection() override;
 
@@ -39,7 +39,7 @@ class RadBoundaryVariable : public CellCenteredBoundaryVariable {
   void SetBoundaries() override;
 
 
-// function for shearing box
+  // function for shearing box
   void AddRadShearForInit();
   void ShearQuantities(AthenaArray<Real> &shear_cc_, bool upper) override;
   void SetShearingBoxBoundaryBuffers();
@@ -48,8 +48,6 @@ class RadBoundaryVariable : public CellCenteredBoundaryVariable {
   bool ReceiveFluxShearingBoxBoundaryBuffers();
   bool ReceiveShearingBoxBoundaryBuffers();
   void SendShearingBoxBoundaryBuffers();
-
-
 
   // BoundaryPhysics: need to rotate the intensity
   void ReflectInnerX1(Real time, Real dt,
@@ -91,42 +89,42 @@ class RadBoundaryVariable : public CellCenteredBoundaryVariable {
                       int il, int iu, int jl, int ju, int kl, int ngh) override;
   void OutflowOuterX3(Real time, Real dt,
                       int il, int iu, int jl, int ju, int ku, int ngh) override;
-  
-  //rotate the specific intensity by some amount
-  //these functions are typically called with periodic boundary together
-  void RotateHPi_InnerX2(Real time, Real dt, 
+
+  // rotate the specific intensity by some amount
+  // these functions are typically called with periodic boundary together
+  void RotateHPi_InnerX2(Real time, Real dt,
                       int il, int iu, int jl, int kl, int ku, int ngh);
 
-  void RotateHPi_OuterX2(Real time, Real dt, 
+  void RotateHPi_OuterX2(Real time, Real dt,
                       int il, int iu, int ju, int kl, int ku, int ngh);
 
-  void RotateHPi_InnerX3(Real time, Real dt, 
+  void RotateHPi_InnerX3(Real time, Real dt,
                       int il, int iu, int jl, int ju, int kl, int ngh);
 
-  void RotateHPi_OuterX3(Real time, Real dt, 
+  void RotateHPi_OuterX3(Real time, Real dt,
                       int il, int iu, int jl, int ju, int ku, int ngh);
 
-  void RotatePi_InnerX3(Real time, Real dt, 
+  void RotatePi_InnerX3(Real time, Real dt,
                       int il, int iu, int jl, int ju, int kl, int ngh);
- 
-  void RotatePi_OuterX3(Real time, Real dt, 
+
+  void RotatePi_OuterX3(Real time, Real dt,
                       int il, int iu, int jl, int ju, int ku, int ngh);
-  
+
   void PolarWedgeInnerX2(Real time, Real dt,
                       int il, int iu, int jl, int ju, int ku, int ngh) override;
-  
+
   void PolarWedgeOuterX2(Real time, Real dt,
                       int il, int iu, int jl, int ju, int ku, int ngh) override;
 
-private:
+ private:
   AthenaArray<Real>  azimuthal_shift_rad_;
 
   // override function for flux correction
   void SetFluxBoundaryFromFiner(Real *buf, const NeighborBlock& nb);
   void SetFluxBoundarySameLevel(Real *buf, const NeighborBlock& nb);
 
-  int LoadFluxBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);  
-  int LoadFluxBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;  
+  int LoadFluxBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb);
+  int LoadFluxBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) override;
 
   void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
@@ -149,14 +147,7 @@ private:
   void SetFluxShearingBoxBoundarySameLevel(AthenaArray<Real> &src,
                                            Real *buf, const int nb);
 
-
-
-
-  // function for shearing box
-
-  AthenaArray<Real> ir_cm_, ir_lab_, pflux_; // co-moving frame specific inteisites 
-
-
+  AthenaArray<Real> ir_cm_, ir_lab_, pflux_; // co-moving frame specific inteisites
 };
 
-#endif // BVALS_CC_HYDRO_BVALS_HYDRO_HPP_
+#endif //  BVALS_CC_NR_RADIATION_BVALS_RAD_HPP_

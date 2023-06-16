@@ -123,11 +123,11 @@ void RadBoundaryVariable::VacuumInnerX2(
             } else {
               (*var_cc)(k,jl-j,i,ang) = 0.0;
             }
-          }// end n
-
+          }
         }
-      }}}
-
+      }
+    }
+  }
   return;
 }
 

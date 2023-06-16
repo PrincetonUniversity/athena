@@ -128,18 +128,17 @@ TaskStatus IMRadITTaskList::AddFluxAndSourceTerms(MeshBlock *pmb) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           prad->pradintegrator->FirstOrderFluxDivergence(k, j, i,
-                                                   prad->ir_old);
+                                                         prad->ir_old);
 
-        // add angular flux
+          // add angular flux
           if (prad->angle_flag == 1) {
             prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);
           }// end angular flux
 
-        // add the source terms together
+          // add the source terms together
           prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u,
-                                          prad->ir1, prad->ir);
-
-    }
+                                               prad->ir1, prad->ir);
+        }
       }
     }
   } else if (rb_or_not == 1) {
@@ -149,18 +148,18 @@ TaskStatus IMRadITTaskList::AddFluxAndSourceTerms(MeshBlock *pmb) {
         for (int i=is; i<=ie; ++i) {
           if (((i-is)+(j-js)+(k-ks))%2 == 0) {
             prad->pradintegrator->FirstOrderFluxDivergence(k, j, i,
-                                                       prad->ir);
+                                                           prad->ir);
 
-        // add angular flux
+            // add angular flux
             if (prad->angle_flag == 1) {
               prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);
             }
 
-        // add the source terms together
+            // add the source terms together
             prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u,
                                                  prad->ir1, prad->ir);
           }
-    }
+        }
       }
     }
   } else if (rb_or_not == 2) {
@@ -170,22 +169,21 @@ TaskStatus IMRadITTaskList::AddFluxAndSourceTerms(MeshBlock *pmb) {
         for (int i=is; i<=ie; ++i) {
           if (((i-is)+(j-js)+(k-ks))%2 == 1) {
             prad->pradintegrator->FirstOrderFluxDivergence(k, j, i,
-                                                       prad->ir);
+                                                           prad->ir);
 
-        // add angular flux
+            // add angular flux
             if (prad->angle_flag == 1) {
               prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);
             }
 
-        // add the source terms together
+            // add the source terms together
             prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u,
-                                          prad->ir1, prad->ir);
-
+                                                 prad->ir1, prad->ir);
           }
+        }
+      }
     }
-  }
-}
-  } else{
+  } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in function [Iteration]"
         << std::endl << "red_or_black '" << rb_or_not << "' not allowed!";

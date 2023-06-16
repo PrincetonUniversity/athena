@@ -185,11 +185,9 @@ void MeshRefinement::RestrictCellCenteredValues(
   int si = (csi - pmb->cis)*2 + pmb->is, ei = (cei - pmb->cis)*2 + pmb->is + 1;
 
   // reverse order for radiation variables
-  if(array_order < 0){
-
+  if (array_order < 0) {
     // store the restricted data in the prolongation buffer for later use
     if (pmb->block_size.nx3>1) { // 3D
-
       for (int ck=csk; ck<=cek; ck++) {
         int k = (ck - pmb->cks)*2 + pmb->ks;
         for (int cj=csj; cj<=cej; cj++) {
@@ -212,7 +210,8 @@ void MeshRefinement::RestrictCellCenteredValues(
                   (((fine(k  ,j  ,i,n)*fvol_[0][0](i) + fine(k  ,j+1,i,n)*fvol_[0][1](i))
                     + (fine(k  ,j  ,i+1,n)*fvol_[0][0](i+1) +
                        fine(k  ,j+1,i+1,n)*fvol_[0][1](i+1)))
-                   + ((fine(k+1,j  ,i,n)*fvol_[1][0](i) + fine(k+1,j+1,i,n)*fvol_[1][1](i))
+                   + ((fine(k+1,j  ,i,n)*fvol_[1][0](i)
+                       + fine(k+1,j+1,i,n)*fvol_[1][1](i))
                       + (fine(k+1,j  ,i+1,n)*fvol_[1][0](i+1) +
                          fine(k+1,j+1,i+1,n)*fvol_[1][1](i+1)))) / tvol;
             }
@@ -220,7 +219,6 @@ void MeshRefinement::RestrictCellCenteredValues(
         }
       }
     } else if (pmb->block_size.nx2>1) { // 2D
-
       for (int cj=csj; cj<=cej; cj++) {
         int j = (cj - pmb->cjs)*2 + pmb->js;
         pco->CellVolume(0,j  ,si,ei,fvol_[0][0]);
@@ -234,7 +232,8 @@ void MeshRefinement::RestrictCellCenteredValues(
             // KGF: add the off-centered quantities first to preserve FP symmetry
             coarse(0,cj,ci,n) =
                 ((fine(0,j  ,i,n)*fvol_[0][0](i) + fine(0,j+1,i,n)*fvol_[0][1](i))
-                 + (fine(0,j ,i+1,n)*fvol_[0][0](i+1) + fine(0,j+1,i+1,n)*fvol_[0][1](i+1)))
+                 + (fine(0,j ,i+1,n)*fvol_[0][0](i+1)
+                    + fine(0,j+1,i+1,n)*fvol_[0][1](i+1)))
                 /tvol;
           }
         }
@@ -252,10 +251,8 @@ void MeshRefinement::RestrictCellCenteredValues(
         }
       }
     }
-  }// end array_order < 0
+  }
 }
-
-
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshRefinement::RestrictFieldX1(const AthenaArray<Real> &fine
@@ -617,7 +614,7 @@ void MeshRefinement::ProlongateCellCenteredValues(
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
 
-  if(array_order < 0){
+  if (array_order < 0) {
     if (pmb->block_size.nx3 > 1) {
       for (int k=sk; k<=ek; k++) {
         int fk = (k - pmb->cks)*2 + pmb->ks;
@@ -745,20 +742,18 @@ void MeshRefinement::ProlongateCellCenteredValues(
         Real dx1fp = fx1p - x1c;
         for (int n=sn; n<=en; n++) {
           Real ccval = coarse(k,j,i,n);
-        // calculate 1D gradient using the min-mod limiter
+          // calculate 1D gradient using the min-mod limiter
           Real gx1m = (ccval - coarse(k,j,i-1,n))/dx1m;
           Real gx1p = (coarse(k,j,i+1,n) - ccval)/dx1p;
           Real gx1c = 0.5*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
                                                            std::abs(gx1p));
-
-        // interpolate on to the finer grid
+          // interpolate on to the finer grid
           fine(fk  ,fj  ,fi  ,n) = ccval - gx1c*dx1fm;
           fine(fk  ,fj  ,fi+1,n) = ccval + gx1c*dx1fp;
         }
       }
     }
-
-  }//finish array_order
+  }
   return;
 }
 

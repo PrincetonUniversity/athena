@@ -902,14 +902,14 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
             << std::endl;
         ATHENA_ERROR(msg);
     }
-  }else{
+  } else {
     if (datasize != my_blocks(0)->GetBlockSizeInBytes()) {
         msg << "### FATAL ERROR in Mesh constructor" << std::endl
             << "The restart file is broken or input parameters are inconsistent."
             << std::endl;
         ATHENA_ERROR(msg);
     }
-  }// end check getblocksizeinbytes
+  }
 
   ResetLoadBalanceVariables();
 
@@ -1559,7 +1559,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                    pbval->bvars_main_int);
         if (IM_RADIATION_ENABLED)
           pmb->pnrrad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);
-
       }
 
       // With AMR/SMR GR send primitives to enable cons->prim before prolongation

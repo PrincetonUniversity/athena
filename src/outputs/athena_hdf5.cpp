@@ -27,8 +27,8 @@
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-#include "../parameter_input.hpp"
 #include "../nr_radiation/radiation.hpp"
+#include "../parameter_input.hpp"
 #include "outputs.hpp"
 
 // Only proceed if HDF5 output enabled
@@ -194,14 +194,14 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         std::string vname = pod->name + sn;
         std::strncpy(variable_names[n_variable++], vname.c_str(), max_name_length+1);
       }
-    }else if(pod->type=="TENSORS") {
+    } else if(pod->type=="TENSORS") {
       for(int i=1; i<=3; i++) {
         char sn[3];
         std::snprintf(sn,sizeof(sn),"%d%d", i,i);
         std::string vname = pod->name + sn;
         std::strncpy(variable_names[n_variable++], vname.c_str(), max_name_length+1);
       }
-      for(int i=2; i<=3; i++) {
+      for (int i=2; i<=3; i++) {
         char sn[3];
         std::snprintf(sn,sizeof(sn),"%d%d", 1,i);
         std::string vname = pod->name + sn;
@@ -219,7 +219,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         std::string vname = pod->name + sn;
         std::strncpy(variable_names[n_variable++], vname.c_str(), max_name_length+1);
       }
-    }else {
+    } else {
       std::strncpy(variable_names[n_variable++], pod->name.c_str(), max_name_length+1);
     }
     pod = pod->pnext;
