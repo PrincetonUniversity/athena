@@ -21,8 +21,8 @@
 #include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
-#include "../utils/buffer_utils.hpp"
 #include "../nr_radiation/radiation.hpp"
+#include "../utils/buffer_utils.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
@@ -170,9 +170,10 @@ void Mesh::UpdateCostList() {
 
 void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   // compute nleaf= number of leaf MeshBlocks per refined block
-  int nleaf = 2; // dim = 1;
-  if (mesh_size.nx2 > 1) nleaf = 4, dim = 2;
-  if (mesh_size.nx3 > 1) nleaf = 8, dim = 3;
+  int nleaf = 2;
+  // int dim = 1;
+  // if (mesh_size.nx2 > 1) nleaf = 4, dim = 2;
+  // if (mesh_size.nx3 > 1) nleaf = 8, dim = 3;
 
   // collect refinement flags from all the meshblocks
   // count the number of the blocks to be (de)refined
@@ -687,7 +688,6 @@ void Mesh::PrepareSendSameLevel(MeshBlock* pb, Real *sendbuf) {
     int nu = pb->pnrrad->ir.GetDim1() - 1;
     BufferUtility::PackData(pb->pnrrad->ir, sendbuf, pb->ks, pb->ke,
                             0,  nu, pb->is, pb->ie, pb->js, pb->je, p);
-
   }
 
   for (FaceField &var_fc : pb->vars_fc_) {
@@ -736,7 +736,6 @@ void Mesh::PrepareSendCoarseToFineAMR(MeshBlock* pb, Real *sendbuf,
     int nu = pb->pnrrad->ir.GetDim1() - 1;
     BufferUtility::PackData(pb->pnrrad->ir, sendbuf, kl, ku,
                             0,  nu, il, iu, jl, ju, p);
-
   }
 
 
@@ -790,7 +789,6 @@ void Mesh::PrepareSendFineToCoarseAMR(MeshBlock* pb, Real *sendbuf) {
                             0, nu,
                             pb->cis, pb->cie,
                             pb->cjs, pb->cje, p);
-
   }
 
   for (auto fc_pair : pb->pmr->pvars_fc_) {
@@ -852,7 +850,7 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
                                     pob->cks, pob->cke);
     // copy from old/original/other MeshBlock (pob) to newly created block (pmb)
     AthenaArray<Real> const &src = *coarse_cc;
-    AthenaArray<Real> const &dst = *std::get<0>(*pmb_cc_it); // pmb->phydro->u;
+    AthenaArray<Real> &dst = *std::get<0>(*pmb_cc_it); // pmb->phydro->u;
     for (int nv=0; nv<=nu; nv++) {
       for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
         for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
@@ -879,21 +877,17 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
 
     // now copy from pob to new pmb
     AthenaArray<Real> const &src = coarse_cc;
-    AthenaArray<Real> const &dst = pmb->pnrrad->ir;
+    AthenaArray<Real> &dst = pmb->pnrrad->ir;
 
     for (int k=kl, fk=pob->cks; fk<=pob->cke; k++, fk++) {
       for (int j=jl, fj=pob->cjs; fj<=pob->cje; j++, fj++) {
         for (int i=il, fi=pob->cis; fi<=pob->cie; i++, fi++) {
           for (int nv=0; nv<=nu; nv++)
             dst(k, j, i, nv) = src(fk, fj, fi, nv);
-
         }
       }
     }
-
-
-  }// end radiation
-
+  }
 
   auto pmb_fc_it = pmb->pmr->pvars_fc_.begin();
   for (auto fc_pair : pmr->pvars_fc_) {
@@ -972,7 +966,7 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
     int nu = var_cc->GetDim4() - 1;
 
     AthenaArray<Real> const &src = *std::get<0>(*pob_cc_it);
-    AthenaArray<Real> const &dst = *coarse_cc;
+    AthenaArray<Real> &dst = *coarse_cc;
     // fill the coarse buffer
     for (int nv=0; nv<=nu; nv++) {
       for (int k=kl, ck=cks; k<=ku; k++, ck++) {
@@ -1009,9 +1003,7 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
     pmr->ProlongateCellCenteredValues(
         dst, var_cc, -1, 0, nu,
         pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
-
-  }// end radiation
-
+  }
 
   auto pob_fc_it = pob->pmr->pvars_fc_.begin();
   // iterate MeshRefinement std::vectors on new pmb
@@ -1071,9 +1063,7 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
     int nu = pb->pnrrad->ir.GetDim1() - 1;
     BufferUtility::UnpackData(recvbuf, pb->pnrrad->ir, pb->ks, pb->ke, 0, nu,
                               pb->is, pb->ie, pb->js, pb->je, p);
-
   }
-
 
   for (FaceField &var_fc : pb->vars_fc_) {
     BufferUtility::UnpackData(recvbuf, var_fc.x1f,
@@ -1131,9 +1121,7 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
     int nu = pb->pnrrad->ir.GetDim1() - 1;
     BufferUtility::UnpackData(recvbuf, pb->pnrrad->ir, kl, ku, 0, nu,
                               il, iu, jl, ju, p);
-
   }
-
 
   for (auto fc_pair : pb->pmr->pvars_fc_) {
     FaceField *var_fc = std::get<0>(fc_pair);

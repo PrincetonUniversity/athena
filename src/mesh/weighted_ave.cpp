@@ -240,10 +240,8 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
   // than each input array) in each array dimension, and full range is desired:
   // nx4*(3D real MeshBlock cells)
 
-  if(flag == 1){
-
+  if (flag == 1) {
     const int nu = u_out.GetDim1() - 1;
-
     // u_in2 may be an unallocated AthenaArray if using a 2S time integrator
     if (wght[0] == 1.0) {
       if (wght[2] != 0.0) {
@@ -346,12 +344,8 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
         }
       }
     }
-
-  }// end flag == 1
-  else if(flag == 2){
-
+  } else if(flag == 2) {
     const int nu = u_out.GetDim4() - 1;
-
     // u_in2 may be an unallocated AthenaArray if using a 2S time integrator
     if (wght[0] == 1.0) {
       if (wght[2] != 0.0) {
@@ -454,8 +448,7 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
         }
       }
     }
-
-  }// end flag == 2
+  }
   return;
 }
 

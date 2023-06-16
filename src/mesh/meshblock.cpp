@@ -176,16 +176,11 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
         } else if (angle_flag == 10) {
           n_ang = nmu * nmu/2;
         }
-      }// end 3D
-
+      }
     }
-
     nfre_ang = n_ang * noct * nfreq;
-
   }
   //========================================================
-
-
   // Reconstruction: constructor may implicitly depend on Coordinates, and PPM variable
   // floors depend on EOS, but EOS isn't needed in Reconstruction constructor-> this is ok
   precon = new Reconstruction(this, pin);
@@ -479,11 +474,12 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
     if (pnrrad->restart_from_gray) {
-      std::memcpy(pnrrad->ir_gray.data(), &(mbdata[os]), pnrrad->ir_gray.GetSizeInBytes());
+      std::memcpy(pnrrad->ir_gray.data(), &(mbdata[os]),
+                  pnrrad->ir_gray.GetSizeInBytes());
       AthenaArray<Real> fre_ratio;
 
       fre_ratio.NewAthenaArray(pnrrad->nfreq);
-      Real invcrat = 1.0/pnrrad->crat;
+      // Real invcrat = 1.0/pnrrad->crat;
       for (int k=ks; k<=ke; ++k) {
         for (int j=js; j<=je; ++j) {
           for (int i=is; i<=ie; ++i) {
@@ -501,7 +497,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
             for (int ifr=0; ifr<pnrrad->nfreq; ++ifr) {
               for (int n=0; n<pnrrad->nang; ++n) {
-                pnrrad->ir(k,j,i,ifr*pnrrad->nang+n) = pnrrad->ir_gray(k,j,i,n) * fre_ratio(ifr);
+                pnrrad->ir(k,j,i,ifr*pnrrad->nang+n) = pnrrad->ir_gray(k,j,i,n)
+                                                       * fre_ratio(ifr);
               }
             }
           }
