@@ -59,7 +59,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   bd_flag = pin->GetOrAddInteger("problem","black_body",0.0);
 
   Real gamma = peos->GetGamma();
-  Real tr_ini = pow(er1,0.25);
+  Real tr_ini = std::pow(er1,0.25);
 
   // Initialize hydro variable
   for (int k=ks; k<=ke; ++k) {

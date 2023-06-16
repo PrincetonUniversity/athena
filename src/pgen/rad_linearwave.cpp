@@ -93,11 +93,16 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         Real der = amp * (er_r * cos(theta) + er_i * sin(theta));
         Real dfr = amp * (fr_r * cos(theta) + fr_i * sin(theta));
 
-        Real diffrho = (pmb->phydro->u(IDN,k,j,i) - 1.0) - delrho * exp(-omegaimg*time);
-        Real diffvel= pmb->phydro->w(IVX,k,j,i) - delv*exp(-omegaimg*time);
-        Real diffpre = (pmb->phydro->w(IEN,k,j,i) - 1.0) - delp *exp(-omegaimg*time);
-        Real differ= (pmb->pnrrad->rad_mom(IER,k,j,i) - 1.0) - der*exp(-omegaimg*time);
-        Real difffr= pmb->pnrrad->rad_mom(IFR1,k,j,i) -  dfr *exp(-omegaimg*time);
+        Real diffrho = (pmb->phydro->u(IDN,k,j,i) - 1.0)
+                       - delrho * std::exp(-omegaimg*time);
+        Real diffvel= pmb->phydro->w(IVX,k,j,i)
+                      - delv*std::exp(-omegaimg*time);
+        Real diffpre = (pmb->phydro->w(IEN,k,j,i) - 1.0)
+                       - delp *std::exp(-omegaimg*time);
+        Real differ= (pmb->pnrrad->rad_mom(IER,k,j,i) - 1.0)
+                     - der*std::exp(-omegaimg*time);
+        Real difffr= pmb->pnrrad->rad_mom(IFR1,k,j,i)
+                     -  dfr *std::exp(-omegaimg*time);
 
         l1_err[0] += std::abs(diffrho);
         max_err[0] = std::max(std::abs(diffrho), max_err[0]);

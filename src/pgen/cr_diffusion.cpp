@@ -167,20 +167,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
 
         if (CR_ENABLED) {
-            pcr->u_cr(CRE,k,j,i) = exp(-40.0*(dist_sq));
+            pcr->u_cr(CRE,k,j,i) = std::exp(-40.0*(dist_sq));
             if (direction == 0) {
-              pcr->u_cr(CRF1,k,j,i) = vx*4.0*exp(-40.0*dist_sq)/(3.0*pcr->vmax)
-                                   +80*x1*exp(-40.0*dist_sq)/sigma;
+              pcr->u_cr(CRF1,k,j,i) = vx*4.0*std::exp(-40.0*dist_sq)/(3.0*pcr->vmax)
+                                   +80*x1*std::exp(-40.0*dist_sq)/sigma;
               pcr->u_cr(CRF2,k,j,i) = 0.0;
               pcr->u_cr(CRF3,k,j,i) = 0.0;
             } else if (direction == 1) {
-              pcr->u_cr(CRF2,k,j,i) = vy*4.0*exp(-40.0*dist_sq)/(3.0*pcr->vmax)
-                                   +80*x2*exp(-40.0*dist_sq)/sigma;
+              pcr->u_cr(CRF2,k,j,i) = vy*4.0*std::exp(-40.0*dist_sq)/(3.0*pcr->vmax)
+                                   +80*x2*std::exp(-40.0*dist_sq)/sigma;
               pcr->u_cr(CRF1,k,j,i) = 0.0;
               pcr->u_cr(CRF3,k,j,i) = 0.0;
             } else if (direction == 2) {
-              pcr->u_cr(CRF3,k,j,i) = vz*4.0*exp(-40.0*dist_sq)/(3.0*pcr->vmax)
-                                   +80*x3*exp(-40.0*dist_sq)/sigma;
+              pcr->u_cr(CRF3,k,j,i) = vz*4.0*std::exp(-40.0*dist_sq)/(3.0*pcr->vmax)
+                                   +80*x3*std::exp(-40.0*dist_sq)/sigma;
               pcr->u_cr(CRF1,k,j,i) = 0.0;
               pcr->u_cr(CRF2,k,j,i) = 0.0;
             }

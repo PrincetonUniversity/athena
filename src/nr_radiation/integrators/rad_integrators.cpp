@@ -607,7 +607,7 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
           vel = vx * vx + vy * vy + vz * vz;
         }
 
-        Real ratio = sqrt(vel) * invcrat;
+        Real ratio = std::sqrt(vel) * invcrat;
         // Limit the velocity to be smaller than the speed of light
         if (ratio > prad->vmax) {
           Real factor = prad->vmax/ratio;
@@ -779,10 +779,9 @@ void RadIntegrator::GetTaufactor(const Real tau, Real &factor1, int dir) {
       Real tausq = tau * tau;
       factor1 = 1.0 - 0.5 * tausq;
       if (tausq > 1.e-3) {
-        factor1  = (1.0 - exp(-tausq))/tausq;
+        factor1  = (1.0 - std::exp(-tausq))/tausq;
       }
-      factor1 = sqrt(factor1);
-
+      factor1 = std::sqrt(factor1);
     } else if (tau_flag_ == 2) {
       Real tausq = tau;
       if (tausq > 1)
@@ -800,10 +799,9 @@ void RadIntegrator::GetTaufactor(const Real tau, Real &factor1, int dir) {
       Real tausq = tau * tau;
       factor1 = tausq;
       if (tausq > 1.e-3) {
-        factor1  = (1.0 - exp(-tausq*tausq))/tausq;
+        factor1  = (1.0 - std::exp(-tausq*tausq))/tausq;
       }
-      factor1 = sqrt(factor1);
-
+      factor1 = std::sqrt(factor1);
     } else if (tau_flag_ == 2) {
       Real tausq = tau;
       if (tausq > 1)
@@ -824,10 +822,9 @@ void RadIntegrator::GetTaufactorAdv(const Real tau, Real &factor) {
   Real tausq = tau * tau;
   factor = tausq - 0.5 * tausq * tausq;
   if (tausq > 1.e-3)
-    factor = (1.0 - exp(-tausq));
+    factor = (1.0 - std::exp(-tausq));
   return;
 }
-
 
 
 void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i,

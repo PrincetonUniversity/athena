@@ -22,8 +22,9 @@
 int FouthPolyRoot(const Real coef4, const Real tconst, Real &root) {
   // First, get the real root of
   // z^3-4*tconst/coef4 * z - 1/coef4^2==0
-  Real asquar = coef4 * coef4;
-  Real acubic = coef4 * asquar;
+
+  //Real asquar = coef4 * coef4;
+  //Real acubic = coef4 * asquar;
   Real ccubic = tconst * tconst * tconst;
   Real delta1 = 0.25 - 64.0 * ccubic * coef4/27.0;
   if (delta1 < 0.0) {
@@ -46,7 +47,7 @@ int FouthPolyRoot(const Real coef4, const Real tconst, Real &root) {
 
   zroot *= std::pow(coef4,-2.0/3.0);
 
-  Real rcoef = sqrt(zroot);
+  Real rcoef = std::sqrt(zroot);
   Real delta2 = -zroot + 2.0/(coef4*rcoef);
   if (delta2 < 0.0) {
     return -1;
