@@ -24,14 +24,14 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../cr/cr.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-#include "../scalars/scalars.hpp"
 #include "../nr_radiation/radiation.hpp"
-#include "../cr/cr.hpp"
+#include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
 // NEW_OUTPUT_TYPES:
@@ -125,7 +125,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
           // Cell-centered magnetic energy, partitioned by coordinate direction:
           if (MAGNETIC_FIELDS_ENABLED) {
             Real const &bcc1 = pfld->bcc(IB1,k,j,i);
-            Real cosnt &bcc2 = pfld->bcc(IB2,k,j,i);
+            Real const &bcc2 = pfld->bcc(IB2,k,j,i);
             Real const &bcc3 = pfld->bcc(IB3,k,j,i);
             constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED;
             hst_data[prev_out] += vol(i)*0.5*bcc1*bcc1;
@@ -138,9 +138,10 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD;
             hst_data[prev_out + n] += vol(i)*s;
           }
-          if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
-            if(prad->nfreq == 1){
-              constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD + NSCALARS;
+          if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+            if (prad->nfreq == 1) {
+              constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED
+                                       + NFIELD + NSCALARS;
               hst_data[prev_out + 0] += vol(i)*prad->rad_mom(IER,k,j,i);
               hst_data[prev_out + 1] += vol(i)*prad->rad_mom(IFR1,k,j,i);
               hst_data[prev_out + 2] += vol(i)*prad->rad_mom(IFR2,k,j,i);
@@ -155,15 +156,17 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               hst_data[prev_out + 11] += vol(i)*prad->rad_mom(IPR22,k,j,i);
               hst_data[prev_out + 12] += vol(i)*prad->rad_mom(IPR23,k,j,i);
               hst_data[prev_out + 13] += vol(i)*prad->rad_mom(IPR33,k,j,i);
-            }else{
-              if(4*prad->nfreq > NRAD){
+            } else {
+              if (4*prad->nfreq > NRAD) {
                 std::stringstream msg;
-                msg << "### FATAL ERROR in function [OutputType::HistoryFile]" << std::endl
+                msg << "### FATAL ERROR in function [OutputType::HistoryFile]"
+                    << std::endl
                     << "Incrase NRAD '" << NRAD << "' to 4 x number of frequency groups";
                 ATHENA_ERROR(msg);
               }
-              constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD + NSCALARS;
-              for(int ifr=0; ifr<prad->nfreq; ++ifr){
+              constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED
+                                       + NFIELD + NSCALARS;
+              for (int ifr=0; ifr<prad->nfreq; ++ifr) {
                 hst_data[prev_out + 4*ifr] += vol(i)*prad->rad_mom_nu(ifr*13,k,j,i);
                 hst_data[prev_out + 4*ifr+1] += vol(i)*prad->rad_mom_nu(ifr*13+1,k,j,i);
                 hst_data[prev_out + 4*ifr+2] += vol(i)*prad->rad_mom_nu(ifr*13+2,k,j,i);
@@ -171,7 +174,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               }
             }// end nfreq > 1
           }
-          if(CR_ENABLED){
+          if (CR_ENABLED) {
             constexpr int prev_out = NHYDRO + 3 + SELF_GRAVITY_ENABLED + NFIELD + NSCALARS
                                    + NRAD;
             hst_data[prev_out + 0] += vol(i)*pcr->u_cr(IER,k,j,i);
@@ -179,7 +182,6 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             hst_data[prev_out + 2] += vol(i)*pcr->u_cr(IFR2,k,j,i);
             hst_data[prev_out + 3] += vol(i)*pcr->u_cr(IFR3,k,j,i);
           }
-
         }
       }
     }
@@ -194,10 +196,12 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             hst_data[NHISTORY_VARS+NRAD+NCRV+n] += usr_val;
             break;
           case UserHistoryOperation::max:
-            hst_data[NHISTORY_VARS+NRAD+NCRV+n] = std::max(usr_val, hst_data[NHISTORY_VARS+NRAD+NCRV+n]);
+            hst_data[NHISTORY_VARS+NRAD+NCRV+n] = std::max(
+                usr_val, hst_data[NHISTORY_VARS+NRAD+NCRV+n]);
             break;
           case UserHistoryOperation::min:
-            hst_data[NHISTORY_VARS+NRAD+NCRV+n] = std::min(usr_val, hst_data[NHISTORY_VARS+NRAD+NCRV+n]);
+            hst_data[NHISTORY_VARS+NRAD+NCRV+n] = std::min(
+                usr_val, hst_data[NHISTORY_VARS+NRAD+NCRV+n]);
             break;
         }
       }
@@ -207,10 +211,12 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 #ifdef MPI_PARALLEL
   // sum built-in/predefined hst_data[] over all ranks
   if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE, hst_data.get(), NHISTORY_VARS+NRAD+NCRV, MPI_ATHENA_REAL, MPI_SUM, 0,
+    MPI_Reduce(MPI_IN_PLACE, hst_data.get(),
+               NHISTORY_VARS+NRAD+NCRV, MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
   } else {
-    MPI_Reduce(hst_data.get(), hst_data.get(), NHISTORY_VARS+NRAD+NCRV, MPI_ATHENA_REAL, MPI_SUM,
+    MPI_Reduce(hst_data.get(), hst_data.get(),
+               NHISTORY_VARS+NRAD+NCRV, MPI_ATHENA_REAL, MPI_SUM,
                0, MPI_COMM_WORLD);
   }
   // apply separate chosen operations to each user-defined history output
@@ -279,8 +285,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       for (int n=0; n<NSCALARS; n++) {
         std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n);
       }
-      if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED){
-        if(pm->my_blocks(0)->pnrrad->nfreq == 1){
+      if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+        if (pm->my_blocks(0)->pnrrad->nfreq == 1) {
           std::fprintf(pfile,"[%d]=Er    ", iout++);
           std::fprintf(pfile,"[%d]=Fr1    ", iout++);
           std::fprintf(pfile,"[%d]=Fr2    ", iout++);
@@ -295,8 +301,8 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
           std::fprintf(pfile,"[%d]=Pr22    ", iout++);
           std::fprintf(pfile,"[%d]=Pr23    ", iout++);
           std::fprintf(pfile,"[%d]=Pr33    ", iout++);
-        }else{
-          for(int ifr=0; ifr<pm->my_blocks(0)->pnrrad->nfreq; ++ifr){
+        } else {
+          for (int ifr=0; ifr<pm->my_blocks(0)->pnrrad->nfreq; ++ifr) {
             std::fprintf(pfile,"[%d]=Er   ", iout++);
             std::fprintf(pfile,"[%d]=Fr1   ", iout++);
             std::fprintf(pfile,"[%d]=Fr2   ", iout++);
@@ -304,7 +310,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
           }
         }
       }
-      if(CR_ENABLED){
+      if (CR_ENABLED) {
         std::fprintf(pfile,"[%d]=Ec    ", iout++);
         std::fprintf(pfile,"[%d]=Fc1    ", iout++);
         std::fprintf(pfile,"[%d]=Fc2    ", iout++);

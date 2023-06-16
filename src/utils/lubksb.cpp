@@ -22,29 +22,29 @@
 // indx id the history of row permutation
 // b is the vector on the right (AX=b), and is returned with the solution
 void Lubksb_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
-               AthenaArray<Real> &b)
-{
+               AthenaArray<Real> &b) {
   int ii=-1,ip;
   Real sum;
   // Solve L*y=b
-  for(int i=0;i<n;++i) {
-    ip=indx(i);
+  for (int i=0; i<n; ++i) {
+    ip = indx(i);
     sum=b(ip);
     b(ip)=b(i);
-    if (ii>=0)
-      for (int j=ii;j<=i-1;++j) sum -= a(i,j)*b(j);
-    else if (sum) ii=i;
+    if (ii>=0) {
+      for (int j=ii; j<=i-1; ++j) sum -= a(i,j)*b(j);
+    } else if (sum) {
+      ii=i;
+    }
     b(i)=sum;
   }
   // Solve U*x=y
-  for(int i=n-1;i>=0;--i) {
+  for (int i=n-1; i>=0; --i) {
     sum=b(i);
-    for (int j=i+1;j<n;++j){
+    for (int j=i+1; j<n; ++j) {
       Real& ap = a(i,j);
       Real& bp = b(j);
       sum -= ap * bp;
     }
     b(i)=sum/a(i,i);
   }
-  
 }

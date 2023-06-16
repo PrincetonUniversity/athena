@@ -7,54 +7,52 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file radiation.cpp
-//  \brief implementation of functions in class Radiation
+//! \file
+//  \brief
 //======================================================================================
 
+// C headers
 
-#include <sstream>  // msg
+// C++ headers
+#include <algorithm>
 #include <iostream>  // cout
+#include <sstream>  // msg
 #include <stdexcept> // runtime erro
-#include <stdio.h>  // fopen and fwrite
-
+//#include <stdio.h>  // fopen and fwrite
 
 // Athena++ headers
 #include "../../athena.hpp"
-#include "../../athena_arrays.hpp" 
-#include "../radiation.hpp"
-#include "radiation_implicit.hpp"
-#include "../../parameter_input.hpp"
-#include "../../mesh/mesh.hpp"
+#include "../../athena_arrays.hpp"
 #include "../../globals.hpp"
+#include "../../mesh/mesh.hpp"
+#include "../../parameter_input.hpp"
 #include "../integrators/rad_integrators.hpp"
+#include "../radiation.hpp"
+#include "./radiation_implicit.hpp"
 
 
 // set the default parameters for SRJ
-inline void DefaultSRJ(IMRadiation *pimrad)
-{
+inline void DefaultSRJ(IMRadiation *pimrad) {
+  // One example:
+  // SRJ_P = 7
+  // SRJ_w1 = 2.0, SRJ_w2 = 1.8,SRJ_w3 = 1.6,SRJ_w4 = 1.4,SRJ_w5 = 1.2,
+  // SRJ_w6 = 1.0,SRJ_w7 = 0.6
+  // SRJ_Q1 = 1,SRJ_Q2 = 1,SRJ_Q3 = 1,SRJ_Q4 = 1,SRJ_Q5 = 1,SRJ_Q6 = 1,SRJ_Q7 = 1
 
-  // One example
-// SRJ_P = 7
-//SRJ_w1 = 2.0, SRJ_w2 = 1.8,SRJ_w3 = 1.6,SRJ_w4 = 1.4,SRJ_w5 = 1.2,SRJ_w6 = 1.0,SRJ_w7 = 0.6
-//SRJ_Q1 = 1,SRJ_Q2 = 1,SRJ_Q3 = 1,SRJ_Q4 = 1,SRJ_Q5 = 1,SRJ_Q6 = 1,SRJ_Q7 = 1
-
-  for(int i=0; i<9; ++i){
+  for (int i=0; i<9; ++i) {
     pimrad->srj_q[i] = 0;
     pimrad->srj_w[i] = 1.0;
-  }  
-
+  }
   return;
 }
 
-
-
-IMRadiation::IMRadiation(Mesh *pm, ParameterInput *pin){
+IMRadiation::IMRadiation(Mesh *pm, ParameterInput *pin) {
   // read in the parameters
   // maximum number of iterations
   nlimit_ = pin->GetOrAddInteger("radiation","nlimit",100);
@@ -77,9 +75,6 @@ IMRadiation::IMRadiation(Mesh *pm, ParameterInput *pin){
 }
 
 
-void IMRadiation::EnrollSRJFunction(SRJFunc MySRJFunction)
-{
+void IMRadiation::EnrollSRJFunction(SRJFunc MySRJFunction) {
   SetSRJParameters = MySRJFunction;
-  
 }
-
