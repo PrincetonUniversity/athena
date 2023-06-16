@@ -86,10 +86,11 @@ void RadBoundaryVariable::VacuumOuterX1(
             } else {
               (*var_cc)(k,j,iu+i,ang) = 0.0;
             }
-          }// end n
-        }// end ifr
-      }}}
-
+          }
+        }
+      }
+    }
+  }
   return;
 }
 
@@ -104,7 +105,6 @@ void RadBoundaryVariable::VacuumOuterX1(
 
 void RadBoundaryVariable::VacuumInnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
-
   // copy radiation variables into ghost zones,
   // reflect rays along angles with opposite nx
   MeshBlock *pmb=pmy_block_;
@@ -157,10 +157,11 @@ void RadBoundaryVariable::VacuumOuterX2(
             } else {
               (*var_cc)(k,ju+j,i,ang) = 0.0;
             }
-          }// end n
-        }// end ifr
-      }}}
-
+          }
+        }
+      }
+    }
+  }
   return;
 }
 
@@ -195,14 +196,13 @@ void RadBoundaryVariable::VacuumInnerX3(
             } else {
               (*var_cc)(kl-k,j,i,ang) = 0.0;
             }
-          }// end n
-        }// end ifr
-      }}}
-
+          }
+        }
+      }
+    }
+  }
   return;
 }
-
-
 
 
 //----------------------------------------------------------------------------------------

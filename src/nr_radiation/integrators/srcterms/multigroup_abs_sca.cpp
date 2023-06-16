@@ -132,7 +132,7 @@ Real RadIntegrator::MultiGroupAbsScat(
     // The polynomial is
     // coef[1] * x^4 + x + coef[0] == 0
 
-    if (fabs(coef[1]) > TINY_NUMBER) {
+    if (std::abs(coef[1]) > TINY_NUMBER) {
       int flag = FouthPolyRoot(coef[1], coef[0], tgasnew);
       if (flag == -1 || tgasnew != tgasnew) {
         badcell = true;
@@ -143,7 +143,7 @@ Real RadIntegrator::MultiGroupAbsScat(
     }
 
     if (badcell) break;
-    tgas_diff = fabs(tgas_last - tgasnew)/tgas_last;
+    tgas_diff = std::abs(tgas_last - tgasnew)/tgas_last;
     count_iteration++;
     tgas_last = tgasnew;
   }

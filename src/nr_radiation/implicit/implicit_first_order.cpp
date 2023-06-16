@@ -119,14 +119,14 @@ void RadIntegrator::FirstOrderFluxDivergenceCoef(const Real wght) {
         Real *sm_diff2 = &(sm_diff2_(0));
         for (int n=0; n<prad->n_fre_ang; ++n) {
           Real diff = smax_l[n] - smin_l[n];
-          if (std::fabs(diff) < TINY_NUMBER)
+          if (std::abs(diff) < TINY_NUMBER)
             sm_diff1[n] = 0.0;
           else
             sm_diff1[n] = 1.0/diff;
         }
         for (int n=0; n<prad->n_fre_ang; ++n) {
           Real diff = smax_r[n] - smin_r[n];
-          if (std::fabs(diff) < TINY_NUMBER)
+          if (std::abs(diff) < TINY_NUMBER)
             sm_diff2[n] = 0.0;
           else
             sm_diff2[n] = 1.0/diff;
@@ -207,14 +207,14 @@ void RadIntegrator::FirstOrderFluxDivergenceCoef(const Real wght) {
           Real *sm_diff2 = &(sm_diff2_(0));
           for (int n=0; n<prad->n_fre_ang; ++n) {
             Real diff = smax_l[n] - smin_l[n];
-            if (std::fabs(diff) < TINY_NUMBER)
+            if (std::abs(diff) < TINY_NUMBER)
               sm_diff1[n] = 0.0;
             else
               sm_diff1[n] = 1.0/diff;
           }
           for (int n=0; n<prad->n_fre_ang; ++n) {
             Real diff = smax_r[n] - smin_r[n];
-            if (std::fabs(diff) < TINY_NUMBER)
+            if (std::abs(diff) < TINY_NUMBER)
               sm_diff2[n] = 0.0;
             else
               sm_diff2[n] = 1.0/diff;
@@ -294,14 +294,14 @@ void RadIntegrator::FirstOrderFluxDivergenceCoef(const Real wght) {
           Real *sm_diff2 = &(sm_diff2_(0));
           for (int n=0; n<prad->n_fre_ang; ++n) {
             Real diff = smax_l[n] - smin_l[n];
-            if (std::fabs(diff) < TINY_NUMBER)
+            if (std::abs(diff) < TINY_NUMBER)
               sm_diff1[n] = 0.0;
             else
               sm_diff1[n] = 1.0/diff;
           }
           for (int n=0; n<prad->n_fre_ang; ++n) {
             Real diff = smax_r[n] - smin_r[n];
-            if (std::fabs(diff) < TINY_NUMBER)
+            if (std::abs(diff) < TINY_NUMBER)
               sm_diff2[n] = 0.0;
             else
               sm_diff2[n] = 1.0/diff;

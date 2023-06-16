@@ -172,7 +172,7 @@ void NRRadiation::CalculateComMoment() {
         Real vz = phydro->u(IM3,k,j,i)/phydro->u(IDN,k,j,i);
         Real vel = vx * vx + vy * vy + vz * vz;
 
-        Real ratio = sqrt(vel) * invcrat;
+        Real ratio = std::sqrt(vel) * invcrat;
          // Limit the velocity to be smaller than the speed of light
         if (ratio > vmax) {
           Real factor = vmax/ratio;
@@ -185,14 +185,14 @@ void NRRadiation::CalculateComMoment() {
 
             // square of Lorentz factor
         Real lorzsq = 1.0/(1.0 - vel * invcrat * invcrat);
-        Real lorz = sqrt(lorzsq);
+        Real lorz = std::sqrt(lorzsq);
 
         // first, get co-moving frame ir_cm
         Real numsum = 0.0;
         for (int n=0; n<nang; ++n) {
           Real vdotn = vx * cosx[n] + vy * cosy[n] + vz * cosz[n];
           Real vnc = 1.0 - vdotn * invcrat;
-          tran_coef(n) = sqrt(lorzsq) * vnc;
+          tran_coef(n) = std::sqrt(lorzsq) * vnc;
           wmu_cm(n) = weight[n]/(lorzsq * vnc * vnc);
           numsum += wmu_cm(n);
           cm_to_lab(n) = tran_coef(n)*tran_coef(n)*tran_coef(n)*tran_coef(n);

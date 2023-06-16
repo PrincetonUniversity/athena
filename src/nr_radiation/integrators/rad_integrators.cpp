@@ -718,8 +718,8 @@ void RadIntegrator::SignalSpeed(const Real adv, const Real f_l,
   }
   if (adv_flag_ == 0) {
     for (int n=0; n<pmy_rad->nang; ++n) {
-      smax[n] += std::fabs(adv);
-      smin[n] -= std::fabs(adv);
+      smax[n] += std::abs(adv);
+      smin[n] -= std::abs(adv);
     }
   }
 }

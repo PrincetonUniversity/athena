@@ -43,7 +43,7 @@ void Gauleg(int n, Real x1, Real x2,  AthenaArray<Real> &x,
       pp = (Real)n * (z * p1 - p2) / (z * z - 1.0);
       z1 = z;
       z = z1 - p1 / pp;
-    }  while(fabs(z - z1) > eps);
+    }  while(std::abs(z - z1) > eps);
     x(i-1) = xm - xl * z;
     x(n-i) = xm + xl * z;
     w(i-1) = 2.0 * xl / ((1.0 - z * z) * pp * pp);

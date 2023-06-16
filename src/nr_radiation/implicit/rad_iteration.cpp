@@ -221,8 +221,8 @@ void IMRadiation::CheckResidual(MeshBlock *pmb,
           Real *iro = &(ir_old(k,j,i,ifr*nang));
           Real *irn = &(ir_new(k,j,i,ifr*nang));
           for(int n=0; n<nang; ++n) {
-            prad->sum_diff += fabs(iro[n] - irn[n]);
-            prad->sum_full += fabs(irn[n]);
+            prad->sum_diff += std::abs(iro[n] - irn[n]);
+            prad->sum_full += std::abs(irn[n]);
           }
         }// end ifr
       }// end i

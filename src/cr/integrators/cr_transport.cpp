@@ -161,11 +161,11 @@ void CRIntegrator::CalculateFluxes(
                        pcr->v_diff(2,k,j,i));
           // take the absolute value
           // Also add the Alfven velocity for the streaming flux
-          pcr->v_diff(0,k,j,i) = fabs(pcr->v_diff(0,k,j,i));
+          pcr->v_diff(0,k,j,i) = std::abs(pcr->v_diff(0,k,j,i));
 
-          pcr->v_diff(1,k,j,i) = fabs(pcr->v_diff(1,k,j,i));
+          pcr->v_diff(1,k,j,i) = std::abs(pcr->v_diff(1,k,j,i));
 
-          pcr->v_diff(2,k,j,i) = fabs(pcr->v_diff(2,k,j,i));
+          pcr->v_diff(2,k,j,i) = std::abs(pcr->v_diff(2,k,j,i));
         }
       }
       // need to add additional sound speed for stability

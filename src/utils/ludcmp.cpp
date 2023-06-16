@@ -40,7 +40,7 @@ void Ludcmp_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
   for (int i=0; i<n; ++i) {
     big=0.0;
     for (int j=0; j<n; ++j)
-      if ((temp=fabs(a(i,j))) > big) big=temp;
+      if ((temp=std::abs(a(i,j))) > big) big=temp;
     if (big == 0.0) {
       msg << "### [LUdecomp]:Input matrix is singular!"
       << "### FATAL ERROR in function [LUdecomp_nr]" << std::endl;
@@ -71,7 +71,7 @@ void Ludcmp_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
       }
       a(i,j)=sum;
       // search for the largest pivot element
-      if ( (dum=rowscale(i)*fabs(sum)) >= big) {
+      if ( (dum=rowscale(i)*std::abs(sum)) >= big) {
         big=dum;
         imax=i;
       }

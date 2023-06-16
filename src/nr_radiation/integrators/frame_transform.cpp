@@ -107,7 +107,7 @@ void RadIntegrator::ComToLabMultiGroup(const Real vx, const Real vy, const Real 
   AthenaArray<int> map_start, map_end;
 
   // square of Lorentz factor
-  Real lorz = sqrt(1.0/(1.0 - (vx * vx + vy * vy + vz * vz) * invcrat * invcrat));
+  Real lorz = std::sqrt(1.0/(1.0 - (vx * vx + vy * vy + vz * vz) * invcrat * invcrat));
   // first, get the lorentz transformation factor
   // now calculate the actual transformation factor
 
@@ -143,7 +143,7 @@ void RadIntegrator::ComAngle(const Real vx, const Real vy, const Real vz,
   Real invcrat = 1.0/pmy_rad->crat;
   // square of Lorentz factor
   Real lorz = 1.0/(1.0 - (vx * vx + vy * vy + vz * vz) * invcrat * invcrat);
-  lorz = sqrt(lorz);
+  lorz = std::sqrt(lorz);
   Real vdotn = vx * mux + vy * muy + vz * muz;
 
   Real angcoef = lorz * invcrat * (1.0 - lorz * vdotn * invcrat/(1.0 + lorz));

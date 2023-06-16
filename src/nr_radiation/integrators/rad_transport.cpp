@@ -120,7 +120,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
         Real *sm_diff = &(sm_diff1_(0));
         for (int n=0; n<prad->n_fre_ang; ++n) {
           Real diff = smax[n] - smin[n];
-          if (std::fabs(diff) < TINY_NUMBER)
+          if (std::abs(diff) < TINY_NUMBER)
             sm_diff[n] = 0.0;
           else
             sm_diff[n] = 1.0/diff;
@@ -211,7 +211,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           Real *sm_diff = &(sm_diff1_(0));
           for (int n=0; n<prad->n_fre_ang; ++n) {
             Real diff = smax[n] - smin[n];
-            if (std::fabs(diff) < TINY_NUMBER)
+            if (std::abs(diff) < TINY_NUMBER)
               sm_diff[n] = 0.0;
             else
               sm_diff[n] = 1.0/diff;
@@ -310,7 +310,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           Real *sm_diff = &(sm_diff1_(0));
           for (int n=0; n<prad->n_fre_ang; ++n) {
             Real diff = smax[n] - smin[n];
-            if (std::fabs(diff) < TINY_NUMBER)
+            if (std::abs(diff) < TINY_NUMBER)
               sm_diff[n] = 0.0;
             else
               sm_diff[n] = 1.0/diff;

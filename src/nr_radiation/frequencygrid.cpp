@@ -182,7 +182,7 @@ Real NRRadiation::EffectiveBlackBody(Real intensity, Real nu) {
       while((count < 6) && (residual > 1.e-6)) {
         Real ratio = yini*yini*yini*yini/(6.0+6.0*yini+3.0*yini*yini+yini*yini*yini);
         nu_tr = -std::log((PI_FOUR_POWER*a_nu/15.0)*ratio);
-        residual=fabs((nu_tr-yini)/nu_tr);
+        residual = std::abs((nu_tr-yini)/nu_tr);
         count++;
         yini=nu_tr;
       }

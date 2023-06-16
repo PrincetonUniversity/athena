@@ -141,7 +141,7 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
             Real b_grad_pc = bcc(IB1,k,j,i) * pcr->sigma_adv(0,k,j,i)
                            + bcc(IB2,k,j,i) * pcr->sigma_adv(1,k,j,i)
                            + bcc(IB3,k,j,i) * pcr->sigma_adv(2,k,j,i);
-            pcr->sigma_adv(0,k,j,i) = fabs(b_grad_pc)/(btot * va * (1.0 + 1.0/3.0)
+            pcr->sigma_adv(0,k,j,i) = std::abs(b_grad_pc)/(btot * va * (1.0 + 1.0/3.0)
                                                * invlim * u_cr(CRE,k,j,i));
           }
           pcr->sigma_adv(1,k,j,i) = pcr->max_opacity;
@@ -198,7 +198,7 @@ inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
       pcr->v_adv(1,k,j,i) = -va2 * dpc_sign;
       pcr->v_adv(2,k,j,i) = -va3 * dpc_sign;
       if (va > TINY_NUMBER) {
-        pcr->sigma_adv(0,k,j,i) = fabs(b_grad_pc)/(std::sqrt(pb) * va *
+        pcr->sigma_adv(0,k,j,i) = std::abs(b_grad_pc)/(std::sqrt(pb) * va *
                                (4.0/3.0) * invlim * u_cr(CRE,k,j,i));
         pcr->sigma_adv(1,k,j,i) = pcr->max_opacity;
         pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;

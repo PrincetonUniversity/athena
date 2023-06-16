@@ -75,7 +75,8 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
             AthenaArray<Real>::DataStatus::empty)},
           {pmb->ncells3+1, pmb->ncells2, pmb->ncells1, pmb->nfre_ang,
            (pmb->pmy_mesh->f3 ? AthenaArray<Real>::DataStatus::allocated :
-            AthenaArray<Real>::DataStatus::empty)}},
+            AthenaArray<Real>::DataStatus::empty)}
+    },
     coarse_ir_(pmb->ncc3, pmb->ncc2, pmb->ncc1,pmb->nfre_ang,
                (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                 AthenaArray<Real>::DataStatus::empty)),

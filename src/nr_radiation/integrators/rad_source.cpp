@@ -190,7 +190,7 @@ void RadIntegrator::CalSourceTerms(MeshBlock *pmb, const Real dt,
         MultiGroupCompton(wmu_cm,tran_coef,dt,lorz,rho,t_ini,tgas_new_(k,j,i),
                                                                     ir_buff_);
         count++;
-        relative_error = std::fabs(t_old-tgas_new_(k,j,i))/tgas_new_(k,j,i);
+        relative_error = std::abs(t_old-tgas_new_(k,j,i))/tgas_new_(k,j,i);
       }
       ir_cm = ir_buff_;
       // inverseshift
@@ -358,7 +358,7 @@ void RadIntegrator::AddMultiGroupCompt(MeshBlock *pmb, const Real dt,
             MultiGroupCompton(wmu_cm,tran_coef,dt,lorz,rho,t_ini,tgas_new_(k,j,i),
                                                                         ir_buff_);
             count++;
-            relative_error = std::fabs(t_old-tgas_new_(k,j,i))/tgas_new_(k,j,i);
+            relative_error = std::abs(t_old-tgas_new_(k,j,i))/tgas_new_(k,j,i);
           }
           ir_cm = ir_buff_;
 

@@ -78,10 +78,10 @@ void RadIntegrator::Compton(AthenaArray<Real> &wmu_cm,
       }
       suma2 = 4.0 * lorz * prat * dtcsigma*(gamma-1.0)*telectron/rho;
 
-      Real tr = sqrt(sqrt(jr_cm));
+      Real tr = std::sqrt(std::sqrt(jr_cm));
       Real trnew;
 
-      if (fabs(tr - tgas) > 1.e-12) {
+      if (std::abs(tr - tgas) > 1.e-12) {
         coef[1] = (1.0 + suma2* jr_cm)/(suma1 * jr_cm);
         coef[0] = -(1.0+suma2*jr_cm)/suma1-tgas;
         int flag = FouthPolyRoot(coef[1], coef[0], trnew);
@@ -206,7 +206,7 @@ void RadIntegrator::MultiGroupCompton(
     Real r_four_sol = coef_rhs/(coef_r4 + coef_r5 * r_ini);
     r_four_sol = std::pow(r_four_sol,0.25);
     int count=0;
-    while((count < 10) && (fabs(r_ini-r_four_sol)/r_four_sol > 1.e-6)) {
+    while((count < 10) && (std::abs(r_ini-r_four_sol)/r_four_sol > 1.e-6)) {
       r_ini = r_four_sol;
       r_four_sol = coef_rhs/(coef_r4 + coef_r5 * r_ini);
       r_four_sol = std::pow(r_four_sol,0.25);
@@ -255,7 +255,7 @@ void RadIntegrator::MultiGroupCompton(
 
   Real *eq_sol = &(eq_sol_(0));
   for (int ifr=0; ifr<nfreq-1; ++ifr) {
-    eq_sol[ifr] = 1.0/(eq_sol_c * exp(nu_cen[ifr]/tgas_new) - 1);
+    eq_sol[ifr] = 1.0/(eq_sol_c * std::exp(nu_cen[ifr]/tgas_new) - 1);
   }
 
   // now determine the delta_coefficient at the frequency interface
@@ -273,7 +273,7 @@ void RadIntegrator::MultiGroupCompton(
       Real dndnu = (eq_sol[ifr]-eq_sol[ifr-1])
                  /(nu_cen[ifr]-nu_cen[ifr-1]);
       Real eq_n_coef = 1-4.0*tgas_new*dndnu;
-      Real eq_n_face = 0.5*(sqrt(eq_n_coef) - 1.0);
+      Real eq_n_face = 0.5*(std::sqrt(eq_n_coef) - 1.0);
       delta_coef[ifr] = std::max(Real(0.0),(eq_n_face - eq_sol[ifr])/(
           eq_sol[ifr-1]-eq_sol[ifr]));
     }
@@ -342,7 +342,7 @@ void RadIntegrator::MultiGroupCompton(
     Real ef = (1.0-com_d_coef_r[ifr]+com_b_coef_l[ifr]);
     Real new_ef = 1.0 + com_d_coef_l[ifr] * nf_n0[ifr-1]/ef;
     nf_rhs[ifr] = n_nu[ifr]/ef-com_d_coef_l[ifr] * nf_rhs[ifr-1]/ef;
-    if (std::fabs(new_ef) < TINY_NUMBER) {
+    if (std::abs(new_ef) < TINY_NUMBER) {
       bd_cell_flag = 1;
       break;
     }
@@ -371,7 +371,7 @@ void RadIntegrator::MultiGroupCompton(
   Real rhs_coef = n_nu[nfreq-2]+flux_last_explicit
                   -com_d_coef_l[nfreq-2]*nf_rhs[nfreq-3];
 
-  if (std::fabs(n0_coef) < TINY_NUMBER) {
+  if (std::abs(n0_coef) < TINY_NUMBER) {
     bd_cell_flag = 1;
     return;
   }
@@ -435,7 +435,7 @@ Real RadIntegrator::QuasiEqSol(Real &tgas, Real &tot_n) {
   if ((n_t3 < 2.3739) && (n_t3 > 0.6932)) {
     eq_sol_c = 1.948 * std::pow(n_t3, -1.016) + 0.1907;
   } else if (n_t3 <= 0.6932) {
-    eq_sol_c = (1.0 + sqrt(1.0 + 0.25 * n_t3))/n_t3;
+    eq_sol_c = (1.0 + std::sqrt(1.0 + 0.25 * n_t3))/n_t3;
   }
   return eq_sol_c;
 }
