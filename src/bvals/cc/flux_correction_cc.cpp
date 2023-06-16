@@ -30,7 +30,7 @@
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
 #include "../../utils/buffer_utils.hpp"
-#include "bvals_cc.hpp"
+#include "./bvals_cc.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL

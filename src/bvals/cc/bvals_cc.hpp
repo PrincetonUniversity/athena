@@ -131,7 +131,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void VacuumInnerX3(Real time, Real dt,
                       int il, int iu, int jl, int ju, int kl, int ngh) override;
   void VacuumOuterX3(Real time, Real dt,
-                      int il, int iu, int jl, int ju, int ku, int ngh) override;  
+                      int il, int iu, int jl, int ju, int ku, int ngh) override;
 
   void PolarWedgeInnerX2(Real time, Real dt,
                          int il, int iu, int jl, int kl, int ku, int ngh) override;
@@ -197,11 +197,8 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
                                             Real *buf, int nb);
   void SetFluxShearingBoxBoundarySameLevel(AthenaArray<Real> &src,
                                            Real *buf, const int nb);
-
-
   friend class ParticleMeshBoundaryVariable;
   friend class RadBoundaryVariable;
-  
 };
 
 #endif // BVALS_CC_BVALS_CC_HPP_

@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file flux_correction_cc.cpp
-//! \brief functions that perform flux correction for CELL_CENTERED variables
+//! \file flux_correction_radiation.cpp
+//! \brief
 
 // C headers
 
@@ -27,13 +27,13 @@
 #include "../../../field/field.hpp"
 #include "../../../globals.hpp"
 #include "../../../hydro/hydro.hpp"
-#include "../../../nr_radiation/radiation.hpp"
-#include "../../../nr_radiation/integrators/rad_integrators.hpp"
 #include "../../../mesh/mesh.hpp"
+#include "../../../nr_radiation/integrators/rad_integrators.hpp"
+#include "../../../nr_radiation/radiation.hpp"
 #include "../../../parameter_input.hpp"
 #include "../../../utils/buffer_utils.hpp"
 #include "../bvals_cc.hpp"
-#include "bvals_rad.hpp"
+#include "./bvals_rad.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL
@@ -46,7 +46,7 @@
 //! \brief Set surface flux buffers for sending to a block on the same level
 
 int RadBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
-                                                       const NeighborBlock& nb) {
+                                                         const NeighborBlock& nb) {
   MeshBlock *pmb=pmy_block_;
   NRRadiation *prad = pmb->pnrrad;
   Real qomL = pbval_->qomL_;
@@ -65,14 +65,14 @@ int RadBoundaryVariable::LoadFluxBoundaryBufferSameLevel(Real *buf,
     // pack x1flux
     for (int k=pmb->ks; k<=pmb->ke; k++) {
       for (int j=pmb->js; j<=pmb->je; j++) {
-        // convert flux due to velocity difference 
+        // convert flux due to velocity difference
         Real vx = pmb->phydro->w(IVX,k,j,i);
         Real vy = pmb->phydro->w(IVY,k,j,i);
         Real vz = pmb->phydro->w(IVZ,k,j,i);
         Real *mux = &(prad->mu(0,k,j,i,0));
         Real *muy = &(prad->mu(1,k,j,i,0));
         Real *muz = &(prad->mu(2,k,j,i,0));
-        Real *flux_lab = &(x1flux(k,j,i,0));        
+        Real *flux_lab = &(x1flux(k,j,i,0));
         prad->pradintegrator->LabToCom(vx,vy,vz,mux,muy,muz,flux_lab,ir_cm_);
         flux_lab = &(ir_lab_(0));
         prad->pradintegrator->ComToLab(vx,vy+sign*qomL,vz,mux,muy,muz,ir_cm_,flux_lab);
@@ -154,7 +154,7 @@ int RadBoundaryVariable::LoadFluxBoundaryBufferToCoarser(Real *buf,
       pco->Face2Area(0, j, pmb->is ,pmb->ie, sarea0);
       for (int i=pmb->is; i<=pmb->ie; i+=2) {
         Real tarea = sarea0(i) + sarea0(i+1);
-        for (int nn=nl_; nn<=nu_; nn++) {        
+        for (int nn=nl_; nn<=nu_; nn++) {
           buf[p++] = (x2flux(k, j, i  , nn)*sarea0(i  )
                      + x2flux(k, j, i+1, nn)*sarea0(i+1))/tarea;
         }
@@ -168,7 +168,7 @@ int RadBoundaryVariable::LoadFluxBoundaryBufferToCoarser(Real *buf,
       pco->Face3Area(k, j+1, pmb->is, pmb->ie, sarea1);
       for (int i=pmb->is; i<=pmb->ie; i+=2) {
         Real tarea = sarea0(i) + sarea0(i+1) + sarea1(i) + sarea1(i+1);
-        for (int nn=nl_; nn<=nu_; nn++) {        
+        for (int nn=nl_; nn<=nu_; nn++) {
           buf[p++] = (x3flux(k, j  , i, nn )*sarea0(i  )
                      + x3flux(k, j  , i+1, nn)*sarea0(i+1)
                      + x3flux(k, j+1, i, nn)*sarea1(i  )
@@ -226,7 +226,7 @@ void RadBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
   MeshBlock *pmb = pmy_block_;
   int p = 0;
   int i;
-  
+
   if (nb.fid == BoundaryFace::inner_x1) {
     i = pmb->is;
     for (int k=pmb->ks; k<=pmb->ke; k++) {
@@ -240,13 +240,13 @@ void RadBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
     i = pmb->ie + 1;
     for (int k=pmb->ks; k<=pmb->ke; k++) {
       for (int j=pmb->js; j<=pmb->je; j++) {
-        for (int nn=nl_; nn<=nu_; nn++) {   
+        for (int nn=nl_; nn<=nu_; nn++) {
           shear_var_flx_[1](k,j,nn) = buf[p++];
         }
       }
     }
   }
-  
+
   return;
 }
 
@@ -351,5 +351,3 @@ bool RadBoundaryVariable::ReceiveFluxCorrection() {
 
   return flag;
 }
-
-

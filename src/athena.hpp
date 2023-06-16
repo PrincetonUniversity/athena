@@ -15,8 +15,8 @@
 #include <cstdint>  // std::int64_t
 
 // Athena++ headers
-#include "athena_arrays.hpp"
-#include "defs.hpp"
+#include "./athena_arrays.hpp"
+#include "./defs.hpp"
 
 // primitive type alias that allows code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
@@ -216,22 +216,22 @@ using MGSourceMaskFunc = void (*)(AthenaArray<Real> &src,
 using OrbitalVelocityFunc = Real (*)(
     OrbitalAdvection *porb, Real x1, Real x2, Real x3);
 using RadBoundaryFunc = void (*)(
-     MeshBlock *pmb, Coordinates *pco, NRRadiation *prad, 
-     const AthenaArray<Real> &w, FaceField &b, 
+     MeshBlock *pmb, Coordinates *pco, NRRadiation *prad,
+     const AthenaArray<Real> &w, FaceField &b,
      AthenaArray<Real> &ir,
      Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 using OpacityFunc = void (*)(MeshBlock *pmb, AthenaArray<Real> &prim);
 using FrequencyFunc = void (*)(NRRadiation *prad);
 using EmissionFunc = void(*)(NRRadiation *prad, Real tgas);
-using CROpacityFunc = void (*)(MeshBlock *pmb, AthenaArray<Real> &u_cr, 
+using CROpacityFunc = void (*)(MeshBlock *pmb, AthenaArray<Real> &u_cr,
                       AthenaArray<Real> &prim, AthenaArray<Real> &bcc);
-using CRStreamingFunc = void (*)(MeshBlock *pmb, AthenaArray<Real> &u_cr, 
+using CRStreamingFunc = void (*)(MeshBlock *pmb, AthenaArray<Real> &u_cr,
                       AthenaArray<Real> &prim, AthenaArray<Real> &bcc,
                       AthenaArray<Real> &grad_pc, int k, int j, int is, int ie);
 using SRJFunc = void (*)(IMRadiation *pimrad);
 
 using CRBoundaryFunc = void (*)(
-     MeshBlock *pmb, Coordinates *pco, CosmicRay *pcr, 
+     MeshBlock *pmb, Coordinates *pco, CosmicRay *pcr,
      const AthenaArray<Real> &w, FaceField &b, AthenaArray<Real> &u_cr,
      Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
 using CRSrcTermFunc = void (*)(

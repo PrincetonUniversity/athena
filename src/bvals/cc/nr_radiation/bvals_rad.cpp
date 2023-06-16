@@ -14,45 +14,39 @@
 
 // Athena++ headers
 #include "../../../athena.hpp"
-#include "../../../hydro/hydro.hpp"
-#include "../../../mesh/mesh.hpp"
 #include "../../../coordinates/coordinates.hpp"
 #include "../../../globals.hpp"
+#include "../../../hydro/hydro.hpp"
+#include "../../../mesh/mesh.hpp"
 #include "../../../nr_radiation/radiation.hpp"
-#include "bvals_rad.hpp"
+#include "./bvals_rad.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \class RadiationBoundaryFunctions
 
-RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb, 
+RadBoundaryVariable::RadBoundaryVariable(MeshBlock *pmb,
     AthenaArray<Real> *var_rad, AthenaArray<Real> *coarse_var,
     AthenaArray<Real> *var_flux) :
-    CellCenteredBoundaryVariable(pmb, var_rad, coarse_var, var_flux, true, 1){
-
+    CellCenteredBoundaryVariable(pmb, var_rad, coarse_var, var_flux, true, 1) {
     // the radiation array is (k,j,i,n)
     // the number of variables is GetDim1
     // All the other shared functions are initialized in CellCenteredBoundaryVariable
     // radiation specific functions need to be defined here
-
     azimuthal_shift_rad_.NewAthenaArray(pmb->ke + NGHOST + 2,nu_+1);
     ir_cm_.NewAthenaArray(pmb->nfre_ang);
     ir_lab_.NewAthenaArray(pmb->nfre_ang);
     if (pbval_->shearing_box != 0) {
       int pnum = pmb->block_size.nx2+2*NGHOST+1;
       pflux_.NewAthenaArray(pnum,pmb->nfre_ang);
-    }// end if shearing
-
+    }
 }
-
-
 
 //----------------------------------------------------------------------------------------
 //! \fn int RadBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 //                                                                const NeighborBlock& nb)
 //  \brief Set cell-centered boundary buffers for sending to a block on the same level
 
-int RadBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
-                                                              const NeighborBlock& nb) {
+int RadBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
 
@@ -74,8 +68,7 @@ int RadBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 //                                                                const NeighborBlock& nb)
 //  \brief Set cell-centered boundary buffers for sending to a block on the coarser level
 
-int RadBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
-                                                              const NeighborBlock& nb) {
+int RadBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
   int si, sj, sk, ei, ej, ek;
@@ -103,8 +96,7 @@ int RadBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 //                                                                const NeighborBlock& nb)
 //  \brief Set cell-centered boundary buffers for sending to a block on the finer level
 
-int RadBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
-                                                            const NeighborBlock& nb) {
+int RadBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb = pmy_block_;
   int si, sj, sk, ei, ej, ek;
   int cn = pmb->cnghost - 1;
@@ -200,20 +192,16 @@ void RadBoundaryVariable::SetBoundarySameLevel(Real *buf,
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
         for (int i=si; i<=ei; ++i) {
- #pragma omp simd linear(p)
+#pragma omp simd linear(p)
           for (int n=nl_; n<=nu_; ++n) {
- //           Real sign = 1.0;
- //           if (flip_across_pole_ != nullptr) 
- //           	sign = flip_across_pole_[n] ? -1.0 : 1.0;
             var(k,j,i,n) = buf[p++];
-          }// nu
-        }//i
-      }//j
-    }// k
+          }
+        }
+      }
+    }
   } else {
     BufferUtility::UnpackData(buf, var, sk, ek, nl_, nu_, si, ei, sj, ej, p);
   }
-
   return;
 }
 
@@ -265,11 +253,9 @@ void RadBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 
   int p = 0;
   if (nb.polar) {
-//      Real sign = 1.0;
-//      if (flip_across_pole_ != nullptr) sign = flip_across_pole_[n] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-        for (int i=si; i<=ei; ++i){
+        for (int i=si; i<=ei; ++i) {
 #pragma omp simd linear(p)
           for (int n=nl_; n<=nu_; ++n) {
             coarse_var(k,j,i,n) = buf[p++];
@@ -289,8 +275,7 @@ void RadBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 //                                                              const NeighborBlock& nb)
 //  \brief Set cell-centered boundary received from a block on a finer level
 
-void RadBoundaryVariable::SetBoundaryFromFiner(Real *buf,
-                                                        const NeighborBlock& nb) {
+void RadBoundaryVariable::SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) {
   MeshBlock *pmb = pmy_block_;
   AthenaArray<Real> &var = *var_cc;
   // receive already restricted data
@@ -344,7 +329,7 @@ void RadBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 //      if (flip_across_pole_ != nullptr) sign = flip_across_pole_[n] ? -1.0 : 1.0;
     for (int k=sk; k<=ek; ++k) {
       for (int j=ej; j>=sj; --j) {
-        for (int i=si; i<=ei; ++i){
+        for (int i=si; i<=ei; ++i) {
 #pragma omp simd linear(p)
           for (int n=nl_; n<=nu_; ++n) {
             var(k,j,i,n) = buf[p++];
@@ -375,7 +360,7 @@ void RadBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->js-NGHOST; j<=pmb->js-1; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
-          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k){
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             for (int n=nl_; n<=nu_; ++n) {
               azimuthal_shift_rad_(k,n) = var(k,j,i,n);
             }
@@ -395,26 +380,21 @@ void RadBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;
       for (int j=pmb->je+1; j<=pmb->je+NGHOST; ++j) {
         for (int i=pmb->is-NGHOST; i<=pmb->ie+NGHOST; ++i) {
-          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k){
+          for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             for (int n=nl_; n<=nu_; ++n) {
               azimuthal_shift_rad_(k,n) = var(k,j,i,n);
-            }// end n
-          }// end k
+            }
+          }
           for (int k=pmb->ks-NGHOST; k<=pmb->ke+NGHOST; ++k) {
             int k_shift = k;
             k_shift += (k < (nx3_half + NGHOST) ? 1 : -1) * nx3_half;
-            for(int n=nl_; n<=nu_; ++n){
+            for(int n=nl_; n<=nu_; ++n) {
               var(k,j,i,n) = azimuthal_shift_rad_(k_shift,n);
-            }// end n
-          }// end k
-          
-        }// end i
-      }// end j
-    }//end outer_x2 polar
-  }// end if nx3 > 1
+            }
+          }
+        }
+      }
+    }
+  }
   return;
 }
-
-
-
-

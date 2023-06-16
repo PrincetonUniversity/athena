@@ -1,5 +1,5 @@
-#ifndef TASK_LIST_IM_RAD_LIST_HPP_
-#define TASK_LIST_IM_RAD_LIST_HPP_
+#ifndef TASK_LIST_IM_RAD_TASK_LIST_HPP_
+#define TASK_LIST_IM_RAD_TASK_LIST_HPP_
 //========================================================================================
 // Athena++ astrophysical MHD code
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
@@ -35,7 +35,6 @@ struct IMRadTask {
   TaskStatus (IMRadTaskList::*TaskFunc)(MeshBlock *); //!> ptr to a task
 };
 
-
 //----------------------------------------------------------------------------------------
 //! \class MultigridTaskList
 //! \brief data and function definitions for IMRadTaskList class
@@ -43,38 +42,28 @@ struct IMRadTask {
 class IMRadTaskList {
  public:
   IMRadTaskList() : ntasks(0), task_list_{} {} // 2x direct + zero initialization
-  // rule of five:
   virtual ~IMRadTaskList() = default;
 
   Mesh *pmy_mesh;
-  // data
   int ntasks;     //!> number of tasks in this list
   Real time, dt;
 
-  // functions
   TaskListStatus DoAllAvailableTasks(MeshBlock *pmb, TaskStates &ts);
   void DoTaskListOneStage(Real wght);
   TaskStatus PhysicalBoundary(MeshBlock *pmb);
   TaskStatus ProlongateBoundary(MeshBlock *pmb);
 
-
  protected:
   IMRadTask task_list_[64*TaskID::kNField_];
 
  private:
-
   virtual void AddTask(const TaskID& id, const TaskID& dep) = 0;
   virtual void StartupTaskList(MeshBlock *pmb) = 0;
-
-
 };
 
 class IMRadITTaskList : public IMRadTaskList {
  public:
-  IMRadITTaskList(Mesh *pm); 
-
-
-  // functions
+  explicit IMRadITTaskList(Mesh *pm);
 
   TaskStatus ClearRadBoundary(MeshBlock *pmb);
   TaskStatus SendRadBoundary(MeshBlock *pmb);
@@ -84,8 +73,6 @@ class IMRadITTaskList : public IMRadTaskList {
   TaskStatus ReceiveRadBoundaryShear(MeshBlock *pmb);
   TaskStatus CheckResidual(MeshBlock *pmb);
   TaskStatus AddFluxAndSourceTerms(MeshBlock *pmb);
-  
-
 
  private:
   void StartupTaskList(MeshBlock *pmb) override;
@@ -94,37 +81,31 @@ class IMRadITTaskList : public IMRadTaskList {
 
 //----------------------------------------------
 //! IMRadHydroTaskList
-//! Derived Class to handle Hydro boundary update 
+//! Derived Class to handle Hydro boundary update
 class IMRadHydroTaskList : public IMRadTaskList{
-  public:
-    IMRadHydroTaskList(Mesh *pm);
+ public:
+  explicit IMRadHydroTaskList(Mesh *pm);
 
-  // functions
+  TaskStatus ClearHydroBoundary(MeshBlock *pmb);
+  TaskStatus SendHydroBoundary(MeshBlock *pmb);
+  TaskStatus ReceiveHydroBoundary(MeshBlock *pmb);
+  TaskStatus SetHydroBoundary(MeshBlock *pmb);
+  TaskStatus SendHydroBoundaryShear(MeshBlock *pmb);
+  TaskStatus ReceiveHydroBoundaryShear(MeshBlock *pmb);
+  TaskStatus UpdateOpacity(MeshBlock *pmb);
+  TaskStatus AddRadSource(MeshBlock *pmb);
+  TaskStatus Primitive(MeshBlock *pmb);
 
-    TaskStatus ClearHydroBoundary(MeshBlock *pmb);
-    TaskStatus SendHydroBoundary(MeshBlock *pmb);
-    TaskStatus ReceiveHydroBoundary(MeshBlock *pmb);
-    TaskStatus SetHydroBoundary(MeshBlock *pmb);
-    TaskStatus SendHydroBoundaryShear(MeshBlock *pmb);
-    TaskStatus ReceiveHydroBoundaryShear(MeshBlock *pmb);
-    TaskStatus UpdateOpacity(MeshBlock *pmb);  
-    TaskStatus AddRadSource(MeshBlock *pmb);  
-    TaskStatus Primitive(MeshBlock *pmb);
-
-  private:
-    void StartupTaskList(MeshBlock *pmb) override;
-    void AddTask(const TaskID& id, const TaskID& dep) override;
-
+ private:
+  void StartupTaskList(MeshBlock *pmb) override;
+  void AddTask(const TaskID& id, const TaskID& dep) override;
 };
 
 // task list for separate compton scattering
 // need to update boundary condition
 class IMRadComptTaskList : public IMRadTaskList {
  public:
-  IMRadComptTaskList(Mesh *pm); 
-
-
-  // functions
+  explicit IMRadComptTaskList(Mesh *pm);
 
   TaskStatus ClearRadBoundary(MeshBlock *pmb);
   TaskStatus SendRadBoundary(MeshBlock *pmb);
@@ -133,10 +114,6 @@ class IMRadComptTaskList : public IMRadTaskList {
   TaskStatus SendRadBoundaryShear(MeshBlock *pmb);
   TaskStatus ReceiveRadBoundaryShear(MeshBlock *pmb);
   TaskStatus CalComptTerms(MeshBlock *pmb);
-
-  
-
-
  private:
   void StartupTaskList(MeshBlock *pmb) override;
   void AddTask(const TaskID& id, const TaskID& dep) override;
@@ -153,7 +130,7 @@ const TaskID SEND_RAD_BND(2);  // send radiation boundary
 const TaskID RECV_RAD_BND(3); // receive radiation boundary
 const TaskID SETB_RAD_BND(4); // set radiation physical boundary
 const TaskID RAD_PHYS_BND(5);// radiation physical boundary
-const TaskID PRLN_RAD_BND(6); // prolongation 
+const TaskID PRLN_RAD_BND(6); // prolongation
 const TaskID SEND_RAD_SH(7); // send shearing box boundary
 const TaskID RECV_RAD_SH(8); // receive shearing box boundary
 const TaskID CHK_RAD_RES(9); // check residual
@@ -168,13 +145,13 @@ const TaskID SEND_HYD_BND(2); // send radiation boundary
 const TaskID RECV_HYD_BND(3); // receive radiation boundary
 const TaskID SETB_HYD_BND(4); // set radiation physical boundary
 const TaskID HYD_PHYS_BND(5); // radiation physical boundary
-const TaskID PRLN_HYD_BND(6); // prolongation 
+const TaskID PRLN_HYD_BND(6); // prolongation
 const TaskID SEND_HYD_SH(7);  // send shearing box boundary
 const TaskID RECV_HYD_SH(8);  // receive shearing box boundary
 const TaskID UPD_OPA(9);      // check residual
 const TaskID ADD_RAD_SCR(10); // add radiation source term
 const TaskID CONS_TO_PRIM(11);// convert conservative to primitive variables
-} // namespace IMRadTaskNames
+} // namespace IMRadHydroTaskNames
 
 namespace IMRadComptTaskNames {
 const TaskID NONE(0);
@@ -183,11 +160,11 @@ const TaskID SEND_RAD_BND(2);  // send radiation boundary
 const TaskID RECV_RAD_BND(3); // receive radiation boundary
 const TaskID SETB_RAD_BND(4); // set radiation physical boundary
 const TaskID RAD_PHYS_BND(5);// radiation physical boundary
-const TaskID PRLN_RAD_BND(6); // prolongation 
+const TaskID PRLN_RAD_BND(6); // prolongation
 const TaskID SEND_RAD_SH(7); // send shearing box boundary
 const TaskID RECV_RAD_SH(8); // receive shearing box boundary
 const TaskID CAL_COMPT(9); // add flux divergence term
 
-} // namespace IMRadITTaskNames
+} // namespace IMRadComptTaskNames
 
-#endif // TASK_LIST_MG_TASK_LIST_HPP_
+#endif // TASK_LIST_IM_RAD_TASK_LIST_HPP_
