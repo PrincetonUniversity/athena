@@ -16,12 +16,12 @@
 
 // Athena++ headers
 #include "../athena.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-#include "../nr_radiation/radiation.hpp"
 #include "../nr_radiation/implicit/radiation_implicit.hpp"
 #include "../nr_radiation/integrators/rad_integrators.hpp"
-#include "../hydro/hydro.hpp"
-#include "im_rad_task_list.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "./im_rad_task_list.hpp"
 
 //----------------------------------------------------------------------------------------
 //! IMRadTaskList constructor

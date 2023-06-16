@@ -22,8 +22,8 @@
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
-#include "reconstruction.hpp"
 #include "../nr_radiation/radiation.hpp"
+#include "reconstruction.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::PiecewiseLinearX1(const int k, const int j,

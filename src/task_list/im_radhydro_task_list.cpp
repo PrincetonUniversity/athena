@@ -16,16 +16,16 @@
 
 // Athena++ headers
 #include "../athena.hpp"
+#include "../bvals/bvals.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
-#include "../bvals/bvals.hpp"
-#include "../mesh/mesh.hpp"
 #include "../hydro/hydro.hpp"
-#include "../scalars/scalars.hpp"
-#include "../nr_radiation/radiation.hpp"
-#include "../nr_radiation/integrators/rad_integrators.hpp"
+#include "../mesh/mesh.hpp"
 #include "../nr_radiation/implicit/radiation_implicit.hpp"
-#include "im_rad_task_list.hpp"
+#include "../nr_radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "../scalars/scalars.hpp"
+#include "./im_rad_task_list.hpp"
 
 //----------------------------------------------------------------------------------------
 //! IMRadTaskList constructor
@@ -40,7 +40,7 @@ IMRadHydroTaskList::IMRadHydroTaskList(Mesh *pm) {
     AddTask(SEND_HYD_BND,ADD_RAD_SCR);
     AddTask(RECV_HYD_BND,NONE);
     AddTask(SETB_HYD_BND,(RECV_HYD_BND|SEND_HYD_BND));
-    if (pm->shear_periodic){
+    if (pm->shear_periodic) {
       AddTask(SEND_HYD_SH,SETB_HYD_BND);
       AddTask(RECV_HYD_SH,SEND_HYD_SH|RECV_HYD_BND);
     }
@@ -89,7 +89,7 @@ void IMRadHydroTaskList::AddTask(const TaskID& id, const TaskID& dep) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadTaskList::PhysicalBoundary);
-   }else if (id == PRLN_HYD_BND) {
+  } else if (id == PRLN_HYD_BND) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadTaskList::ProlongateBoundary);
@@ -123,7 +123,6 @@ void IMRadHydroTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   return;
 }
 
-
 TaskStatus IMRadHydroTaskList::ClearHydroBoundary(MeshBlock *pmb) {
   pmb->phydro->hbvar.ClearBoundary(BoundaryCommSubset::radhydro);
   return TaskStatus::success;
@@ -150,10 +149,10 @@ TaskStatus IMRadHydroTaskList::ReceiveHydroBoundary(MeshBlock *pmb) {
 
 TaskStatus IMRadHydroTaskList::ReceiveHydroBoundaryShear(MeshBlock *pmb) {
   bool ret = pmb->phydro->hbvar.ReceiveShearingBoxBoundaryBuffers();
-  if (ret){
+  if (ret) {
     pmb->phydro->hbvar.SetShearingBoxBoundaryBuffers();
     return TaskStatus::success;
-  }else {
+  } else {
     return TaskStatus::fail;
   }
 }
@@ -164,18 +163,6 @@ TaskStatus IMRadHydroTaskList::SetHydroBoundary(MeshBlock *pmb) {
   pmb->phydro->hbvar.SetBoundaries();
   return TaskStatus::success;
 }
-
-//TaskStatus IMRadHydroTaskList::PhysicalBoundary(MeshBlock *pmb) {
-//  pmb->pnrrad->rad_bvar.var_cc = &(pmb->pnrrad->ir);
-//  pmb->pbval->ApplyPhysicalBoundaries(time_, dt_,pmb->pbval->bvars_main_int);
-//  return TaskStatus::success;
-//}
-
-
-//TaskStatus IMRadHydroTaskList::ProlongateBoundary(MeshBlock *pmb) {
-//  pmb->pbval->ProlongateBoundaries(time_, dt_, pmb->pbval->bvars_main_int);
-//  return TaskStatus::success;
-//}
 
 TaskStatus IMRadHydroTaskList::Primitive(MeshBlock *pmb) {
   Hydro *ph = pmb->phydro;

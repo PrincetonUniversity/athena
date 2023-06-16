@@ -16,12 +16,12 @@
 
 // Athena++ headers
 #include "../athena.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-#include "../nr_radiation/radiation.hpp"
 #include "../nr_radiation/implicit/radiation_implicit.hpp"
 #include "../nr_radiation/integrators/rad_integrators.hpp"
-#include "../hydro/hydro.hpp"
-#include "im_rad_task_list.hpp"
+#include "../nr_radiation/radiation.hpp"
+#include "./im_rad_task_list.hpp"
 
 //----------------------------------------------------------------------------------------
 //! IMRadTaskList constructor
@@ -49,8 +49,7 @@ IMRadComptTaskList::IMRadComptTaskList(Mesh *pm) {
       AddTask(RAD_PHYS_BND,setb);
     }
     AddTask(CLEAR_RAD, RAD_PHYS_BND);
-  } // end of using namespace block
-
+  }
 }
 
 //----------------------------------------------------------------------------------------
@@ -83,7 +82,7 @@ void IMRadComptTaskList::AddTask(const TaskID& id, const TaskID& dep) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadComptTaskList::PhysicalBoundary);
-   } else if (id == PRLN_RAD_BND) {
+  } else if (id == PRLN_RAD_BND) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadComptTaskList::ProlongateBoundary);
@@ -111,18 +110,11 @@ void IMRadComptTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 
 
 TaskStatus IMRadComptTaskList::CalComptTerms(MeshBlock *pmb) {
-
   NRRadiation *prad = pmb->pnrrad;
   Hydro *ph = pmb->phydro;
-
   prad->pradintegrator->AddMultiGroupCompt(pmb, dt, ph->u, prad->ir);
-
-
   return TaskStatus::success;
-
 }
-
-
 
 TaskStatus IMRadComptTaskList::ClearRadBoundary(MeshBlock *pmb) {
   pmb->pnrrad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);
@@ -138,7 +130,6 @@ TaskStatus IMRadComptTaskList::SendRadBoundaryShear(MeshBlock *pmb) {
   pmb->pnrrad->rad_bvar.SendShearingBoxBoundaryBuffers();
   return TaskStatus::success;
 }
-
 
 TaskStatus IMRadComptTaskList::ReceiveRadBoundary(MeshBlock *pmb) {
   bool ret = pmb->pnrrad->rad_bvar.ReceiveBoundaryBuffers();
@@ -157,13 +148,10 @@ TaskStatus IMRadComptTaskList::ReceiveRadBoundaryShear(MeshBlock *pmb) {
   }
 }
 
-
 TaskStatus IMRadComptTaskList::SetRadBoundary(MeshBlock *pmb) {
   pmb->pnrrad->rad_bvar.SetBoundaries();
   return TaskStatus::success;
 }
-
-
 
 void IMRadComptTaskList::StartupTaskList(MeshBlock *pmb) {
   pmb->pnrrad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);

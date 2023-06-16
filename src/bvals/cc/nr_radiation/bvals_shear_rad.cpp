@@ -25,16 +25,16 @@
 #include "../../../athena_arrays.hpp"
 #include "../../../coordinates/coordinates.hpp"
 #include "../../../globals.hpp"
+#include "../../../hydro/hydro.hpp"
 #include "../../../mesh/mesh.hpp"
+#include "../../../nr_radiation/integrators/rad_integrators.hpp"
+#include "../../../nr_radiation/radiation.hpp"
+#include "../../../orbital_advection/orbital_advection.hpp"
 #include "../../../parameter_input.hpp"
 #include "../../../utils/buffer_utils.hpp"
-#include "../../../hydro/hydro.hpp"
-#include "../../../nr_radiation/radiation.hpp"
-#include "../../../nr_radiation/integrators/rad_integrators.hpp"
-#include "../../../orbital_advection/orbital_advection.hpp"
 #include "../../bvals.hpp"
 #include "../../bvals_interfaces.hpp"
-#include "bvals_rad.hpp"
+#include "./bvals_rad.hpp"
 
 // MPI header
 #ifdef MPI_PARALLEL
@@ -97,12 +97,11 @@ void RadBoundaryVariable::AddRadShearForInit() {
             prad->pradintegrator->LabToCom(vx,vy_ori,vz,mux,muy,muz,ir_lab,ir_cm_);
             // now set lab frame intensities for vx, vy, vz
             prad->pradintegrator->ComToLab(vx,vy,vz,mux,muy,muz,ir_cm_,ir_lab);
-    
-          }// end i
+          }
         }
       }
-    }  // if boundary is shearing
-  }  // loop over inner/outer boundaries
+    }
+  }
   return;
 }
 
@@ -141,7 +140,6 @@ void RadBoundaryVariable::ShearQuantities(AthenaArray<Real> &shear_cc_, bool upp
         prad->pradintegrator->LabToCom(vx,vy_ori,vz,mux,muy,muz,ir_lab,ir_cm_);
         // now set lab frame intensities for vx, vy, vz
         prad->pradintegrator->ComToLab(vx,vy,vz,mux,muy,muz,ir_cm_,ir_lab);
-        
       }
     }
   }
@@ -273,28 +271,27 @@ void RadBoundaryVariable::SetShearingBoxBoundaryBuffers() {
         for (int i=0; i<NGHOST; i++) {
           int ii = ib[upper]+i;
           if (xorder<=2) {
-            porb->RemapFluxPlm(pflux, shear_cc_[upper], eps, 1-upper, k, i, jl, ju+1, nl_, nu_, xgh);
+            porb->RemapFluxPlm(pflux, shear_cc_[upper], eps, 1-upper, k,
+                               i, jl, ju+1, nl_, nu_, xgh);
           } else {
             printf("Not supported yet!\n");
-//             porb->RemapFluxPpm(pflux, pbuf, eps, 1-upper, k, i, jl, ju+1, xgh);
+            // porb->RemapFluxPpm(pflux, pbuf, eps, 1-upper, k, i, jl, ju+1, xgh);
           }
           const int shift = xgh+1-upper;
           for (int j=jl; j<=ju; j++) {
             for (int n=nl_; n<=nu_; n++) {
-              var(k,j,ii,n) = shear_cc_[upper](k,i,j+shift,n) - (pflux(j+1,n) - pflux(j,n));
+              var(k,j,ii,n) = shear_cc_[upper](k,i,j+shift,n)
+                              - (pflux(j+1,n) - pflux(j,n));
             }
           }
         }
       }
-      
-    }// end shearing boundary
+    }
   }
   return;
 }
 
 void RadBoundaryVariable::SendShearingBoxBoundaryBuffers() {
-  MeshBlock *pmb = pmy_block_;
-  Mesh *pmesh = pmb->pmy_mesh;
   AthenaArray<Real> &var = *var_cc;
   int ssize = nu_ + 1;
   int offset[2]{0, 4};
@@ -318,9 +315,9 @@ void RadBoundaryVariable::SendShearingBoxBoundaryBuffers() {
 #endif
           }
         }
-      }  // loop over recv[0] to recv[3]
-    }  // if boundary is shearing
-  }  // loop over inner/outer boundaries
+      }
+    }
+  }
   return;
 }
 
@@ -360,6 +357,3 @@ bool RadBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
   }  // loop over inner/outer boundaries
   return (flag[0] && flag[1]);
 }
-
-
-

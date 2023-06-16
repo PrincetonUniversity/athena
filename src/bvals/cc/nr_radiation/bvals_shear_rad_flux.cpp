@@ -29,15 +29,14 @@
 #include "../../../globals.hpp"
 #include "../../../hydro/hydro.hpp"
 #include "../../../mesh/mesh.hpp"
+#include "../../../nr_radiation/integrators/rad_integrators.hpp"
+#include "../../../nr_radiation/radiation.hpp"
 #include "../../../orbital_advection/orbital_advection.hpp"
 #include "../../../parameter_input.hpp"
 #include "../../../utils/buffer_utils.hpp"
 #include "../../bvals.hpp"
 #include "../../bvals_interfaces.hpp"
 #include "./bvals_rad.hpp"
-#include "../../../nr_radiation/radiation.hpp"
-#include "../../../nr_radiation/integrators/rad_integrators.hpp"
-
 
 // MPI header
 #ifdef MPI_PARALLEL
@@ -147,7 +146,7 @@ void RadBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
       int ii = ib[upper];
       for (int k=ks; k<=ke; k++) {
         if (xorder<=2) {
-          porb->RemapFluxPlm(pflux, shear_map_flx_[upper], eps, 1-upper, 
+          porb->RemapFluxPlm(pflux, shear_map_flx_[upper], eps, 1-upper,
                                           k, 0, js, je+1, nl_, nu_, xgh);
         } else {
            printf("3 order shearing box Not supported yet!\n");
@@ -160,7 +159,7 @@ void RadBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
                                - (pflux(j+1,n) - pflux(j,n)));
           }// end n
         }// end j
-        
+
       }// end k
     }
   }
@@ -238,4 +237,3 @@ bool RadBoundaryVariable::ReceiveFluxShearingBoxBoundaryBuffers() {
   }  // loop over inner/outer boundaries
   return (flag[0] && flag[1]);
 }
-
