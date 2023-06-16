@@ -483,8 +483,6 @@ if args['cr']:
 else:
     definitions['CR_ENABLED'] = '0'
 
-
-
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
     # GCC is C++11 feature-complete since v4.8.1 (2013-05-31)
@@ -880,9 +878,8 @@ print('  Compiler:                   ' + args['cxx'])
 print('  Compilation command:        ' + makefile_options['COMPILER_COMMAND'] + ' '
       + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])
 
-
 # write the configuration optitions into a log file
-flog=open('./configure.log', 'w')
+flog = open('./configure.log', 'w')
 flog.write('Your Athena++ distribution has now been configured with the following options:' + '\n')  # noqa
 flog.write('  Problem generator:          ' + args['prob'] + '\n')
 flog.write('  Coordinate system:          ' + args['coord'] + '\n')
@@ -891,7 +888,7 @@ flog.write('  Riemann solver:             ' + args['flux'] + '\n')
 flog.write('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF') + '\n')
 flog.write('  Number of scalars:          ' + args['nscalars'] + '\n')
 flog.write('  Special relativity:         ' + ('ON' if args['s'] else 'OFF') + '\n')
-flog.write('  General relativity:         ' + ('ON' if args['g'] else 'OFF')+ '\n')
+flog.write('  General relativity:         ' + ('ON' if args['g'] else 'OFF') + '\n')
 flog.write('  Radiative Transfer:         ' + ('ON' if args['nr_radiation'] else 'OFF')
            + '\n')
 flog.write('  Implicit Radiation:         ' + ('ON' if args['implicit_radiation']
@@ -904,7 +901,7 @@ flog.write('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF')
 flog.write('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF')
            + '\n')
 flog.write('  Linker flags:               ' + makefile_options['LINKER_FLAGS'] + ' '
-      + makefile_options['LIBRARY_FLAGS'] + '\n')
+           + makefile_options['LIBRARY_FLAGS'] + '\n')
 flog.write('  Floating-point precision:   ' + ('single' if args['float'] else 'double')
            + '\n')
 flog.write('  Number of ghost cells:      ' + args['nghost'] + '\n')
@@ -917,7 +914,7 @@ if args['hdf5']:
                                                    else 'single') + '\n')
 flog.write('  Compiler:                   ' + args['cxx'] + '\n')
 flog.write('  Compilation command:        ' + makefile_options['COMPILER_COMMAND'] + ' '
-      + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS']
-           + '\n')
+           + makefile_options['PREPROCESSOR_FLAGS'] + ' '
+           + makefile_options['COMPILER_FLAGS'] + '\n')
 
 flog.close()
