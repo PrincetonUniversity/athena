@@ -115,7 +115,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const int Nx_mesh = pmy_mesh->mesh_size.nx1;
   const int Ny_mesh = pmy_mesh->mesh_size.nx2;
   const int Nz_mesh = pmy_mesh->mesh_size.nx3;
-  int ierr;
+
   //read joined or unjoined vtk files
   int isjoinedvtk = pin->GetOrAddInteger("problem", "is_joined_vtk", 0);
   AthenaArray<Real> data; //temporary array to store data;
@@ -137,8 +137,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
   std::stringstream msg; //error message
   std::string vtkfile; //corresponding vtk file for this meshblock
-  //gamma-1 for hydro eos
-  const Real gm1 = peos->GetGamma() - 1.0;
   //initial abundance
   const Real r_init = pin->GetReal("problem", "r_init");
 
@@ -160,8 +158,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       printf("meshblock gid=%d, lx1=%lld, lx2=%lld, lx3=%lld, level=%d, vtk file = %s\n",
               gid, loc.lx1, loc.lx2, loc.lx3, loc.level, vtkfile.c_str());
     }
-    //scalers
-    for(int i = 0; i < scaler_fields.size(); ++i) {
+    // scalars
+    for(std::uint64_t i = 0; i < scaler_fields.size(); ++i) {
       if (scaler_fields[i] == "density") {
         if (Globals::my_rank == 0) {
 #ifdef DEBUG
@@ -221,7 +219,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
     //vectors
-    for(int i = 0; i < vector_fields.size(); ++i) {
+    for(std::uint64_t i = 0; i < vector_fields.size(); ++i) {
       if (vector_fields[i] == "velocity") {
         //vx
         if (Globals::my_rank == 0) {
@@ -330,7 +328,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         gid, loc.lx1, loc.lx2, loc.lx3, loc.level, vtkfile.c_str());
 
     //read scalers
-    for(int i = 0; i < scaler_fields.size(); ++i) {
+    for(std::uint64_t i = 0; i < scaler_fields.size(); ++i) {
       if (scaler_fields[i] == "density") {
         readvtk(this, vtkfile, "density", 0, data,isjoinedvtk);
         for (int k=ks; k<=ke; ++k) {
@@ -356,7 +354,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
     //read vectors
-    for(int i = 0; i < vector_fields.size(); ++i) {
+    for (std::uint64_t i = 0; i < vector_fields.size(); ++i) {
       if (vector_fields[i] == "velocity") {
         //vx
         readvtk(this, vtkfile, "velocity", 0, data,isjoinedvtk);
@@ -477,7 +475,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   //total number of cells in MeshBlock
   const int cell_dat_mb = Nx_mb * Ny_mb * Nz_mb;
   int retval, nread; //file handler return value
-  float fdat, fvec[3], ften[9];//store float format scaler, vector, and tensor
+  float fdat, fvec[3]; //, ften[9];//store float format scalar, vector, and tensor
 
   if ( (fp = fopen(filename.c_str(),"r")) == NULL ) {
     msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
@@ -735,7 +733,7 @@ void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=1; i<=ngh; ++i) {
           pmb->pscalars->s(n,k,j,il-i) = 0;
         }
@@ -746,7 +744,7 @@ void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=1; i<=ngh; ++i) {
           prim(n,k,j,il-i) = 0;
         }
@@ -763,7 +761,7 @@ void SixRayBoundaryInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           pmb->pscalars->s(n,k,jl-j,i) = 0;
         }
@@ -774,7 +772,7 @@ void SixRayBoundaryInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(n,k,jl-j,i) = 0;
         }
@@ -791,7 +789,7 @@ void SixRayBoundaryInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           pmb->pscalars->s(n,kl-k,j,i) = 0;
         }
@@ -802,7 +800,7 @@ void SixRayBoundaryInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(n,kl-k,j,i) = 0;
         }
@@ -819,7 +817,7 @@ void SixRayBoundaryOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=1; i<=ngh; ++i) {
           pmb->pscalars->s(n,k,j,iu+i) = 0;
         }
@@ -830,7 +828,7 @@ void SixRayBoundaryOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=1; i<=ngh; ++i) {
           prim(n,k,j,iu+i) = 0;
         }
@@ -847,7 +845,7 @@ void SixRayBoundaryOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           pmb->pscalars->s(n,k,ju+j,i) = 0;
         }
@@ -858,7 +856,7 @@ void SixRayBoundaryOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(n,k,ju+j,i) = 0;
         }
@@ -875,7 +873,7 @@ void SixRayBoundaryOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           pmb->pscalars->s(n,ku+k,j,i) = 0;
         }
@@ -886,7 +884,7 @@ void SixRayBoundaryOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(n,ku+k,j,i) = 0;
         }
