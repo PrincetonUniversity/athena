@@ -55,8 +55,9 @@ void RadBoundaryVariable::ReflectInnerX1(Real time, Real dt, int il, int jl, int
     for (int j=jl; j<=ju; ++j) {
       for (int i=1; i<=ngh; ++i) {
         for (int ifr=0; ifr<nfreq; ++ifr) {
-          Real *iri = &(*(var_cc)(k,j,(il+i-1),ifr*pmy_block_->pnrrad->nang));
-          Real *iro = &(*(var_cc)(k,j, il-i, ifr*pmy_block_->pnrrad->nang));
+          AthenaArray<Real> &var = *var_cc;
+          Real *iri = &var(k,j,(il+i-1),ifr*pmy_block_->pnrrad->nang);
+          Real *iro = &var(k,j, il-i, ifr*pmy_block_->pnrrad->nang);
           CopyIntensity(iri, iro, 0, 1, n_ang);
           if (noct > 2) {
             CopyIntensity(iri, iro, 2, 3, n_ang);
@@ -90,8 +91,9 @@ void RadBoundaryVariable::ReflectOuterX1(
     for (int j=jl; j<=ju; ++j) {
       for (int i=1; i<=ngh; ++i) {
         for (int ifr=0; ifr<nfreq; ++ifr) {
-          Real *iri = &((*var_cc)(k,j,(iu-i+1),ifr*pmy_block_->pnrrad->nang));
-          Real *iro = &((*var_cc)(k,j, iu+i, ifr*pmy_block_->pnrrad->nang));
+          AthenaArray<Real> &var = *var_cc;
+          Real *iri = &var(k,j,(iu-i+1),ifr*pmy_block_->pnrrad->nang);
+          Real *iro = &var(k,j, iu+i, ifr*pmy_block_->pnrrad->nang);
           CopyIntensity(iri, iro, 0, 1, n_ang);
           if (noct > 2) {
             CopyIntensity(iri, iro, 2, 3, n_ang);
@@ -125,8 +127,9 @@ void RadBoundaryVariable::ReflectInnerX2(Real time, Real dt, int il, int iu, int
     for (int j=1; j<=ngh; ++j) {
       for (int i=il; i<=iu; ++i) {
         for (int ifr=0; ifr<nfreq; ++ifr) {
-          Real *iri = &((*var_cc)(k,jl+j-1,i,ifr*pmy_block_->pnrrad->nang));
-          Real *iro = &((*var_cc)(k,jl-j,i, ifr*pmy_block_->pnrrad->nang));
+          AthenaArray<Real> &var = *var_cc;
+          Real *iri = &var(k,jl+j-1,i,ifr*pmy_block_->pnrrad->nang);
+          Real *iro = &var(k,jl-j,i, ifr*pmy_block_->pnrrad->nang);
           CopyIntensity(iri, iro, 0, 2, n_ang);
           CopyIntensity(iri, iro, 1, 3, n_ang);
 
@@ -161,8 +164,9 @@ void RadBoundaryVariable::ReflectOuterX2(Real time, Real dt, int il, int iu, int
     for (int j=1; j<=ngh; ++j) {
       for (int i=il; i<=iu; ++i) {
         for (int ifr=0; ifr<nfreq; ++ifr) {
-          Real *iri = &((*var_cc)(k,ju-j+1,i,ifr*pmy_block_->pnrrad->nang));
-          Real *iro = &((*var_cc)(k,ju+j,i, ifr*pmy_block_->pnrrad->nang));
+          AthenaArray<Real> &var = *var_cc;
+          Real *iri = &var(k,ju-j+1,i,ifr*pmy_block_->pnrrad->nang);
+          Real *iro = &var(k,ju+j,i, ifr*pmy_block_->pnrrad->nang);
           CopyIntensity(iri, iro, 0, 2, n_ang);
           CopyIntensity(iri, iro, 1, 3, n_ang);
 
@@ -198,8 +202,9 @@ void RadBoundaryVariable::ReflectInnerX3(Real time, Real dt, int il, int iu, int
     for (int j=jl; j<=ju; ++j) {
       for (int i=il; i<=iu; ++i) {
         for (int ifr=0; ifr<nfreq; ++ifr) {
-          Real *iri = &((*var_cc)(kl+k-1,j,i,ifr*pmy_block_->pnrrad->nang));
-          Real *iro = &((*var_cc)(kl-k,j,i, ifr*pmy_block_->pnrrad->nang));
+          AthenaArray<Real> &var = *var_cc;
+          Real *iri = &var(kl+k-1,j,i,ifr*pmy_block_->pnrrad->nang);
+          Real *iro = &var(kl-k,j,i, ifr*pmy_block_->pnrrad->nang);
           CopyIntensity(iri, iro, 0, 4, n_ang);
           CopyIntensity(iri, iro, 1, 5, n_ang);
           CopyIntensity(iri, iro, 2, 6, n_ang);
@@ -228,8 +233,9 @@ void RadBoundaryVariable::ReflectOuterX3(Real time, Real dt, int il, int iu, int
     for (int j=jl; j<=ju; ++j) {
       for (int i=il; i<=iu; ++i) {
         for (int ifr=0; ifr<nfreq; ++ifr) {
-          Real *iri = &((*var_cc)(ku-k+1,j,i,ifr*pmy_block_->pnrrad->nang));
-          Real *iro = &((*var_cc)(ku+k,j,i, ifr*pmy_block_->pnrrad->nang));
+          AthenaArray<Real> &var = *var_cc;
+          Real *iri = &var(ku-k+1,j,i,ifr*pmy_block_->pnrrad->nang);
+          Real *iro = &var(ku+k,j,i, ifr*pmy_block_->pnrrad->nang);
           CopyIntensity(iri, iro, 0, 4, n_ang);
           CopyIntensity(iri, iro, 1, 5, n_ang);
           CopyIntensity(iri, iro, 2, 6, n_ang);
