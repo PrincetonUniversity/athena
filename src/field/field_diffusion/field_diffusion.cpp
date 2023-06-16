@@ -10,7 +10,7 @@
 
 // C++ headers
 #include <algorithm>  // min()
-#include <cmath>      // sqrt(), fabs()
+#include <cmath>      // sqrt(), abs()
 #include <cstring>    // strcmp()
 #include <iostream>   // endl
 #include <limits>
