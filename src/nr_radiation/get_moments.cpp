@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -17,50 +17,47 @@
 //  \brief calculate the moments of the radiation field
 //======================================================================================
 
+// C headers
+
+// C++ headers
 
 // Athena++ headers
-#include "./radiation.hpp"
-#include "./integrators/rad_integrators.hpp"
-#include "../mesh/mesh.hpp"
-#include "../hydro/hydro.hpp"
+
 #include "../defs.hpp"
+#include "../hydro/hydro.hpp"
+#include "../mesh/mesh.hpp"
+#include "./integrators/rad_integrators.hpp"
+#include "./radiation.hpp"
 
 //--------------------------------------------------------------------------------------
 // \!fn void CalculateMoment()
-
 // \brief function to create the radiation moments
-
-
 // calculate the frequency integrated moments of the radiation field
 // including the ghost zones
-void NRRadiation::CalculateMoment(AthenaArray<Real> &ir_in)
-{
+void NRRadiation::CalculateMoment(AthenaArray<Real> &ir_in) {
   Real er, frx, fry, frz, prxx, pryy, przz, prxy, prxz, pryz;
   int n1z = pmy_block->block_size.nx1 + 2*(NGHOST);
   int n2z = pmy_block->block_size.nx2;
   int n3z = pmy_block->block_size.nx3;
-  if(n2z > 1) n2z += (2*(NGHOST));
-  if(n3z > 1) n3z += (2*(NGHOST));
-  
+  if (n2z > 1) n2z += (2*(NGHOST));
+  if (n3z > 1) n3z += (2*(NGHOST));
   Real *weight = &(wmu(0));
-  
 
-  
   // reset the moment arrays to be zero
   // There are 13 3D arrays
-  for(int n=0; n<13; ++n)
-    for(int k=0; k<n3z; ++k)
-      for(int j=0; j<n2z; ++j){
+  for (int n=0; n<13; ++n)
+    for (int k=0; k<n3z; ++k)
+      for (int j=0; j<n2z; ++j) {
           Real *i_mom = &(rad_mom(n,k,j,0));
-        for(int i=0; i<n1z; ++i){
+        for (int i=0; i<n1z; ++i) {
           i_mom[i] = 0.0;
         }
       }
-  
-  for(int k=0; k<n3z; ++k){
-    for(int j=0; j<n2z; ++j){
-      for(int i=0; i<n1z; ++i){
-        for(int ifr=0; ifr<nfreq; ++ifr){
+
+  for (int k=0; k<n3z; ++k) {
+    for (int j=0; j<n2z; ++j) {
+      for (int i=0; i<n1z; ++i) {
+        for (int ifr=0; ifr<nfreq; ++ifr) {
           er=0.0; frx=0.0; fry=0.0; frz=0.0;
           prxx=0.0; pryy=0.0; przz=0.0; prxy=0.0;
           prxz=0.0; pryz=0.0;
@@ -68,7 +65,7 @@ void NRRadiation::CalculateMoment(AthenaArray<Real> &ir_in)
           Real *cosx = &(mu(0,k,j,i,0));
           Real *cosy = &(mu(1,k,j,i,0));
           Real *cosz = &(mu(2,k,j,i,0));
-          for(int n=0; n<nang; ++n){
+          for (int n=0; n<nang; ++n) {
             Real irweight = weight[n] * intensity[n];
             er   += irweight;
             frx  += irweight * cosx[n];
@@ -82,7 +79,7 @@ void NRRadiation::CalculateMoment(AthenaArray<Real> &ir_in)
             pryz += irweight * cosy[n] * cosz[n];
           }
           // assign the moments for each frequency group
-          if(nfreq > 1){
+          if (nfreq > 1) {
             rad_mom_nu(ifr*13+IER,k,j,i) = er;
             rad_mom_nu(ifr*13+IFR1,k,j,i) = frx;
             rad_mom_nu(ifr*13+IFR2,k,j,i) = fry;
@@ -96,12 +93,9 @@ void NRRadiation::CalculateMoment(AthenaArray<Real> &ir_in)
             rad_mom_nu(ifr*13+IPR21,k,j,i) = prxy;
             rad_mom_nu(ifr*13+IPR31,k,j,i) = prxz;
             rad_mom_nu(ifr*13+IPR32,k,j,i) = pryz;
-
           }
-       
 
-          
-          //assign the moments
+          // assign the moments
           rad_mom(IER,k,j,i) += er;
           rad_mom(IFR1,k,j,i) += frx;
           rad_mom(IFR2,k,j,i) += fry;
@@ -115,16 +109,10 @@ void NRRadiation::CalculateMoment(AthenaArray<Real> &ir_in)
           rad_mom(IPR21,k,j,i) += prxy;
           rad_mom(IPR31,k,j,i) += prxz;
           rad_mom(IPR32,k,j,i) += pryz;
-          
-          
-        }// End frequency loop
-
+        }
       }
     }
-    
   }
-  
-  
 }
 
 
@@ -134,20 +122,16 @@ void NRRadiation::CalculateMoment(AthenaArray<Real> &ir_in)
 // \brief Calculate the radiation moments in the co-moving frame
 // Also load specific intensity for dump
 
-void NRRadiation::CalculateComMoment()
-{
-
+void NRRadiation::CalculateComMoment() {
   Hydro *phydro=pmy_block->phydro;
   Real invcrat = 1.0/crat;
-  
   Real er, frx, fry, frz;
   int n1z = pmy_block->block_size.nx1 + 2*(NGHOST);
   int n2z = pmy_block->block_size.nx2;
   int n3z = pmy_block->block_size.nx3;
-  if(n2z > 1) n2z += (2*(NGHOST));
-  if(n3z > 1) n3z += (2*(NGHOST));
-  
-  
+  if (n2z > 1) n2z += (2*(NGHOST));
+  if (n3z > 1) n3z += (2*(NGHOST));
+
   AthenaArray<Real> &i_mom = rad_mom_cm;
   Real *weight = &(wmu(0));
   Real *ir_output;
@@ -162,40 +146,40 @@ void NRRadiation::CalculateComMoment()
 
   AthenaArray<Real> split_ratio;
   AthenaArray<int> map_start, map_end;
-  
+
   // reset the moment arrays to be zero
   // There are 4 3D arrays
-  for(int n=0; n<4; ++n)
-    for(int k=0; k<n3z; ++k)
-      for(int j=0; j<n2z; ++j)
+  for (int n=0; n<4; ++n) {
+    for (int k=0; k<n3z; ++k) {
+      for (int j=0; j<n2z; ++j) {
 #pragma omp simd
-        for(int i=0; i<n1z; ++i){
+        for (int i=0; i<n1z; ++i) {
           i_mom(n,k,j,i) = 0.0;
         }
+      }
+    }
+  }
 
-  
-  for(int k=0; k<n3z; ++k){
-    for(int j=0; j<n2z; ++j){
-      for(int i=0; i<n1z; ++i){
-
-
+  for (int k=0; k<n3z; ++k) {
+    for (int j=0; j<n2z; ++j) {
+      for (int i=0; i<n1z; ++i) {
         Real *cosx = &(mu(0,k,j,i,0));
         Real *cosy = &(mu(1,k,j,i,0));
         Real *cosz = &(mu(2,k,j,i,0));
-        
+
         Real vx = phydro->u(IM1,k,j,i)/phydro->u(IDN,k,j,i);
         Real vy = phydro->u(IM2,k,j,i)/phydro->u(IDN,k,j,i);
         Real vz = phydro->u(IM3,k,j,i)/phydro->u(IDN,k,j,i);
         Real vel = vx * vx + vy * vy + vz * vz;
-        
+
         Real ratio = sqrt(vel) * invcrat;
          // Limit the velocity to be smaller than the speed of light
-        if(ratio > vmax){
+        if (ratio > vmax) {
           Real factor = vmax/ratio;
           vx *= factor;
           vy *= factor;
           vz *= factor;
-           
+
           vel *= (factor*factor);
         }
 
@@ -205,7 +189,7 @@ void NRRadiation::CalculateComMoment()
 
         // first, get co-moving frame ir_cm
         Real numsum = 0.0;
-        for(int n=0; n<nang; ++n){
+        for (int n=0; n<nang; ++n) {
           Real vdotn = vx * cosx[n] + vy * cosy[n] + vz * cosz[n];
           Real vnc = 1.0 - vdotn * invcrat;
           tran_coef(n) = sqrt(lorzsq) * vnc;
@@ -218,30 +202,27 @@ void NRRadiation::CalculateComMoment()
           cosx_cm(n) = (cosx[n] - vx * angcoef) * incoef;
           cosy_cm(n) = (cosy[n] - vy * angcoef) * incoef;
           cosz_cm(n) = (cosz[n] - vz * angcoef) * incoef;
-           
-        }// finish angular coefficient
+        }
         numsum = 1.0/numsum;
 #pragma omp simd
-        for(int n=0; n<nang; ++n){
+        for (int n=0; n<nang; ++n) {
            wmu_cm(n) *= numsum;
         }
 
-        for(int ifr=0; ifr<nfreq; ++ifr){
-          for(int n=0; n<nang; ++n){
-            ir_cm(n+ifr*nang) = ir(k,j,i,ifr*nang+n) * cm_to_lab(n); 
-          }// end n
-
-        }// end ifr
+        for (int ifr=0; ifr<nfreq; ++ifr) {
+          for (int n=0; n<nang; ++n) {
+            ir_cm(n+ifr*nang) = ir(k,j,i,ifr*nang+n) * cm_to_lab(n);
+          }
+        }
         // in the case of multi-groups
-        if(nfreq > 1){
+        if (nfreq > 1) {
           // shift intensity from shifted frequency bins
 
-    // map frequency grid 
-          for(int n=0; n<nang; ++n){
-
-            for(int ifr=0; ifr<nfreq; ++ifr)
+          // map frequency grid
+          for (int n=0; n<nang; ++n) {
+            for (int ifr=0; ifr<nfreq; ++ifr) {
               pradintegrator->ir_ori_(ifr) = ir_cm(ifr*nang+n);
-
+            }
             split_ratio.InitWithShallowSlice(pradintegrator->split_ratio_,
                                                                     3,n,1);
             map_start.InitWithShallowSlice(pradintegrator->map_bin_start_,
@@ -254,68 +235,44 @@ void NRRadiation::CalculateComMoment()
                       map_start, map_end,
                       pradintegrator->ir_ori_, pradintegrator->ir_done_);
 
-            for(int ifr=0; ifr<nfreq; ++ifr)
+            for (int ifr=0; ifr<nfreq; ++ifr)
               ir_cm(ifr*nang+n) = pradintegrator->ir_done_(ifr);
-
-          }// end nang
+          }
         }
-           
-        Real *cm_weight = &(wmu_cm(0));
-        for(int ifr=0; ifr<nfreq; ++ifr){
-          ir_output = &(ir_cm(ifr*nang));
 
+        Real *cm_weight = &(wmu_cm(0));
+        for (int ifr=0; ifr<nfreq; ++ifr) {
+          ir_output = &(ir_cm(ifr*nang));
           er=0.0; frx=0.0; fry=0.0; frz=0.0;
-          for(int n=0; n<nang; ++n){
+          for (int n=0; n<nang; ++n) {
             Real ir_weight = ir_output[n] * cm_weight[n];
-    
             er   += ir_weight;
             frx  += ir_weight * cosx_cm(n);
             fry  += ir_weight * cosy_cm(n);
             frz  += ir_weight * cosz_cm(n);
-            
           }
 
           // assign the moments for each frequency group
-          if(nfreq > 1){
+          if (nfreq > 1) {
             rad_mom_cm_nu(ifr*4+IER,k,j,i) = er;
             rad_mom_cm_nu(ifr*4+IFR1,k,j,i) = frx;
             rad_mom_cm_nu(ifr*4+IFR2,k,j,i) = fry;
             rad_mom_cm_nu(ifr*4+IFR3,k,j,i) = frz;
           }
-
           i_mom(IER,k,j,i) += er;
           i_mom(IFR1,k,j,i) += frx;
           i_mom(IFR2,k,j,i) += fry;
           i_mom(IFR3,k,j,i) += frz;
-          
         }// End frequency loop
-        
+
         // prepare the opacity array for output
-        for(int ifr=0; ifr<nfreq; ++ifr){
+        for (int ifr=0; ifr<nfreq; ++ifr) {
           output_sigma(3*ifr+OPAS,k,j,i) = sigma_s(k,j,i,ifr);
           output_sigma(3*ifr+OPAA,k,j,i) = sigma_a(k,j,i,ifr);
           output_sigma(3*ifr+OPAP,k,j,i) = sigma_p(k,j,i,ifr);
-        }// end frquency
-      }// end i
+        }
+      }
     }
   }
-
-  // Load the specific intensity for dump
-//  if(ir_output > 0){
-//    for(int n=0; n<ir_output; ++n){
-//      for(int k=0; k<n3z; ++k){
-//        for(int j=0; j<n2z; ++j){
-//          for(int i=0; i<n1z; ++i){
-//            dump_ir(n,k,j,i)=ir(k,j,i,ir_index(n));
-//          }
-//        }
-//      }
-//    }
-
-
-//  }
-  
-
-  
+  return;
 }
-

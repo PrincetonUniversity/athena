@@ -7,7 +7,7 @@
 // either version 3 of the License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 // PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 //
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
@@ -17,59 +17,52 @@
 //  \brief implementation of functions in class Radiation
 //======================================================================================
 
+// C headers
 
-#include <sstream>  // msg
+// C++ headers
 #include <iostream>  // cout
+#include <sstream>  // msg
 #include <stdexcept> // runtime erro
-#include <stdio.h>  // fopen and fwrite
-
+//#include <stdio.h>  // fopen and fwrite
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../athena_arrays.hpp" 
-#include "radiation.hpp"
-#include "../parameter_input.hpp"
-#include "../mesh/mesh.hpp"
-#include "../globals.hpp"
+#include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
-#include "integrators/rad_integrators.hpp"
+#include "../globals.hpp"
+#include "../mesh/mesh.hpp"
+#include "../parameter_input.hpp"
 #include "implicit/radiation_implicit.hpp"
-
+#include "integrators/rad_integrators.hpp"
+#include "./radiation.hpp"
 // constructor, initializes data structures and parameters
 
 // The default opacity function.
 // Do nothing. Keep the opacity as the initial value
-inline void DefaultFrequency(NRRadiation *prad)
-{
+inline void DefaultFrequency(NRRadiation *prad) {
   return;
 }
 
 // The default opacity function.
 // Do nothing. Keep the opacity as the initial value
-inline void DefaultEmission(NRRadiation *prad, Real tgas)
-{
+inline void DefaultEmission(NRRadiation *prad, Real tgas) {
   int &nfreq = prad->nfreq;
-  if(nfreq > 1){
-    for(int ifr=0; ifr<nfreq-1; ++ifr)
-      prad->emission_spec(ifr) =  
+  if (nfreq > 1) {
+    for(int ifr=0; ifr<nfreq-1; ++ifr) {
+      prad->emission_spec(ifr) =
             prad->BlackBodySpec(prad->nu_grid(ifr)/tgas, prad->nu_grid(ifr+1)/tgas);
-
-      prad->emission_spec(nfreq-1) = 1.0 - prad->FitBlackBody(prad->nu_grid(nfreq-1)/tgas);
+    }
+    prad->emission_spec(nfreq-1) = 1.0 - prad->FitBlackBody(prad->nu_grid(nfreq-1)/tgas);
   }
-
-  
-
   return;
 }
 
 
 // The default opacity function.
 // Do nothing. Keep the opacity as the initial value
-inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &prim)
-{
+inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &prim) {
   return;
 }
-
 
 
 NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
@@ -86,20 +79,20 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     coarse_ir_(pmb->ncc3, pmb->ncc2, pmb->ncc1,pmb->nfre_ang,
              (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
               AthenaArray<Real>::DataStatus::empty)),
-    rad_bvar(pmb, &ir, &coarse_ir_, flux){
+    rad_bvar(pmb, &ir, &coarse_ir_, flux) {
 
-  //universal constants we need
+  // universal constants we need
   // https://physics.info/constants/
   // arad = 4 * sigma/c
-  Real arad = 7.565733250033928e-15; 
+  Real arad = 7.565733250033928e-15;
   Real c_speed = 2.99792458e10;  // speed of light
 
   // read in the parameters
   int nmu = pin->GetInteger("radiation","nmu");
   // total number of polar angles covering 0 to pi/2
-  nzeta = pin->GetOrAddInteger("radiation","nzeta",0); 
+  nzeta = pin->GetOrAddInteger("radiation","nzeta",0);
   // total number of azimuthal angles covering 0 to pi
-  npsi = pin->GetOrAddInteger("radiation","npsi",0); 
+  npsi = pin->GetOrAddInteger("radiation","npsi",0);
   angle_flag = pin->GetOrAddInteger("radiation","angle_flag",0);
 
   rotate_theta=pin->GetOrAddInteger("radiation","rotate_theta",0);
@@ -114,11 +107,11 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   kappa_es = pin->GetOrAddReal("radiation","electron_scattering",0.34);
 
   kappa_es = kappa_es * rhounit * lunit; // dimensionless electron scattering
-  
-  if(user_unit_ == 0){  
+
+  if (user_unit_ == 0) {
     prat = pin->GetReal("radiation","Prat");
     crat = pin->GetReal("radiation","Crat");
-  }else if(user_unit_ == 1){
+  }else if (user_unit_ == 1) {
    // calculate prat and crat based on user provided unit
     Real r_ideal = 8.314462618e7/mol_weight;
     prat = arad * tunit * tunit * tunit/(rhounit * r_ideal);
@@ -131,116 +124,113 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   telectron = 5.94065e9;
   telectron /= tunit;
 
-  reduced_c  = crat * pin->GetOrAddReal("radiation","reduced_factor",1.0);  
+  reduced_c  = crat * pin->GetOrAddReal("radiation","reduced_factor",1.0);
 
   Real taucell = pin->GetOrAddReal("radiation","taucell",5);
 
-  Mesh *pm = pmb->pmy_mesh;
+  //Mesh *pm = pmb->pmy_mesh;
+  //ir_output=pin->GetOrAddInteger("radiation","ir_output",0);
 
-//  ir_output=pin->GetOrAddInteger("radiation","ir_output",0);
-  
   set_source_flag = pin->GetOrAddInteger("radiation","source_flag",1);
 
   // number of cells for three dimensions
-  int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;  
+  int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
   // calculate noct based on dimension
   int ndim = 1;
-  if(nc2 > 1) ndim = 2;
-  if(nc3 > 1) ndim = 3;
-  
-   
-  int n_ang; // number of angles per octant and number of octant
-  // total calculate total number of angles based on dimensions
-  if(angle_flag == 1){
+  if (nc2 > 1) ndim = 2;
+  if (nc3 > 1) ndim = 3;
 
-    if(ndim == 1){
+  int n_ang=0; // number of angles per octant and number of octant
+  // total calculate total number of angles based on dimensions
+  if (angle_flag == 1) {
+    if (ndim == 1) {
       noct = 2;
       n_ang = nzeta;
-      if(npsi > 0){
+      if (npsi > 0) {
         std::stringstream msg;
         msg << "### FATAL ERROR in radiation class" << std::endl
         << "1D problem cannot have npsi > 0"   << std::endl;
         ATHENA_ERROR(msg);
       }
 
-    }else if(ndim == 2){
-      if(npsi <= 1){
+    }else if (ndim == 2) {
+      if (npsi <= 1) {
         n_ang = nzeta;
-      }else if(nzeta == 0){
+      }else if (nzeta == 0) {
         n_ang = npsi/2;
       }else{
         n_ang = nzeta*npsi;
       }
-      if(std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+      if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
         noct = 8;
         n_ang = nzeta*npsi/2;
       }
       else
         noct = 4;
-    }else if(ndim == 3){
+    }else if (ndim == 3) {
       n_ang = nzeta*npsi/2;
       noct = 8;
     }
 
-  }else{ 
+  }else{
 
-    if(ndim == 1){
+    if (ndim == 1) {
       n_ang = nmu;
       noct = 2;
-    }else if(ndim == 2){
+    }else if (ndim == 2) {
       noct = 4;
-      if(angle_flag == 0){
+      if (angle_flag == 0) {
         n_ang = nmu * (nmu + 1)/2;
-      }else if(angle_flag == 10){
+      }else if (angle_flag == 10) {
         n_ang = nmu;
       }
-    }else if(ndim == 3){
+    }else if (ndim == 3) {
       noct = 8;
-      if(angle_flag == 0){
+      if (angle_flag == 0) {
         n_ang = nmu * (nmu + 1)/2;
-      }else if(angle_flag == 10){
+      }else if (angle_flag == 10) {
         n_ang = nmu * nmu/2;
       }
     }// end 3D
   }
-  
+
   nang = n_ang * noct;
 
 
   // frequency grid
-  //frequency grid covers -infty to infty, default nfreq=1, means gray 
+  //frequency grid covers -infty to infty, default nfreq=1, means gray
   // integrated over all frequency
 
    // the number of frequeny bins
-  nfreq  = pin->GetOrAddInteger("radiation","n_frequency",1);  
-  // when the emission spectrum depends on tgas, we perform 
+  nfreq  = pin->GetOrAddInteger("radiation","n_frequency",1);
+  // when the emission spectrum depends on tgas, we perform
 
   // minimum frequency
-  nu_min = pin->GetOrAddReal("radiation","frequency_min",0);  
+  nu_min = pin->GetOrAddReal("radiation","frequency_min",0);
 
-  // maximum frequency 
-  nu_max = pin->GetOrAddReal("radiation","frequency_max",1);  
+  // maximum frequency
+  nu_max = pin->GetOrAddReal("radiation","frequency_max",1);
 
   // log frequency space ratio
-  fre_ratio= pin->GetOrAddReal("radiation","frequency_ratio",1.0); 
+  fre_ratio= pin->GetOrAddReal("radiation","frequency_ratio",1.0);
 
   log_fre_ = pin->GetOrAddInteger("radiation","log_frequency_spacing",1);
 
-  restart_from_gray  = pin->GetOrAddInteger("radiation","res_gray",0);  
-  // when the emission spectrum depends on tgas, we perform 
+  restart_from_gray  = pin->GetOrAddInteger("radiation","res_gray",0);
+  // when the emission spectrum depends on tgas, we perform
 
   // setup the frequency grid
-  FrequencyGrid();  
+  FrequencyGrid();
 
 
   UserFrequency = DefaultFrequency;
   UserEmissionSpec = DefaultEmission;
 
-  
+
   n_fre_ang = nang * nfreq;
  //co-moving frame frequency grid depends on angels
-  
- // do not add radiation to vars_cc, which needs to be done in different order for 
+
+ // do not add radiation to vars_cc, which needs to be done in different order for
  // restriction/prolongation in AMR
 //  pmb->RegisterMeshBlockData(ir);
 
@@ -254,23 +244,23 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
 
   ir_old.NewAthenaArray(nc3,nc2,nc1,n_fre_ang);
 
-  if(restart_from_gray){
+  if (restart_from_gray) {
     ir_gray.NewAthenaArray(nc3,nc2,nc1,nang);
   }
-  
- // Do not add to cell-centered refinement, as 
-// radiation variables need to be done in different order      
-//  if(pm->multilevel){
+
+ // Do not add to cell-centered refinement, as
+// radiation variables need to be done in different order
+//  if (pm->multilevel) {
 //    refinement_idx = pmy_block->pmr->AddToRefinement(&ir, &coarse_ir_);
 //  }
-  
+
   rad_mom.NewAthenaArray(13,nc3,nc2,nc1);
   rad_mom_cm.NewAthenaArray(4,nc3,nc2,nc1);
   // dump the moments in each frequency groups
-  if(nfreq > 1){
+  if (nfreq > 1) {
     // moments in different frequency bins
-    rad_mom_nu.NewAthenaArray(13*nfreq,nc3,nc2,nc1); 
-    rad_mom_cm_nu.NewAthenaArray(4*nfreq,nc3,nc2,nc1); 
+    rad_mom_nu.NewAthenaArray(13*nfreq,nc3,nc2,nc1);
+    rad_mom_cm_nu.NewAthenaArray(4*nfreq,nc3,nc2,nc1);
   }
 
   // the equation is
@@ -284,38 +274,38 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
 
   t_floor_.NewAthenaArray(nc3,nc2,nc1);
   t_ceiling_.NewAthenaArray(nc3,nc2,nc1);
-  
+
   output_sigma.NewAthenaArray(3*nfreq,nc3,nc2,nc1);
 
-  
+
   mu.NewAthenaArray(3,nc3,nc2,nc1,nang);
   wmu.NewAthenaArray(nang);
 
 
 
-  
-  if(angle_flag == 1){
+
+  if (angle_flag == 1) {
     AngularGrid(angle_flag, nzeta, npsi);
-    if(nc2 > 1){
+    if (nc2 > 1) {
       cot_theta.NewAthenaArray(nc2);
       for(int i=0; i<nc2; ++i)
         cot_theta(i) = cos(pmb->pcoord->x2v(i))/sin(pmb->pcoord->x2v(i));
     }
   }
   else
-    AngularGrid(angle_flag, nmu);    
+    AngularGrid(angle_flag, nmu);
 
-  
+
   // set a default opacity function
   UpdateOpacity = DefaultOpacity;
-  
-  
+
+
   pradintegrator = new RadIntegrator(this, pin);
 
   rad_bvar.bvar_index = pmb->pbval->bvars.size();
   pmb->pbval->bvars.push_back(&rad_bvar);
 // enroll radiation boundary value object
-  if(NR_RADIATION_ENABLED){
+  if (NR_RADIATION_ENABLED) {
     pmb->pbval->bvars_main_int.push_back(&rad_bvar);
   }
 
@@ -325,7 +315,7 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   cosx_cm_.NewAthenaArray(nang);
   cosy_cm_.NewAthenaArray(nang);
   cosz_cm_.NewAthenaArray(nang);
- 
+
 
 
 
@@ -334,16 +324,16 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   // set the default t_floor and t_ceiling
   for(int k=0; k<nc3; ++k)
     for(int j=0; j<nc2; ++j)
-      for(int i=0; i<nc1; ++i){
+      for(int i=0; i<nc1; ++i) {
         t_floor_(k,j,i) = TINY_NUMBER;
         t_ceiling_(k,j,i) = HUGE_NUMBER;
       }
-  
+
   // dump the angular grid and radiation parameters in a file
-  if(Globals::my_rank ==0){
+  if (Globals::my_rank ==0) {
     FILE *pfile;
     std::stringstream msg;
-    if((pfile = fopen("Rad_angles.txt","w")) == NULL){
+    if ((pfile = fopen("Rad_angles.txt","w")) == NULL) {
         msg << "### FATAL ERROR in Radiation Class" << std::endl
             << "Output file Rad_angles.txt could not be opened";
         throw std::runtime_error(msg.str().c_str());
@@ -362,48 +352,46 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     fprintf(pfile,"nzeta:        %d  \n",nzeta);
     fprintf(pfile,"npsi:         %d  \n",npsi);
     fprintf(pfile,"taucell:      %e  \n",taucell);
-    fprintf(pfile,"source_flag:  %d  \n",set_source_flag);    
-    fprintf(pfile,"nfreq      :  %d  \n",nfreq);  
-    fprintf(pfile,"fre_ratio:    %e  \n",fre_ratio);  
-    fprintf(pfile,"nu_min:       %e  \n",nu_min);  
-    fprintf(pfile,"nu_max:       %e  \n",nu_max);  
-    if(IM_RADIATION_ENABLED){
+    fprintf(pfile,"source_flag:  %d  \n",set_source_flag);
+    fprintf(pfile,"nfreq      :  %d  \n",nfreq);
+    fprintf(pfile,"fre_ratio:    %e  \n",fre_ratio);
+    fprintf(pfile,"nu_min:       %e  \n",nu_min);
+    fprintf(pfile,"nu_max:       %e  \n",nu_max);
+    if (IM_RADIATION_ENABLED) {
     fprintf(pfile,"iteration:    %d  \n",pmb->pmy_mesh->pimrad->ite_scheme);
     fprintf(pfile,"red_or_black: %d  \n",pmb->pmy_mesh->pimrad->rb_or_not);
     fprintf(pfile,"err_limit:    %e  \n",pmb->pmy_mesh->pimrad->error_limit_);
     fprintf(pfile,"n_limit:      %d  \n",pmb->pmy_mesh->pimrad->nlimit_);
-    fprintf(pfile,"tau_scheme    %d  \n",pradintegrator->tau_flag_); 
+    fprintf(pfile,"tau_scheme    %d  \n",pradintegrator->tau_flag_);
     }
-    
-    for(int n=0; n<nang; ++n){
+
+    for(int n=0; n<nang; ++n) {
       fprintf(pfile,"%2d   %e   %e   %e    %e\n",n,mu(0,0,0,0,n),mu(1,0,0,0,n),
              mu(2,0,0,0,n), wmu(n));
     }
-    if(nfreq > 1){
+    if (nfreq > 1) {
       fprintf(pfile,"fre   spec\n");
-      for(int ifr=0; ifr<nfreq; ++ifr){
-        fprintf(pfile,"%e   %e\n",nu_grid(ifr),emission_spec(ifr)); 
+      for(int ifr=0; ifr<nfreq; ++ifr) {
+        fprintf(pfile,"%e   %e\n",nu_grid(ifr),emission_spec(ifr));
       }
     }
-    
+
     fclose(pfile);
-  
+
   }
-  
-  
+
+
 
 }
 
 // destructor
 // destructor not used
-NRRadiation::~NRRadiation()
-{
-
+NRRadiation::~NRRadiation() {
   ir_old.DeleteAthenaArray();
   rad_mom.DeleteAthenaArray();
   rad_mom_cm.DeleteAthenaArray();
 
-  if(restart_from_gray){
+  if (restart_from_gray) {
     ir_gray.DeleteAthenaArray();
   }
 
@@ -421,37 +409,24 @@ NRRadiation::~NRRadiation()
   cosy_cm_.DeleteAthenaArray();
   cosz_cm_.DeleteAthenaArray();
 
-  if(nfreq  > 1){
+  if (nfreq  > 1) {
     rad_mom_nu.DeleteAthenaArray();
     rad_mom_cm_nu.DeleteAthenaArray();
   }
-
-  
   delete pradintegrator;
-  
 }
 
 
-//Enrol the function to update opacity
-
-void NRRadiation::EnrollOpacityFunction(OpacityFunc MyOpacityFunction)
-{
+void NRRadiation::EnrollOpacityFunction(OpacityFunc MyOpacityFunction) {
   UpdateOpacity = MyOpacityFunction;
-  
 }
 
 
-void NRRadiation::EnrollFrequencyFunction(FrequencyFunc MyFrequencyFunction)
-{
+void NRRadiation::EnrollFrequencyFunction(FrequencyFunc MyFrequencyFunction) {
   UserFrequency = MyFrequencyFunction;
-  
 }
 
 
-void NRRadiation::EnrollEmissionFunction(EmissionFunc MyEmissionSpec)
-{
+void NRRadiation::EnrollEmissionFunction(EmissionFunc MyEmissionSpec) {
   UserEmissionSpec = MyEmissionSpec;
-  
 }
-
-

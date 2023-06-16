@@ -363,9 +363,7 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
     int nu= var_cc->GetDim1() - 1;
     pmr->RestrictCellCenteredValues(*var_cc, *coarse_cc, -1, 0, nu,
                                          ris, rie, rjs, rje, rks, rke);
-
   }
-
   return;
 }
 
@@ -572,7 +570,6 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
 
   // do radiation quantities separately
   if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
-
     NRRadiation *pnrrad=pmb->pnrrad;
     AthenaArray<Real> *var_cc = pnrrad->rad_bvar.var_cc;
     AthenaArray<Real> *coarse_cc = pnrrad->rad_bvar.coarse_buf;
