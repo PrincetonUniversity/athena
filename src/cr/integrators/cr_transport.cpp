@@ -90,14 +90,13 @@ void CRIntegrator::CalculateFluxes(
         taux = taux * taux/(2.0 * eddxx);
         Real diffv = 1.0;
 
-        if (taux < 1.e-3)
-          diffv = sqrt((1.0 - 0.5* taux));
-        else
-          diffv = sqrt((1.0 - exp(-taux)) / taux);
-
-
-        pcr->v_diff(0,k,j,i) = pcr->vmax * sqrt(eddxx) * diffv;
-      }// end i direction
+        if (taux < 1.e-3) {
+          diffv = std::sqrt((1.0 - 0.5* taux));
+        } else {
+          diffv = std::sqrt((1.0 - std::exp(-taux)) / taux);
+        }
+        pcr->v_diff(0,k,j,i) = pcr->vmax * std::sqrt(eddxx) * diffv;
+      }
 
       // y direction
       if (ncells2 >1) {
@@ -114,13 +113,12 @@ void CRIntegrator::CalculateFluxes(
 
           Real diffv = 1.0;
 
-          if (tauy < 1.e-3)
-            diffv = sqrt((1.0 - 0.5* tauy));
-          else
-            diffv = sqrt((1.0 - exp(-tauy)) / tauy);
-
-
-          pcr->v_diff(1,k,j,i) = pcr->vmax * sqrt(eddyy) * diffv;
+          if (tauy < 1.e-3) {
+            diffv = std::sqrt((1.0 - 0.5* tauy));
+          } else {
+            diffv = std::sqrt((1.0 - std::exp(-tauy)) / tauy);
+          }
+          pcr->v_diff(1,k,j,i) = pcr->vmax * std::sqrt(eddyy) * diffv;
         }
       } else {
         for (int i=0; i<ncells1; ++i)
@@ -142,12 +140,12 @@ void CRIntegrator::CalculateFluxes(
 
           Real diffv = 1.0;
 
-          if (tauz < 1.e-3)
-            diffv = sqrt((1.0 - 0.5* tauz));
-          else
-            diffv = sqrt((1.0 - exp(-tauz)) / tauz);
-
-          pcr->v_diff(2,k,j,i) = pcr->vmax * sqrt(eddzz) * diffv;
+          if (tauz < 1.e-3) {
+            diffv = std::sqrt((1.0 - 0.5* tauz));
+          } else {
+            diffv = std::sqrt((1.0 - std::exp(-tauz)) / tauz);
+          }
+          pcr->v_diff(2,k,j,i) = pcr->vmax * std::sqrt(eddzz) * diffv;
         }
       } else {
         for (int i=0; i<ncells1; ++i)
@@ -172,15 +170,18 @@ void CRIntegrator::CalculateFluxes(
       }
       // need to add additional sound speed for stability
       for (int i=0; i<ncells1; ++i) {
-        Real cr_sound_x = vel_flx_flag_ * sqrt((4.0/9.0) * cr(CRE,k,j,i)/w(IDN,k,j,i));
+        Real cr_sound_x = vel_flx_flag_ * std::sqrt((4.0/9.0)
+                                                    * cr(CRE,k,j,i)/w(IDN,k,j,i));
         pcr->v_diff(0,k,j,i) += cr_sound_x;
         if (ncells2 > 1) {
-          Real cr_sound_y = vel_flx_flag_ * sqrt((4.0/9.0) * cr(CRE,k,j,i)/w(IDN,k,j,i));
+          Real cr_sound_y = vel_flx_flag_ * std::sqrt((4.0/9.0)
+                                                      * cr(CRE,k,j,i)/w(IDN,k,j,i));
           pcr->v_diff(1,k,j,i) += cr_sound_y;
         }
 
         if (ncells3 > 1) {
-          Real cr_sound_z = vel_flx_flag_ * sqrt((4.0/9.0) * cr(CRE,k,j,i)/w(IDN,k,j,i));
+          Real cr_sound_z = vel_flx_flag_ * std::sqrt((4.0/9.0)
+                                                      * cr(CRE,k,j,i)/w(IDN,k,j,i));
 
           pcr->v_diff(2,k,j,i) += cr_sound_z;
         }

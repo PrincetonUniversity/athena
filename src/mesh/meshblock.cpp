@@ -486,8 +486,8 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
             Real Er = 0.0;
             for (int n=0; n<pnrrad->nang; ++n) {
               Er += pnrrad->ir_gray(k,j,i,n) * pnrrad->wmu(n);
-            }// finish going through all angles
-            Real tr = pow(Er,0.25);
+            }
+            Real tr = std::pow(Er,0.25);
 
             // now split to different frequency bins
             for (int ifr=0; ifr<pnrrad->nfreq; ++ifr) {
