@@ -99,7 +99,7 @@
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
-#include "./outputs.hpp"
+#include "outputs.hpp"
 
 //----------------------------------------------------------------------------------------
 //! OutputType constructor

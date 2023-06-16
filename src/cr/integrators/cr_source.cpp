@@ -116,7 +116,6 @@ void CRIntegrator::AddSourceTerms(MeshBlock *pmb, const Real dt, AthenaArray<Rea
            // we will still need to include this in general for diffusion case
            vtot2 = 0.0;
            vtot3 = 0.0;
-
          }
 
          Real sigma_x = pcr->sigma_diff(0,k,j,i);

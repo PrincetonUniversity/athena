@@ -47,8 +47,9 @@
 #endif
 
 
-void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
-            AthenaArray<Real> &bcc, AthenaArray<Real> &cr, const int order) {
+void CRIntegrator::CalculateFluxes(
+    AthenaArray<Real> &w, AthenaArray<Real> &bcc,
+    AthenaArray<Real> &cr, const int order) {
   CosmicRay *pcr=pmy_cr;
   MeshBlock *pmb=pcr->pmy_block;
   Coordinates *pco = pmb->pcoord;
@@ -56,7 +57,7 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
 
 
   int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2,
-  ncells3 = pmb->ncells3;
+      ncells3 = pmb->ncells3;
 
   AthenaArray<Real> &x1flux=pcr->flux[X1DIR];
 
@@ -68,26 +69,23 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
   if (ncells2 > 1) {
     if (ncells3 == 1) {
       jl=js-1, ju=je+1, kl=ks, ku=ke;
-    }else{
+    } else {
       jl=js-1, ju=je+1, kl=ks-1, ku=ke+1;
     }
-
   }
 
-//--------------------------------------------------------------------------------------
+  //---------------------------------------------------------------------
   for (int k=0; k<ncells3; ++k) {
     for (int j=0; j<ncells2; ++j) {
-
       // diffusion velocity along the direction of sigma vector
       // We first assume B is along x coordinate
       // Then rotate according to B direction to the actual acooridnate
-
       for (int i=0; i<ncells1; ++i) {
         Real eddxx=1.0/3.0;
         Real totsigma = pcr->sigma_diff(0,k,j,i);
         if (pcr->stream_flag)
           totsigma = 1.0/(1.0/pcr->sigma_diff(0,k,j,i)
-                        + 1.0/pcr->sigma_adv(0,k,j,i));
+                          + 1.0/pcr->sigma_adv(0,k,j,i));
         Real taux = taufact_ * totsigma * pco->dx1f(i);
         taux = taux * taux/(2.0 * eddxx);
         Real diffv = 1.0;
@@ -101,7 +99,7 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
         pcr->v_diff(0,k,j,i) = pcr->vmax * sqrt(eddxx) * diffv;
       }// end i direction
 
-       // y direction
+      // y direction
       if (ncells2 >1) {
         pco->CenterWidth2(k,j,0,ncells1-1,cwidth2_);
         // get the optical depth across the cell
@@ -110,7 +108,7 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           Real totsigma = pcr->sigma_diff(1,k,j,i);
           if (pcr->stream_flag)
             totsigma = 1.0/(1.0/pcr->sigma_diff(1,k,j,i)
-                        + 1.0/pcr->sigma_adv(1,k,j,i));
+                            + 1.0/pcr->sigma_adv(1,k,j,i));
           Real tauy = taufact_ * totsigma * cwidth2_(i);
           tauy = tauy * tauy/(2.0 * eddyy);
 
@@ -123,13 +121,13 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
 
 
           pcr->v_diff(1,k,j,i) = pcr->vmax * sqrt(eddyy) * diffv;
-        }// end i
-      }else{
+        }
+      } else {
         for (int i=0; i<ncells1; ++i)
           pcr->v_diff(1,k,j,i) = 0.0;
       }
 
-     // z direction
+      // z direction
       if (ncells3 > 1) {
         pco->CenterWidth3(k,j,0,ncells1-1,cwidth3_);
         // get the optical depth across the cell
@@ -138,7 +136,7 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           Real totsigma = pcr->sigma_diff(2,k,j,i);
           if (pcr->stream_flag)
             totsigma = 1.0/(1.0/pcr->sigma_diff(2,k,j,i)
-                        + 1.0/pcr->sigma_adv(2,k,j,i));
+                            + 1.0/pcr->sigma_adv(2,k,j,i));
           Real tauz = taufact_ * totsigma * cwidth3_(i);
           tauz = tauz * tauz/(2.0 * eddzz);
 
@@ -151,76 +149,66 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
 
           pcr->v_diff(2,k,j,i) = pcr->vmax * sqrt(eddzz) * diffv;
         }
-      }else{
+      } else {
         for (int i=0; i<ncells1; ++i)
           pcr->v_diff(2,k,j,i) = 0.0;
       }
 
-        //rotate the v_diff vector to the local coordinate
+      // rotate the v_diff vector to the local coordinate
       if (MAGNETIC_FIELDS_ENABLED) {
         for (int i=0; i<ncells1; ++i) {
-
           InvRotateVec(pcr->b_angle(0,k,j,i),pcr->b_angle(1,k,j,i),
-                        pcr->b_angle(2,k,j,i),pcr->b_angle(3,k,j,i),
-                          pcr->v_diff(0,k,j,i),pcr->v_diff(1,k,j,i),
-                                              pcr->v_diff(2,k,j,i));
-            // take the absolute value
-            // Also add the Alfven velocity for the streaming flux
+                       pcr->b_angle(2,k,j,i),pcr->b_angle(3,k,j,i),
+                       pcr->v_diff(0,k,j,i),pcr->v_diff(1,k,j,i),
+                       pcr->v_diff(2,k,j,i));
+          // take the absolute value
+          // Also add the Alfven velocity for the streaming flux
           pcr->v_diff(0,k,j,i) = fabs(pcr->v_diff(0,k,j,i));
 
           pcr->v_diff(1,k,j,i) = fabs(pcr->v_diff(1,k,j,i));
 
           pcr->v_diff(2,k,j,i) = fabs(pcr->v_diff(2,k,j,i));
-
+        }
+      }
+      // need to add additional sound speed for stability
+      for (int i=0; i<ncells1; ++i) {
+        Real cr_sound_x = vel_flx_flag_ * sqrt((4.0/9.0) * cr(CRE,k,j,i)/w(IDN,k,j,i));
+        pcr->v_diff(0,k,j,i) += cr_sound_x;
+        if (ncells2 > 1) {
+          Real cr_sound_y = vel_flx_flag_ * sqrt((4.0/9.0) * cr(CRE,k,j,i)/w(IDN,k,j,i));
+          pcr->v_diff(1,k,j,i) += cr_sound_y;
         }
 
-      }// end MHD
+        if (ncells3 > 1) {
+          Real cr_sound_z = vel_flx_flag_ * sqrt((4.0/9.0) * cr(CRE,k,j,i)/w(IDN,k,j,i));
 
-       // need to add additional sound speed for stability
-      for (int i=0; i<ncells1; ++i) {
-         Real cr_sound_x = vel_flx_flag_ * sqrt((4.0/9.0) * cr(CRE,k,j,i)/w(IDN,k,j,i));
-
-         pcr->v_diff(0,k,j,i) += cr_sound_x;
-
-         if (ncells2 > 1) {
-           Real cr_sound_y = vel_flx_flag_ * sqrt((4.0/9.0) * cr(CRE,k,j,i)/w(IDN,k,j,i));
-
-           pcr->v_diff(1,k,j,i) += cr_sound_y;
-
-         }
-
-         if (ncells3 > 1) {
-           Real cr_sound_z = vel_flx_flag_ * sqrt((4.0/9.0) * cr(CRE,k,j,i)/w(IDN,k,j,i));
-
-           pcr->v_diff(2,k,j,i) += cr_sound_z;
-         }
+          pcr->v_diff(2,k,j,i) += cr_sound_z;
+        }
       }
-
-    }// end j
-  }// end k
-
+    }
+  }
   // prepare Array for reconstruction
   for (int n=0; n<NCR; ++n) {
     for (int k=0; k<ncells3; ++k) {
       for (int j=0; j<ncells2; ++j) {
         for (int i=0; i<ncells1; ++i) {
-           ucr_vel_(n,k,j,i) = cr(n,k,j,i);
-        }// end i
-      }// end j
-    }// end k
-  }// end n
+          ucr_vel_(n,k,j,i) = cr(n,k,j,i);
+        }
+      }
+    }
+  }
 
-//--------------------------------------------------------------------------------------
-// i-direction
+  //--------------------------------------------------------------------------------------
+  // i-direction
 
   // add vx velocity
   for (int k=0; k<ncells3; ++k) {
     for (int j=0; j<ncells2; ++j) {
       for (int i=0; i<ncells1; ++i) {
-         ucr_vel_(NCR,k,j,i) = w(IVX,k,j,i);
-      }// end i
-    }// end j
-  }// end k
+        ucr_vel_(NCR,k,j,i) = w(IVX,k,j,i);
+      }
+    }
+  }
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -251,24 +239,21 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           x1flux(n,k,j,i) = dflx_(n,i);
         }
       }
-
     }
   }
 
-//--------------------------------------------------------------------------------------
-// j-direction
+  //--------------------------------------------------------------------------------------
+  // j-direction
   if (pmb->pmy_mesh->f2) {
-
     AthenaArray<Real> &x2flux=pcr->flux[X2DIR];
-  // add vy velocity
+    // add vy velocity
     for (int k=0; k<ncells3; ++k) {
       for (int j=0; j<ncells2; ++j) {
         for (int i=0; i<ncells1; ++i) {
-           ucr_vel_(NCR,k,j,i) = w(IVY,k,j,i);
-        }// end i
-      }// end j
-    }// end k
-
+          ucr_vel_(NCR,k,j,i) = w(IVY,k,j,i);
+        }
+      }
+    }
 
     il=is-1; iu=ie+1; kl=ks; ku=ke;
     if (ncells3 ==  1) // 2D
@@ -301,39 +286,34 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           vdiff_l_(i) = pcr->v_diff(1,k,j-1,i);
           vdiff_r_(i) = pcr->v_diff(1,k,j,i);
         }
-      // calculate the flux
+        // calculate the flux
         CRFlux(CRF2, il, iu, ucr_l_, ucr_r_, vdiff_l_, vdiff_r_, dflx_);
-      // store the flux
+        // store the flux
         for (int n=0; n<NCR; ++n) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
             x2flux(n,k,j,i) = dflx_(n,i);
           }
         }
-       // swap the array for next cycle
+        // swap the array for next cycle
         ucr_l_.SwapAthenaArray(ucr_lb_);
-
-      }// end j from js to je+1
+      }
     }
-  }// finish j direction
-
-
-
-//  k-direction
+  }
+  //  k-direction
   if (pmb->pmy_mesh->f3) {
     AthenaArray<Real> &x3flux=pcr->flux[X3DIR];
     il =is-1, iu=ie+1, jl=js-1, ju=je+1;
-  // add vz velocity
+    // add vz velocity
     for (int k=0; k<ncells3; ++k) {
       for (int j=0; j<ncells2; ++j) {
         for (int i=0; i<ncells1; ++i) {
-           ucr_vel_(NCR,k,j,i) = w(IVZ,k,j,i);
+          ucr_vel_(NCR,k,j,i) = w(IVZ,k,j,i);
         }// end i
       }// end j
     }// end k
 
     for (int j=jl; j<=ju; ++j) {
-
       if (order == 1) {
         pmb->precon->DonorCellX3(ks-1, j, il, iu, ucr_vel_, ucr_l_, ucr_r_);
       } else if (order == 2) {
@@ -357,7 +337,7 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           vdiff_l_(i) = pcr->v_diff(2,k-1,j,i);
           vdiff_r_(i) = pcr->v_diff(2,k,j,i);
         }
-      // calculate the flux
+        // calculate the flux
         CRFlux(CRF3, il, iu, ucr_l_, ucr_r_, vdiff_l_, vdiff_r_, dflx_);
         for (int n=0; n<NCR; ++n) {
 #pragma omp simd
@@ -365,32 +345,28 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
             x3flux(n,k,j,i) = dflx_(n,i);
           }
         }
-
-       // swap the array for next cycle
+        // swap the array for next cycle
         ucr_l_.SwapAthenaArray(ucr_lb_);
+      }
+    }
+  }
 
-      }// end k loop
-    }// end j loop
-
-  }// finish k direction
-
-//-------------------------------------------------------------------------------------------------
-// Now calculate Grad Pc and the associated heating term
-// the flux divergence term is Grad P_c for \partial F_c/\partial t
+  //---------------------------------------------------------------------------------------
+  // Now calculate Grad Pc and the associated heating term
+  // the flux divergence term is Grad P_c for \partial F_c/\partial t
   // only do this for the MHD case and along direction perpendicular
   // to the magnetic field
   if (MAGNETIC_FIELDS_ENABLED) {
-
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         pmb->pcoord->Face1Area(k,j,is,ie+1,x1face_area_);
         pmb->pcoord->CellVolume(k,j,is,ie,cell_volume_);
-      // x1 direction
+        // x1 direction
         for (int n=0; n<3; ++n) {
-  #pragma omp simd
+#pragma omp simd
           for (int i=is; i<=ie; ++i) {
             grad_pc_(n,k,j,i) = (x1face_area_(i+1)*x1flux(CRF1+n,k,j,i+1)
-                               - x1face_area_(i)  *x1flux(CRF1+n,k,j,i))/cell_volume_(i);
+                                 - x1face_area_(i)*x1flux(CRF1+n,k,j,i))/cell_volume_(i);
           }
         }
 
@@ -399,36 +375,35 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           pmb->pcoord->Face2Area(k,j  ,is,ie,x2face_area_   );
           pmb->pcoord->Face2Area(k,j+1,is,ie,x2face_area_p1_);
           for (int n=0; n<3; ++n) {
-  #pragma omp simd
+#pragma omp simd
             for (int i=is; i<=ie; ++i) {
               grad_pc_(n,k,j,i) += (x2face_area_p1_(i)*x2flux(CRF1+n,k,j+1,i)
-                                 -  x2face_area_(i)  *x2flux(CRF1+n,k,j,i))/cell_volume_(i);
-            }// end i
+                                    - x2face_area_(i)*x2flux(CRF1+n,k,j,i))
+                                   /cell_volume_(i);
+            }
           }
-        }// end nx2
-
+        }
         if (pmb->block_size.nx3 > 1) {
           AthenaArray<Real> &x3flux=pcr->flux[X3DIR];
           pmb->pcoord->Face3Area(k  ,j,is,ie,x3face_area_);
           pmb->pcoord->Face3Area(k+1,j,is,ie,x3face_area_p1_);
           for (int n=0; n<3; ++n) {
-  #pragma omp simd
+#pragma omp simd
             for (int i=is; i<=ie; ++i) {
               grad_pc_(n,k,j,i) += (x3face_area_p1_(i) *x3flux(CRF1+n,k+1,j,i)
-                                  - x3face_area_(i)*x3flux(CRF1+n,k,j,i))/cell_volume_(i);
+                                    - x3face_area_(i)*x3flux(CRF1+n,k,j,i))
+                                   /cell_volume_(i);
             }
           }
-        }// end nx3
-
-
+        }
         for (int n=0; n<3; ++n) {
-  #pragma omp simd
+#pragma omp simd
           for (int i=is; i<=ie; ++i) {
             grad_pc_(n,k,j,i) *= invlim;
           }
         }
 
-        //need to subtract the coordinate source term to get the actual grad Pc for c
+        // need to subtract the coordinate source term to get the actual grad Pc for c
         // curlinear coordinate system
         pmb->pcoord->AddCoordTermsDivergence(cr, grad_pc_);
 
@@ -436,9 +411,8 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
 
         pcr->UpdateStreaming(pmb, cr,w,bcc,grad_pc_,k,j,is,ie);
 
-     // calculate streaming velocity with magnetic field
+        // calculate streaming velocity with magnetic field
         for (int i=is; i<=ie; ++i) {
-
           Real v1 = w(IVX,k,j,i);
           Real v2 = w(IVY,k,j,i);
           Real v3 = w(IVZ,k,j,i);
@@ -447,37 +421,31 @@ void CRIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           Real dpcdy = grad_pc_(1,k,j,i);
           Real dpcdz = grad_pc_(2,k,j,i);
 
+          RotateVec(pcr->b_angle(0,k,j,i),pcr->b_angle(1,k,j,i),
+                    pcr->b_angle(2,k,j,i),pcr->b_angle(3,k,j,i),dpcdx,dpcdy,dpcdz);
 
           RotateVec(pcr->b_angle(0,k,j,i),pcr->b_angle(1,k,j,i),
-                   pcr->b_angle(2,k,j,i),pcr->b_angle(3,k,j,i),dpcdx,dpcdy,dpcdz);
+                    pcr->b_angle(2,k,j,i),pcr->b_angle(3,k,j,i),v1,v2,v3);
 
-          RotateVec(pcr->b_angle(0,k,j,i),pcr->b_angle(1,k,j,i),
-                   pcr->b_angle(2,k,j,i),pcr->b_angle(3,k,j,i),v1,v2,v3);
-
-            // only calculate v_dot_gradpc perpendicular to B
-            // perpendicular direction only has flow velocity, no streaming velocity
+          // only calculate v_dot_gradpc perpendicular to B
+          // perpendicular direction only has flow velocity, no streaming velocity
           Real v_dot_gradpc = v2 * dpcdy + v3 * dpcdz;
 
           ec_source_(k,j,i) = v_dot_gradpc;
-        }// end i
-
-      }// end j
-
-    }// end k
-  }// end MHD
-
+        }
+      }
+    }
+  }
   //-----------------------------------------------------------------------
   // calculate coordinate source terms for Cosmic ray
   pco->AddCoordTermsDivergence(1,cr,coord_source_);
-
 }
 
 
-void CRIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &cr_out)
-{
+void CRIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &cr_out) {
   CosmicRay *pcr=pmy_cr;
   MeshBlock *pmb = pcr->pmy_block;
-  Coordinates *pco = pmb->pcoord;
+  //  Coordinates *pco = pmb->pcoord;
 
   AthenaArray<Real> &x1flux=pcr->flux[X1DIR];
   AthenaArray<Real> &x2flux=pcr->flux[X2DIR];
@@ -485,25 +453,23 @@ void CRIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &cr_out)
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 
-
   AthenaArray<Real> &x1area = x1face_area_, &x2area = x2face_area_,
                  &x2area_p1 = x2face_area_p1_, &x3area = x3face_area_,
                  &x3area_p1 = x3face_area_p1_, &vol = cell_volume_, &dflx = dflx_;
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-
       // calculate x1-flux divergence
       pmb->pcoord->Face1Area(k,j,is,ie+1,x1area);
 
       for (int n=0; n<NCR; ++n) {
- #pragma omp simd
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           dflx(n,i) = (x1area(i+1) *x1flux(n,k,j,i+1) - x1area(i)*x1flux(n,k,j,i));
         }// end n
       }// End i
 
-     // calculate x2-flux
+      // calculate x2-flux
       if (pmb->block_size.nx2 > 1) {
         pmb->pcoord->Face2Area(k,j  ,is,ie,x2area   );
         pmb->pcoord->Face2Area(k,j+1,is,ie,x2area_p1);
@@ -535,10 +501,8 @@ void CRIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &cr_out)
           cr_out(n,k,j,i) -= wght*dflx(n,i)/vol(i);
         }
       }
-
-
-    }// end j
-  }// End k
+    }
+  }
 
   // Add coordinate source term
   for (int n=0; n<NCR; ++n)

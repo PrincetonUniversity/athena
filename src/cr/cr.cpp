@@ -32,8 +32,8 @@
 #include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
-#include "./cr.hpp"
-#include "./integrators/cr_integrators.hpp"
+#include "cr.hpp"
+#include "integrators/cr_integrators.hpp"
 
 // constructor, initializes data structures and parameters
 
@@ -149,8 +149,7 @@ inline void DefaultOpacity(MeshBlock *pmb, AthenaArray<Real> &u_cr,
         }
       }
     }
-  }
-  else{
+  } else {
     for(int k=kl; k<=ku; ++k) {
       for(int j=jl; j<=ju; ++j) {
 #pragma omp simd

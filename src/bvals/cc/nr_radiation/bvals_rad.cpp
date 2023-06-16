@@ -19,7 +19,7 @@
 #include "../../../hydro/hydro.hpp"
 #include "../../../mesh/mesh.hpp"
 #include "../../../nr_radiation/radiation.hpp"
-#include "./bvals_rad.hpp"
+#include "bvals_rad.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \class RadiationBoundaryFunctions
