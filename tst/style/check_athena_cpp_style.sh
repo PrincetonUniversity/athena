@@ -40,7 +40,7 @@ do
     # Code would be fine for >95% of environments and libraries with these violations, but they may affect portability.
     # --------------------------
 
-    # Ignoring inline comments, check that all sqrt() and cbrt() function calls reside in std::, not global namespace
+    # Ignoring inline comments, check that all sqrt() and cbrt(), etc. function calls reside in std::, not global namespace
     # Note, currently all such chained grep calls will miss violations if a comment is at the end of line, e.g.:
     #     }}  // this is a comment after a style error
     grep -nri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//"
@@ -48,6 +48,24 @@ do
 
     grep -nri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//"
     if [ $? -ne 1 ]; then echo "ERROR: Use std::cbrt(), not cbrt()"; exit 1; fi
+
+    grep -nri "log(" "$file" | grep -v "std::log(" | grep -v "//"
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::log(), not log()"; exit 1; fi
+
+    grep -nri "log10(" "$file" | grep -v "std::log10(" | grep -v "//"
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::log10(), not log10()"; exit 1; fi
+
+    grep -nri "exp(" "$file" | grep -v "std::exp(" | grep -v "//"
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::exp(), not exp()"; exit 1; fi
+
+    grep -nri "pow(" "$file" | grep -v "std::pow(" | grep -v "//"
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::pow(), not pow()"; exit 1; fi
+
+    grep -nri "fabs(" "$file" | grep -v "std::abs(" | grep -v "//"
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::abs(), not fabs()"; exit 1; fi
+
+    grep -nri "abs(" "$file" | grep -v "std::abs(" | grep -v "//"
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::abs(), not abs()"; exit 1; fi
 
     # TYPE 3: purely stylistic inconsistencies.
     # These errors would not cause any changes to code behavior if they were ignored, but they may affect readability.
