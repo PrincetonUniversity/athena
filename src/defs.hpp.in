@@ -54,9 +54,6 @@
 // enable general relativity? default=0 (false)
 #define GENERAL_RELATIVITY @GENERAL_RELATIVITY@
 
-// enable GR frame transformations? default=0 (false)
-#define FRAME_TRANSFORMATIONS @FRAME_TRANSFORMATIONS@
-
 // use single precision floating-point values (binary32)? default=0 (false; use binary64)
 #define SINGLE_PRECISION_ENABLED @SINGLE_PRECISION_ENABLED@
 
