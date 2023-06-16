@@ -13,8 +13,8 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file reflect.cpp
-//  \brief implementation of reflecting BCs in each dimension
+//! \file rotate_rad.cpp
+//  \brief implementation of rotating radiation BCs in each dimension
 //======================================================================================
 
 // Athena++ headers

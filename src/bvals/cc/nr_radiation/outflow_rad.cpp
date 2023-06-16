@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file outflow_rad.cpp
-//  \brief implementation of reflecting BCs in each dimension
+//  \brief implementation of outflow BCs in each dimension
 
 // C headers
 
