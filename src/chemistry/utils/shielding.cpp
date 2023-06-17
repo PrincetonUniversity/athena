@@ -304,8 +304,8 @@ Shielding::Shielding() {}
 //!
 //! NCO, NH2: column densith of CO and H2 in cm^-2.
 Real Shielding::fShield_CO_vDB(const Real NCO, const Real NH2) {
-  const Real logNCO = log10(NCO);
-  const Real logNH2 = log10(NH2);
+  const Real logNCO = std::log10(NCO);
+  const Real logNH2 = std::log10(NH2);
   int iCO0, iCO1;
   int iH20, iH21;
   //interpretation value of first, second line, and final value
@@ -317,9 +317,11 @@ Real Shielding::fShield_CO_vDB(const Real NCO, const Real NH2) {
   iH21 = iH20+1;
   //linear interpretation of the rows
   fl1 = Interpolation::LinearInterp(logNCOvDB_[iCO0], logNCOvDB_[iCO1],
-                     log(ThetavDB_[iH20][iCO0]),  log(ThetavDB_[iH20][iCO1]), logNCO);
+                                    std::log(ThetavDB_[iH20][iCO0]),
+                                    std::log(ThetavDB_[iH20][iCO1]), logNCO);
   fl2 = Interpolation::LinearInterp(logNCOvDB_[iCO0], logNCOvDB_[iCO1],
-                     log(ThetavDB_[iH21][iCO0]),  log(ThetavDB_[iH21][iCO1]), logNCO);
+                                    std::log(ThetavDB_[iH21][iCO0]),
+                                    std::log(ThetavDB_[iH21][iCO1]), logNCO);
   //linear interpretation of the column
   fl = Interpolation::LinearInterp(logNH2vDB_[iH20], logNH2vDB_[iH21],
                     fl1, fl2, logNH2);
@@ -340,13 +342,13 @@ Real Shielding::fShield_CO_V09(const Real NCO, const Real NH2) {
   }
   if (NCO < N_small_) {
     logNCO = 10.;
-    logNH2 = log10(NH2);
+    logNH2 = std::log10(NH2);
   } else if (NH2 < N_small_) {
     logNH2 = 10.;
-    logNCO = log10(NCO);
+    logNCO = std::log10(NCO);
   } else {
-    logNCO = log10(NCO);
-    logNH2 = log10(NH2);
+    logNCO = std::log10(NCO);
+    logNH2 = std::log10(NH2);
   }
 
   int iCO0, iCO1;
@@ -360,9 +362,11 @@ Real Shielding::fShield_CO_V09(const Real NCO, const Real NH2) {
   iH21 = iH20+1;
   //linear interpretation of the rows
   fl1 = Interpolation::LinearInterp(logNCOV09_[iCO0], logNCOV09_[iCO1],
-                     log(ThetaV09_[iH20][iCO0]),  log(ThetaV09_[iH20][iCO1]), logNCO);
+                                    std::log(ThetaV09_[iH20][iCO0]),
+                                    std::log(ThetaV09_[iH20][iCO1]), logNCO);
   fl2 = Interpolation::LinearInterp(logNCOV09_[iCO0], logNCOV09_[iCO1],
-                     log(ThetaV09_[iH21][iCO0]),  log(ThetaV09_[iH21][iCO1]), logNCO);
+                                    std::log(ThetaV09_[iH21][iCO0]),
+                                    std::log(ThetaV09_[iH21][iCO1]), logNCO);
   //linear interpretation of the column
   fl = Interpolation::LinearInterp(logNH2V09_[iH20], logNH2V09_[iH21],
                     fl1, fl2, logNH2);

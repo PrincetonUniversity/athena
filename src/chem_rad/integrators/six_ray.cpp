@@ -174,12 +174,12 @@ void ChemRadIntegrator::UpdateRadiation() {
           NCO = col(direction, k, j, i,  pmy_chemnet->iNCO_);
           NC = col(direction, k, j, i,  pmy_chemnet->iNC_);
           AV = NH * Zd / 1.87e21;
-          //photo-reactions
+          // photo-reactions
           for (int ifreq=0; ifreq < pmy_rad->nfreq-2; ++ifreq) {
             pmy_rad->ir(k, j, i, ifreq * pmy_rad->nang+iang) = G0_iang(iang)
-              * exp( -ChemNetwork::kph_avfac_[ifreq] * AV );
+              * std::exp( -ChemNetwork::kph_avfac_[ifreq] * AV );
           }
-          //H2, CO and CI self-shielding
+          // H2, CO and CI self-shielding
           fs_CO = Shielding::fShield_CO_V09(NCO, NH2);
           fs_H2 = Shielding::fShield_H2(NH2, bH2);
           fs_CI = Shielding::fShield_C(NC, NH2);
@@ -189,10 +189,10 @@ void ChemRadIntegrator::UpdateRadiation() {
             fs_CO;
           pmy_rad->ir(k, j, i, iph_C * pmy_rad->nang+iang) *=
             fs_CI;
-          //GPE
+          // GPE
           pmy_rad->ir(k, j, i, iPE * pmy_rad->nang+iang) = G0_iang(iang)
-            *  exp(-NH * sigmaPE * Zd);
-          //CR
+            *  std::exp(-NH * sigmaPE * Zd);
+          // CR
           if (pmy_chemnet->is_cr_shielding_) {
             if (NH <= NH0_CR) {
               pmy_rad->ir(k, j, i, iCR * pmy_rad->nang+iang)

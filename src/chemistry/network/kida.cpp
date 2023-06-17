@@ -340,7 +340,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
       rad_(ifreq) = rad_sum / static_cast<float>(nang);
     }
 #ifdef DEBUG
-    if (isnan(rad_(ifreq))) {
+    if (std::isnan(rad_(ifreq))) {
       printf("InitializeNextStep: ");
       printf("ifreq=%d, nang=%d, rad_sum=%.2e\n", ifreq, nang, rad_sum);
       OutputRates(stdout);
@@ -381,7 +381,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
       y0[i] = y[i];
     }
     //throw error if nan, or inf, or large negative value occurs
-    if ( isnan(y[i]) || isinf(y[i]) ) {
+    if ( std::isnan(y[i]) || std::isinf(y[i]) ) {
       printf("RHS: ");
       for (int j=0; j<NSPECIES; j++) {
         printf("%s: %.2e  ", species_names[j].c_str(), y[j]);
@@ -522,7 +522,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
 
   //throw error if nan, or inf, or large value occurs
   for (int i=0; i<NSPECIES; i++) {
-    if ( isnan(ydot[i]) || isinf(ydot[i]) ) {
+    if ( std::isnan(ydot[i]) || std::isinf(ydot[i]) ) {
       printf("ydot: ");
       for (int j=0; j<NSPECIES; j++) {
         printf("%s: %.2e  ", species_names[j].c_str(), ydot[j]);
@@ -583,7 +583,11 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
   //abundances
   const Real y_H2 = y0[ispec_map_["H2"]];
   const Real y_H = y0[ispec_map_["H"]];
-  Real y_e, y_He, y_Hplus, kcr_H, kcr_H2, kcr_He, kgr_H, kph_H2, y_PAH;
+  Real y_e, y_He, y_Hplus;
+  Real kcr_H;
+  Real kcr_H2, kcr_He;
+  Real kgr_H;
+  Real kph_H2, y_PAH;
   //explicit PAH abundance for heating and cooling
   if (!is_fixed_PAH_) {
     y_PAH = y0[ispec_map_["PAH0"]] + y0[ispec_map_["PAH+"]] + y0[ispec_map_["PAH-"]];
@@ -751,8 +755,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
   //return in code units
   Real dEDdt = dEdt * nH_ / pmy_mb_->punit->code_energydensity_cgs
                  * pmy_mb_->punit->code_time_cgs;
-  if ( isnan(dEdt) || isinf(dEdt) ) {
-    if ( isnan(LCOR) || isinf(LCOR) ) {
+  if ( std::isnan(dEdt) || std::isinf(dEdt) ) {
+    if ( std::isnan(LCOR) || std::isinf(LCOR) ) {
       printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
           NCOeff, gradeff, gradv_, vth, nH_, nCO);
     }
@@ -1512,8 +1516,8 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
   }
   for (int i=0; i<n_gr_; i++) {
     if (frml_gr_(i) == 10) {
-      kth = nu0gr_(i) * exp( -TDgr_(i)/T );
-      kcr = 0.108 * rad_(index_cr_) * nu0gr_(i) * exp( -TDgr_(i)/70. );
+      kth = nu0gr_(i) * std::exp( -TDgr_(i)/T );
+      kcr = 0.108 * rad_(index_cr_) * nu0gr_(i) * std::exp( -TDgr_(i)/70. );
       kcrp = 1.037e5 * rad_(index_cr_) * Yi_;
       kFUV = 3.23e-11 * rad_(index_gpe_);
       kgr_(i) = (kth + kcr + kcrp + kFUV) * fl;
@@ -1532,7 +1536,8 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
           Tcap = T;
         }
         if (frml_2body_(i) == 3) {
-          k2body_(i) = a2body_(i)*pow(Tcap/300., b2body_(i))*exp(-c2body_(i)/Tcap);
+          k2body_(i) = a2body_(i)*std::pow(Tcap/300.,
+                                           b2body_(i))*std::exp(-c2body_(i)/Tcap);
         } else if (frml_2body_(i) == 4) {
           k2body_(i) = a2body_(i)*b2body_(i)*( 0.62
                                             + 0.4767*c2body_(i)*std::sqrt(300./Tcap) );
@@ -1544,7 +1549,7 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
     } else {
       for (int i=0; i<n_2body_; i++) {
         if (frml_2body_(i) == 3) {
-          k2body_(i) = a2body_(i)*pow(T/300., b2body_(i))*exp(-c2body_(i)/T);
+          k2body_(i) = a2body_(i)*std::pow(T/300., b2body_(i))*std::exp(-c2body_(i)/T);
         } else if (frml_2body_(i) == 4) {
           k2body_(i) = a2body_(i)*b2body_(i)*( 0.62
                                               + 0.4767*c2body_(i)*std::sqrt(300./T) );
@@ -1604,8 +1609,8 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
         }
         //calculate rates
         if (frml_2bodytr_(i,irange1) == 3) {
-          rate1 = a2bodytr_(i,irange1)*pow(Tcap/300., b2bodytr_(i,irange1))
-                      *exp(-c2bodytr_(i,irange1)/Tcap);
+          rate1 = a2bodytr_(i,irange1)*std::pow(Tcap/300., b2bodytr_(i,irange1))
+                      *std::exp(-c2bodytr_(i,irange1)/Tcap);
         } else if (frml_2bodytr_(i,irange1) == 4) {
           rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62
                                  + 0.4767*c2bodytr_(i,irange1)*std::sqrt(300./Tcap) );
@@ -1618,8 +1623,8 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
           rate2 = rate1;
         } else {
           if (frml_2bodytr_(i,irange2) == 3) {
-            rate2 = a2bodytr_(i,irange2)*pow(Tcap/300., b2bodytr_(i,irange2))
-                        *exp(-c2bodytr_(i,irange2)/Tcap);
+            rate2 = a2bodytr_(i,irange2)*std::pow(Tcap/300., b2bodytr_(i,irange2))
+                        *std::exp(-c2bodytr_(i,irange2)/Tcap);
           } else if (frml_2bodytr_(i,irange2) == 4) {
             rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62
                                    + 0.4767*c2bodytr_(i,irange2)*std::sqrt(300./Tcap) );
@@ -1671,8 +1676,8 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
         }
         //calculate rates
         if (frml_2bodytr_(i,irange1) == 3) {
-          rate1 = a2bodytr_(i,irange1)*pow(T/300., b2bodytr_(i,irange1))
-                      *exp(-c2bodytr_(i,irange1)/T);
+          rate1 = a2bodytr_(i,irange1)*std::pow(T/300., b2bodytr_(i,irange1))
+                      *std::exp(-c2bodytr_(i,irange1)/T);
         } else if (frml_2bodytr_(i,irange1) == 4) {
           rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62
                                  + 0.4767*c2bodytr_(i,irange1)*std::sqrt(300./T) );
@@ -1685,8 +1690,8 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES], const Real E) {
           rate2 = rate1;
         } else {
           if (frml_2bodytr_(i,irange2) == 3) {
-            rate2 = a2bodytr_(i,irange2)*pow(T/300., b2bodytr_(i,irange2))
-                        *exp(-c2bodytr_(i,irange2)/T);
+            rate2 = a2bodytr_(i,irange2)*std::pow(T/300., b2bodytr_(i,irange2))
+                        *std::exp(-c2bodytr_(i,irange2)/T);
           } else if (frml_2bodytr_(i,irange2) == 4) {
             rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62
                                    + 0.4767*c2bodytr_(i,irange2)*std::sqrt(300./T) );
@@ -1910,7 +1915,7 @@ void ChemNetwork::PrintProperties() const {
 
   //print each reactions.
   std::cout << "number of reactions: " << nr_ << std::endl;
-  for (int i=0; i<reactions_.size(); i++) {
+  for (std::uint64_t i=0; i<reactions_.size(); i++) {
     reactions_[i].Print();
     std::cout << "alpha=" << reactions_[i].alpha_ << ","
               << "beta=" << reactions_[i]. beta_ << ","

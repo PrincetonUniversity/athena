@@ -264,9 +264,9 @@ Real Thermo::HeatingPE(const Real G, const Real Zd, const Real T,
     return 0.;
   }
   const Real x = 1.7 * G * std::sqrt(T)/ne + 50.;
-  const Real fac = ( CPE_[0] + CPE_[1]*pow(T, CPE_[4]) ) /
+  const Real fac = ( CPE_[0] + CPE_[1]*std::pow(T, CPE_[4]) ) /
     (
-     1. + CPE_[2]*pow(x, CPE_[5]) * ( 1. + CPE_[3]*pow(x, CPE_[6]) )
+     1. + CPE_[2]*std::pow(x, CPE_[5]) * ( 1. + CPE_[3]*std::pow(x, CPE_[6]) )
      );
   const Real heating = 1.7e-26 * G * Zd * fac;
   return heating;
@@ -296,8 +296,8 @@ Real Thermo::HeatingPE_W03(const Real G, const Real Z_PAH, const Real T,
     return 0.;
   }
   const Real psi = (1.7 * G * std::sqrt(T)/ne + 50.)/phi_PAH;
-  const Real fac = 4.9e-2/(1+4.0e-3*pow(psi, 0.73))
-                    + 3.7e-2*pow(T/1e4, 0.7)/(1 + 2.0e-4*psi);
+  const Real fac = 4.9e-2/(1+4.0e-3*std::pow(psi, 0.73))
+                    + 3.7e-2*std::pow(T/1e4, 0.7)/(1 + 2.0e-4*psi);
   const Real heating = 2.2e-24 * G * Z_PAH * fac;
   return heating;
 }
@@ -377,7 +377,7 @@ Real Thermo::q10CII_(const Real nHI, const Real nH2, const Real ne,
   //Draine (2011) ISM book eq (17.16) and (17.17)
   const Real T2 = T/100.;
   const Real k10e = 4.53e-8 * std::sqrt(1.0e4/T);
-  const Real k10HI = 7.58e-10 * pow(T2, 0.1281+0.0087*log(T2));
+  const Real k10HI = 7.58e-10 * std::pow(T2, 0.1281+0.0087*log(T2));
   Real k10oH2 = 0;
   Real k10pH2 = 0;
   Real tmp = 0;
@@ -387,7 +387,7 @@ Real Thermo::q10CII_(const Real nHI, const Real nH2, const Real ne,
     k10pH2 = (4.43 + 0.33*T2)*1.0e-10;
   } else {
     // Glover+ Jappsen 2007, for high temperature scales similar to HI
-    tmp = pow(T, 0.07);
+    tmp = std::pow(T, 0.07);
     k10oH2 = 3.74757785025e-10*tmp;
     k10pH2 = 3.88997286356e-10*tmp;
   }
@@ -411,7 +411,7 @@ Real Thermo::CoolingCII(const Real xCII, const Real nHI,
                           const Real nH2, const Real ne,
                           const Real T) {
   const Real q10 = q10CII_(nHI, nH2, ne, T);
-  const Real q01 = (g1CII_/g0CII_) * q10 * exp( -E10CII_/(kb_*T) );
+  const Real q01 = (g1CII_/g0CII_) * q10 * std::exp( -E10CII_/(kb_*T) );
   return Cooling2Level_(q01, q10, A10CII_, E10CII_, xCII);
 }
 
@@ -428,8 +428,8 @@ Real Thermo::CoolingCII(const Real xCII, const Real nHI,
 //! Cooling rate for Lyman alpha line in erg H^-1 s^-1
 Real Thermo::CoolingLya(const Real xHI, const Real ne, const Real T) {
   const Real T4 = T / 1.0e4;
-  const Real fac = 5.31e-8*pow(T4, 0.15)/(1. + pow(T4/5., 0.65));
-  const Real k01e = fac * exp(-11.84/T4);
+  const Real fac = 5.31e-8*std::pow(T4, 0.15)/(1. + std::pow(T4/5., 0.65));
+  const Real k01e = fac * std::exp(-11.84/T4);
   const Real q01 = k01e * ne;
   const Real q10 = (g0HI_/g1HI_) * fac * ne;
   return Cooling2Level_(q01, q10, A10HI_, E10HI_, xHI);
@@ -479,21 +479,21 @@ Real Thermo::CoolingCI(const Real xCI, const Real nHI,
     lngamma21e = (((9.78573e-2*lnT - 3.19268)*lnT +3.85049e1)*lnT
                   - 2.02193e2)*lnT +3.86186e2;
   }
-  k10e = fac * exp(lngamma10e) / g1CI_;
-  k20e = fac * exp(lngamma20e) / g2CI_;
-  k21e = fac * exp(lngamma21e) / g2CI_;
+  k10e = fac * std::exp(lngamma10e) / g1CI_;
+  k20e = fac * std::exp(lngamma20e) / g2CI_;
+  k21e = fac * std::exp(lngamma21e) / g2CI_;
   //HI collisional rates, Draine (2011) ISM book Appendix F Table F.6
   // NOTE: this is more updated than the LAMBDA database.
-  const Real k10HI = 1.26e-10 * pow(T2, 0.115+0.057*lnT2);
-  const Real k20HI = 0.89e-10 * pow(T2, 0.228+0.046*lnT2);
-  const Real k21HI = 2.64e-10 * pow(T2, 0.231+0.046*lnT2);
+  const Real k10HI = 1.26e-10 * std::pow(T2, 0.115+0.057*lnT2);
+  const Real k20HI = 0.89e-10 * std::pow(T2, 0.228+0.046*lnT2);
+  const Real k21HI = 2.64e-10 * std::pow(T2, 0.231+0.046*lnT2);
   //H2 collisional rates, Draine (2011) ISM book Appendix F Table F.6
-  const Real k10H2p = 0.67e-10 * pow(T2, -0.085+0.102*lnT2);
-  const Real k10H2o = 0.71e-10 * pow(T2, -0.004+0.049*lnT2);
-  const Real k20H2p = 0.86e-10 * pow(T2, -0.010+0.048*lnT2);
-  const Real k20H2o = 0.69e-10 * pow(T2, 0.169+0.038*lnT2);
-  const Real k21H2p = 1.75e-10 * pow(T2, 0.072+0.064*lnT2);
-  const Real k21H2o = 1.48e-10 * pow(T2, 0.263+0.031*lnT2);
+  const Real k10H2p = 0.67e-10 * std::pow(T2, -0.085+0.102*lnT2);
+  const Real k10H2o = 0.71e-10 * std::pow(T2, -0.004+0.049*lnT2);
+  const Real k20H2p = 0.86e-10 * std::pow(T2, -0.010+0.048*lnT2);
+  const Real k20H2o = 0.69e-10 * std::pow(T2, 0.169+0.038*lnT2);
+  const Real k21H2p = 1.75e-10 * std::pow(T2, 0.072+0.064*lnT2);
+  const Real k21H2o = 1.48e-10 * std::pow(T2, 0.263+0.031*lnT2);
   const Real k10H2 = k10H2p*fp_ + k10H2o*fo_;
   const Real k20H2 = k20H2p*fp_ + k20H2o*fo_;
   const Real k21H2 = k21H2p*fp_ + k21H2o*fo_;
@@ -501,9 +501,9 @@ Real Thermo::CoolingCI(const Real xCI, const Real nHI,
   const Real q10 = k10HI*nHI + k10H2*nH2 + k10e*ne;
   const Real q20 = k20HI*nHI + k20H2*nH2 + k20e*ne;
   const Real q21 = k21HI*nHI + k21H2*nH2 + k21e*ne;
-  const Real q01 = (g1CI_/g0CI_) * q10 * exp( -E10CI_/(kb_*T) );
-  const Real q02 = (g2CI_/g0CI_) * q20 * exp( -E20CI_/(kb_*T) );
-  const Real q12 = (g2CI_/g1CI_) * q21 * exp( -E21CI_/(kb_*T) );
+  const Real q01 = (g1CI_/g0CI_) * q10 * std::exp( -E10CI_/(kb_*T) );
+  const Real q02 = (g2CI_/g0CI_) * q20 * std::exp( -E20CI_/(kb_*T) );
+  const Real q12 = (g2CI_/g1CI_) * q21 * std::exp( -E21CI_/(kb_*T) );
 
   return Cooling3Level_(q01,q10, q02, q20, q12, q21, A10CI_,A20CI_,
                         A21CI_, E10CI_, E20CI_, E21CI_, xCI);
@@ -530,31 +530,31 @@ Real Thermo::CoolingOI(const Real xOI, const Real nHI,
   const Real T2 = T/100;
   const Real lnT2 = log(T2);
   //HI
-  const Real k10HI = 3.57e-10 * pow(T2, 0.419-0.003*lnT2);
-  const Real k20HI = 3.19e-10 * pow(T2, 0.369-0.006*lnT2);
-  const Real k21HI = 4.34e-10 * pow(T2, 0.755-0.160*lnT2);
+  const Real k10HI = 3.57e-10 * std::pow(T2, 0.419-0.003*lnT2);
+  const Real k20HI = 3.19e-10 * std::pow(T2, 0.369-0.006*lnT2);
+  const Real k21HI = 4.34e-10 * std::pow(T2, 0.755-0.160*lnT2);
   //H2
-  const Real k10H2p = 1.49e-10 * pow(T2, 0.264+0.025*lnT2);
-  const Real k10H2o = 1.37e-10 * pow(T2, 0.296+0.043*lnT2);
-  const Real k20H2p = 1.90e-10 * pow(T2, 0.203+0.041*lnT2);
-  const Real k20H2o = 2.23e-10 * pow(T2, 0.237+0.058*lnT2);
-  const Real k21H2p = 2.10e-12 * pow(T2, 0.889+0.043*lnT2);
-  const Real k21H2o = 3.00e-12 * pow(T2, 1.198+0.525*lnT2);
+  const Real k10H2p = 1.49e-10 * std::pow(T2, 0.264+0.025*lnT2);
+  const Real k10H2o = 1.37e-10 * std::pow(T2, 0.296+0.043*lnT2);
+  const Real k20H2p = 1.90e-10 * std::pow(T2, 0.203+0.041*lnT2);
+  const Real k20H2o = 2.23e-10 * std::pow(T2, 0.237+0.058*lnT2);
+  const Real k21H2p = 2.10e-12 * std::pow(T2, 0.889+0.043*lnT2);
+  const Real k21H2o = 3.00e-12 * std::pow(T2, 1.198+0.525*lnT2);
   const Real k10H2 = k10H2p*fp_ + k10H2o*fo_;
   const Real k20H2 = k20H2p*fp_ + k20H2o*fo_;
   const Real k21H2 = k21H2p*fp_ + k21H2o*fo_;
   //e
   //fit from Bell+1998
-  const Real k10e = 5.12e-10 * pow(T, -0.075);
-  const Real k20e = 4.86e-10 * pow(T, -0.026);
-  const Real k21e = 1.08e-14 * pow(T, 0.926);
+  const Real k10e = 5.12e-10 * std::pow(T, -0.075);
+  const Real k20e = 4.86e-10 * std::pow(T, -0.026);
+  const Real k21e = 1.08e-14 * std::pow(T, 0.926);
   //total collisional rates
   const Real q10 = k10HI*nHI + k10H2*nH2 + k10e * ne;
   const Real q20 = k20HI*nHI + k20H2*nH2 + k20e * ne;
   const Real q21 = k21HI*nHI + k21H2*nH2 + k21e * ne;
-  const Real q01 = (g1OI_/g0OI_) * q10 * exp( -E10OI_/(kb_*T) );
-  const Real q02 = (g2OI_/g0OI_) * q20 * exp( -E20OI_/(kb_*T) );
-  const Real q12 = (g2OI_/g1OI_) * q21 * exp( -E21OI_/(kb_*T) );
+  const Real q01 = (g1OI_/g0OI_) * q10 * std::exp( -E10OI_/(kb_*T) );
+  const Real q02 = (g2OI_/g0OI_) * q20 * std::exp( -E20OI_/(kb_*T) );
+  const Real q12 = (g2OI_/g1OI_) * q21 * std::exp( -E21OI_/(kb_*T) );
 
   return Cooling3Level_(q01,q10, q02, q20, q12, q21, A10OI_,A20OI_,
                         A21OI_, E10OI_, E20OI_, E21OI_, xOI);
@@ -589,11 +589,11 @@ Real Thermo::CoolingCOR(const Real xCO, const Real nHI, const Real nH2,
   } else {
     T = Tmax_CO;
   }
-  const Real facT = pow(1. - exp(-T), 1.0e3);
+  const Real facT = std::pow(1. - std::exp(-T), 1.0e3);
   //small number for a very small NCOeff
   const Real eps = 1.0e13;
   const Real log_NCOeff = log10(NCOeff*1.0e5 + eps); //unit: cm^-2 / (km/s)
-  const Real Troot4 = pow(T, 0.25);
+  const Real Troot4 = std::pow(T, 0.25);
   const Real neff = nH2 + 1.75*Troot4 * nHI + 680.1/Troot4 * ne;
   // interpolate parameters using given T and NCOeff
   // index of T and Neff
@@ -601,20 +601,20 @@ Real Thermo::CoolingCOR(const Real xCO, const Real nHI, const Real nH2,
   const int iNeff0 = Interpolation::LinearInterpIndex(lenNeffCO_, NeffCO_, log_NCOeff);
   // L0
   const Real log_L0 = - Interpolation::LP1Di(TCO_, L0CO_, iT0, T);
-  const Real L0 = pow(10, log_L0);
+  const Real L0 = std::pow(10, log_L0);
   // LLTE
   const Real log_LLTE = - Interpolation::LP2Di(TCO_, NeffCO_, lenTCO_, iT0, iNeff0,
                                            LLTECO_, T, log_NCOeff);
-  const Real LLTE = pow(10, log_LLTE);
+  const Real LLTE = std::pow(10, log_LLTE);
   // n1/2
   const Real log_nhalf = Interpolation::LP2Di(TCO_, NeffCO_, lenTCO_, iT0, iNeff0,
                                           nhalfCO_, T, log_NCOeff);
-  const Real nhalf = pow(10, log_nhalf);
+  const Real nhalf = std::pow(10, log_nhalf);
   // alpha
   const Real alpha = Interpolation::LP2Di(TCO_, NeffCO_, lenTCO_, iT0, iNeff0,
                                       alphaCO_, T, log_NCOeff);
   const Real inv_LCO = 1./L0 + neff/LLTE
-                         + 1./L0 * pow(neff/nhalf, alpha) * (1. - nhalf*L0/LLTE);
+                         + 1./L0 * std::pow(neff/nhalf, alpha) * (1. - nhalf*L0/LLTE);
   const Real gco = (1./inv_LCO) * neff * xCO * facT;
   return gco;
 }
@@ -660,39 +660,39 @@ Real Thermo::CoolingH2(const Real xH2, const Real nHI, const Real nH2,
   Real LHI, LH2, LHe, LHplus, Le;
   // HI
   if (T < 100) {
-    LHI = pow(10, -16.818342e0 +3.7383713e1*logT3
+    LHI = std::pow(10, -16.818342e0 +3.7383713e1*logT3
                   +5.8145166e1*logT3_2 +4.8656103e1*logT3_3
                   +2.0159831e1*logT3_4 +3.8479610e0*logT3_5 );
   } else if (T < 1000) {
-    LHI = pow(10, -2.4311209e1 +3.5692468e0*logT3
+    LHI = std::pow(10, -2.4311209e1 +3.5692468e0*logT3
                   -1.1332860e1*logT3_2 -2.7850082e1*logT3_3
                   -2.1328264e1*logT3_4 -4.2519023e0*logT3_5 );
   } else {
-    LHI = pow(10, -2.4311209e1 +4.6450521e0*logT3
+    LHI = std::pow(10, -2.4311209e1 +4.6450521e0*logT3
                   -3.7209846e0*logT3_2 +5.9369081e0*logT3_3
                   -5.5108049e0*logT3_4 +1.5538288e0*logT3_5);
   }
   // H2
-  LH2 = pow(10, -2.3962112e1 +2.09433740e0*logT3
+  LH2 = std::pow(10, -2.3962112e1 +2.09433740e0*logT3
                 -0.77151436e0*logT3_2 +0.43693353e0*logT3_3
                 -0.14913216e0*logT3_4 -0.033638326e0*logT3_5);
   // He
-  LHe = pow(10, -2.3689237e1 +2.1892372e0*logT3
+  LHe = std::pow(10, -2.3689237e1 +2.1892372e0*logT3
                 -0.81520438e0*logT3_2 +0.29036281e0*logT3_3
                 -0.16596184e0*logT3_4 +0.19191375e0*logT3_5);
   // H+
-  LHplus = pow(10, -2.2089523e1 +1.5714711e0*logT3
+  LHplus = std::pow(10, -2.2089523e1 +1.5714711e0*logT3
                    +0.015391166e0*logT3_2 -0.23619985e0*logT3_3
                    -0.51002221e0*logT3_4 +0.32168730e0*logT3_5);
   // e
   if (T < 500) {
-    Le = pow(10, -2.1928796e1 + 1.6815730e1*logT3
+    Le = std::pow(10, -2.1928796e1 + 1.6815730e1*logT3
                  +9.6743155e1*logT3_2 +3.4319180e2*logT3_3
                  +7.3471651e2*logT3_4 +9.8367576e2*logT3_5
                  +8.0181247e2*logT3_6 +3.6414446e2*logT3_7
                  +7.0609154e1*logT3_8);
   } else {
-    Le = pow(10, -2.2921189e1 +1.6802758e0*logT3
+    Le = std::pow(10, -2.2921189e1 +1.6802758e0*logT3
                  +0.93310622e0*logT3_2 +4.0406627e0*logT3_3
                  -4.7274036e0*logT3_4 -8.8077017e0*logT3_5
                  +8.9167183*logT3_6 +6.4380698*logT3_7
@@ -702,9 +702,9 @@ Real Thermo::CoolingH2(const Real xH2, const Real nHI, const Real nH2,
   const Real Gamma_n0 = LHI*nHI + LH2*nH2 + LHe*nHe + LHplus*nHplus + Le*ne;
   // cooling rate at LTE, from Hollenbach + McKee 1979
   const Real T3 = T / 1.0e3;
-  const Real Gamma_LTE_HR = (9.5e-22*pow(T3, 3.76))/(1.+0.12*pow(T3, 2.1))
-      *exp(-pow(0.13/T3, 3))+ 3.e-24*exp(-0.51/T3);
-  const Real Gamma_LTE_HV = 6.7e-19*exp(-5.86/T3) + 1.6e-18*exp(-11.7/T3);
+  const Real Gamma_LTE_HR = (9.5e-22*std::pow(T3, 3.76))/(1.+0.12*std::pow(T3, 2.1))
+      *std::exp(-std::pow(0.13/T3, 3))+ 3.e-24*std::exp(-0.51/T3);
+  const Real Gamma_LTE_HV = 6.7e-19*std::exp(-5.86/T3) + 1.6e-18*std::exp(-11.7/T3);
   const Real Gamma_LTE = Gamma_LTE_HR +  Gamma_LTE_HV;
   // Total cooling rate
   Real Gamma_tot;
@@ -740,11 +740,11 @@ Real Thermo::CoolingDust(const Real Zd, const Real nH, const Real Tg,
   const Real logTgi = log10(Tg);
   const Real logpsi = Interpolation::LP2D(lenTg_, logTg_, lennH_, lognH_, logps_,
                                      logTgi, lognHi);
-  const Real L_CMB = (sigmad10_ * 0.01) * ca_ * pow(TCMB_, 6);
+  const Real L_CMB = (sigmad10_ * 0.01) * ca_ * std::pow(TCMB_, 6);
   const Real L_ISRF = 3.9e-24 * GISRF;
-  const Real Td1 = pow( (L_CMB + L_ISRF) / (sigmad10_ * 0.01 * ca_), 1./6. );
+  const Real Td1 = std::pow( (L_CMB + L_ISRF) / (sigmad10_ * 0.01 * ca_), 1./6. );
   const Real L1 = alpha_GD_ * nH * std::sqrt(Tg) * (Tg - Td1);
-  const Real LnoISRF = pow(10, - logpsi) * Zd;
+  const Real LnoISRF = std::pow(10, - logpsi) * Zd;
   if (L1 < LnoISRF) {
     return L1;
   } else {
@@ -786,8 +786,8 @@ Real Thermo::CoolingRec(const Real Zd, const Real T, const Real ne,
                           const Real G) {
   const Real x = 1.7 * G * std::sqrt(T)/(ne+1e-50) + 50.;
   const Real lnx = log(x);
-  const Real cooling = 1.0e-28 * ne * pow(T, DPE_[0] + DPE_[1]/lnx)
-                          * exp( DPE_[2] + (DPE_[3] - DPE_[4]*lnx)*lnx );
+  const Real cooling = 1.0e-28 * ne * std::pow(T, DPE_[0] + DPE_[1]/lnx)
+                          * std::exp( DPE_[2] + (DPE_[3] - DPE_[4]*lnx)*lnx );
   return cooling * Zd;
 }
 
@@ -811,8 +811,8 @@ Real Thermo::CoolingRec_W03(const Real Z_PAH, const Real T, const Real ne,
     return 0.;
   }
   const Real psi = (1.7 * G * std::sqrt(T)/(ne+1e-50) + 50.)/phi_PAH;
-  const Real beta  = 0.74/pow(T, 0.068);
-  const Real cooling = 4.65e-30 * pow(T, 0.94) * pow(psi, beta) * ne * phi_PAH;
+  const Real beta  = 0.74/std::pow(T, 0.068);
+  const Real cooling = 4.65e-30 * std::pow(T, 0.94) * std::pow(psi, beta) * ne * phi_PAH;
   return cooling * Z_PAH;
 }
 
@@ -879,9 +879,9 @@ Real Thermo::CoolingHotGas(const Real nH, const Real T, const Real Zg) {
     gamma_Z = 0;
   } else {
     my_log_gamma_Z1 = Interpolation::LP1Di(log_Trad_, log_gamma_Z_, indx, logT);
-    gamma_Z = pow(10., my_log_gamma_Z1) * Zg;
+    gamma_Z = std::pow(10., my_log_gamma_Z1) * Zg;
   }
-  gamma_H_He = pow(10., my_log_gamma_H_He);
+  gamma_H_He = std::pow(10., my_log_gamma_H_He);
   gamma_tot = gamma_H_He + gamma_Z;
   return gamma_tot * nH;
 }
@@ -905,8 +905,8 @@ Real Thermo::HeatingH2gr(const Real xHI, const Real xH2, const Real nH,
   const Real A = 2.0e-7;
   const Real D = k_xH2_photo;
   const Real t = 1. + T/1000.;
-  const Real geff_H = pow(10, -11.06 + 0.0555/t -2.390/(t*t));
-  const Real geff_H2 = pow(10, -11.08 -3.671/t -2.023/(t*t));
+  const Real geff_H = std::pow(10, -11.06 + 0.0555/t -2.390/(t*t));
+  const Real geff_H2 = std::pow(10, -11.08 -3.671/t -2.023/(t*t));
   // critical density ncr, heating only effective at n > ncr
   const Real ncr = (A + D) / (geff_H*xHI + geff_H2*xH2);
   const Real f = 1. / (1. + ncr/nH);
@@ -930,8 +930,8 @@ Real Thermo::HeatingH2pump(const Real xHI, const Real xH2, const Real nH,
   const Real A = 2.0e-7;
   const Real D = k_xH2_photo;
   const Real t = 1. + T/1000.;
-  const Real geff_H = pow(10, -11.06 + 0.0555/t -2.390/(t*t));
-  const Real geff_H2 = pow(10, -11.08 -3.671/t -2.023/(t*t));
+  const Real geff_H = std::pow(10, -11.06 + 0.0555/t -2.390/(t*t));
+  const Real geff_H2 = std::pow(10, -11.08 -3.671/t -2.023/(t*t));
   // critical density ncr, heating only effective at n > ncr
   const Real ncr = (A + D) / (geff_H*xHI + geff_H2*xH2);
   const Real f = 1. / (1. + ncr/nH);

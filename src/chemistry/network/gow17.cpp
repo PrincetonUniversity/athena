@@ -11,8 +11,8 @@
 #include "gow17.hpp"
 
 //c header
-#include <math.h>  //a^x = pow(a,x)
-#include <stdio.h> //FILE, fprintf()
+#include <math.h>   // a^x = pow(a,x)
+#include <stdio.h>  // FILE, fprintf()
 
 //c++ header
 #include <algorithm>//max
@@ -768,12 +768,12 @@ Real ChemNetwork::CII_rec_rate_(const Real temp) {
   T1 = 1.943e6;
   C = 0.1597;
   T2 = 4.955e4;
-  BN = B + C * exp(-T2/temp);
+  BN = B + C * std::exp(-T2/temp);
   term1 = std::sqrt(temp/T0);
   term2 = std::sqrt(temp/T1);
-  alpharr = A / ( term1*pow(1.0+term1, 1.0-BN) * pow(1.0+term2, 1.0+BN) );
-  alphadr = pow( temp, -3.0/2.0 ) * ( 6.346e-9 * exp(-1.217e1/temp) +
-        9.793e-09 * exp(-7.38e1/temp) + 1.634e-06 * exp(-1.523e+04/temp) );
+  alpharr = A / ( term1*std::pow(1.0+term1, 1.0-BN) * std::pow(1.0+term2, 1.0+BN) );
+  alphadr = std::pow( temp, -3.0/2.0 ) * ( 6.346e-9 * std::exp(-1.217e1/temp) +
+        9.793e-09 * std::exp(-7.38e1/temp) + 1.634e-06 * std::exp(-1.523e+04/temp) );
   return (alpharr+alphadr);
 }
 
@@ -801,9 +801,9 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
     //dissociation rates Tcoll
     T = temp_max_rates_;
   }
-  const Real logT = log10(T);
-  const Real logT4coll = log10(Tcoll/1.0e4);
-  const Real lnTecoll = log(Tcoll * 8.6173e-5);
+  const Real logT = std::log10(T);
+  const Real logT4coll = std::log10(Tcoll/1.0e4);
+  const Real lnTecoll = std::log(Tcoll * 8.6173e-5);
   Real ncr, n2ncr;
   Real psi; //H+ grain recombination parameter
   Real kcr_H_fac;//ratio of total rate to primary rate
@@ -830,35 +830,35 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
   kcr_[6] *= 2*y[iH2_];
   //2 body reactions
   for (int i=0; i<n_2body_; i++) {
-    k2body_[i] = k2body_base_[i] * pow(T, k2Texp_[i]) * nH_;
+    k2body_[i] = k2body_base_[i] * std::pow(T, k2Texp_[i]) * nH_;
   }
   //Special treatment of rates for some equations
   /*(0) H3+ + *C -> CH + H2         --Vissapragada2016 new rates*/
-  t1_CHx = A_kCHx_ * pow( 300./T, n_kCHx_);
-  t2_CHx = c_kCHx_[0] * exp(-Ti_kCHx_[0]/T) + c_kCHx_[1] * exp(-Ti_kCHx_[1]/T)
-           + c_kCHx_[2]*exp(-Ti_kCHx_[2]/T) + c_kCHx_[3] *exp(-Ti_kCHx_[3]/T);
-  k2body_[0] *= t1_CHx + pow(T, -1.5) * t2_CHx;
+  t1_CHx = A_kCHx_ * std::pow( 300./T, n_kCHx_);
+  t2_CHx = c_kCHx_[0] * std::exp(-Ti_kCHx_[0]/T) + c_kCHx_[1] * std::exp(-Ti_kCHx_[1]/T)
+           + c_kCHx_[2]*std::exp(-Ti_kCHx_[2]/T) + c_kCHx_[3] *std::exp(-Ti_kCHx_[3]/T);
+  k2body_[0] *= t1_CHx + std::pow(T, -1.5) * t2_CHx;
   /*(3) He+ + H2 -> H+ + *He + *H   --fit to Schauer1989 */
-  k2body_[3] *= exp(-22.5/T);
+  k2body_[3] *= std::exp(-22.5/T);
   //(5) C+ + H2 -> CH + *H         -- schematic reaction for C+ + H2 -> CH2+
-  k2body_[5] *= exp(-23./T);
+  k2body_[5] *= std::exp(-23./T);
   // ---branching of C+ + H2 ------
   //(22) C+ + H2 + *e -> *C + *H + *H
-  k2body_[22] *= exp(-23./T);
+  k2body_[22] *= std::exp(-23./T);
   // (6) C+ + OH -> HCO+             -- Schematic equation for C+ + OH -> CO+ + H.
   // Use rates in KIDA website.
   k2body_[6] = 9.15e-10 * kida_fac;
   //(8) OH + *C -> CO + *H          --exp(0.108/T)
-  k2body_[8] *= exp(0.108/T);
+  k2body_[8] *= std::exp(0.108/T);
   //(9) He+ + *e -> *He             --(17) Case B
   k2body_[9] *= 11.19 + (-1.676 + (-0.2852 + 0.04433*logT) * logT )* logT;
   // (11) C+ + *e -> *C              -- Include RR and DR, Badnell2003, 2006.
   k2body_[11] = CII_rec_rate_(T) * nH_;
   // (13) H2+ + H2 -> H3+ + *H       --(54) exp(-T/46600)
-  k2body_[13] *= exp(- T/46600.);
+  k2body_[13] *= std::exp(- T/46600.);
   // (14) H+ + *e -> *H              --(12) Case B
-  k2body_[14] *= pow( 315614.0 / T, 1.5)
-                   * pow(  1.0 + pow( 115188.0 / T, 0.407) , -2.242 );
+  k2body_[14] *= std::pow( 315614.0 / T, 1.5)
+                   * std::pow(  1.0 + std::pow( 115188.0 / T, 0.407) , -2.242 );
   //--- H2O+ + e branching--
   //(1) H3+ + *O -> OH + H2
   //(24) H3+ + *O + *e -> H2 + *O + *H
@@ -879,8 +879,9 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
   //  (28) O+ + *H -> H+ + *O
   //  (29) O+ + H2 -> OH + *H     -- branching of H2O+
   //  (30) O+ + H2 -> *O + *H + *H  -- branching of H2O+ */
-  k2body_[27] *= ( 1.1e-11 * pow(T, 0.517) + 4.0e-10 * pow(T, 6.69e-3) )*exp(-227./T);
-  k2body_[28] *= 4.99e-11* pow(T, 0.405) + 7.5e-10 * pow(T, -0.458);
+  k2body_[27] *= ( 1.1e-11 * std::pow(T, 0.517) + 4.0e-10
+                   * std::pow(T, 6.69e-3) )*std::exp(-227./T);
+  k2body_[28] *= 4.99e-11* std::pow(T, 0.405) + 7.5e-10 * std::pow(T, -0.458);
   k2body_[29] *= fac_H2Oplus_H2;
   k2body_[30] *= fac_H2Oplus_e;
 
@@ -891,13 +892,14 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
     //(15) H2 + *H -> 3 *H
     //(16) H2 + H2 -> H2 + 2 *H
     // --(9) Density dependent. See Glover+MacLow2007
-    k9l = 6.67e-12 * std::sqrt(Tcoll) * exp(-(1. + 63590./Tcoll));
-    k9h = 3.52e-9 * exp(-43900.0 / Tcoll);
-    k10l = 5.996e-30 * pow(Tcoll, 4.1881) / pow((1.0 + 6.761e-6 * Tcoll), 5.6881)
-            * exp(-54657.4 / Tcoll);
-    k10h = 1.3e-9 * exp(-53300.0 / Tcoll);
-    ncrH = pow(10, (3.0 - 0.416 * logT4coll - 0.327 * logT4coll*logT4coll));
-    ncrH2 = pow(10, (4.845 - 1.3 * logT4coll + 1.62 * logT4coll*logT4coll));
+    k9l = 6.67e-12 * std::sqrt(Tcoll) * std::exp(-(1. + 63590./Tcoll));
+    k9h = 3.52e-9 * std::exp(-43900.0 / Tcoll);
+    k10l = 5.996e-30 * std::pow(Tcoll, 4.1881)
+           / std::pow((1.0 + 6.761e-6 * Tcoll), 5.6881)
+           * std::exp(-54657.4 / Tcoll);
+    k10h = 1.3e-9 * std::exp(-53300.0 / Tcoll);
+    ncrH = std::pow(10, (3.0 - 0.416 * logT4coll - 0.327 * logT4coll*logT4coll));
+    ncrH2 = std::pow(10, (4.845 - 1.3 * logT4coll + 1.62 * logT4coll*logT4coll));
     div_ncr = y[igH_]/(ncrH + small_) + y[iH2_]/(ncrH2 + small_);
     if (div_ncr < small_) {
       ncr = 1./ small_;
@@ -905,12 +907,12 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
       ncr = 1. / div_ncr;
     }
     n2ncr = nH_ / ncr;
-    k2body_[15] = pow(10, log10(k9h) *  n2ncr/(1. + n2ncr)
-                         + log10(k9l) / (1. + n2ncr)) * nH_;
-    k2body_[16] = pow(10, log10(k10h) *  n2ncr/(1. + n2ncr)
-                         + log10(k10l) / (1. + n2ncr)) * nH_;
+    k2body_[15] = std::pow(10, std::log10(k9h) *  n2ncr/(1. + n2ncr)
+                         + std::log10(k9l) / (1. + n2ncr)) * nH_;
+    k2body_[16] = std::pow(10, std::log10(k10h) *  n2ncr/(1. + n2ncr)
+                         + std::log10(k10l) / (1. + n2ncr)) * nH_;
     // (17) *H + *e -> H+ + 2 *e       --(11) Relates to Te
-    k2body_[17] *= exp( -3.271396786e1 +
+    k2body_[17] *= std::exp( -3.271396786e1 +
                       (1.35365560e1 + (- 5.73932875 + (1.56315498
                     + (- 2.877056e-1 + (3.48255977e-2 + (- 2.63197617e-3
                     + (1.11954395e-4 + (-2.03914985e-6)
@@ -948,30 +950,30 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
     psi = psi_gr_fac_ / y[ige_];
     kgr_[1] = 1.0e-14 * cHp_[0] /
                  (
-                   1.0 + cHp_[1]*pow(psi, cHp_[2]) *
-                     (1.0 + cHp_[3] * pow(T, cHp_[4])
-                                   *pow( psi, -cHp_[5]-cHp_[6]*log(T) )
+                   1.0 + cHp_[1]*std::pow(psi, cHp_[2]) *
+                     (1.0 + cHp_[3] * std::pow(T, cHp_[4])
+                                   *std::pow( psi, -cHp_[5]-cHp_[6]*std::log(T) )
                      )
                   ) * nH_ * zdg_;
     kgr_[2] = 1.0e-14 * cCp_[0] /
                  (
-                   1.0 + cCp_[1]*pow(psi, cCp_[2]) *
-                     (1.0 + cCp_[3] * pow(T, cCp_[4])
-                                   *pow( psi, -cCp_[5]-cCp_[6]*log(T) )
+                   1.0 + cCp_[1]*std::pow(psi, cCp_[2]) *
+                     (1.0 + cCp_[3] * std::pow(T, cCp_[4])
+                                   *std::pow( psi, -cCp_[5]-cCp_[6]*std::log(T) )
                      )
                   ) * nH_ * zdg_;
     kgr_[3] = 1.0e-14 * cHep_[0] /
                  (
-                   1.0 + cHep_[1]*pow(psi, cHep_[2]) *
-                     (1.0 + cHep_[3] * pow(T, cHep_[4])
-                                   *pow( psi, -cHep_[5]-cHep_[6]*log(T) )
+                   1.0 + cHep_[1]*std::pow(psi, cHep_[2]) *
+                     (1.0 + cHep_[3] * std::pow(T, cHep_[4])
+                                   *std::pow( psi, -cHep_[5]-cHep_[6]*std::log(T) )
                      )
                   ) * nH_ * zdg_;
     kgr_[4] = 1.0e-14 * cSip_[0] /
                  (
-                   1.0 + cSip_[1]*pow(psi, cSip_[2]) *
-                     (1.0 + cSip_[3] * pow(T, cSip_[4])
-                                   *pow( psi, -cSip_[5]-cSip_[6]*log(T) )
+                   1.0 + cSip_[1]*std::pow(psi, cSip_[2]) *
+                     (1.0 + cSip_[3] * std::pow(T, cSip_[4])
+                                   *std::pow( psi, -cSip_[5]-cSip_[6]*std::log(T) )
                      )
                   ) * nH_ * zdg_;
   } else {
