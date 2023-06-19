@@ -94,7 +94,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
     //check adiabatic index, this is for calling CvCold later
     const Real eps = 0.01;
     const Real gm = pin->GetReal("hydro", "gamma");
-    const Real diff = fabs(gm - 5./3.) / (5./3.);
+    const Real diff = std::abs(gm - 5./3.) / (5./3.);
     if (diff > eps) {
       std::stringstream msg1; //error message
       msg1 << "### FATAL ERROR in ChemNetwork constructor" << std::endl
@@ -2267,7 +2267,7 @@ void ChemNetwork::SetGrad_v(const int k, const int j, const int i) {
   di2 = w(IVZ, k, j, i) - w(IVZ, k-1, j, i);
   dz2 = ( pmy_mb_->pcoord->dx3f(k)+pmy_mb_->pcoord->dx3f(k-1) )/2.;
   dvdz = (di1/dz1 + di2/dz2)/2.;
-  dvdr_avg = ( fabs(dvdx) + fabs(dvdy) + fabs(dvdz) ) / 3.;
+  dvdr_avg = ( std::abs(dvdx) + std::abs(dvdy) + std::abs(dvdz) ) / 3.;
   //asign gradv_, in cgs.
   gradv_ = dvdr_avg * pmy_mb_->punit->code_velocity_cgs / pmy_mb_->punit->code_length_cgs;
   return;

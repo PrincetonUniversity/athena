@@ -59,7 +59,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const Real gm1  = peos->GetGamma() - 1.0;
   Real pres = 0.;
   //factors between the logspace grids cells
-  const Real fac_nH = ( log10(nH_max) - log10(nH_min) ) / (Nx-1.);
+  const Real fac_nH = ( std::log10(nH_max) - std::log10(nH_min) ) / (Nx-1.);
   //arrays for storing chi and crir
   AthenaArray<Real> chi;
   AthenaArray<Real> cr;
@@ -70,7 +70,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::string dir_input = pin->GetString("problem", "dir_input");
   const Real Zdg = pin->GetReal("chemistry", "Zdg");
   char dir_z[20];
-  sprintf(dir_z, "Z%.1f/", Zdg); // NOLINT
+  snprintf(dir_z, sizeof(dir_z), "Z%.1f/", Zdg);
   //std::string dir_z = std::to_string(dir_z_buf);
   std::string fn_chi = dir_input + dir_z + "chi.txt";
   std::string fn_cr = dir_input + dir_z + "cr.txt";
@@ -107,7 +107,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
         //density
-        phydro->u(IDN, k, j, i) = nH_min * pow(10, (i-is)*fac_nH);
+        phydro->u(IDN, k, j, i) = nH_min * std::pow(10, (i-is)*fac_nH);
         //energy
         if (NON_BAROTROPIC_EOS) {
           pres = phydro->u(IDN, k, j, i) * SQR(iso_cs);

@@ -227,7 +227,7 @@ Real Thermo::HeatingCr(const Real xe, const Real nH,
   // Heating rate per ioniztion in molecular region.
   // Despotic paper Appendix B
   Real qH2;
-  const Real lognH = log10(nH);
+  const Real lognH = std::log10(nH);
   if (nH < 100.) { //prevent log of small negative number
     qH2 = 10. * eV_;
   } else if (lognH < 4) {
@@ -377,7 +377,7 @@ Real Thermo::q10CII_(const Real nHI, const Real nH2, const Real ne,
   //Draine (2011) ISM book eq (17.16) and (17.17)
   const Real T2 = T/100.;
   const Real k10e = 4.53e-8 * std::sqrt(1.0e4/T);
-  const Real k10HI = 7.58e-10 * std::pow(T2, 0.1281+0.0087*log(T2));
+  const Real k10HI = 7.58e-10 * std::pow(T2, 0.1281+0.0087*std::log(T2));
   Real k10oH2 = 0;
   Real k10pH2 = 0;
   Real tmp = 0;
@@ -457,8 +457,8 @@ Real Thermo::CoolingCI(const Real xCI, const Real nHI,
   //e collisional coefficents from Johnson, Burke, & Kingston 1987,
   // JPhysB, 20, 2553
   const Real T2 = T/100.;
-  const Real lnT2 = log(T2);
-  const Real lnT = log(T);
+  const Real lnT2 = std::log(T2);
+  const Real lnT = std::log(T);
   //ke(u,l) = fac*gamma(u,l)/g(u)
   const Real fac = 8.629e-8 * std::sqrt(1.0e4/T);
   Real k10e, k20e, k21e;
@@ -528,7 +528,7 @@ Real Thermo::CoolingOI(const Real xOI, const Real nHI,
                          const Real nH2, const Real ne, const Real T) {
   //collisional rates from  Draine (2011) ISM book Appendix F Table F.6
   const Real T2 = T/100;
-  const Real lnT2 = log(T2);
+  const Real lnT2 = std::log(T2);
   //HI
   const Real k10HI = 3.57e-10 * std::pow(T2, 0.419-0.003*lnT2);
   const Real k20HI = 3.19e-10 * std::pow(T2, 0.369-0.006*lnT2);
@@ -592,7 +592,7 @@ Real Thermo::CoolingCOR(const Real xCO, const Real nHI, const Real nH2,
   const Real facT = std::pow(1. - std::exp(-T), 1.0e3);
   //small number for a very small NCOeff
   const Real eps = 1.0e13;
-  const Real log_NCOeff = log10(NCOeff*1.0e5 + eps); //unit: cm^-2 / (km/s)
+  const Real log_NCOeff = std::log10(NCOeff*1.0e5 + eps); //unit: cm^-2 / (km/s)
   const Real Troot4 = std::pow(T, 0.25);
   const Real neff = nH2 + 1.75*Troot4 * nHI + 680.1/Troot4 * ne;
   // interpolate parameters using given T and NCOeff
@@ -649,7 +649,7 @@ Real Thermo::CoolingH2(const Real xH2, const Real nHI, const Real nH2,
   } else {
     T = temp;
   }
-  const Real logT3 = log10(T / 1.0e3);
+  const Real logT3 = std::log10(T / 1.0e3);
   const Real logT3_2 = logT3 * logT3;
   const Real logT3_3 = logT3_2 * logT3;
   const Real logT3_4 = logT3_3 * logT3;
@@ -736,8 +736,8 @@ Real Thermo::CoolingH2(const Real xH2, const Real nHI, const Real nH2,
 //! Cooling rate for dust in erg H^-1 s^-1
 Real Thermo::CoolingDust(const Real Zd, const Real nH, const Real Tg,
                            const Real GISRF) {
-  const Real lognHi = log10(nH);
-  const Real logTgi = log10(Tg);
+  const Real lognHi = std::log10(nH);
+  const Real logTgi = std::log10(Tg);
   const Real logpsi = Interpolation::LP2D(lenTg_, logTg_, lennH_, lognH_, logps_,
                                      logTgi, lognHi);
   const Real L_CMB = (sigmad10_ * 0.01) * ca_ * std::pow(TCMB_, 6);
@@ -785,7 +785,7 @@ Real Thermo::CoolingDustTd(const Real Zd, const Real nH, const Real Tg,
 Real Thermo::CoolingRec(const Real Zd, const Real T, const Real ne,
                           const Real G) {
   const Real x = 1.7 * G * std::sqrt(T)/(ne+1e-50) + 50.;
-  const Real lnx = log(x);
+  const Real lnx = std::log(x);
   const Real cooling = 1.0e-28 * ne * std::pow(T, DPE_[0] + DPE_[1]/lnx)
                           * std::exp( DPE_[2] + (DPE_[3] - DPE_[4]*lnx)*lnx );
   return cooling * Zd;
@@ -872,7 +872,7 @@ Real Thermo::CoolingHotGas(const Real nH, const Real T, const Real Zg) {
   }
   Real my_log_gamma_H_He, my_log_gamma_Z1;
   Real gamma_H_He, gamma_Z, gamma_tot;
-  const Real logT = log10(T);
+  const Real logT = std::log10(T);
   const int indx = Interpolation::LinearInterpIndex(len_rad_cool_, log_Trad_, logT);
   my_log_gamma_H_He = Interpolation::LP1Di(log_Trad_, log_gamma_H_He_, indx, logT);
   if (logT < 4.2) {

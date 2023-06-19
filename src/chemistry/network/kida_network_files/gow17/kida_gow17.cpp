@@ -47,9 +47,9 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   if (T < temp_min_rates_) {
     T = temp_min_rates_;
   }
-  const Real logT = log10(T);
-  const Real logT4 = log10(T/1.0e4);
-  const Real lnTe = log(T * 8.6173e-5);
+  const Real logT = std::log10(T);
+  const Real logT4 = std::log10(T/1.0e4);
+  const Real lnTe = std::log(T * 8.6173e-5);
   const Real kcr_H_fac = 2.3*y_H2 + 1.5 * y_H; //ratio of total to primary rate
   //grain assisted reactions
   const Real GPE0 = rad_(index_gpe_);
@@ -78,7 +78,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                (
                  1.0 + cHp[1]*std::pow(psi, cHp[2]) *
                    (1.0 + cHp[3] * std::pow(T, cHp[4])
-                                 *std::pow( psi, -cHp[5]-cHp[6]*log(T) )
+                                 *std::pow( psi, -cHp[5]-cHp[6]*std::log(T) )
                    )
                 ) * nH_ * Z_d_;
   //(17) C+ + e- + gr -> C + gr
@@ -86,7 +86,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                (
                  1.0 + cCp[1]*std::pow(psi, cCp[2]) *
                    (1.0 + cCp[3] * std::pow(T, cCp[4])
-                                 *std::pow( psi, -cCp[5]-cCp[6]*log(T) )
+                                 *std::pow( psi, -cCp[5]-cCp[6]*std::log(T) )
                    )
                 ) * nH_ * Z_d_;
   //(18) He+ + e- + gr -> He + gr
@@ -94,7 +94,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                (
                  1.0 + cHep[1]*std::pow(psi, cHep[2]) *
                    (1.0 + cHep[3] * std::pow(T, cHep[4])
-                                 *std::pow( psi, -cHep[5]-cHep[6]*log(T) )
+                                 *std::pow( psi, -cHep[5]-cHep[6]*std::log(T) )
                    )
                 ) * nH_ * Z_d_;
   //(19) Si+ + e- + gr -> Si + gr
@@ -102,7 +102,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                (
                  1.0 + cSip[1]*std::pow(psi, cSip[2]) *
                    (1.0 + cSip[3] * std::pow(T, cSip[4])
-                                 *std::pow( psi, -cSip[5]-cSip[6]*log(T) )
+                                 *std::pow( psi, -cSip[5]-cSip[6]*std::log(T) )
                    )
                 ) * nH_ * Z_d_;
 
@@ -141,10 +141,10 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
       ncr = 1. / div_ncr;
     }
     n2ncr = nH_ / ncr;
-    k2body_(id7map_(41)) = std::pow(10, log10(k9h) *  n2ncr/(1. + n2ncr)
-                         + log10(k9l) / (1. + n2ncr));
-    k2body_(id7map_(42)) = std::pow(10, log10(k10h) *  n2ncr/(1. + n2ncr)
-                         + log10(k10l) / (1. + n2ncr));
+    k2body_(id7map_(41)) = std::pow(10, std::log10(k9h) *  n2ncr/(1. + n2ncr)
+                         + std::log10(k9l) / (1. + n2ncr));
+    k2body_(id7map_(42)) = std::pow(10, std::log10(k10h) *  n2ncr/(1. + n2ncr)
+                         + std::log10(k10l) / (1. + n2ncr));
     k2body_(id7map_(43)) = std::exp( -3.271396786e1 +
                       (1.35365560e1 + (- 5.73932875 + (1.56315498
                     + (- 2.877056e-1 + (3.48255977e-2 + (- 2.63197617e-3

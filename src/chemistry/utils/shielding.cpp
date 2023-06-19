@@ -325,7 +325,7 @@ Real Shielding::fShield_CO_vDB(const Real NCO, const Real NH2) {
   //linear interpretation of the column
   fl = Interpolation::LinearInterp(logNH2vDB_[iH20], logNH2vDB_[iH21],
                     fl1, fl2, logNH2);
-  return exp(fl);
+  return std::exp(fl);
 }
 
 //----------------------------------------------------------------------------------------
@@ -370,7 +370,7 @@ Real Shielding::fShield_CO_V09(const Real NCO, const Real NH2) {
   //linear interpretation of the column
   fl = Interpolation::LinearInterp(logNH2V09_[iH20], logNH2V09_[iH21],
                     fl1, fl2, logNH2);
-  return exp(fl);
+  return std::exp(fl);
 }
 
 //----------------------------------------------------------------------------------------
@@ -386,7 +386,7 @@ Real Shielding::fShield_H2(const Real NH2, const Real bH2) {
   Real p1, p2, term; //first and second term
   p1 = 0.965 / ( (1.+x/b5) * (1.+x/b5) );
   term = std::sqrt(1. + x);
-  p2 = 0.035/term * exp(-8.5e-4*term);
+  p2 = 0.035/term * std::exp(-8.5e-4*term);
   return p1 + p2;
 }
 
@@ -410,8 +410,8 @@ Real Shielding::fShield_C(const Real NC, const Real NH2) {
   const Real AH2 = 1.17e-8;
   const Real tau_H2 = 1.2e-14 * 2 * NH2i;
   const Real y = AH2 * tau_H2;
-  const Real ry = exp(-y) / (1. + y);
-  const Real rc = exp(-1.6e-17*NCi);
+  const Real ry = std::exp(-y) / (1. + y);
+  const Real rc = std::exp(-1.6e-17*NCi);
   return rc * ry;
 }
 
@@ -422,6 +422,6 @@ Real Shielding::fShield_CO_C(const Real NC) {
   if (NC < 0) {
     return 0.;
   } else {
-    return exp(-1.6e-17*NC);
+    return std::exp(-1.6e-17*NC);
   }
 }

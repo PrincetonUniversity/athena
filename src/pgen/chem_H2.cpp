@@ -99,7 +99,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             Real x1 = pcoord->x1v(i);
             //gaussian initial H abundance in [0, 1), and no H in [1, 2]
             if (x1 <= 1) {
-              pscalars->s(0, k, j, i) = exp( -SQR(x1-gaussian_mean)
+              pscalars->s(0, k, j, i) = std::exp( -SQR(x1-gaussian_mean)
                                                /(2.*SQR(gaussian_std)) )*nH; //H
               pscalars->s(1, k, j, i) = 0.5*(nH - pscalars->s(0, k, j, i)); //H2
             } else {
@@ -217,9 +217,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           if ( (x < xg_min) || (x > xg_max) ) {
             fH0 = fH1;
           } else {
-            fH0 = exp( -SQR(x-mu)/(2.*SQR(gaussian_std)) );
+            fH0 = std::exp( -SQR(x-mu)/(2.*SQR(gaussian_std)) );
           }
-          Real fH = (fH0 - a2/a1)*exp(-a1*tchem) + a2/a1;
+          Real fH = (fH0 - a2/a1)*std::exp(-a1*tchem) + a2/a1;
           Real fH2 = 0.5*(1. - fH);
           T1_a = 1. / SQR( tchem/tdust + 1./sqrt(T0) );//analytic T
           T1_s = pmb->phydro->w(IPR,k,j,i)/pmb->phydro->w(IDN,k,j,i)/(gm-1)

@@ -105,10 +105,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie; i++) {
             for (int n=0; n<NSCALARS; ++n) {
-              if (std::fabs(pcoord->x2v(j)) > 0.25) {
+              if (std::abs(pcoord->x2v(j)) > 0.25) {
                 pscalars->s(n,k,j,i) = n % 2;
               } else {
-                pscalars->s(n,k,j,i) = abs(n % 2 - 1)*drat;
+                pscalars->s(n,k,j,i) = std::abs(n % 2 - 1)*drat;
               }
             }
           }
