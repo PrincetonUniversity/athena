@@ -177,7 +177,7 @@ void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=1; i<=ngh; ++i) {
           pmb->pscalars->s(n,k,j,il-i) = 0;
         }
@@ -188,7 +188,7 @@ void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=1; i<=ngh; ++i) {
           prim(n,k,j,il-i) = 0;
         }
@@ -205,7 +205,7 @@ void SixRayBoundaryInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           pmb->pscalars->s(n,k,jl-j,i) = 0;
         }
@@ -216,7 +216,7 @@ void SixRayBoundaryInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(n,k,jl-j,i) = 0;
         }
@@ -233,7 +233,7 @@ void SixRayBoundaryInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           pmb->pscalars->s(n,kl-k,j,i) = 0;
         }
@@ -244,7 +244,7 @@ void SixRayBoundaryInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(n,kl-k,j,i) = 0;
         }
@@ -261,7 +261,7 @@ void SixRayBoundaryOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=1; i<=ngh; ++i) {
           pmb->pscalars->s(n,k,j,iu+i) = 0;
         }
@@ -272,7 +272,7 @@ void SixRayBoundaryOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=1; i<=ngh; ++i) {
           prim(n,k,j,iu+i) = 0;
         }
@@ -289,7 +289,7 @@ void SixRayBoundaryOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           pmb->pscalars->s(n,k,ju+j,i) = 0;
         }
@@ -300,7 +300,7 @@ void SixRayBoundaryOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(n,k,ju+j,i) = 0;
         }
@@ -317,7 +317,7 @@ void SixRayBoundaryOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           pmb->pscalars->s(n,ku+k,j,i) = 0;
         }
@@ -328,7 +328,7 @@ void SixRayBoundaryOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
-#pragma simd
+#pragma omp simd
         for (int i=il; i<=iu; ++i) {
           prim(n,ku+k,j,i) = 0;
         }
