@@ -225,10 +225,8 @@ void RadBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
                                                            const NeighborBlock& nb) {
   MeshBlock *pmb = pmy_block_;
   int p = 0;
-  int i;
 
   if (nb.fid == BoundaryFace::inner_x1) {
-    i = pmb->is;
     for (int k=pmb->ks; k<=pmb->ke; k++) {
       for (int j=pmb->js; j<=pmb->je; j++) {
         for (int nn=nl_; nn<=nu_; nn++) {
@@ -237,7 +235,6 @@ void RadBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
       }
     }
   } else {
-    i = pmb->ie + 1;
     for (int k=pmb->ks; k<=pmb->ke; k++) {
       for (int j=pmb->js; j<=pmb->je; j++) {
         for (int nn=nl_; nn<=nu_; nn++) {
@@ -246,7 +243,6 @@ void RadBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
       }
     }
   }
-
   return;
 }
 
