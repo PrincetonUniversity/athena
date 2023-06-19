@@ -117,8 +117,8 @@
 #define ONE_OVER_SQRT2 0.70710678118654752
 #define ONE_3RD 0.33333333333333333
 #define TWO_3RD 0.66666666666666667
-#define TINY_NUMBER Real(1.0e-20)
-#define HUGE_NUMBER Real(1.0e+36)
+#define TINY_NUMBER 1.0e-20
+#define HUGE_NUMBER 1.0e+36
 #define SQR(x) ( (x)*(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
 #define PI_FOUR_POWER 97.409091034002415
