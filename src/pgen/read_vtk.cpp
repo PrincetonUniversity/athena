@@ -16,6 +16,7 @@
 
 // C++ headers
 #include <algorithm>  // std::find()
+#include <cinttypes>  // format macro "PRId64" for fixed-width integer type std::int64_t
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // std::runtime_error()
@@ -135,12 +136,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     data.NewAthenaArray(Nz, Ny, Nx);
     b.NewAthenaArray(Nz, Ny, Nx);
   }
-  std::stringstream msg; //error message
-  std::string vtkfile; //corresponding vtk file for this meshblock
-  //initial abundance
+  std::stringstream msg; // error message
+  std::string vtkfile; // corresponding vtk file for this meshblock
+  // initial abundance
   const Real r_init = pin->GetReal("problem", "r_init");
 
-  //parse input parameters
+  // parse input parameters
   std::string vtkfile0 = pin->GetString("problem", "vtkfile");//id0 file
   std::string str_scalers = pin->GetString("problem", "scalers");
   std::string str_vectors = pin->GetString("problem", "vectors");
@@ -148,15 +149,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::vector<std::string> vector_fields = StringUtils::split(str_vectors, ',');
 
   if (isjoinedvtk != 0) {
-    //for joined vtk file, read with processor 0, and broadcast
-    int gis = loc.lx1 * Nx;
-    int gjs = loc.lx2 * Ny;
-    int gks = loc.lx3 * Nz;
+    // for joined vtk file, read with processor 0, and broadcast
+    // TODO(KGF): risk of narrowing here:
+    int gis = static_cast<int>(loc.lx1) * Nx;
+    int gjs = static_cast<int>(loc.lx2) * Ny;
+    int gks = static_cast<int>(loc.lx3) * Nz;
     vtkfile = vtkfile0;
-    //dagnostic printing of filename
+    // diagnostic printing of filename
     if (Globals::my_rank == 0) {
-      printf("meshblock gid=%d, lx1=%lld, lx2=%lld, lx3=%lld, level=%d, vtk file = %s\n",
-              gid, loc.lx1, loc.lx2, loc.lx3, loc.level, vtkfile.c_str());
+      printf("meshblock gid=%d, location = (%"
+             PRId64 " %" PRId64 " %" PRId64") level=%d, vtk file = %s\n",
+             gid, loc.lx1, loc.lx2, loc.lx3, loc.level, vtkfile.c_str());
     }
     // scalars
     for(std::uint64_t i = 0; i < scaler_fields.size(); ++i) {
@@ -323,11 +326,12 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       vtkfile = base_dir + id_str + vtk_name;
     }
 
-    //dagnostic printing of filename
-    printf("meshblock gid=%d, lx1=%lld, lx2=%lld, lx3=%lld, level=%d, vtk file = %s\n",
-        gid, loc.lx1, loc.lx2, loc.lx3, loc.level, vtkfile.c_str());
+    // diagnostic printing of filename
+    printf("meshblock gid=%d, location = (%"
+           PRId64 " %" PRId64 " %" PRId64") level=%d, vtk file = %s\n",
+           gid, loc.lx1, loc.lx2, loc.lx3, loc.level, vtkfile.c_str());
 
-    //read scalers
+    // read scalars
     for(std::uint64_t i = 0; i < scaler_fields.size(); ++i) {
       if (scaler_fields[i] == "density") {
         readvtk(this, vtkfile, "density", 0, data,isjoinedvtk);
