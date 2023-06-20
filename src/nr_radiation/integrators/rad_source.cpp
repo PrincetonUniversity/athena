@@ -239,7 +239,8 @@ void RadIntegrator::CalSourceTerms(MeshBlock *pmb, const Real dt,
     for (int ifr=0; ifr<nfreq; ++ifr) {
       lab_ir = &(ir(k,j,i,nang*ifr));
       for (int n=0; n<nang; ++n) {
-        lab_ir[n] = std::max(ir_cm(n+ifr*nang)/cm_to_lab(n), static_cast<Real>(TINY_NUMBER));
+        lab_ir[n] = std::max(ir_cm(n+ifr*nang)/cm_to_lab(n),
+                             static_cast<Real>(TINY_NUMBER));
       }
     }
   } else {
@@ -320,7 +321,8 @@ void RadIntegrator::AddMultiGroupCompt(MeshBlock *pmb, const Real dt,
           for (int ifr=0; ifr<nfreq; ++ifr) {
             lab_ir=&(ir(k,j,i,ifr*nang));
             for (int n=0; n<nang; ++n)
-              ir_cm(n+ifr*nang) = std::max(lab_ir[n] * cm_to_lab(n), static_cast<Real>(TINY_NUMBER));
+              ir_cm(n+ifr*nang) = std::max(lab_ir[n] * cm_to_lab(n),
+                                           static_cast<Real>(TINY_NUMBER));
             // store the moments
             Real er_fr = 0.0;
             for (int n=0; n<nang; ++n) {
