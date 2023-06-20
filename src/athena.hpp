@@ -15,8 +15,8 @@
 #include <cstdint>  // std::int64_t
 
 // Athena++ headers
-#include "./athena_arrays.hpp"
-#include "./defs.hpp"
+#include "athena_arrays.hpp"
+#include "defs.hpp"
 
 // primitive type alias that allows code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
