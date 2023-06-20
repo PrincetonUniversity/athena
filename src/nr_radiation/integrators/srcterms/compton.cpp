@@ -387,7 +387,7 @@ void RadIntegrator::MultiGroupCompton(
   n_nusq_last_bin -= flux_last *
                      (nu_cen[nfreq-2]*nu_cen[nfreq-2]*delta_nu[nfreq-2]);
 
-  n_nusq_last_bin = std::max(n_nusq_last_bin,TINY_NUMBER);
+  n_nusq_last_bin = std::max(n_nusq_last_bin,static_cast<Real>(TINY_NUMBER));
 
   //-------------------------------------------------------------------------
   // now go from update n_nu to new_j_nu
@@ -423,7 +423,7 @@ void RadIntegrator::MultiGroupCompton(
       Real *irn = &(ir_cm(nang*ifr));
       for (int n=0; n<nang; n++) {
         irn[n] += tcoef[n]* (new_j_nu[ifr] - j_nu[ifr]);
-        irn[n] = std::max(irn[n],TINY_NUMBER);
+        irn[n] = std::max(irn[n],static_cast<Real>(TINY_NUMBER));
       }
     }
   }

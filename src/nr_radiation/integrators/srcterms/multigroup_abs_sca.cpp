@@ -13,9 +13,13 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file absorption.cpp
-//  \brief  Add absorption source terms
+//! \file
+//  \brief
 //======================================================================================
+
+// C headers
+
+// C++ headers
 
 // Athena++ headers
 #include "../../../athena.hpp"
@@ -175,7 +179,7 @@ Real RadIntegrator::MultiGroupAbsScat(
         irn[n] +=  ((rdtcsigmas + rdtcsigmar - rdtcsigmae) * jr_cm + rdtcsigmap * emi_nu
                     - ((imcoef[n]-1.0)/tcoef[n] + rdtcsigmas
                        + rdtcsigmar) * irn[n]) * vn2[n];
-        irn[n] = std::max(irn[n],TINY_NUMBER);
+        irn[n] = std::max(irn[n], static_cast<Real>(TINY_NUMBER));
       }
     }
   }

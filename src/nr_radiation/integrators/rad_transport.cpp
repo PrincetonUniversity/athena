@@ -449,13 +449,13 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
                   psi_flux_(k,j,i,ifr,ang_num) =  -prad->reduced_c * ql_psi_(m+NGHOST)
                                                   * g_coef;
               }
-            }// end nzeta
-          }// end frequency
+            }
+          }
         }
       }
     }
-  }// end ang_flag==1 and npsi > 0
-}// end calculate_flux
+  }
+}
 
 
 // calculate advective flux for the implicit scheme
@@ -464,7 +464,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order) {
   MeshBlock *pmb=prad->pmy_block;
 
   // int nang=prad->nang;
-  //int nfreq=prad->nfreq;
+  // int nfreq=prad->nfreq;
 
   // int ncells1 = pmb->ncells1;
   int ncells2 = pmb->ncells2, ncells3 = pmb->ncells3;
@@ -487,7 +487,6 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order) {
   // i-direction
 
   // First, do reconstruction of the specific intensities
-
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
       // reconstruct L/R states
@@ -505,15 +504,15 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order) {
         if (vel >0) {
           for (int n=0; n<prad->n_fre_ang; ++n) {
             x1flux(k,j,i,n) = vel * il_(i,n);
-          }// end n
+          }
         } else {
           for (int n=0; n<prad->n_fre_ang; ++n) {
             x1flux(k,j,i,n) = vel * ir_(i,n);
-          }// end n
-        }// end vel
-      }// end i
-    }// end j
-  }// end k
+          }
+        }
+      }
+    }
+  }
 
   // j-direction
   if (pmb->pmy_mesh->f2) {
@@ -525,7 +524,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order) {
       kl = ks-1, ku = ke+1;
 
     for (int k=kl; k<=ku; ++k) {
-      //reconstruct the first row
+      // reconstruct the first row
       if (order == 1) {
         pmb->precon->DonorCellX2(k, js-1, il, iu, ir, -1, il_, ir_);
       } else if (order == 2) {
@@ -533,7 +532,6 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order) {
       } else {
         pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, ir, -1, il_, ir_);
       }
-
 
       for (int j=js; j<=je+1; ++j) {
         if (order == 1) {
@@ -544,25 +542,24 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order) {
           pmb->precon->PiecewiseParabolicX2(k, j, il, iu, ir, -1, ilb_, ir_);
         }
 
-        //calculate the flux
         // calculate flux with velocity times the interface state
         for (int i=il; i<=iu; ++i) {
           Real &vel = adv_vel(1,k,j,i);
           if (vel > 0) {
             for (int n=0; n<prad->n_fre_ang; ++n) {
               x2flux(k,j,i,n) = vel * il_(i,n);
-            }// end n
+            }
           } else {
             for (int n=0; n<prad->n_fre_ang; ++n) {
               x2flux(k,j,i,n) = vel * ir_(i,n);
-            }// end n
+            }
           }
-        }// end i
+        }
         //swap the array for the next step
         il_.SwapAthenaArray(ilb_);
-      }// end j loop from js to je+1
-    }//end k
-  }//end pmy_mesh->f2
+      }
+    }
+  }
 
   if (pmb->pmy_mesh->f3) {
     AthenaArray<Real> &x3flux=prad->flux[X3DIR];
@@ -596,20 +593,20 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order) {
           if (vel > 0) {
             for (int n=0; n<prad->n_fre_ang; ++n) {
               x3flux(k,j,i,n) = vel * il_(i,n);
-            }// end n
+            }
           } else {
             for (int n=0; n<prad->n_fre_ang; ++n) {
               x3flux(k,j,i,n) = vel * ir_(i,n);
-            }// end n
+            }
           }
-        }// end i
+        }
 
         // swap the arrays for the next step
         il_.SwapAthenaArray(ilb_);
-      }// end k loop
-    }// end j from jl to ju
-  }// end k direction
-}// end calculate_flux
+      }
+    }
+  }
+}
 
 
 // add flux divergence due to advection for the implicit scheme
@@ -719,8 +716,8 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
         Real *flxn = &(dflx(i,0));
         for (int n=0; n<prad->n_fre_ang; ++n) {
           flxn[n] = (x1area(i+1) *flxr[n] - x1area(i)*flxl[n]);
-        }// end n
-      }// End i
+        }
+      }
 
       // calculate x2-flux
       if (pmb->block_size.nx2 > 1) {
@@ -734,7 +731,7 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
             flxn[n] += (x2area_p1(i)*flxr[n] - x2area(i)*flxl[n]);
           }
         }
-      }// end nx2
+      }
 
       // calculate x3-flux divergence
       if (pmb->block_size.nx3 > 1) {
@@ -748,7 +745,7 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
             flxn[n] += (x3area_p1(i)*flxr[n] - x3area(i)*flxl[n]);
           }
         }
-      }// end nx3
+      }
       // update variable with flux divergence
       pmb->pcoord->CellVolume(k,j,is,ie,vol);
       for (int i=is; i<=ie; ++i) {
@@ -756,7 +753,7 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
         Real *iro = &(ir_out(k,j,i,0));
         Real *flxn = &(dflx(i,0));
         for (int n=0; n<prad->n_fre_ang; ++n) {
-          iro[n] = std::max(irin[n]-wght*flxn[n]/vol(i), TINY_NUMBER);
+          iro[n] = std::max(irin[n]-wght*flxn[n]/vol(i), static_cast<Real>(TINY_NUMBER));
         }
       }
 
@@ -774,8 +771,8 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
                   int ang_num1 = (n+1)*2*npsi+m;
                   dflx_ang(ang_num) += (area_zeta(m,n+1) * zeta_flux_(k,j,i,ifr,ang_num1)
                                         - area_zeta(m,n) * zeta_flux_(k,j,i,ifr,ang_num));
-                }// end zeta angle
-              }// end psi angles
+                }
+              }
               // now psi flux
               for (int n=0; n<2*nzeta; ++n) {
                 Real *flxn = &(dflx_ang(n*2*npsi));
@@ -793,7 +790,7 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
               for (int n=0; n<2*nzeta; ++n) {
                 flxn[n] += (areazeta[n+1] * zetaflx[n+1]
                             - areazeta[n] * zetaflx[n]);
-              }// end zeta angle
+              }
             } else if (npsi > 0) {
               Real *flxn = &(dflx_ang(0));
               Real *areapsi = &(area_psi(0));
@@ -802,21 +799,21 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
                 flxn[m] += (areapsi[m+1] * psiflx[m+1]
                             - areapsi[m] * psiflx[m]);
               }
-            }// end npsi > 0
+            }
             // apply the flux divergence back
             // We need ir_out, not ir_in, as ir_out is already partially updated
             Real *iro = &(ir_out(k,j,i,ifr*nang));
             Real *flxn = &(dflx_ang(0));
             Real *angv = &(ang_vol(0));
             for (int n=0; n<prad->nang; ++n) {
-              iro[n] = std::max(iro[n]-wght*flxn[n]/angv[n], TINY_NUMBER);
-            }// end angle
-          }// end ifr
-        }// end i
-      }// end if angle_flag == 1
-    }// end j
-  }// End k
-
+              iro[n] = std::max(iro[n]-wght*flxn[n]/angv[n],
+                                static_cast<Real>(TINY_NUMBER));
+            }
+          }
+        }
+      }
+    }
+  }
   if (prad->angle_flag == 1 && (imp_ang_flx_ == 1)) {
     ImplicitAngularFluxesCoef(wght);
     for (int k=ks; k<=ke; ++k) {

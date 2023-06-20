@@ -152,7 +152,7 @@ Real NRRadiation::BlackBodySpec(Real nu_min, Real nu_max) {
 // intensity/nu^4=A=(1/y)^4(15/pi^4)\int_y^{infty} x^3dx/(exp(x)-1)
 // we use a fitting formula to get y
 Real NRRadiation::EffectiveBlackBody(Real intensity, Real nu) {
-  Real ir = std::max(intensity,TINY_NUMBER);
+  Real ir = std::max(intensity,static_cast<Real>(TINY_NUMBER));
   Real a_nu = ir/(nu*nu*nu*nu); // I/nu^4
   Real nu_tr = 1.0;
   if (a_nu > 0.184077200146896) {

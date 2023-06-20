@@ -135,7 +135,7 @@ Real RadIntegrator::AbsorptionScattering(
         irn[n] +=  ((rdtcsigmas + rdtcsigmar - rdtcsigmae) * jr_cm + rdtcsigmap * emission
                     - ((imcoef[n]-1.0)/tcoef[n] + rdtcsigmas
                        + rdtcsigmar) * irn[n]) * vn2[n];
-        irn[n] = std::max(irn[n],TINY_NUMBER);
+        irn[n] = std::max(irn[n],static_cast<Real>(TINY_NUMBER));
       }
     }
   }

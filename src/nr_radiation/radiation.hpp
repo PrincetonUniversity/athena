@@ -9,6 +9,7 @@
 //  \brief definitions for Radiation class
 //======================================================================================
 
+// C headers
 
 // C++ headers
 #include <cstdint>     // int64_t
@@ -28,7 +29,6 @@ class RadIntegrator;
 
 //! \class Radiation
 //  \brief radiation data and functions
-
 
 // prototype for user-defined opacity function for radiative transfer
 
@@ -57,7 +57,6 @@ class NRRadiation {
                   // Planck mean and radiation energy weighted mean
   AthenaArray<Real> output_sigma; // frequency integrated opacity
   AthenaArray<Real> mu, wmu; // angles and weight
-
 
   AthenaArray<Real> flux[3]; // store transport flux, also need for refinement
 
@@ -93,7 +92,7 @@ class NRRadiation {
   Real fre_ratio; // ratio between neighboring frequency bins
   // frequency grid, center of each frequency bin
   AthenaArray<Real> nu_grid, nu_cen, delta_nu;
-  //gas emission term in each frequency bin relative to a_rT^4
+  // gas emission term in each frequency bin relative to a_rT^4
   AthenaArray<Real> emission_spec;
   FrequencyFunc UserFrequency; // user defined frequency grid
   void EnrollFrequencyFunction(FrequencyFunc MyFrequencyFunction);
@@ -108,25 +107,19 @@ class NRRadiation {
 
   RadIntegrator *pradintegrator;
 
-    // The function pointer for the opacity
+  // The function pointer for the opacity
   OpacityFunc UpdateOpacity;
 
   Real kappa_es; // the frequency independent electron scattering opacity
-
-
 
   int rotate_theta; // flag to rotate the boundary
   int rotate_phi;
   int set_source_flag; // flag to add radiation source term or not
 
-
   // Functions
-  //Function in problem generators to update opacity
+  // Function in problem generators to update opacity
   void EnrollOpacityFunction(OpacityFunc MyOpacityFunction);
 
-
-
-  //functin to calculate the radiation moments
   void CalculateMoment(AthenaArray<Real> &ir_in);
   void CalculateComMoment();
 
