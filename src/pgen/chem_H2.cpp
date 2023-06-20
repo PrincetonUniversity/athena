@@ -7,12 +7,11 @@
 //! \brief problem generator, H2 chemistry
 //======================================================================================
 
-// c headers
-#include <stdio.h>    // c style file
-#include <string.h>   // strcmp()
+// C headers
 
 // C++ headers
 #include <algorithm>  // std::find()
+#include <cstdio>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // std::runtime_error()
@@ -59,15 +58,16 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //! \brief initialize problem by reading in vtk file.
 //======================================================================================
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  //dimensions of meshblock
-  const int Nx = ie - is + 1;
-  const int Ny = je - js + 1;
-  const int Nz = ke - ks + 1;
-  //read input parameters
+  // dimensions of meshblock
+  //const int Nx = ie - is + 1;
+  //const int Ny = je - js + 1;
+  //const int Nz = ke - ks + 1;
+
+  // read input parameters
   const Real nH = pin->GetReal("problem", "nH"); //density
   const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0); //velocity x
   const Real fH1 = pin->GetOrAddReal("problem", "fH1", 0.); //H abundance at x>1
-  //mean and std of the initial gaussian profile
+  // mean and std of the initial gaussian profile
   const Real gaussian_mean = pin->GetOrAddReal("problem", "gaussian_mean", 0.5);
   const Real gaussian_std = pin->GetOrAddReal("problem", "gaussian_std", 0.1);
   const Real iso_cs = pin->GetReal("hydro", "iso_sound_speed");
@@ -158,9 +158,11 @@ int RefinementCondition(MeshBlock *pmb) {
   if (maxeps < 0.25*threshold) return -1;
   return 0;
 }
+
 //========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //========================================================================================
+
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem", "compute_error", false)) return;
 

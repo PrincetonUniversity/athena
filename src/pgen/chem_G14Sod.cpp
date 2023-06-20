@@ -20,9 +20,7 @@
 //======================================================================================
 
 // C headers
-#include <stdio.h>    // c style file
-#include <string.h>   // strcmp()
-                      //
+
 // C++ headers
 #include <algorithm>  // std::find()
 #include <iostream>   // endl

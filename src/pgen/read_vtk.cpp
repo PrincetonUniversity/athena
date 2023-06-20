@@ -11,12 +11,11 @@
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
-#include <stdio.h>    // c style file
-#include <string.h>   // strcmp()
 
 // C++ headers
 #include <algorithm>  // std::find()
 #include <cinttypes>  // format macro "PRId64" for fixed-width integer type std::int64_t
+#include <cstdio>
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // std::runtime_error()

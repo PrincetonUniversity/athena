@@ -6,10 +6,9 @@
 //! \file forward_euler.cpp
 //! \brief implementation of the forward Euler solver
 
-//c header
-#include <stdio.h> //c style io
+// C header
 
-//c++ header
+// C++ header
 #include <ctime> //time
 #include <iostream>   // endl, ostream
 #include <limits>

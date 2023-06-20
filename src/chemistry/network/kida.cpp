@@ -10,26 +10,26 @@
 // this class header
 #include "kida.hpp"
 
-//c header
-#include <stdio.h>    // c style file
+// C header
 
-//c++ header
+// C++ header
 #include <algorithm>    // std::find()
 #include <cmath>       //M_PI
+#include <cstdio>
 #include <fstream>   //file()
 #include <iostream>   // endl
 #include <iterator>     // std::distance()
 #include <limits>    //inf
 #include <sstream>    // stringstream
 
-//athena++ header
+// Athena++ header
 #include "../../chem_rad/radiation.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
 #include "../../globals.hpp"
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
-#include "../../parameter_input.hpp"       //ParameterInput
+#include "../../parameter_input.hpp"
 #include "../../scalars/scalars.hpp"
 #include "../../units/units.hpp"
 #include "../../utils/string_utils.hpp"

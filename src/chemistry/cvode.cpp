@@ -6,12 +6,11 @@
 //! \file cvode.cpp
 //! \brief implementation of the CVODE solver
 
-//c header
-#include <stdio.h> //c style io
+// C header
 
-//c++ header
-#include <ctime> //time
-#include <stdexcept> //throw exceptions
+// C++ header
+#include <ctime>
+#include <stdexcept> // throw exceptions
 #include <string>
 
 // Athena++ classes headers

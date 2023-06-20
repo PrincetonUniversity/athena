@@ -7,9 +7,7 @@
 //! \brief problem generator, uniform chemistry and radiation with six-ray
 //======================================================================================
 
-// c headers
-#include <stdio.h>    // c style file
-#include <string.h>   // strcmp()
+// C headers
 
 // C++ headers
 #include <algorithm>  // std::find()
@@ -165,4 +163,3 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   }
   return;
 }
-

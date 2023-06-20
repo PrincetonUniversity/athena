@@ -12,9 +12,7 @@
 //! Gas and dust metallicities needs to be specified by the input file.
 //======================================================================================
 
-// c headers
-#include <stdio.h>    // c style file
-#include <string.h>   // strcmp()
+// C headers
 
 // C++ headers
 #include <algorithm>  // std::find()

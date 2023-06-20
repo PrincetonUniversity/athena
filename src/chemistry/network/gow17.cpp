@@ -10,17 +10,17 @@
 // this class header
 #include "gow17.hpp"
 
-//c header
-#include <math.h>   // a^x = pow(a,x)
-#include <stdio.h>  // FILE, fprintf()
+// C header
 
-//c++ header
+// C++ header
 #include <algorithm>//max
+#include <cmath>
+#include <cstdio>
 #include <iostream> //endl
 #include <limits>   //inf
 #include <sstream>  //stringstream
 
-//athena++ header
+// Athena++ header
 #include "../../chem_rad/integrators/rad_integrators.hpp"
 #include "../../chem_rad/radiation.hpp"
 #include "../../coordinates/coordinates.hpp"

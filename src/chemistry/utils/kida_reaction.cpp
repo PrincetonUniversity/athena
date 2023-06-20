@@ -6,18 +6,17 @@
 //! \file kida_reaction.cpp
 //! \brief implementation of functions in class KidaReaction
 
-//this class header
+// this class header
 #include "kida_reaction.hpp"
 
-//c header
-#include <stdio.h> //sscanf()
+// C headers
 
-//c++ header
+// C++ headers
 #include <iostream>   // endl
 #include <stdexcept>  // std::runtime_error()
 #include <string>
 
-//athena++ header
+// Athena++ headers
 #include "../../utils/string_utils.hpp"
 
 //----------------------------------------------------------------------------------------

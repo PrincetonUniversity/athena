@@ -20,22 +20,22 @@
 // this class header
 #include "G14Sod.hpp"
 
-//c header
-#include <math.h>    // a^x = pow(a,x)
-#include <stdio.h>   // FILE, fprintf()
+// C header
 
-//c++ header
+// C++ header
+#include <cmath>
+#include <cstdio>
 #include <iostream>  // endl
 #include <limits>    // inf
 #include <sstream>   // stringstream
 
-//athena++ header
+// Athena++ header
 #include "../../coordinates/coordinates.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
-#include "../../parameter_input.hpp"       //ParameterInput
+#include "../../parameter_input.hpp"
 #include "../../scalars/scalars.hpp"
 #include "../utils/chemistry_utils.hpp"
 #include "../utils/thermo.hpp"
