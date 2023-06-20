@@ -26,7 +26,7 @@
 #include "../mesh/mesh.hpp"
 #include "../nr_radiation/radiation.hpp"
 #include "../parameter_input.hpp"
-#include "./coordinates.hpp"
+#include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
 // Spherical polar coordinates constructor
