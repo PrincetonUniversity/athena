@@ -20,10 +20,10 @@
 // C headers
 
 // C++ headers
+#include <cstdio>  // fopen and fwrite
 #include <iostream>  // cout
 #include <sstream>  // msg
 #include <stdexcept> // runtime erro
-//#include <stdio.h>  // fopen and fwrite
 
 // Athena++ headers
 #include "../athena.hpp"

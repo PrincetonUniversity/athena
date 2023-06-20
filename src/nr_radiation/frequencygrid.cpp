@@ -20,8 +20,8 @@
 // C headers
 
 // C++ headers
+#include <cstdio>  // fopen and fwrite
 #include <sstream>  // msg
-///// #include <stdio.h>  // fopen and fwrite
 
 // Athena++ headers
 #include "../utils/utils.hpp"
