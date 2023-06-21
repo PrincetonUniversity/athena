@@ -78,7 +78,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const Real Tc = 40.;
   const Real nw = pin->GetOrAddReal("problem", "nw", 1e-1);
   const Real Tw = pin->GetOrAddReal("problem", "Tw", 4e4);
-  const Real cv = Thermo::CvCold(0.5, 0.1, 0.);
+  //const Real cv = Thermo::CvCold(0.5, 0.1, 0.);
+  const Real cv = 1.5 * Constants::k_boltzmann_cgs * 0.6;
   const Real Eunit = punit->code_energydensity_cgs;
   const Real Eth = nc * Tc * cv / Eunit;
   const Real xc_start = 5.;
