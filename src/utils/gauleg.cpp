@@ -17,7 +17,7 @@
 //--------------------------------------------------------------------------------------
 //! \fn  void Gauleg(int n, Real x1, Real x2,  AthenaArray<Real> &x,
 //          AthenaArray<Real> &w);
-// \brief gauss-legendre weight routine from numerical recipes
+// \brief gauss-legendre weight routine
 
 void Gauleg(int n, Real x1, Real x2,  AthenaArray<Real> &x,
             AthenaArray<Real> &w) {
@@ -31,7 +31,7 @@ void Gauleg(int n, Real x1, Real x2,  AthenaArray<Real> &x,
   xl = 0.5 * (x2 - x1);
 
   for (int i=1; i<=m; ++i) {
-    z = cos(PI * ((Real)i - 0.25) / ((Real)n + 0.5));
+    z = std::cos(PI * ((Real)i - 0.25) / ((Real)n + 0.5));
     do {
       p1=1.0;
       p2=0.0;

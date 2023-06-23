@@ -21,7 +21,7 @@
 //--------------------------------------------------------------------------------------
 //! \fn  void  Ludcmp_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
 //          Real *d);
-// \brief LU decomposition from numerical recipes
+// \brief LU decomposition
 // Using Crout's method with partial pivoting
 //a is the input matrix, and is returned with LU decomposition readily made,
 // is the matrix size, indx records the history of row permutation,

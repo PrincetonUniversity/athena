@@ -17,7 +17,7 @@
 //--------------------------------------------------------------------------------------
 //! \fn  void  Lubksb_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
 //      AthenaArray<Real> &b)
-// \brief Backward substitution (from numerical recipies)
+// \brief Backward substitution
 // a is the input matrix done with LU decomposition, n is the matrix size
 // indx id the history of row permutation
 // b is the vector on the right (AX=b), and is returned with the solution

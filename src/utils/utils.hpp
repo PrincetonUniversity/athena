@@ -35,12 +35,12 @@ void Ludcmp_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
 void Lubksb_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
                AthenaArray<Real> &b);
 
-void RotateVec(const Real sint, const Real cost,
-                 const Real sinp, const Real cosp,
+void RotateVec(const Real sint, const Real cost, 
+                 const Real sinp, const Real cosp, 
                     Real &v1, Real &v2, Real &v3);
 
-void InvRotateVec(const Real sint, const Real cost,
-                 const Real sinp, const Real cosp,
+void InvRotateVec(const Real sint, const Real cost, 
+                 const Real sinp, const Real cosp, 
                  Real &v1, Real &v2, Real &v3);
 
 
