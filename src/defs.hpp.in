@@ -102,8 +102,8 @@
 #define NSCALARS @NUMBER_PASSIVE_SCALARS@
 #define NGHOST @NUMBER_GHOST_CELLS@
 #define NGRAV @NGRAV_VARIABLES@
-#define NCR 4   // cosmic ray transport module variable
-#define NTC 4   // thermal conduction variable
+#define NCR @NCR_VARIABLES@   // cosmic ray transport module variable
+#define NRAD @NRAD_VARIABLES@  // Radiation variables for history output
 #define MAX_NSTAGE 6     // maximum number of stages per cycle for time-integrator
 #define MAX_NREGISTER 3  // maximum number of (u, b) register pairs for time-integrator
 

@@ -467,21 +467,28 @@ if args['g']:
 
 
 # -radiation argument
+definitions['NRAD_VARIABLES'] = '0'
+
 if args['nr_radiation']:
     definitions['NR_RADIATION_ENABLED'] = '1'
+    definitions['NRAD_VARIABLES'] = '14'
 else:
     definitions['NR_RADIATION_ENABLED'] = '0'
 
 if args['implicit_radiation']:
     definitions['IM_RADIATION_ENABLED'] = '1'
+    definitions['NRAD_VARIABLES'] = '14'
 else:
     definitions['IM_RADIATION_ENABLED'] = '0'
 
 # -cr argument
+definitions['NCR_VARIABLES'] = '0'
 if args['cr']:
     definitions['CR_ENABLED'] = '1'
+    definitions['NCR_VARIABLES'] = '4'
 else:
     definitions['CR_ENABLED'] = '0'
+
 
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
