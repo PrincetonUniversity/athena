@@ -41,8 +41,8 @@
 //14 radiation variables, 4 cosmic ray variables
 
 
-#define NHISTORY_VARS ((NHYDRO) + (SELF_GRAVITY_ENABLED > 0) + (NFIELD) + 3 + (NSCALARS)
-                       +(NRAD) + (NCR))
+#define NHISTORY_VARS ((NHYDRO) + (SELF_GRAVITY_ENABLED > 0) + (NFIELD) + 3 + (NSCALARS) \
+                      +(NRAD) + (NCR))
 
 //----------------------------------------------------------------------------------------
 //! \fn void OutputType::HistoryFile()
