@@ -129,7 +129,8 @@ class Reconstruction {
                             const AthenaArray<Real> &q,
                             AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  // overloads for cell centered variables with different ordering
+  // overloads for cell centered variables with memory order as [k,j,i,n]
+  // Notice that the default order in Athena++ is [n,k,j,i]
   void DonorCellX1(const int k, const int j, const int il, const int iu,
                    AthenaArray<Real> &q, const int array_order,
                    AthenaArray<Real> &ql, AthenaArray<Real> &qr);
