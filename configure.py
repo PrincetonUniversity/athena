@@ -7,39 +7,39 @@
 # Makefile.in and src/defs.hpp.in respectively.
 #
 # The following options are implememted:
-#   -h  --help        help message
-#   --prob=name       use src/pgen/name.cpp as the problem generator
-#   --coord=xxx       use xxx as the coordinate system
-#   --eos=xxx         use xxx as the equation of state
-#   --flux=xxx        use xxx as the Riemann solver
-#   --nghost=xxx      set NGHOST=xxx
-#   --nscalars=xxx    set NSCALARS=xxx
-#   -eos_table        enable EOS table
-#   -b                enable magnetic fields
-#   -s                enable special relativity
-#   -g                enable general relativity
-#   -t                enable interface frame transformations for GR
-#   -debug            enable debug flags (-g -O0); override other compiler options
-#   -coverage         enable compiler-dependent code coverage flags
-#   -float            enable single precision (default is double)
-#   -mpi              enable parallelization with MPI
-#   -omp              enable parallelization with OpenMP
-#   -hdf5             enable HDF5 output (requires the HDF5 library)
-#   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
-#   -fft              enable FFT (requires the FFTW library)
-#   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
-#   --grav=xxx        use xxx as the self-gravity solver
-#   --cxx=xxx         use xxx as the C++ compiler (works w/ or w/o -mpi)
-#   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
-#   --mpiccmd=name    use name as the command to call the MPI C++ compiler
-#   --gcovcmd=name    use name as the command to call the gcov utility
-#   --cflag=string    append string whenever invoking compiler/linker
-#   --include=path    use -Ipath when compiling
-#   --lib_path=path   use -Lpath when linking
-#   --lib=xxx         use -lxxx when linking
+#   -h  --help           help message
+#   --prob=name          use src/pgen/name.cpp as the problem generator
+#   --coord=xxx          use xxx as the coordinate system
+#   --eos=xxx            use xxx as the equation of state
+#   --flux=xxx           use xxx as the Riemann solver
+#   --nghost=xxx         set NGHOST=xxx
+#   --nscalars=xxx       set NSCALARS=xxx
+#   -eos_table           enable EOS table
+#   -b                   enable magnetic fields
+#   -s                   enable special relativity
+#   -g                   enable general relativity
+#   -t                   enable interface frame transformations for GR
+#   -debug               enable debug flags (-g -O0); override other compiler options
+#   -coverage            enable compiler-dependent code coverage flags
+#   -float               enable single precision (default is double)
+#   -mpi                 enable parallelization with MPI
+#   -omp                 enable parallelization with OpenMP
+#   -hdf5                enable HDF5 output (requires the HDF5 library)
+#   --hdf5_path=path     path to HDF5 libraries (requires the HDF5 library)
+#   -fft                 enable FFT (requires the FFTW library)
+#   --fftw_path=path     path to FFTW libraries (requires the FFTW library)
+#   --grav=xxx           use xxx as the self-gravity solver
+#   --cxx=xxx            use xxx as the C++ compiler (works w/ or w/o -mpi)
+#   --ccmd=name          use name as the command to call the (non-MPI) C++ compiler
+#   --mpiccmd=name       use name as the command to call the MPI C++ compiler
+#   --gcovcmd=name       use name as the command to call the gcov utility
+#   --cflag=string       append string whenever invoking compiler/linker
+#   --include=path       use -Ipath when compiling
+#   --lib_path=path      use -Lpath when linking
+#   --lib=xxx            use -lxxx when linking
 #   -nr_radiation        turn on radiation transport
-#   -implicit_radiation implicit radiation transport module
-#   -cr               enable cosmic ray transport
+#   -implicit_radiation  implicit radiation transport module
+#   -cr                  enable cosmic ray transport
 # ----------------------------------------------------------------------------------------
 
 # Modules
