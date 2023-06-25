@@ -51,9 +51,9 @@ int RefinementCondition(MeshBlock *pmb);
  *====================================================================================*/
 
 void TwoBeams(MeshBlock *pmb, Coordinates *pco, NRRadiation *prad,
-            const AthenaArray<Real> &w, FaceField &b,
-            AthenaArray<Real> &ir,
-            Real time, Real dt, int is, int ie, int js, int je, int ks, int ke, int ngh);
+              const AthenaArray<Real> &w, FaceField &b,
+              AthenaArray<Real> &ir, Real time, Real dt,
+              int is, int ie, int js, int je, int ks, int ke, int ngh);
 
 void TwoBeamHydro(
     MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, FaceField &b,
@@ -103,7 +103,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Now initialize opacity and specific intensity
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
     int nfreq = pnrrad->nfreq;
-    //int nang = pnrrad->nang;
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {

@@ -4,57 +4,54 @@ reference =
 configure = --prob=radwave
 
 <job>
-problem_id = radwave        # problem ID: basename of output filenames
+problem_id = radwave  # problem ID: basename of output filenames
 
 <output1>
-file_type  = hst       # History data dump
-dt         = 0.01      # time increment between outputs
-
+file_type = hst   # History data dump
+dt        = 0.01  # time increment between outputs
 
 #<output2>
-#file_type  = vtk       # Binary data dump
-#variable   = prim      # variables to be output
-#dt         = 0.01       # time increment between outputs
+#file_type = vtk   # Binary data dump
+#variable  = prim  # variables to be output
+#dt        = 0.01  # time increment between outputs
 
 #<output3>
-#file_type  = rst       # Binary data dump
-#dt         = 0.01       # time increment between outputs
+#file_type = rst   # Binary data dump
+#dt        = 0.01  # time increment between outputs
 
 #<output4>
-#file_type  = hdf5       # Binary data dump
-#dt         = 0.01       # time increment between outputs
-#variable   = prim
+#file_type = hdf5  # Binary data dump
+#dt        = 0.01  # time increment between outputs
+#variable  = prim
 
 #<output5>
-#file_type   = tab       # Tabular data dump
-#variable    = prim      # variables to be output
-#data_format = %16.14e    # Optional data format string
-#dt          = 0.09819810298708518    # time increment between outputs
-#x2_slice    =  0       # slice in x2
-
+#file_type   = tab                  # Tabular data dump
+#variable    = prim                 # variables to be output
+#data_format = %16.14e              # Optional data format string
+#dt          = 0.09819810298708518  # time increment between outputs
+#x2_slice    =  0                   # slice in x2
 
 <time>
-cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
-nlim       = 100000    # cycle limit
-tlim       = 0.7745966144169111      # time limit
+cfl_number = 0.4                 # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = 100000              # cycle limit
+tlim       = 0.7745966144169111  # time limit
 
 <mesh>
 nx1        = 128       # Number of zones in X1-direction
-x1min      = 0.0      # minimum value of X1
+x1min      = 0.0       # minimum value of X1
 x1max      =  1.0      # maximum value of X1
 ix1_bc     = periodic  # inner-X1 boundary flag
 ox1_bc     = periodic  # inner-X1 boundary flag
 ix1_rad_bc = periodic
 ox1_rad_bc = periodic
 
-nx2        = 8       # Number of zones in X2-direction
+nx2        = 8         # Number of zones in X2-direction
 x2min      = -0.5      # minimum value of X2
 x2max      = 0.5       # maximum value of X2
 ix2_bc     = periodic  # inner-X2 boundary flag
 ox2_bc     = periodic  # inner-X2 boundary flag
 ix2_rad_bc = periodic
 ox2_rad_bc = periodic
-
 
 nx3        = 1         # Number of zones in X3-direction
 x3min      = -0.5      # minimum value of X3
@@ -64,10 +61,9 @@ ox3_bc     = periodic  # inner-X3 boundary flag
 ix3_rad_bc = periodic
 ox3_rad_bc = periodic
 
-refinement  = adaptive # AMR
-derefine_count = 5     # allow derefinement after 5 steps
-numlevel    = 2        # number of AMR levels
-
+refinement     = adaptive  # AMR
+derefine_count = 5         # allow derefinement after 5 steps
+numlevel       = 2         # number of AMR levels
 
 <meshblock>
 nx1 = 8 
@@ -75,15 +71,15 @@ nx2 = 8
 nx3 = 1
 
 <hydro>
-gamma           = 1.6666666666667       # gamma = C_p/C_v
+gamma = 1.6666666666667  # gamma = C_p/C_v
 
 <radiation>
-nmu             = 1
-Prat            = 0.01
-Crat            = 10
-error_limit     = 1.e-12
-taucell         = 5
+nmu         = 1
+Prat        = 0.01
+Crat        = 10
+error_limit = 1.e-12
+taucell     = 5
 
 <problem>
-regime          = 1
-compute_error  = true
+regime        = 1
+compute_error = true

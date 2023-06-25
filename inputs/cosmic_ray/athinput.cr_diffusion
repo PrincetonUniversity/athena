@@ -4,78 +4,71 @@ reference =
 configure = --prob=cr_diffusion
 
 <job>
-problem_id = cr        # problem ID: basename of output filenames
+problem_id = cr  # problem ID: basename of output filenames
 
 #<output1>
-#file_type  = hdf5       # Binary data dump
-#dt         = 0.2      # time increment between outputs
-#variable   = prim
+#file_type = hdf5  # Binary data dump
+#dt        = 0.2   # time increment between outputs
+#variable  = prim
 
 #<output2>
-#file_type  = hst       # Binary data dump
-#dt         = 0.001       # time increment between outputs
-
+#file_type = hst    # Binary data dump
+#dt        = 0.001  # time increment between outputs
 
 #<output3>
-#file_type  = rst       # Binary data dump
-#dt         = 0.02      # time increment between outputs
-
+#file_type = rst   # Binary data dump
+#dt        = 0.02  # time increment between outputs
 
 <time>
-cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
-nlim       = -1    # cycle limit
-tlim       = 0.2      # time limit
+cfl_number = 0.3  # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1   # cycle limit
+tlim       = 0.2  # time limit
 
 <mesh>
-nx1        = 16       # Number of zones in X1-direction
-x1min      = -1.0     # minimum value of X1
-x1max      = 1.0     # maximum value of X1
-ix1_bc     = periodic   # inner-X1 boundary flag
-ox1_bc     = periodic          # inner-X1 boundary flag
+nx1    = 16        # Number of zones in X1-direction
+x1min  = -1.0      # minimum value of X1
+x1max  = 1.0       # maximum value of X1
+ix1_bc = periodic  # inner-X1 boundary flag
+ox1_bc = periodic  # inner-X1 boundary flag
 
+nx2    = 256      # Number of zones in X2-direction
+x2min  = -1.0     # minimum value of X2
+x2max  = 1.0      # maximum value of X2
+ix2_bc = outflow  # inner-X2 boundary flag
+ox2_bc = outflow  # inner-X2 boundary flag
 
-nx2        = 256      # Number of zones in X2-direction
-x2min      = -1.0      # minimum value of X2
-x2max      = 1.0       # maximum value of X2
-ix2_bc     = outflow  # inner-X2 boundary flag
-ox2_bc     = outflow  # inner-X2 boundary flag
-
-
-
-nx3        = 1        # Number of zones in X3-direction
-x3min      = -1.0      # minimum value of X3
-x3max      = 1.0       # maximum value of X3
-ix3_bc     = periodic  # inner-X3 boundary flag
-ox3_bc     = periodic  # inner-X3 boundary flag
-
+nx3    = 1         # Number of zones in X3-direction
+x3min  = -1.0      # minimum value of X3
+x3max  = 1.0       # maximum value of X3
+ix3_bc = periodic  # inner-X3 boundary flag
+ox3_bc = periodic  # inner-X3 boundary flag
 
 #refinement = static
 
 <meshblock>
-nx1         = 16 
-nx2         = 256
-nx3         = 1
+nx1 = 16 
+nx2 = 256
+nx3 = 1
 
 <refinement1>
-x1min       = 1
-x1max       = 23.4414
-x2min       = 0.698132 
-x2max       = 2.44346
-x3min       = 0.0
-x3max       = 6.283185307179586 
-level       = 2
+x1min = 1
+x1max = 23.4414
+x2min = 0.698132 
+x2max = 2.44346
+x3min = 0.0
+x3max = 6.283185307179586 
+level = 2
 
 <hydro>
-gamma           = 1.6666666666667       # gamma = C_p/C_v
-dfloor          = 1.e-8
-pfloor          = 1.e-7
-
+gamma  = 1.6666666666667  # gamma = C_p/C_v
+dfloor = 1.e-8
+pfloor = 1.e-7
 
 <cr>
-vmax         = 100
+vmax     = 100
 src_flag = 0
 
 <problem>
-v0 = 0
-sigma = 1.e3
+v0        = 0
+sigma     = 1.e3
 direction = 1
