@@ -269,7 +269,6 @@ void BoundaryValues::SetupPersistentMPI() {
   // initialize the shearing block lists
   if (shearing_box != 0) {
     MeshBlock *pmb = pmy_block_;
-    // int nbtotal = pmy_mesh_->nbtotal;
     int *ranklist = pmy_mesh_->ranklist;
     int *nslist = pmy_mesh_->nslist;
     LogicalLocation *loclist = pmy_mesh_->loclist;

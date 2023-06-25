@@ -199,9 +199,9 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     int &xgh = pbval_->xgh_;
     for (int upper=0; upper<2; upper++) {
       if (pbval_->is_shear[upper]) {
-       shear_cc_[upper].NewAthenaArray(nc3, NGHOST, nc2+2*xgh+1,nu_+1);
+        shear_cc_[upper].NewAthenaArray(nc3, NGHOST, nc2+2*xgh+1, nu_+1);
         shear_var_flx_[upper].NewAthenaArray(nc3, nc2,nu_+1);
-        shear_map_flx_[upper].NewAthenaArray(nc3, 1, nc2+2*xgh+1,nu_+1);
+        shear_map_flx_[upper].NewAthenaArray(nc3, 1, nc2+2*xgh+1, nu_+1);
 
         // TODO(KGF): the rest of this should be a part of InitBoundaryData()
 

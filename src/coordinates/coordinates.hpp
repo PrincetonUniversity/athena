@@ -129,11 +129,11 @@ class Coordinates {
 
   // coordinate source term for cosmic rays
   virtual void AddCoordTermsDivergence(int flag, const AthenaArray<Real> &u_cr,
-                                      AthenaArray<Real> &coord_src);
+                                       AthenaArray<Real> &coord_src);
 
   // subtract coordinate source term for grad_pc
   virtual void AddCoordTermsDivergence(const AthenaArray<Real> &u_cr,
-                                      AthenaArray<Real> &grad_pc);
+                                       AthenaArray<Real> &grad_pc);
 
   virtual void AddCoordTermsDivergence_STS(const Real dt, int stage,
                              const AthenaArray<Real> *flux,
@@ -149,12 +149,12 @@ class Coordinates {
   virtual void PsiArea(NRRadiation *prad, AthenaArray<Real> &area);
   virtual void AngularVol(NRRadiation *prad, AthenaArray<Real> &vol);
   virtual void GetGeometryZeta(NRRadiation *prad, const int k, const int j,
-                                  const int i, AthenaArray<Real> &g_zeta);
+                               const int i, AthenaArray<Real> &g_zeta);
   virtual void GetGeometryPsi(NRRadiation *prad, const int k, const int j,
-                        const int i, const int n_zeta, AthenaArray<Real> &g_psi);
+                              const int i, const int n_zeta, AthenaArray<Real> &g_psi);
   // function overwirte in case nzeta = 0
   virtual void GetGeometryPsi(NRRadiation *prad, const int k, const int j,
-                        const int i, AthenaArray<Real> &g_psi);
+                              const int i, AthenaArray<Real> &g_psi);
 
   // ...to determine if index is a pole
   bool IsPole(int j);
@@ -366,15 +366,16 @@ class Cylindrical : public Coordinates {
 
   // coordinate source term for cosmic rays
   void AddCoordTermsDivergence(int flag, const AthenaArray<Real> &u_cr,
-                                      AthenaArray<Real> &coord_src) final;
+                               AthenaArray<Real> &coord_src) final;
 
   // subtract coordinate source term for grad_pc
   void AddCoordTermsDivergence(const AthenaArray<Real> &u_cr,
-                                      AthenaArray<Real> &grad_pc) final;
+                               AthenaArray<Real> &grad_pc) final;
 
   void AddCoordTermsDivergence_STS(const Real dt, int stage,
-                     const AthenaArray<Real> *flux,
-                     AthenaArray<Real> &u, AthenaArray<Real> &flux_div) final;
+                                   const AthenaArray<Real> *flux,
+                                   AthenaArray<Real> &u,
+                                   AthenaArray<Real> &flux_div) final;
 
   // for radiation functions...
   void AxisDirection(int *axisx, int *axisy, int *axisz) final;
@@ -435,33 +436,33 @@ class SphericalPolar : public Coordinates {
 
   // ...to compute geometrical source terms
   void AddCoordTermsDivergence(const Real dt, const AthenaArray<Real> *flux,
-                     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc,
-                     AthenaArray<Real> &u) final;
+                               const AthenaArray<Real> &prim,
+                               const AthenaArray<Real> &bcc, AthenaArray<Real> &u) final;
 
   // coordinate source term for cosmic rays
   void AddCoordTermsDivergence(int flag, const AthenaArray<Real> &u_cr,
-                                      AthenaArray<Real> &coord_src) final;
+                               AthenaArray<Real> &coord_src) final;
 
   // subtract coordinate source term for grad_pc
   void AddCoordTermsDivergence(const AthenaArray<Real> &u_cr,
-                                      AthenaArray<Real> &grad_pc) final;
+                               AthenaArray<Real> &grad_pc) final;
 
   //for radiation functions...
   void AxisDirection(int *axisx, int *axisy, int *axisz) final;
   void ConvertAngle(MeshBlock *pmb, const int nang, AthenaArray<Real> &mu) final;
 
   void GetGeometryZeta(NRRadiation *prad, const int k, const int j,
-                                  const int i, AthenaArray<Real> &g_zeta) final;
+                       const int i, AthenaArray<Real> &g_zeta) final;
   void GetGeometryPsi(NRRadiation *prad, const int k, const int j,
-                        const int i, const int n_zeta, AthenaArray<Real> &g_psi) final;
+                      const int i, const int n_zeta, AthenaArray<Real> &g_psi) final;
 
   void GetGeometryPsi(NRRadiation *prad, const int k, const int j,
-                        const int i, AthenaArray<Real> &g_psi) final;
+                      const int i, AthenaArray<Real> &g_psi) final;
 
 
   void AddCoordTermsDivergence_STS(const Real dt, int stage,
-                     const AthenaArray<Real> *flux,
-                     AthenaArray<Real> &u, AthenaArray<Real> &flux_div) final;
+                                   const AthenaArray<Real> *flux, AthenaArray<Real> &u,
+                                   AthenaArray<Real> &flux_div) final;
 };
 
 //----------------------------------------------------------------------------------------

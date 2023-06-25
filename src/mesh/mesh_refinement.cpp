@@ -650,24 +650,24 @@ void MeshRefinement::ProlongateCellCenteredValues(
             Real dx1fm = x1c - fx1m;
             Real dx1fp = fx1p - x1c;
 
-              for (int n=sn; n<=en; n++) {
-                 Real ccval = coarse(k,j,i,n);
-            // calculate 3D gradients using the minmod limiter
+            for (int n=sn; n<=en; n++) {
+              Real ccval = coarse(k,j,i,n);
+              // calculate 3D gradients using the minmod limiter
               Real gx1m = (ccval - coarse(k,j,i-1,n))/dx1m;
               Real gx1p = (coarse(k,j,i+1,n) - ccval)/dx1p;
               Real gx1c = 0.5*(SIGN(gx1m) + SIGN(gx1p))*
-                        std::min(std::abs(gx1m), std::abs(gx1p));
+                          std::min(std::abs(gx1m), std::abs(gx1p));
               Real gx2m = (ccval - coarse(k,j-1,i,n))/dx2m;
               Real gx2p = (coarse(k,j+1,i,n) - ccval)/dx2p;
               Real gx2c = 0.5*(SIGN(gx2m) + SIGN(gx2p))*
-                        std::min(std::abs(gx2m), std::abs(gx2p));
+                          std::min(std::abs(gx2m), std::abs(gx2p));
               Real gx3m = (ccval - coarse(k-1,j,i,n))/dx3m;
               Real gx3p = (coarse(k+1,j,i,n) - ccval)/dx3p;
               Real gx3c = 0.5*(SIGN(gx3m) + SIGN(gx3p))*
-                        std::min(std::abs(gx3m), std::abs(gx3p));
+                          std::min(std::abs(gx3m), std::abs(gx3p));
 
-            // KGF: add the off-centered quantities first to preserve FP symmetry
-            // interpolate onto the finer grid
+              // KGF: add the off-centered quantities first to preserve FP symmetry
+              // interpolate onto the finer grid
               fine(fk  ,fj  ,fi  ,n) = ccval - (gx1c*dx1fm + gx2c*dx2fm + gx3c*dx3fm);
               fine(fk  ,fj  ,fi+1,n) = ccval + (gx1c*dx1fp - gx2c*dx2fm - gx3c*dx3fm);
               fine(fk  ,fj+1,fi  ,n) = ccval - (gx1c*dx1fm - gx2c*dx2fp + gx3c*dx3fm);
@@ -707,7 +707,7 @@ void MeshRefinement::ProlongateCellCenteredValues(
           for (int n=sn; n<=en; n++) {
             Real ccval = coarse(k,j,i,n);
 
-          // calculate 2D gradients using the minmod limiter
+            // calculate 2D gradients using the minmod limiter
             Real gx1m = (ccval - coarse(k,j,i-1,n))/dx1m;
             Real gx1p = (coarse(k,j,i+1,n) - ccval)/dx1p;
             Real gx1c = 0.5*(SIGN(gx1m) + SIGN(gx1p))*
@@ -717,8 +717,8 @@ void MeshRefinement::ProlongateCellCenteredValues(
             Real gx2c = 0.5*(SIGN(gx2m) + SIGN(gx2p))*
                         std::min(std::abs(gx2m), std::abs(gx2p));
 
-          // KGF: add the off-centered quantities first to preserve FP symmetry
-          // interpolate onto the finer grid
+            // KGF: add the off-centered quantities first to preserve FP symmetry
+            // interpolate onto the finer grid
             fine(fk  ,fj  ,fi  ,n) = ccval - (gx1c*dx1fm + gx2c*dx2fm);
             fine(fk  ,fj  ,fi+1,n) = ccval + (gx1c*dx1fp - gx2c*dx2fm);
             fine(fk  ,fj+1,fi  ,n) = ccval - (gx1c*dx1fm - gx2c*dx2fp);
@@ -746,7 +746,7 @@ void MeshRefinement::ProlongateCellCenteredValues(
           Real gx1m = (ccval - coarse(k,j,i-1,n))/dx1m;
           Real gx1p = (coarse(k,j,i+1,n) - ccval)/dx1p;
           Real gx1c = 0.5*(SIGN(gx1m) + SIGN(gx1p))*std::min(std::abs(gx1m),
-                                                           std::abs(gx1p));
+                                                             std::abs(gx1p));
           // interpolate on to the finer grid
           fine(fk  ,fj  ,fi  ,n) = ccval - gx1c*dx1fm;
           fine(fk  ,fj  ,fi+1,n) = ccval + gx1c*dx1fp;

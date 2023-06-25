@@ -301,7 +301,7 @@ void RadBoundaryVariable::SendShearingBoxBoundaryBuffers() {
         SimpleNeighborBlock& snb = pbval_->sb_data_[upper].send_neighbor[n];
         if (snb.rank != -1) {
           LoadShearingBoxBoundarySameLevel(var, shear_bd_var_[upper].send[n],
-                                       n+offset[upper]);
+                                           n+offset[upper]);
           if (snb.rank == Globals::my_rank) {// on the same process
             CopyShearBufferSameProcess(snb, shear_send_count_cc_[upper][n]*ssize, n,
                                        upper);

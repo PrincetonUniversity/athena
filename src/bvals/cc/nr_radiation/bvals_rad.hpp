@@ -28,7 +28,6 @@ class RadBoundaryVariable : public CellCenteredBoundaryVariable {
   RadBoundaryVariable(MeshBlock *pmb,
                       AthenaArray<Real> *var_rad, AthenaArray<Real> *coarse_var,
                       AthenaArray<Real> *var_flux);
-                                                // AthenaArray<Real> &prim);
   virtual ~RadBoundaryVariable() = default;
 
   // functions unique implementation to radiation class

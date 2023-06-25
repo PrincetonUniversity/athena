@@ -675,7 +675,7 @@ void SphericalPolar::AxisDirection(int *axisx, int *axisy, int *axisz) {
 
 
 void SphericalPolar::ConvertAngle(MeshBlock *pmb, const int nang,
-                               AthenaArray<Real> &mu) {
+                                  AthenaArray<Real> &mu) {
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
     int n1z = pmb->ncells1, n2z = pmb->ncells2, n3z = pmb->ncells3;
 
@@ -718,7 +718,7 @@ void SphericalPolar::ConvertAngle(MeshBlock *pmb, const int nang,
 // get the geometry factor for zeta flux
 // this needs to go throug all the nzeta
 void SphericalPolar::GetGeometryZeta(NRRadiation *prad, const int k, const int j,
-                                  const int i, AthenaArray<Real> &g_zeta) {
+                                     const int i, AthenaArray<Real> &g_zeta) {
   int &nzeta = prad->nzeta;
   Real radius = x1v(i);
   for(int n=0; n<nzeta*2+1; ++n) {
@@ -729,7 +729,8 @@ void SphericalPolar::GetGeometryZeta(NRRadiation *prad, const int k, const int j
 // get the geometry factor for psi flux
 // this needs to go throug all the nzeta
 void SphericalPolar::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
-                        const int i, const int n_zeta, AthenaArray<Real> &g_psi) {
+                                    const int i, const int n_zeta,
+                                    AthenaArray<Real> &g_psi) {
   int &npsi = prad->npsi;
   Real radius = x1v(i);
   Real sinzeta_v = 1.0 - prad->coszeta_v(n_zeta) * prad->coszeta_v(n_zeta);

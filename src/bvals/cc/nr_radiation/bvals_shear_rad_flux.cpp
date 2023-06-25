@@ -52,7 +52,6 @@
 void RadBoundaryVariable::LoadFluxShearingBoxBoundarySameLevel(
                                AthenaArray<Real> &src, Real *buf, int nb) {
   MeshBlock *pmb = pmy_block_;
-  // Mesh *pmesh = pmb->pmy_mesh;
   int sj, sk, ej, ek;
   int jo = pbval_->joverlap_flux_;
   int *jmin1 = pbval_->sb_flux_data_[0].jmin_send;
@@ -130,7 +129,6 @@ void RadBoundaryVariable::SetFluxShearingBoxBoundarySameLevel(
 
 void RadBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
-  // Mesh *pmesh = pmb->pmy_mesh;
   OrbitalAdvection *porb = pmb->porb;
   AthenaArray<Real> &pflux = pflux_;
   int &xgh = pbval_->xgh_;
@@ -178,7 +176,7 @@ void RadBoundaryVariable::SendFluxShearingBoxBoundaryBuffers() {
                                    shear_bd_flux_[upper].send[n], n+offset[upper]);
           if (snb.rank == Globals::my_rank) {// on the same process
             CopyShearFluxSameProcess(snb, shear_send_count_flx_[upper][n]*ssize, n,
-                                       upper);
+                                     upper);
           } else { // MPI
 #ifdef MPI_PARALLEL
             int tag = pbval_->CreateBvalsMPITag(snb.lid, n+offset[upper],
