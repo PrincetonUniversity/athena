@@ -30,9 +30,7 @@ Real DenProfileCyl(const Real rad, const Real phi, const Real z);
 Real PoverR(const Real rad, const Real phi, const Real z);
 Real VelProfileCyl(const Real rad, const Real phi, const Real z);
 // problem parameters which are useful to make global to this file
-Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, z, phi, r, rp, phip, F_g;
-Real dfloor;
-Real Omega0;
+Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, z, phi, r, rp, phip, F_g, g_mag, d, dfloor, Omega0, cosine_term, sine_term;
 } // namespace
 
 // User-defined boundary conditions for disk simulations
@@ -64,7 +62,7 @@ void DiskOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceF
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real x1, x2, x3;
-  // Get parameters for gravitatonal potential of central point mass
+  // Get parameters for gravitatonal potential of central star mass
   gm0 = pin->GetOrAddReal("problem","GM",0.0);
   r0 = pin->GetOrAddReal("problem","r0",1.0);
 
@@ -72,6 +70,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   rho0 = pin->GetReal("problem","rho0");
   dslope = pin->GetOrAddReal("problem","dslope",0.0);
 
+  // Get parameters for gravitational potential of orbiting protoplanet
   gm_planet = pin -> GetOrAddReal("problem", "planetgm", 0.0);
   rp = pin -> GetOrAddReal("problem", "ptosr", 1.0);
 
@@ -115,7 +114,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   return;
 }
-
+  
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //! \brief Initializes Keplerian accretion disk.
@@ -174,7 +173,7 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
         r = pmb->pcoord->x1v(i);
         Real period = 2*M_PI*sqrt(pow(rp,3)/gm0);
         phip = 2*(M_PI / period)*time;
-        Real d = sqrt(pow(rp,2) + pow(r,2) - 2*rp*r*cos(phi - phip));
+        d = sqrt(pow(rp,2) + pow(r,2) - 2*rp*r*cos(phi - phip));
         Real dens = prim(IDN,k,j,i);
         Real velocity_x = prim(IVX,k,j,i);
         Real velocity_y = prim(IVY,k,j,i);
@@ -184,8 +183,8 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
         else {
           F_g = (dens)*((gm_planet*d) / pow(0.05,3));
         }
-        Real cosine_term = (pow(r,2)*(pow(cos(phi),2)) - r*rp*cos(phi)*cos(phip) + pow(r,2)*(pow(sin(phi),2)) - r*rp*sin(phi)*sin(phip)) / (r*d);
-        Real sine_term = (-1*r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
+        cosine_term = (pow(r,2)*(pow(cos(phi),2)) - r*rp*cos(phi)*cos(phip) + pow(r,2)*(pow(sin(phi),2)) - r*rp*sin(phi)*sin(phip)) / (r*d);
+        sine_term = (-1*r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
         Real Fg_x = -1*F_g*cosine_term;
         Real Fg_y = F_g*sine_term;
         Real delta_momentum_x = Fg_x * dt;
