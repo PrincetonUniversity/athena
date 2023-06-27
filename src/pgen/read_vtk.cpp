@@ -477,7 +477,8 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   int cell_dat_vtk; //total number of cells in vtk file
   //total number of cells in MeshBlock
   const int cell_dat_mb = Nx_mb * Ny_mb * Nz_mb;
-  int retval, nread; //file handler return value
+  int retval;
+  size_t nread; //file handler return value
   float fdat, fvec[3]; //, ften[9];//store float format scalar, vector, and tensor
 
   if ( (fp = fopen(filename.c_str(),"r")) == NULL ) {
@@ -591,7 +592,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
 
   //-------------read data--------------
   while (true) {
-    retval = fscanf(fp,"%s %s %s\n", type, variable, format);
+    retval = std::fscanf(fp,"%s %s %s\n", type, variable, format);
     if (retval == EOF) { // Assuming no errors, we are done.
       fclose(fp); //close file
       return;
@@ -600,17 +601,17 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
       printf("%s %s %s\n", type, variable ,format);
     }
     //check format
-    if (strcmp(format, "float") != 0) {
+    if (std::strcmp(format, "float") != 0) {
       fclose(fp);
       msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
         << "expected  \"float\" format, found " << type << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
     //check lookup table
-    if (strcmp(type, "SCALARS") == 0) {
+    if (std::strcmp(type, "SCALARS") == 0) {
       // Read in the LOOKUP_TABLE (only default supported for now)
       fscanf(fp,"%s %s\n", t_type, t_format);
-      if (strcmp(t_type, "LOOKUP_TABLE") != 0 || strcmp(t_format, "default") != 0 ) {
+      if (std::strcmp(t_type, "LOOKUP_TABLE") != 0 || std::strcmp(t_format, "default") != 0 ) {
         fclose(fp);
         msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
           << "Expected \"LOOKUP_TABLE default, found "
@@ -624,13 +625,13 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
 
     //determine variable type and read data
     //read scalers
-    if (strcmp(type, "SCALARS") == 0) {
-      if (strcmp(variable, field.c_str()) == 0) {
+    if (std::strcmp(type, "SCALARS") == 0) {
+      if (std::strcmp(variable, field.c_str()) == 0) {
         printf("  Reading %s...\n", variable);
         for (int k=0; k<Nz_vtk; k++) {
           for (int j=0; j<Ny_vtk; j++) {
             for (int i=0; i<Nx_vtk; i++) {
-              if ((nread = fread(&fdat, sizeof(float), 1, fp)) != 1) {
+              if ((nread = std::fread(&fdat, sizeof(float), 1, fp)) != 1) {
                 fclose(fp);
                 msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
                   << "Error reading SCALARS... " << std::endl;
@@ -645,16 +646,16 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
         return;
       } else {
         if (SHOW_OUTPUT) printf("  Skipping %s...\n",variable);
-        fseek(fp, cell_dat_vtk*sizeof(float), SEEK_CUR);
+        std::fseek(fp, cell_dat_vtk*sizeof(float), SEEK_CUR);
       }
     //read vectors
-    } else if (strcmp(type, "VECTORS") == 0) {
-      if (strcmp(variable, field.c_str()) == 0) {
+    } else if (std::strcmp(type, "VECTORS") == 0) {
+      if (std::strcmp(variable, field.c_str()) == 0) {
         printf("  Reading %s%d...\n", variable, component);
         for (int k=0; k<Nz_vtk; k++) {
           for (int j=0; j<Ny_vtk; j++) {
             for (int i=0; i<Nx_vtk; i++) {
-              if ((nread = fread(&fvec, sizeof(float), 3, fp)) != 3) {
+              if ((nread = std::fread(&fvec, sizeof(float), 3, fp)) != 3) {
                 fclose(fp);
                 msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
                   << "Error reading VECTORS... " << std::endl;
@@ -669,18 +670,18 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
         return;
       } else {
         if (SHOW_OUTPUT) printf("  Skipping %s...\n", variable);
-        fseek(fp, 3*cell_dat_vtk*sizeof(float), SEEK_CUR);
+        std::fseek(fp, 3*cell_dat_vtk*sizeof(float), SEEK_CUR);
       }
     //read tensors, not supported yet
-    } else if (strcmp(type, "TENSORS") == 0) {
-      if (strcmp(variable, field.c_str()) == 0) {
+    } else if (std::strcmp(type, "TENSORS") == 0) {
+      if (std::strcmp(variable, field.c_str()) == 0) {
         fclose(fp);
         msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
           << "TENSORS reading not supported." << std::endl;
         throw std::runtime_error(msg.str().c_str());
       } else {
         if (SHOW_OUTPUT) printf("  Skipping %s...\n", variable);
-        fseek(fp, 9*cell_dat_vtk*sizeof(float), SEEK_CUR);
+        std::fseek(fp, 9*cell_dat_vtk*sizeof(float), SEEK_CUR);
       }
     } else {
         fclose(fp);

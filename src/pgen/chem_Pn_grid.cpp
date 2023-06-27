@@ -16,6 +16,7 @@
 
 // C++ headers
 #include <algorithm>  // std::find()
+#include <cstdio>     // snprintf
 #include <fstream>    // ifstream
 #include <iostream>   // endl
 #include <sstream>    // stringstream
@@ -68,7 +69,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   std::string dir_input = pin->GetString("problem", "dir_input");
   const Real Zdg = pin->GetReal("chemistry", "Zdg");
   char dir_z[20];
-  snprintf(dir_z, sizeof(dir_z), "Z%.1f/", Zdg);
+  std::snprintf(dir_z, sizeof(dir_z), "Z%.1f/", Zdg);
   //std::string dir_z = std::to_string(dir_z_buf);
   std::string fn_chi = dir_input + dir_z + "chi.txt";
   std::string fn_cr = dir_input + dir_z + "cr.txt";
