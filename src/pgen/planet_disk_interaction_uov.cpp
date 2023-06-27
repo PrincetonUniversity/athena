@@ -220,7 +220,7 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
           g_mag = ((gm_planet*d) / pow(0.05,3));
         }
         cosine_term = (pow(r,2)*(pow(cos(phi),2)) - r*rp*cos(phi)*cos(phip) + pow(r,2)*(pow(sin(phi),2)) - r*rp*sin(phi)*sin(phip)) / (r*d);
-        sine_term = (-1*r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
+        sine_term = (r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
         user_out_var(0,k,j,i) = -1*g_mag*cosine_term;
         user_out_var(1,k,j,i) = g_mag*sine_term;
       }
