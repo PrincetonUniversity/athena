@@ -611,7 +611,8 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     if (std::strcmp(type, "SCALARS") == 0) {
       // Read in the LOOKUP_TABLE (only default supported for now)
       fscanf(fp,"%s %s\n", t_type, t_format);
-      if (std::strcmp(t_type, "LOOKUP_TABLE") != 0 || std::strcmp(t_format, "default") != 0 ) {
+      if (std::strcmp(t_type, "LOOKUP_TABLE") != 0 ||
+          std::strcmp(t_format, "default") != 0 ) {
         fclose(fp);
         msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
           << "Expected \"LOOKUP_TABLE default, found "
