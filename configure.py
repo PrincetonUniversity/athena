@@ -392,6 +392,9 @@ if args['eos'][:8] == 'general/':
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
 # Check chemistry
+if args['chemistry'] is None and args['ode_solver'] is not None:
+    raise SystemExit('### CONFIGURE ERROR: must choose chemistry network for ode solver.')
+
 if args['chemistry'] is not None and args['ode_solver'] is None:
     raise SystemExit('### CONFIGURE ERROR: must choose ode solver for chemistry.')
 
