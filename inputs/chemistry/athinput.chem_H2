@@ -39,7 +39,6 @@ nx1        =    4
 nx2        =    4
 nx3        =    4
 
-#hydro block is mendatory
 <hydro>
 gamma = 1.666666666666667 # gamma = C_p/C_v
 iso_sound_speed = 1.0     # isothermal sound speed

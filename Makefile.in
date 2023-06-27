@@ -43,11 +43,11 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     src/eos/$(EOS_FILE) \
 	     src/eos/eos_high_order.cpp \
 	     src/eos/eos_scalars.cpp \
-		 $(wildcard $(CHEMISTRY_FILE)) \
-		 $(CHEMNET_FILE) \
-		 $(wildcard src/chemistry/$(ODE_SOLVER_FILE)) \
-		 $(wildcard src/chem_rad/*.cpp) \
-		 $(wildcard src/chem_rad/integrators/$(CHEMRADIATION_FILE)) \
+	     $(wildcard $(CHEMISTRY_FILE)) \
+	     $(CHEMNET_FILE) \
+	     $(wildcard src/chemistry/$(ODE_SOLVER_FILE)) \
+	     $(wildcard src/chem_rad/*.cpp) \
+	     $(wildcard src/chem_rad/integrators/$(CHEMRADIATION_FILE)) \
 	     $(wildcard src/fft/*.cpp) \
 	     $(wildcard src/field/*.cpp) \
 	     $(wildcard src/field/field_diffusion/*.cpp) \
