@@ -30,8 +30,8 @@
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
-#include "../orbital_advection/orbital_advection.hpp"
 #include "../nr_radiation/radiation.hpp"
+#include "../orbital_advection/orbital_advection.hpp"
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
@@ -84,7 +84,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     CosmicRay *pcr = pmb->pcr;
 
 
-   // Sum history variables over cells. Note ghost cells are never included in sums
+    // Sum history variables over cells. Note ghost cells are never included in sums
     if(porb->orbital_advection_defined
        && !output_params.orbital_system_output) {
       porb->ConvertOrbitalSystem(phyd->w, phyd->u, OrbitalTransform::cons);
@@ -157,7 +157,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
                   std::stringstream msg;
                   msg << "### FATAL ERROR in function [OutputType::HistoryFile]"
                       << std::endl
-                      << "Incrase NRAD '" << NRAD << "' to 4 x number of frequency groups";
+                      << "Incrase NRAD '" << NRAD << "' to 4x number of frequency groups";
                   ATHENA_ERROR(msg);
                 }
                 constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0)
@@ -251,7 +251,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
                   std::stringstream msg;
                   msg << "### FATAL ERROR in function [OutputType::HistoryFile]"
                       << std::endl
-                      << "Incrase NRAD '" << NRAD << "' to 4 x number of frequency groups";
+                      << "Incrase NRAD '" << NRAD << "' to 4x number of frequency groups";
                   ATHENA_ERROR(msg);
                 }
                 constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0)
@@ -272,7 +272,6 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
               hst_data[prev_out + 2] += vol(i)*pcr->u_cr(IFR2,k,j,i);
               hst_data[prev_out + 3] += vol(i)*pcr->u_cr(IFR3,k,j,i);
             }
-
           }
         }
       }
