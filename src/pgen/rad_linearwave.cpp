@@ -68,7 +68,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   int totnum=5;
   // Initialize errors to zero
-  Real l1_err[totnum],max_err[totnum];
+  Real * l1_err = new Real[totnum];
+  Real * max_err = new Real[totnum];
   for (int i=0; i<totnum; ++i) {
     l1_err[i]=0.0;
     max_err[i]=0.0;
@@ -188,6 +189,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     fprintf(pfile,"\n");
     fclose(pfile);
   }
+  delete[] l1_err;
+  delete[] max_err;
 }
 
 
