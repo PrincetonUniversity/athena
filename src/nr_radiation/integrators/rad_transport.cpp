@@ -354,17 +354,20 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
             if (npsi == 0) psi_limit=1;
 
             for (int m=0; m<psi_limit; ++m) {
-#pragma omp simd
+              // TODO(KGF): forced to comment out 4x pragmas here and 2x in
+              // ../get_moments.cpp to stop link-time segfault with icpx 2023.0.0
+              // and other problems on 2022.2.0
+//#pragma omp simd
               for (int n=0; n<nzeta*2; ++n) {
                 int ang_num = ifr*nang + n*psi_limit+m;
                 q_zeta_(n+NGHOST) = ir(k,j,i,ang_num);
               }// end nzeta
               // Add ghost zones
-#pragma omp simd
+//#pragma omp simd
               for (int n=1; n<=NGHOST; ++n) {
                 q_zeta_(NGHOST-n) = q_zeta_(NGHOST+n-1);
               }
-#pragma omp simd
+//#pragma omp simd
               for (int n=1; n<=NGHOST; ++n) {
                 q_zeta_(2*nzeta+NGHOST+n-1) = q_zeta_(2*nzeta+NGHOST-n);
               }
@@ -765,7 +768,7 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
               dflx_ang(n) = 0.0;
             if (nzeta * npsi > 0) {
               for (int m=0; m<2*npsi; ++m) {
-#pragma omp simd
+//#pragma omp simd
                 for (int n=0; n<2*nzeta; ++n) {
                   int ang_num = n*2*npsi + m;
                   int ang_num1 = (n+1)*2*npsi+m;

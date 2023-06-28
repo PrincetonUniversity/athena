@@ -152,7 +152,7 @@ void NRRadiation::CalculateComMoment() {
   for (int n=0; n<4; ++n) {
     for (int k=0; k<n3z; ++k) {
       for (int j=0; j<n2z; ++j) {
-#pragma omp simd
+//#pragma omp simd
         for (int i=0; i<n1z; ++i) {
           i_mom(n,k,j,i) = 0.0;
         }
@@ -204,7 +204,7 @@ void NRRadiation::CalculateComMoment() {
           cosz_cm(n) = (cosz[n] - vz * angcoef) * incoef;
         }
         numsum = 1.0/numsum;
-#pragma omp simd
+//#pragma omp simd
         for (int n=0; n<nang; ++n) {
            wmu_cm(n) *= numsum;
         }
