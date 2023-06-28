@@ -158,7 +158,7 @@ class EquationOfState {
 
  private:
   // (C++11) in-class Default Member Initializer (fallback option):
-  const Real float_min{std::numeric_limits<Real>::min()};
+  const Real float_min{std::numeric_limits<float>::min()};
   MeshBlock *pmy_block_;                 // ptr to MeshBlock containing this EOS
   Real iso_sound_speed_, gamma_;         // isothermal Cs, ratio of specific heats
   Real density_floor_, pressure_floor_;  // density and pressure floors

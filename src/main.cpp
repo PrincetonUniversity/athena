@@ -479,7 +479,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
-                                                       //
+
     //radiation
     if (CHEMRADIATION_ENABLED) {
       clock_t tstart_rad, tstop_rad;
