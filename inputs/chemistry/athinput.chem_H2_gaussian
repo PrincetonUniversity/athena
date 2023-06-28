@@ -7,15 +7,6 @@ configure = --prob=chem_uniform --chemistry=H2 --ode_solver=cvode --cvode_path=$
 <job>
 problem_id = chem_H2   # problem ID: basename of output filenames
 
-#<output1>
-#file_type  = vtk       # vtk data dump
-#variable   = prim      # variables to be output
-#dt         = 1         # time increment between outputs
-#
-#<output2>
-#file_type  = hst       # vtk data dump
-#dt         = 0.05      # time increment between outputs
-
 <time>
 cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1        # cycle limit
