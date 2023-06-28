@@ -171,9 +171,8 @@ void Mesh::UpdateCostList() {
 void Mesh::UpdateMeshBlockTree(int &nnew, int &ndel) {
   // compute nleaf= number of leaf MeshBlocks per refined block
   int nleaf = 2;
-  // int dim = 1;
-  // if (mesh_size.nx2 > 1) nleaf = 4, dim = 2;
-  // if (mesh_size.nx3 > 1) nleaf = 8, dim = 3;
+  if (mesh_size.nx2 > 1) nleaf = 4;
+  if (mesh_size.nx3 > 1) nleaf = 8;
 
   // collect refinement flags from all the meshblocks
   // count the number of the blocks to be (de)refined
