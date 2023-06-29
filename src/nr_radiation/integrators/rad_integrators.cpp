@@ -163,7 +163,7 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin) {
     left_coef2_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
     left_coef3_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
     adv_flx_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
-  }// end implicit
+  }
 
   implicit_coef_.NewAthenaArray(prad->n_fre_ang);
 
@@ -316,11 +316,11 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin) {
             // linear intepolation between x1v(i-1), x1f(i), x1v(i)
             veln[n] = prad->reduced_c *
                       (factl * cosx[n] + factr * cosx1[n]);
-          }// end n
-        }// end ifr
-      }// end i
+          }
+        }
+      }
     }
-  }// end k
+  }
 
   // calculate vely_
   if (ncells2 > 1) {

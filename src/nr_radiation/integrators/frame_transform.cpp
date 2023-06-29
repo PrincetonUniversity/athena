@@ -13,8 +13,8 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file absorption.cpp
-//  \brief  Add absorption source terms
+//! \file frame_transform.cpp
+//  \brief  Perform frame transformation
 //======================================================================================
 
 // C headers
@@ -89,7 +89,7 @@ void RadIntegrator::ComToLab(const Real vx, const Real vy, const Real vz,
 
       ir_lab[ifr*nang+n] = ir_cm(ifr*nang+n) / coef;
     }
-  }// end ifreq
+  }
 
 
   return;

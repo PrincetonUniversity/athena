@@ -14,7 +14,7 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 //! \file angulargrid.cpp
-//  \brief implementation of functions in class Radiation
+//  \brief implementation of angular grid in class Radiation
 //======================================================================================
 
 // C headers

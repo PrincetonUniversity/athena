@@ -5,7 +5,7 @@
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file radiation.hpp
+//! \file rad_integrators.hpp
 //  \brief definitions for Radiation class
 //======================================================================================
 

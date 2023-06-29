@@ -13,8 +13,8 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file rad_transport.cpp
-//  \brief implementation of radiation integrators
+//! \file implicit_first_order.cpp
+//  \brief implementation of implicit transport with first order reconstruction
 //======================================================================================
 
 // C headers
@@ -90,8 +90,8 @@ void RadIntegrator::FirstOrderFluxDivergenceCoef(const Real wght) {
           Real *velxn = &(velx_(k,j,i,ifr*nang));
           Real adv = adv_vel(0,k,j,i);
           SignalSpeed(adv, f_l, f_r, velxn, s1n, s2n);
-        }// end ifr
-      }// end i
+        }
+      }
       // calculate x1-flux divergence
       pco->Face1Area(k,j,is,ie+1,x1area);
       for (int i=is; i<=ie; ++i) {
@@ -263,10 +263,10 @@ void RadIntegrator::FirstOrderFluxDivergenceCoef(const Real wght) {
             Real *velzn = &(velz_(k,j,i,ifr*nang));
             Real adv = adv_vel(2,k,j,i);
             SignalSpeed(adv, f_l, f_r, velzn, s1n, s2n);
-          }// end frequency
-        }// end i
-      }// end j
-    }// end k
+          }
+        }
+      }
+    }
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
         pmb->pcoord->Face3Area(k  ,j,is,ie,x3area   );

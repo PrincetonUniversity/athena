@@ -13,9 +13,10 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file
-//  \brief
+//! \file implicit_angular_flux.cpp
+//  \brief implementation of angular flux implicitly
 //======================================================================================
+ 
 
 // C headers
 
@@ -93,9 +94,9 @@ void RadIntegrator::ImplicitAngularFluxesCoef(const Real wght) {
             Real zeta_coef0 =  wght * g_zeta_(n) * prad->reduced_c;
             Real zeta_coef1 = -wght * g_zeta_(n+1) * prad->reduced_c;
             ImplicitPsiFluxCoef(k,j,i, n, wght, zeta_coef1, zeta_coef0);
-          }// end n
-        }// end npsi > 0
-      }// end k,j,i
+          }
+        }
+      }
 }
 
 
@@ -166,9 +167,9 @@ void RadIntegrator::ImplicitAngularFluxes(const int k, const int j, const int i,
       // now go from 2*nzeta-2 to 0
       for (int n=0; n<2*nzeta; ++n) {
         ImplicitPsiFlux(k,j,i, ifr, n, ir_ini);
-      }// end n
-    }// end npsi > 0
-  }// end ifr
+      }
+    }
+  }
 }
 
 

@@ -254,8 +254,8 @@ void RadIntegrator::CalSourceTerms(MeshBlock *pmb, const Real dt,
       }
     }
     tgas_new_(k,j,i) = omega_1*tgas_(k,j,i) + omega*tgas_new_(k,j,i);
-  }// end omega_1
-}// end source function
+  }
+}
 
 
 

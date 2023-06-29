@@ -13,9 +13,10 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file
-//  \brief
+//! \file absorption_scattering.cpp
+//  \brief implementation of absorption-scattering source terms
 //======================================================================================
+
 
 // C headers
 

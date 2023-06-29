@@ -95,8 +95,8 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           Real *velxn = &(velx_(k,j,i,ifr*nang));
           Real adv = adv_vel(0,k,j,i);
           SignalSpeed(adv, f_l, f_r, velxn, s1n, s2n);
-        }// end ifr
-      }// end i
+        }
+      }
       if (order == 1) {
         pmb->precon->DonorCellX1(k, j, is-1, ie+1, ir, -1, il_, ir_);
       } else if (order == 2) {
@@ -129,22 +129,22 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
           Real vl = vel[n] - adv;
           x1flux(k,j,i,n) = smax[n] * (vl - smin[n]) * irln[n] * sm_diff[n]
                             + smin[n] * (smax[n] - vl) * irrn[n] * sm_diff[n];
-        }// end n
+        }
         if (adv_flag_ > 0) {
           Real &advv = adv_vel(0,k,j,i);
           if (advv >0) {
             for (int n=0; n<prad->n_fre_ang; ++n) {
               x1flux(k,j,i,n) += advv * irln[n];
-            }// end n
+            }
           } else {
             for (int n=0; n<prad->n_fre_ang; ++n) {
               x1flux(k,j,i,n) += advv * irrn[n];
-            }// end n
-          }// end vel
-        }// end adv_flag_
-      }// end i
-    }// end j
-  }// end k
+            }
+          }
+        }
+      }
+    }
+  }
 
 
   // j-direction
@@ -175,9 +175,9 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
             Real *velyn = &(vely_(k,j,i,ifr*nang));
             Real adv = adv_vel(1,k,j,i);
             SignalSpeed(adv, f_l, f_r, velyn, s1n, s2n);
-          }// end frequency
-        }// end i
-      }// end j
+          }
+        }
+      }
 
       // reconstruction
       if (order == 1) {
@@ -229,18 +229,18 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
             if (advv >0) {
               for (int n=0; n<prad->n_fre_ang; ++n) {
                 x2flux(k,j,i,n) += advv * irln[n];
-              }// end n
+              }
             } else {
               for (int n=0; n<prad->n_fre_ang; ++n) {
                 x2flux(k,j,i,n) += advv * irrn[n];
-              }// end n
-            }// end vel
-          }// end adv_flag_
-        }// end i
+              }
+            }
+          }
+        }
         il_.SwapAthenaArray(ilb_);
-      }// end j
-    }// end k
-  }//end pmy_mesh->f2
+      }
+    }
+  }
 
   if (pmb->pmy_mesh->f3) {
     AthenaArray<Real> &x3flux=prad->flux[X3DIR];
@@ -327,19 +327,19 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
             if (advv >0) {
               for (int n=0; n<prad->n_fre_ang; ++n) {
                 x3flux(k,j,i,n) += advv * irln[n];
-              }// end n
+              }
             } else {
               for (int n=0; n<prad->n_fre_ang; ++n) {
                 x3flux(k,j,i,n) += advv * irrn[n];
-              }// end n
-            }// end vel
-          }// end adv_flag_
-        }// end i
+              }
+            }
+          }
+        }
         // swap the arrays for the next step
         il_.SwapAthenaArray(ilb_);
-      }// end k loop
-    }// end j from jl to ju
-  }// end k direction
+      }
+    }
+  }
 
   // calculate flux along angular direction
   if ((prad->angle_flag == 1) && (prad->nzeta > 0) && (imp_ang_flx_ == 0)) {
@@ -361,7 +361,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
               for (int n=0; n<nzeta*2; ++n) {
                 int ang_num = ifr*nang + n*psi_limit+m;
                 q_zeta_(n+NGHOST) = ir(k,j,i,ang_num);
-              }// end nzeta
+              }
               // Add ghost zones
 //#pragma omp simd
               for (int n=1; n<=NGHOST; ++n) {
@@ -392,13 +392,13 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
                 else if (g_coef < 0)
                   zeta_flux_(k,j,i,ifr,ang_num) =  -prad->reduced_c * ql_zeta_(n+NGHOST)
                                                    * g_zeta_(n);
-              }// end zeta
-            }// end npsi
-          }// end frequency
+              }
+            }
+          }
         }
       }
     }
-  }//end angule_flag==1 and nzeta > 0
+  }
 
   // Now calculate psi flux
   if ((prad->angle_flag == 1) && (prad->npsi > 0) && (imp_ang_flx_ == 0)) {
@@ -416,7 +416,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
               Real *irm = &(ir(k,j,i,ifr*nang+n*2*npsi));
               for (int m=0; m<npsi*2; ++m) {
                 qpsi[m] = irm[m];
-              }// end nzeta
+              }
               // Add ghost zones
               // phi is periodic
               // the first one qpsi[NGHOST]

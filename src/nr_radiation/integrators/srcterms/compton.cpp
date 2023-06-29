@@ -13,8 +13,8 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file absorption.cpp
-//  \brief  Add absorption source terms
+//! \file compton.cpp
+//  \brief  Add compton source terms
 //======================================================================================
 
 // Athena++ headers
@@ -31,7 +31,7 @@
 #include "../rad_integrators.hpp"
 
 //--------------------------------------------------------------------------------------
-//! \fn RadIntegrator::Absorption()
+//! \fn RadIntegrator::Compton()
 //  \brief
 
 // wmu_cm is the weight in the co-moving frame

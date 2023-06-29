@@ -13,9 +13,10 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file
-//  \brief
+//! \file multigroup_abs_sca.cpp
+//  \brief  Add multi-group absorption scattering 
 //======================================================================================
+
 
 // C headers
 
@@ -34,7 +35,7 @@
 #include "../rad_integrators.hpp"
 
 //--------------------------------------------------------------------------------------
-//! \fn RadIntegrator::AbsorptionScattering()
+//! \fn RadIntegrator::MultiGroupAbsScat()
 //  \brief
 
 // wmu_cm is the weight in the co-moving frame

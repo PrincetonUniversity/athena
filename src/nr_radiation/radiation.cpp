@@ -187,7 +187,7 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
       } else if (angle_flag == 10) {
         n_ang = nmu * nmu/2;
       }
-    }// end 3D
+    }
   }
 
   nang = n_ang * noct;

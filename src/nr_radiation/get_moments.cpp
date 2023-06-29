@@ -263,7 +263,7 @@ void NRRadiation::CalculateComMoment() {
           i_mom(IFR1,k,j,i) += frx;
           i_mom(IFR2,k,j,i) += fry;
           i_mom(IFR3,k,j,i) += frz;
-        }// End frequency loop
+        }
 
         // prepare the opacity array for output
         for (int ifr=0; ifr<nfreq; ++ifr) {

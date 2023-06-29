@@ -139,7 +139,7 @@ void IMRadiation::Iteration(
         prad->ir_old = prad->ir;
         sum_full_ += prad->sum_full;
         sum_diff_ += prad->sum_diff;
-      }// end while pmb
+      }
 
       // MPI sum across all the cores
 #ifdef MPI_PARALLEL
@@ -224,8 +224,8 @@ void IMRadiation::CheckResidual(MeshBlock *pmb,
             prad->sum_diff += std::abs(iro[n] - irn[n]);
             prad->sum_full += std::abs(irn[n]);
           }
-        }// end ifr
-      }// end i
-    }// end j
-  }// end k
+        }
+      }
+    }
+  }
 }

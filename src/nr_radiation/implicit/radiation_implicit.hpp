@@ -5,9 +5,10 @@
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file
-//  \brief
+//! \file radiation_implicit.hpp
+//  \brief implicit radiation class definitions
 //======================================================================================
+
 
 
 // C++ headers

@@ -13,8 +13,8 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file absorption.cpp
-//  \brief  Add absorption source terms
+//! \file multi_group.cpp
+//  \brief  Add multi_group  source terms
 //======================================================================================
 
 // C headers
