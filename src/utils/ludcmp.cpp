@@ -29,7 +29,7 @@
 
 void Ludcmp_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
                Real *d) {
-  int imax;
+  int imax=0;
   Real big,dum,sum,temp;
   AthenaArray<Real> rowscale;  // the implicit scaling of each row
   std::stringstream msg;
