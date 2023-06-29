@@ -1,6 +1,6 @@
 <comment>
 problem   = cosmic ray diffusion
-reference = 
+reference =
 configure = --prob=cr_diffusion
 
 <job>
@@ -23,6 +23,7 @@ problem_id = cr  # problem ID: basename of output filenames
 cfl_number = 0.3  # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1   # cycle limit
 tlim       = 0.2  # time limit
+ncycle_out = 1    # interval for stdout summary info
 
 <mesh>
 nx1    = 16        # Number of zones in X1-direction
@@ -46,17 +47,17 @@ ox3_bc = periodic  # inner-X3 boundary flag
 #refinement = static
 
 <meshblock>
-nx1 = 16 
+nx1 = 16
 nx2 = 256
 nx3 = 1
 
 <refinement1>
 x1min = 1
 x1max = 23.4414
-x2min = 0.698132 
+x2min = 0.698132
 x2max = 2.44346
 x3min = 0.0
-x3max = 6.283185307179586 
+x3max = 6.283185307179586
 level = 2
 
 <hydro>

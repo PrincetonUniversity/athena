@@ -27,7 +27,7 @@ def run(**kwargs):
     arguments = ['mesh/nx1=256', 'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
                  'mesh/nx2=16', 'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
                  'meshblock/nx1=32', 'meshblock/nx2=16' 'problem/direction=0',
-                 'problem/v0=0']
+                 'problem/v0=0', 'time/ncycle_out=100']
     athena.run('cosmic_ray/athinput.cr_diffusion', arguments)
 #
 #  bashcommand="cp bin/linearwave-errors.dat ~/linearwave-errors_regime1.dat"
