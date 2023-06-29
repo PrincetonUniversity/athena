@@ -41,7 +41,7 @@
 
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//  \brief beam test
+//  \brief cosmic ray diffusion test
 //======================================================================================
 
 static Real sigma = 1.e3;

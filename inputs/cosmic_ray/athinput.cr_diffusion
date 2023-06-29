@@ -6,18 +6,6 @@ configure = --prob=cr_diffusion
 <job>
 problem_id = cr  # problem ID: basename of output filenames
 
-#<output1>
-#file_type = hdf5  # Binary data dump
-#dt        = 0.2   # time increment between outputs
-#variable  = prim
-
-#<output2>
-#file_type = hst    # Binary data dump
-#dt        = 0.001  # time increment between outputs
-
-#<output3>
-#file_type = rst   # Binary data dump
-#dt        = 0.02  # time increment between outputs
 
 <time>
 cfl_number = 0.3  # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -44,7 +32,6 @@ x3max  = 1.0       # maximum value of X3
 ix3_bc = periodic  # inner-X3 boundary flag
 ox3_bc = periodic  # inner-X3 boundary flag
 
-#refinement = static
 
 <meshblock>
 nx1 = 16
