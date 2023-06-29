@@ -5,8 +5,8 @@
 // Copyright (C) 2014 James M. Stone  <jmstone@princeton.edu>
 // See LICENSE file for full public license information.
 //======================================================================================
-//! \file radiation.hpp
-//  \brief definitions for Radiation class
+//! \file cr.hpp
+//  \brief definitions for cosmic ray class
 //======================================================================================
 
 // C headers

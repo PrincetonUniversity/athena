@@ -18,7 +18,7 @@
 #include "./cr_integrators.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Reconstruction::CRFlux()
+//! \fn ReIntegrator::CRFlux()
 //  \brief HLLE flux for Cosmic Ray Transport
 
 void CRIntegrator::CRFlux(int fdir, int il, int iu,

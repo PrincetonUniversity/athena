@@ -13,8 +13,8 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file radiation.cpp
-//  \brief implementation of functions in class Radiation
+//! \file cr.cpp
+//  \brief implementation of functions in cosmic ray class
 //======================================================================================
 
 // C headers

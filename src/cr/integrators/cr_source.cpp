@@ -13,8 +13,8 @@
 // You should have received a copy of GNU GPL in the file LICENSE included in the code
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
-//! \file rad_source.cpp
-//  \brief Add radiation source terms to both radiation and gas
+//! \file cr_source.cpp
+//  \brief Add cosmic ray source terms to  gas
 //======================================================================================
 
 // C headers
