@@ -37,14 +37,14 @@ def run(**kwargs):
     arguments = ['mesh/nx1=256', 'mesh/ix1_bc=outflow', 'mesh/ox1_bc=outflow',
                  'mesh/nx2=16', 'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
                  'meshblock/nx1=32', 'meshblock/nx2=16' 'problem/direction=0',
-                 'problem/v0=1']
+                 'problem/v0=1', 'time/ncycle_out=100']
     athena.run('cosmic_ray/athinput.cr_diffusion', arguments)
 
     # case 3: static diffusion along y direction
     arguments = ['mesh/nx1=16', 'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
                  'mesh/nx2=256', 'mesh/ix2_bc=outflow', 'mesh/ox2_bc=outflow',
                  'meshblock/nx1=16', 'meshblock/nx2=32' 'problem/direction=0',
-                 'problem/v0=0']
+                 'problem/v0=0', 'time/ncycle_out=100']
     athena.run('cosmic_ray/athinput.cr_diffusion', arguments)
 #
 #  bashcommand="cp bin/linearwave-errors.dat ~/linearwave-errors_regime1.dat"
@@ -54,7 +54,7 @@ def run(**kwargs):
     arguments = ['mesh/nx1=16', 'mesh/ix1_bc=periodic', 'mesh/ox1_bc=periodic',
                  'mesh/nx2=256', 'mesh/ix2_bc=outflow', 'mesh/ox2_bc=outflow',
                  'meshblock/nx1=16', 'meshblock/nx2=32' 'problem/direction=0',
-                 'problem/v0=1']
+                 'problem/v0=1', 'time/ncycle_out=100']
     athena.run('cosmic_ray/athinput.cr_diffusion', arguments)
 
     # case 5: static diffusion along z direction
@@ -62,7 +62,7 @@ def run(**kwargs):
                  'mesh/nx2=16', 'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
                  'mesh/nx3=256', 'mesh/ix3_bc=outflow', 'mesh/ox3_bc=outflow',
                  'meshblock/nx1=16', 'meshblock/nx2=16', 'meshblock/nx3=32',
-                 'problem/direction=2', 'problem/v0=0']
+                 'problem/direction=2', 'problem/v0=0', 'time/ncycle_out=100']
     athena.run('cosmic_ray/athinput.cr_diffusion', arguments)
 
     # case 6: dynamic static diffusion along z direction
@@ -70,7 +70,7 @@ def run(**kwargs):
                  'mesh/nx2=16', 'mesh/ix2_bc=periodic', 'mesh/ox2_bc=periodic',
                  'mesh/nx3=256', 'mesh/ix3_bc=outflow', 'mesh/ox3_bc=outflow',
                  'meshblock/nx1=16', 'meshblock/nx2=16', 'meshblock/nx3=32',
-                 'problem/direction=2', 'problem/v0=1']
+                 'problem/direction=2', 'problem/v0=1', 'time/ncycle_out=100']
     athena.run('cosmic_ray/athinput.cr_diffusion', arguments)
 
 #  bashcommand="cp bin/linearwave-errors.dat ~/linearwave-errors.dat"
