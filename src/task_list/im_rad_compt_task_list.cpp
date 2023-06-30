@@ -3,8 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file fft_grav_task_list.cpp
-//! \brief function implementation for FFTGravitySolverTaskList
+//! \file im_rad_compt_task_list.cpp
+//! \brief function implementation for implicit radiation with Compton
 
 // C headers
 
