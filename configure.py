@@ -208,13 +208,13 @@ parser.add_argument('--hdf5_path',
                     default='',
                     help='path to HDF5 libraries')
 
-# -radiation argument
+# -nr_radiation argument
 parser.add_argument('-nr_radiation',
                     action='store_true',
                     default=False,
                     help='enable non-relativistic radiative transfer')
 
-# -radiation argument
+# -implicit_radiation argument
 parser.add_argument('-implicit_radiation',
                     action='store_true',
                     default=False,
