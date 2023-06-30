@@ -52,8 +52,8 @@ static Real omegareal, omegaimg;
 int RefinementCondition(MeshBlock *pmb);
 
 //======================================================================================
-/*! \file beam.cpp
- *  \brief Beam test for the radiative transfer module
+/*! \file rad_linearwave.cpp
+ *  \brief Linear wave test for the radiative transfer module
  *
  *====================================================================================*/
 
