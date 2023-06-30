@@ -1,7 +1,9 @@
 <comment>
-problem   = Radiation beam test
-reference = 
-configure = --prob=beam
+problem   = Radiation thermal relaxation test
+reference =
+configure = --prob=thermal_relaxation -nr_radiation
+or
+configure = --prob=thermal_relaxation -implicit_radiation
 
 <job>
 problem_id = thermal  # problem ID: basename of output filenames
@@ -10,19 +12,6 @@ problem_id = thermal  # problem ID: basename of output filenames
 file_type = hst  # History data dump
 dt        = 1.9  # time increment between outputs
 
-#<output2>
-#file_type = vtk   # Binary data dump
-#variable  = prim  # variables to be output
-#dt        = 0.01  # time increment between outputs
-
-#<output3>
-#file_type = rst      # Binary data dump
-#dt        = 0.00001  # time increment between outputs
-
-#<output4>
-#file_type = hdf5  # Binary data dump
-#dt        = 0.01  # time increment between outputs
-#variable  = prim
 
 <time>
 cfl_number = 0.4     # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -56,7 +45,7 @@ ox3_rad_bc = periodic
 
 <meshblock>
 nx1 = 32
-nx2 = 32 
+nx2 = 32
 
 <hydro>
 gamma = 1.6666666666667  # gamma = C_p/C_v

@@ -229,7 +229,7 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus ReceiveRadShear(MeshBlock *pmb, int stage);
 
 
-  // Tasks functionc for cosmicr rays
+  // Task functions for cosmic rays
   TaskStatus CalculateCRTCFlux(MeshBlock *pmb, int stage);
   TaskStatus IntegrateCRTC(MeshBlock *pmb, int stage);
   TaskStatus AddSourceTermsCRTC(MeshBlock *pmb, int stage);

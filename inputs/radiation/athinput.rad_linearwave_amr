@@ -1,7 +1,10 @@
 <comment>
-problem   = Radiation beam test
-reference = 
-configure = --prob=radwave
+problem   = Radiation linear wave test
+reference =
+configure = --prob=rad_linearwave -nr_radiation
+or
+configure = --prob=rad_linearwave -implicit_radiation
+
 
 <job>
 problem_id = radwave  # problem ID: basename of output filenames
@@ -10,26 +13,6 @@ problem_id = radwave  # problem ID: basename of output filenames
 file_type = hst   # History data dump
 dt        = 0.01  # time increment between outputs
 
-#<output2>
-#file_type = vtk   # Binary data dump
-#variable  = prim  # variables to be output
-#dt        = 0.01  # time increment between outputs
-
-#<output3>
-#file_type = rst   # Binary data dump
-#dt        = 0.01  # time increment between outputs
-
-#<output4>
-#file_type = hdf5  # Binary data dump
-#dt        = 0.01  # time increment between outputs
-#variable  = prim
-
-#<output5>
-#file_type   = tab                  # Tabular data dump
-#variable    = prim                 # variables to be output
-#data_format = %16.14e              # Optional data format string
-#dt          = 0.09819810298708518  # time increment between outputs
-#x2_slice    =  0                   # slice in x2
 
 <time>
 cfl_number = 0.4                 # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -66,8 +49,8 @@ derefine_count = 5         # allow derefinement after 5 steps
 numlevel       = 2         # number of AMR levels
 
 <meshblock>
-nx1 = 8 
-nx2 = 8 
+nx1 = 8
+nx2 = 8
 nx3 = 1
 
 <hydro>

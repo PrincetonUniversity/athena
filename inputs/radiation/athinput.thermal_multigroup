@@ -1,28 +1,13 @@
 <comment>
-problem   = Radiation beam test
-reference = 
-configure = --prob=beam
+problem   = Radiation thermal relaxation with multi-group
+reference =
+configure = --prob=thermal_multigroup -nr_radiation
+or
+configure = --prob=thermal_multigroup -implicit_radiation
 
 <job>
 problem_id = thermal  # problem ID: basename of output filenames
 
-#<output1>
-#file_type = hst  # History data dump
-#dt        = 0.2  # time increment between outputs
-
-#<output2>
-#file_type = vtk   # Binary data dump
-#variable  = prim  # variables to be output
-#dt        = 0.01  # time increment between outputs
-
-#<output3>
-#file_type = rst      # Binary data dump
-#dt        = 0.00001  # time increment between outputs
-
-#<output4>
-#file_type = hdf5    # Binary data dump
-#dt        = 0.0001  # time increment between outputs
-#variable  = prim
 
 <time>
 cfl_number = 0.4     # The Courant, Friedrichs, & Lewy (CFL) Number
@@ -57,7 +42,7 @@ ox3_rad_bc = periodic
 <meshblock>
 
 nx1 = 32
-nx2 = 1 
+nx2 = 1
 
 <hydro>
 gamma = 1.6666666666667  # gamma = C_p/C_v
@@ -71,7 +56,7 @@ n_frequency   = 3
 frequency_min = -4.0
 frequency_max = -8.0
 
-Compton       = 0   
+Compton       = 0
 T_unit        = 1.e4
 unit          = 0
 density_unit  =  1.e-10
