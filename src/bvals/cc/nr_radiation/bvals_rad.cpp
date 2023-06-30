@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_rad.cpp
-//  \brief implements boundary functions for Hydro variables and utilities to manage
+//  \brief implements boundary functions for Radiation variables and utilities to manage
 //  primitive/conservative variable relationship in a derived class of the
 //  CellCenteredBoundaryVariable base class.
 
@@ -333,10 +333,10 @@ void RadBoundaryVariable::SetBoundaryFromFiner(Real *buf, const NeighborBlock& n
 #pragma omp simd linear(p)
           for (int n=nl_; n<=nu_; ++n) {
             var(k,j,i,n) = buf[p++];
-          }//n
-        }//i
-      }//j
-    }// k
+          }
+        }
+      }
+    }
   } else {
     BufferUtility::UnpackData(buf, var,  sk, ek, nl_, nu_, si, ei, sj, ej, p);
   }
@@ -370,11 +370,11 @@ void RadBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
             k_shift += (k < (nx3_half + NGHOST) ? 1 : -1) * nx3_half;
             for (int n=nl_; n<=nu_; ++n) {
               var(k,j,i,n) = azimuthal_shift_rad_(k_shift,n);
-            }//n
-          }//k
-        }// end i
-      }// end j
-    }// end inner_x2 polar
+            }
+          }
+        }
+      }
+    }
 
     if (pbval_->block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::polar) {
       int nx3_half = (pmb->ke - pmb->ks + 1) / 2;

@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_shear_cc.cpp
-//! \brief functions that apply shearing box BCs for cell-centered variables
+//! \brief functions that apply shearing box BCs for cell-centered radiation variables
 //========================================================================================
 
 // C headers

@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_shear_flux.cpp
-//  \brief functions that apply shearing box BCs for fluxes
+//  \brief functions that apply shearing box BCs for radiation fluxes
 //========================================================================================
 
 // C headers
@@ -188,9 +188,9 @@ void RadBoundaryVariable::SendFluxShearingBoxBoundaryBuffers() {
 #endif
           }
         }
-      }  // loop over recv[0] to recv[3]
-    }  // if boundary is shearing
-  }  // loop over inner/outer boundaries
+      }
+    }
+  }
   return;
 }
 
@@ -227,8 +227,8 @@ bool RadBoundaryVariable::ReceiveFluxShearingBoxBoundaryBuffers() {
                                             shear_bd_flux_[upper].recv[n],
                                             n+nb_offset[upper]);
         shear_bd_flux_[upper].flag[n] = BoundaryStatus::completed; // completed
-      }  // loop over recv[0] to recv[2]
-    }  // if boundary is shearing
-  }  // loop over inner/outer boundaries
+      }
+    }
+  }
   return (flag[0] && flag[1]);
 }
