@@ -14,7 +14,7 @@
 // distribution.  If not see <http://www.gnu.org/licenses/>.
 //======================================================================================
 //! \file multigroup_abs_sca.cpp
-//  \brief  Add multi-group absorption scattering 
+//  \brief  Add multi-group absorption scattering
 //======================================================================================
 
 

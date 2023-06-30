@@ -16,7 +16,7 @@
 //! \file implicit_angular_flux.cpp
 //  \brief implementation of angular flux implicitly
 //======================================================================================
- 
+
 
 // C headers
 
