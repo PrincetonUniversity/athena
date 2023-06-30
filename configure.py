@@ -371,6 +371,14 @@ if args['eos'][:8] == 'general/':
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
+if args['g'] and (args['nr_radiation'] or args['implicit_radiation']):
+    raise SystemExit('### CONFIGURE ERROR: '
+                     + ' GR does not work with nr_radiation or implicit_radiation')
+
+if args['nr_radiation'] and args['implicit_radiation']:
+    raise SystemExit('### CONFIGURE ERROR: '
+                     + ' nr_radiation and implicit_radiation cannot be used together')
+
 # --- Step 3. Set definitions and Makefile options based on above argument
 
 # Prepare dictionaries of substitutions to be made

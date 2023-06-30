@@ -79,6 +79,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
   //! - validate Field and Hydro diffusion with RK3, RK4, SSPRK(5,4)
   integrator = pin->GetOrAddString("time", "integrator", "vl2");
 
+  // nr_radiation enabled but not implicit_radiation
   bool radiation_flag = (NR_RADIATION_ENABLED && (!IM_RADIATION_ENABLED));
 
   // Read a flag for orbital advection
