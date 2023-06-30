@@ -46,7 +46,8 @@ def run(**kwargs):
         'radiation/density_unit=1.e-10',
         'radiation/length_unit=3.e14',
         'radiation/cfl_rad=1',
-        'radiation/Split_compton=0']
+        'radiation/Split_compton=0',
+        'time/ncycle_out=100']
     athena.run('radiation/athinput.thermal_multigroup', arguments)
     bashcommand = "mv bin/Averaged_quantity.dat bin/Averaged_quantity1.dat"
     os.system(bashcommand)
@@ -75,7 +76,8 @@ def run(**kwargs):
         'problem/black_body=1',
         'problem/kappa_es=100',
         'time/tlim=1.e-2',
-        'radiation/nmu=1']
+        'radiation/nmu=1',
+        'time/ncycle_out=100']
     athena.run('radiation/athinput.thermal_multigroup', arguments)
     bashcommand = "mv bin/Averaged_quantity.dat bin/Averaged_quantity2.dat"
     os.system(bashcommand)

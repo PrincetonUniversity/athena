@@ -30,7 +30,8 @@ def run(**kwargs):
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
                      'meshblock/nx2=8',
-                     'meshblock/nx3=1']
+                     'meshblock/nx3=1',
+                     'time/ncycle_out=100']
         athena.run('radiation/athinput.rad_linearwave', arguments)
 #
 #  bashcommand="cp bin/linearwave-errors.dat ~/linearwave-errors_regime1.dat"
@@ -43,7 +44,8 @@ def run(**kwargs):
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
                      'meshblock/nx2=8',
-                     'meshblock/nx3=1']
+                     'meshblock/nx3=1',
+                     'time/ncycle_out=100']
         athena.run('radiation/athinput.rad_linearwave', arguments)
 
     # case 3
@@ -53,7 +55,8 @@ def run(**kwargs):
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
                      'meshblock/nx2=8',
-                     'meshblock/nx3=1']
+                     'meshblock/nx3=1',
+                     'time/ncycle_out=100']
         athena.run('radiation/athinput.rad_linearwave', arguments)
 
     # case 4
@@ -63,7 +66,8 @@ def run(**kwargs):
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
                      'meshblock/nx2=8',
-                     'meshblock/nx3=1']
+                     'meshblock/nx3=1',
+                     'time/ncycle_out=100']
         athena.run('radiation/athinput.rad_linearwave', arguments)
 
     # case 5
@@ -73,7 +77,8 @@ def run(**kwargs):
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
                      'meshblock/nx2=8',
-                     'meshblock/nx3=1']
+                     'meshblock/nx3=1',
+                     'time/ncycle_out=100']
         athena.run('radiation/athinput.rad_linearwave', arguments)
 
     # case 6
@@ -83,7 +88,8 @@ def run(**kwargs):
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
                      'meshblock/nx2=8',
-                     'meshblock/nx3=1']
+                     'meshblock/nx3=1',
+                     'time/ncycle_out=100']
         athena.run('radiation/athinput.rad_linearwave', arguments)
 
     # case 7
@@ -93,7 +99,8 @@ def run(**kwargs):
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
                      'meshblock/nx2=8',
-                     'meshblock/nx3=1']
+                     'meshblock/nx3=1',
+                     'time/ncycle_out=100']
         athena.run('radiation/athinput.rad_linearwave', arguments)
 
     # case 8
@@ -103,7 +110,8 @@ def run(**kwargs):
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
                      'meshblock/nx2=8',
-                     'meshblock/nx3=1']
+                     'meshblock/nx3=1',
+                     'time/ncycle_out=100']
         athena.run('radiation/athinput.rad_linearwave', arguments)
 
 #  bashcommand="cp bin/linearwave-errors.dat ~/linearwave-errors.dat"

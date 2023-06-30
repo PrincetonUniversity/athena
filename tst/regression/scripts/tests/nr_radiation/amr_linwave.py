@@ -27,7 +27,8 @@ def prepare(**kwargs):
 # Run Athena++
 def run(**kwargs):
     # L-going fast wave (set by default in input)
-    arguments = ['time/cfl_number=0.3'  # default =0.4, but tolerances measured w/ 0.3
+    arguments = ['time/cfl_number=0.3',  # default =0.4, but tolerances measured w/ 0.3
+                 'time/ncycle_out=100'
                  ]
     athena.run('radiation/athinput.rad_linearwave_amr', arguments)
 

@@ -13,6 +13,7 @@ problem_id = thermal  # problem ID: basename of output filenames
 cfl_number = 0.4     # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = 100000  # cycle limit
 tlim       = 2.0     # time limit
+ncycle_out = 1       # interval for stdout summary info
 
 <mesh>
 nx1        = 32        # Number of zones in X1-direction
