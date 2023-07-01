@@ -37,7 +37,7 @@
 #   --include=path       use -Ipath when compiling
 #   --lib_path=path      use -Lpath when linking
 #   --lib=xxx            use -lxxx when linking
-#   -nr_radiation        turn on radiation transport
+#   -nr_radiation        turn on non-relativistic radiation transport
 #   -implicit_radiation  implicit radiation transport module
 #   -cr                  enable cosmic ray transport
 # ----------------------------------------------------------------------------------------
