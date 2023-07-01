@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file bvals_refine.cpp
-//! \brief constructor/destructor and utility functions for BoundaryValues class
+//! \brief functions for prolongation and restriction at level boundaries
 //!
 //! SWITCHING BETWEEN PRIMITIVE VS. CONSERVED AND STANDARD VS. COARSE BUFFERS HERE:
 //! -----------
@@ -231,8 +231,6 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt,
     if (CR_ENABLED)
       pcrbvar->var_cc = &(pcr->coarse_cr_);
 
-
-
     // Step 2. Re-apply physical boundaries on the coarse boundary:
     ApplyPhysicalBoundariesOnCoarseLevel(nb, time, dt, si, ei, sj, ej, sk, ek,
                                          bvars_subset);
@@ -247,13 +245,11 @@ void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt,
       ps->sbvar.var_cc = &(ps->r);
     }
 
-
     if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED))
       pradbvar->var_cc = &(pnrrad->ir);
 
     if (CR_ENABLED)
       pcrbvar->var_cc = &(pcr->u_cr);
-
 
     // Step 3. Finally, the ghost-ghost zones are ready for prolongation:
     ProlongateGhostCells(nb, si, ei, sj, ej, sk, ek);

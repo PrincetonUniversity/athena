@@ -114,8 +114,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
     bvars_sts.reserve(1);
   }
 
-
-
   // Matches initial value of Mesh::next_phys_id_
   // reserve phys=0 for former TAG_AMR=8; now hard-coded in Mesh::CreateAMRMPITag()
   bvars_next_phys_id_ = 1;
@@ -341,8 +339,8 @@ void BoundaryValues::CheckUserBoundaries() {
         if (pmy_mesh_->RadBoundaryFunc_[i] == nullptr) {
           std::stringstream msg;
           msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
-              << "A user-defined boundary is specified but the actual Rad_boundary "
-              << "function is not enrolled in direction " << i  << " (in [0,6])."
+              << "A user-defined boundary is specified but the actual RadBoundaryFunc_ "
+              << "is not enrolled in direction " << i  << " (in [0,6])."
               << std::endl;
           ATHENA_ERROR(msg);
         }
@@ -351,8 +349,8 @@ void BoundaryValues::CheckUserBoundaries() {
         if (pmy_mesh_->CRBoundaryFunc_[i] == nullptr) {
           std::stringstream msg;
           msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
-              << "A user-defined boundary is specified but the actual CR_boundary "
-              << "function is not enrolled in direction " << i  << " (in [0,6])."
+              << "A user-defined boundary is specified but the actual CRBoundaryFunc_ "
+              << "is not enrolled in direction " << i  << " (in [0,6])."
               << std::endl;
           ATHENA_ERROR(msg);
         }

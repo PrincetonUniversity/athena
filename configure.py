@@ -373,7 +373,7 @@ if args['eos'][:8] == 'general/':
 
 if args['g'] and (args['nr_radiation'] or args['implicit_radiation']):
     raise SystemExit('### CONFIGURE ERROR: '
-                     + ' GR does not work with nr_radiation or implicit_radiation')
+                     + ' GR is incompatible with nr_radiation or implicit_radiation')
 
 if args['nr_radiation'] and args['implicit_radiation']:
     raise SystemExit('### CONFIGURE ERROR: '
