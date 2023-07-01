@@ -409,7 +409,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
       rad_[ifreq] = rad_sum / static_cast<float>(nang);
     }
 #ifdef DEBUG
-    if (isnan(rad_[ifreq])) {
+    if (std::isnan(rad_[ifreq])) {
       printf("InitializeNextStep: ");
       printf("ifreq=%d, nang=%d, rad_sum=%.2e\n", ifreq, nang, rad_sum);
       OutputRates(stdout);
@@ -455,7 +455,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
       yprev0[i] = yprev[i];
     }
     //throw error if nan, or inf, or large negative value occurs
-    if ( isnan(yprev[i]) || isinf(yprev[i]) ) {
+    if ( std::isnan(yprev[i]) || std::isinf(yprev[i]) ) {
       printf("RHS: ");
       for (int j=0; j<NSPECIES+ngs_; j++) {
         printf("%s: %.2e  ", species_names_all_[j].c_str(), yprev[j]);
@@ -524,7 +524,7 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
 
   //throw error if nan, or inf, or large value occurs
   for (int i=0; i<NSPECIES; i++) {
-    if ( isnan(ydot[i]) || isinf(ydot[i]) ) {
+    if ( std::isnan(ydot[i]) || std::isinf(ydot[i]) ) {
       printf("ydot: ");
       for (int j=0; j<NSPECIES; j++) {
         printf("%s: %.2e  ", species_names[j].c_str(), ydot[j]);
@@ -681,8 +681,8 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
   //return in code units
   Real dEDdt = dEdt * nH_ / pmy_mb_->punit->code_energydensity_cgs
                   * pmy_mb_->punit->code_time_cgs;
-  if ( isnan(dEdt) || isinf(dEdt) ) {
-    if ( isnan(LCOR) || isinf(LCOR) ) {
+  if ( std::isnan(dEdt) || std::isinf(dEdt) ) {
+    if ( std::isnan(LCOR) || std::isinf(LCOR) ) {
       printf("NCOeff=%.2e, gradeff=%.2e, gradv_=%.2e, vth=%.2e, nH_=%.2e, nCO=%.2e\n",
           NCOeff, gradeff, gradv_, vth, nH_, nCO);
     }

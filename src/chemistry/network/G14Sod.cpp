@@ -172,9 +172,9 @@ ChemNetwork::~ChemNetwork() {}
 
 void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
     Real ydot[NSPECIES]) {
-  //function of evolution of the abundance of the element
+  // function of evolution of the abundance of the element
   Real rate;
-  //store previous y includeing ghost species
+  // store previous y includeing ghost species
   Real yprev[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
   Real yprev0[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
   Real ydotg[NSPECIES+ngs_]; // NOLINT (runtime/arrays)
@@ -194,8 +194,8 @@ void ChemNetwork::RHS(const Real t, const Real y[NSPECIES], const Real ED,
     } else {
       yprev0[i] = yprev[i];
     }
-    //throw error if nan, or inf, or large negative value occurs
-    if ( isnan(yprev[i]) || isinf(yprev[i]) ) {
+    // throw error if nan, or inf, or large negative value occurs
+    if ( std::isnan(yprev[i]) || std::isinf(yprev[i]) ) {
       printf("RHS: ");
       for (int j=0; j<NSPECIES+ngs_; j++) {
         printf("%s: %.2e  ", species_names_all_[j].c_str(), yprev[j]);
