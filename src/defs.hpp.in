@@ -45,9 +45,10 @@
 // include self gravity? default=0 (false)
 #define SELF_GRAVITY_ENABLED @SELF_GRAVITY_ENABLED@
 
-// include radiative transfer? default=0 (false)
+// include nonrelativistic radiative transfer? default=0 (false)
 #define NR_RADIATION_ENABLED @NR_RADIATION_ENABLED@
 
+// include radiative transfer evolved with implicit method? default=0 (false)
 #define IM_RADIATION_ENABLED @IM_RADIATION_ENABLED@
 
 // include cosmic ray transport? default=0 (false)

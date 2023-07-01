@@ -614,8 +614,6 @@ void SphericalPolar::AddCoordTermsDivergence_STS(const Real dt, int stage,
   return;
 }
 
-
-
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function for cosmic rays
 
