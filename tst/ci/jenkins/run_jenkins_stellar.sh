@@ -79,6 +79,23 @@ time python -u ./run_tests.py mhd --silent  # (mhd/mhd_linwave.py is currenlty t
 time python -u ./run_tests.py shearingbox --silent
 time python -u ./run_tests.py diffusion --silent
 
+# ----------------
+# Install CVODE
+wget https://github.com/LLNL/sundials/releases/download/v6.2.0/cvode-6.2.0.tar.gz
+tar -xvf cvode-6.2.0.tar.gz
+mkdir cvode_build
+mkdir cvode_install
+export CVODE_PATH=$PWD/cvode_install
+cd cvode_build
+
+cmake -D CMAKE_INSTALL_LIBDIR=lib -D CMAKE_INSTALL_PREFIX=${CVODE_PATH} -D ENABLE_MPI=ON -D ENABLE_OPENMP=ON -D CMAKE_C_COMPILER=gcc -D MPI_C_COMPILER=mpicc -D MPIEXEC_EXECUTABLE=srun -D CMAKE_BUILD_TYPE=RelWithDebInfo ../cvode-6.2.0
+
+# cmake -MAKE_INSTALL_LIBDIR=${CVODE_PATH} -ENABLE_MPI=ON -ENABLE_OPENMP=ON -MAKE_C_COMPILER=icx -MPI_C_COMPILER=mpicc -MPIEXEC_EXECUTABLE=srun -MAKE_BUILD_TYPE=RelWithDebInfo ../cvode-6.2.0
+make -j16
+make install
+cd ..
+# ----------------
+
 time python -u ./run_tests.py chemistry --silent
 
 # High-order solver regression tests w/ GCC
