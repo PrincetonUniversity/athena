@@ -4,7 +4,7 @@
 import sys                                     # standard Python module to change path
 import scripts.utils.athena as athena          # utilities for running Athena++
 sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
-import athena_read                             # utilities for reading Athena++ data
+import athena_read                             # noqa
 
 
 def prepare(**kwargs):

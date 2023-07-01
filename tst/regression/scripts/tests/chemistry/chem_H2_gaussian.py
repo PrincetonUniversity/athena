@@ -5,9 +5,7 @@
 import os
 import logging
 import numpy as np                             # standard Python module for numerics
-import sys                                     # standard Python module to change path
 import scripts.utils.athena as athena          # utilities for running Athena++
-sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 

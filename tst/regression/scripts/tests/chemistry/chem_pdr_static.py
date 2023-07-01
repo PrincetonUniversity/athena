@@ -8,7 +8,7 @@ import sys                                     # standard Python module to chang
 import chemistry                               # utilities for reading chemistry output
 import scripts.utils.athena as athena          # utilities for running Athena++
 sys.path.insert(0, '../../vis/python')         # insert path to Python read scripts
-import athena_read                             # utilities for reading Athena++ data
+import athena_read                             # noqa
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
