@@ -16,6 +16,8 @@
 # Jenkins build time may be misleading, since it includes time sitting in Slurm queue.
 sacct --jobs=$SLURM_JOB_ID --format=JobID,JobName%50,Submit,Start,Elapsed,Timelimit  #--noheader
 
+git clean -f -d
+
 set -e # terminate script at first error/non-zero exit status
 # Store absolute path of project's root directory for Lcov (realpath is GNU coreutils, not macOS)
 athena_rel_path='./'
