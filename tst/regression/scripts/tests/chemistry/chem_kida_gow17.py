@@ -39,7 +39,7 @@ def run(**kwargs):
     print(network_dir)
     arguments = [
             'chem_radiation/G0=1',
-            'chemistry/network_dir='+network_dir
+            'chemistry/network_dir='+network_dir,
             'time/ncycle_out=100']
     athena.run('chemistry/athinput.chem_kida_gow17', arguments)
 
