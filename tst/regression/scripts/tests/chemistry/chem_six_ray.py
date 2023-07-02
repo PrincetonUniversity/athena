@@ -32,7 +32,8 @@ def prepare(**kwargs):
 
 def run(**kwargs):
     vtkfile = os.path.abspath("data/chem_cgk_input.vtk")
-    arguments = ["problem/vtkfile="+vtkfile]
+    arguments = ["problem/vtkfile="+vtkfile,
+                 'time/ncycle_out=100']
     athena.run('chemistry/athinput.six_ray', arguments)
 
 

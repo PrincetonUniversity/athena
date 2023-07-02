@@ -32,7 +32,7 @@ def prepare(**kwargs):
 def run(**kwargs):
     arguments = [
             'chemistry/output_zone_sec=0',
-            ]
+            'time/ncycle_out=100']
     athena.run('chemistry/athinput.chem_H2', arguments)
 
 

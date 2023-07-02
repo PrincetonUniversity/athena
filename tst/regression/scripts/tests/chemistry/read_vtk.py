@@ -13,7 +13,7 @@ def prepare(**kwargs):
 
 
 def run(**kwargs):
-    arguments = []
+    arguments = ['time/ncycle_out=100']
     athena.run('chemistry/athinput.read_vtk', arguments)
 
 
