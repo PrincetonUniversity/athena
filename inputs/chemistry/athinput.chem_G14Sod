@@ -14,19 +14,20 @@ dt         = 2.5e-3     # time increment between outputs
 
 <output2>
 file_type   = hst       # History data dump
-dt          = 2.5e-4      # time increment between outputs
+dt          = 2.5e-4    # time increment between outputs
 data_format = %12.5e    # Optional data format string
 
 <time>
 cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1         # cycle limit
 tlim       = 0.025      # 2.45e4 yr
+ncycle_out = 1          # interval for stdout summary info
 integrator  = rk2       # time integration algorithm
 xorder      = 2         # order of spatial reconstruction
 
 <mesh>
 nx1        = 1024      # Number of zones in X1-direction
-x1min      = 0.0      # minimum value of X1, [unit: pc]
+x1min      = 0.0       # minimum value of X1, [unit: pc]
 x1max      = 1.0       # maximum value of X1, [unit: pc]
 ix1_bc     = outflow   # inner-X1 boundary flag
 ox1_bc     = outflow   # outer-X1 boundary flag
@@ -73,7 +74,6 @@ r_init_H2    = 9.9988955e-07 # H2 number density ratio
 r_init_H2+   = 0.0           # H2+ number density ratio  
 
 <chemistry>
-#chemistry solver parameters
 reltol      = 1.0e-6         # relative tolerance, default 1.0e-2
 abstol      = 1.0e-20        # absolute tolerance, default 1.0e-12
 user_jac    = 0              # flag for whether use user provided Jacobian. default false/0
