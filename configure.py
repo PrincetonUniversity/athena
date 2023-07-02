@@ -544,7 +544,8 @@ if args['cxx'] == 'icpc':
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xhost -inline-forceinline -qopenmp-simd -qopt-prefetch=4 '
-      '-qoverride-limits'  # -qopt-report-phase=ipo (does nothing without -ipo)
+      '-qoverride-limits '  # -qopt-report-phase=ipo (does nothing without -ipo)
+      '-diag-disable=10441'  # The Intel(R) C++ Compiler Classic (ICC) is deprecated
     )
     # -qopt-zmm-usage=high'  # typically harms multi-core performance on Skylake Xeon
     makefile_options['LINKER_FLAGS'] = ''
@@ -557,7 +558,8 @@ if args['cxx'] == 'icpc-debug':
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -xhost -qopenmp-simd -fp-model precise -qopt-prefetch=4 '
-      '-qopt-report=5 -qopt-report-phase=openmp,vec -g -qoverride-limits'
+      '-qopt-report=5 -qopt-report-phase=openmp,vec -g -qoverride-limits '
+      '-diag-disable=10441'
     )
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
