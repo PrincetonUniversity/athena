@@ -107,7 +107,7 @@ time python -u ./run_tests.py grav --config=--cxx=icpx --mpirun=srun --mpirun_op
 time python -u ./run_tests.py turb --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC turb/' --silent
 time python -u ./run_tests.py mpi --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
 time python -u ./run_tests.py omp --config=--cxx=icpx --silent
-timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --config=--cxx=icpx \
+timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --config=--cxx=icpc \
 	--mpirun=srun --mpirun_opts=--job-name='ICC hybrid/hybrid_linwave' --silent
 time python -u ./run_tests.py hydro --config=--cxx=icpx --silent
 time python -u ./run_tests.py mhd --config=--cxx=icpx --silent
