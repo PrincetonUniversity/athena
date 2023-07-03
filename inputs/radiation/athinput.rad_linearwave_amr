@@ -26,24 +26,18 @@ x1min      = 0.0       # minimum value of X1
 x1max      =  1.0      # maximum value of X1
 ix1_bc     = periodic  # inner-X1 boundary flag
 ox1_bc     = periodic  # inner-X1 boundary flag
-ix1_rad_bc = periodic
-ox1_rad_bc = periodic
 
 nx2        = 8         # Number of zones in X2-direction
 x2min      = -0.5      # minimum value of X2
 x2max      = 0.5       # maximum value of X2
 ix2_bc     = periodic  # inner-X2 boundary flag
 ox2_bc     = periodic  # inner-X2 boundary flag
-ix2_rad_bc = periodic
-ox2_rad_bc = periodic
 
 nx3        = 1         # Number of zones in X3-direction
 x3min      = -0.5      # minimum value of X3
 x3max      = 0.5       # maximum value of X3
 ix3_bc     = periodic  # inner-X3 boundary flag
 ox3_bc     = periodic  # inner-X3 boundary flag
-ix3_rad_bc = periodic
-ox3_rad_bc = periodic
 
 refinement     = adaptive  # AMR
 derefine_count = 5         # allow derefinement after 5 steps
