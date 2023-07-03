@@ -401,6 +401,11 @@ if args['chemistry'] is not None and args['ode_solver'] is None:
 if args['chemistry'] == 'kida' and args['kida_rates'] is None:
     raise SystemExit('### CONFIGURE ERROR: must provide rates for kida chemistry.')
 
+if args['chem_radiation'] == 'six_ray' and (
+        args['chemistry'] != 'gow17' and args['chemistry'] != 'kida'):
+    raise SystemExit('### CONFIGURE ERROR: six ray radiation'
+                     + 'only compatible with gow17 or kida chemistry enabled.')
+
 if args['ode_solver'] == 'cvode' and args['cvode_path'] == '':
     raise SystemExit('### CONFIGURE ERROR: must provide library path to cvode.')
 
@@ -634,14 +639,14 @@ if args['cxx'] == 'clang++-apple':
     makefile_options['LIBRARY_FLAGS'] = ''
 
 # --chemistry=[network] argument
+makefile_options['CHEMISTRY_FILE'] = \
+    'src/chemistry/network_wrapper.cpp src/chemistry/utils/*.cpp'
 if args['chemistry'] is not None:
-    definitions['CHEMISTRY_OPTION'] = 'INCLUDE_CHEMISTRY'
+    definitions['CHEMISTRY_ENABLED'] = '1'
     definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/' \
                                         + args['chemistry'] + '.hpp'
     makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \
         + args['chemistry'] + '.cpp'
-    makefile_options['CHEMISTRY_FILE'] = \
-        'src/chemistry/network_wrapper.cpp src/chemistry/utils/*.cpp'
     # specify the number of species for each network
     if args['chemistry'] == "gow17":
         definitions['NUMBER_CHEMICAL_SPECIES'] = '12'
@@ -650,11 +655,10 @@ if args['chemistry'] is not None:
     elif args['chemistry'] == "G14Sod":
         definitions['NUMBER_CHEMICAL_SPECIES'] = '8'
 else:
-    definitions['CHEMISTRY_OPTION'] = 'NOT_INCLUDE_CHEMISTRY'
+    definitions['CHEMISTRY_ENABLED'] = '0'
     definitions['NUMBER_CHEMICAL_SPECIES'] = '0'
     makefile_options['CHEMNET_FILE'] = ''
-    makefile_options['CHEMISTRY_FILE'] = ''
-    definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/network.hpp'
+    definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/chem_network.hpp'
 
 # check number of species and scalars
 if definitions['NUMBER_PASSIVE_SCALARS'] == '0':
@@ -685,6 +689,8 @@ else:
     definitions['CVODE_OPTION'] = 'NO_CVODE'
 if args['ode_solver'] is not None:
     makefile_options['ODE_SOLVER_FILE'] = args['ode_solver']+'.cpp'
+else:
+    makefile_options['ODE_SOLVER_FILE'] = 'forward_euler.cpp'
 
 # --cvode_path=[path] argument
 if args['cvode_path'] != '':

@@ -17,11 +17,8 @@
 //----------------------------------------------------------------------------------------
 //! constructor, for constant radiation integrator
 ChemRadIntegrator::ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pin)
-#ifdef INCLUDE_CHEMISTRY
     : col(0, 0, 0, 0),
-    col_bvar(pchemrad->pmy_block, &col)
-#endif //INCLUDE_CHEMISTRY
-{
+    col_bvar(pchemrad->pmy_block, &col) {
   pmy_mb = pchemrad->pmy_block;
   pmy_rad = pchemrad;
 }
@@ -71,7 +68,5 @@ void ChemRadIntegrator::CopyToOutput() {
 //! \brief update radiation field
 void ChemRadIntegrator::UpdateRadiation() {}
 
-#ifdef INCLUDE_CHEMISTRY
 void ChemRadIntegrator::GetColMB(BoundaryFace direction) {}
 void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {}
-#endif //INCLUDE_CHEMISTRY

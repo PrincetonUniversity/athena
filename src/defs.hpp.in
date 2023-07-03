@@ -45,8 +45,8 @@
 // include self gravity? default=0 (false)
 #define SELF_GRAVITY_ENABLED @SELF_GRAVITY_ENABLED@
 
-// chemistry modules (INCLUDE_CHEMISTRY or NOT_INCLUDE_CHEMISTRY)
-#define @CHEMISTRY_OPTION@
+// include chemistry? default=0 (false)
+#define CHEMISTRY_ENABLED @CHEMISTRY_ENABLED@
 
 // ChemNetwork class header file included in species.hpp
 #define CHEMNETWORK_HEADER "@CHEMNETWORK_HEADER@"

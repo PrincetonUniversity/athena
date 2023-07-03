@@ -102,13 +102,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int i=is; i<=ie; ++i) {
           for (int ispec=0; ispec < NSCALARS; ++ispec) {
             pscalars->s(ispec, k, j, i) = r_init*phydro->u(IDN, k, j, i);
-#ifdef INCLUDE_CHEMISTRY
-            Real s_ispec = pin->GetOrAddReal("problem",
-                "r_init_"+pscalars->chemnet.species_names[ispec], -1);
-            if (s_ispec >= 0.) {
-              pscalars->s(ispec, k, j, i) = s_ispec*phydro->u(IDN, k, j, i);
+            if (CHEMISTRY_ENABLED) {
+              Real s_ispec = pin->GetOrAddReal("problem",
+                  "r_init_"+pscalars->chemnet.species_names[ispec], -1);
+              if (s_ispec >= 0.) {
+                pscalars->s(ispec, k, j, i) = s_ispec*phydro->u(IDN, k, j, i);
+              }
             }
-#endif
           }
         }
       }

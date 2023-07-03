@@ -1411,12 +1411,12 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       ptrbd->Driving();
 
     //initialize ODE solver for chemistry
-#ifdef INCLUDE_CHEMISTRY
-    for (int i=0; i<nblocal; ++i) {
-      MeshBlock *pmb = my_blocks(i);
-      pmb->pscalars->odew.Initialize(pin);
+    if (CHEMISTRY_ENABLED) {
+      for (int i=0; i<nblocal; ++i) {
+        MeshBlock *pmb = my_blocks(i);
+        pmb->pscalars->odew.Initialize(pin);
+      }
     }
-#endif //INCLUDE_CHEMISTRY
 
     // Create send/recv MPI_Requests for all BoundaryData objects
 #pragma omp parallel for num_threads(nthreads)
@@ -1428,10 +1428,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       if (SELF_GRAVITY_ENABLED == 1
         || (SELF_GRAVITY_ENABLED == 2 && pmb->pgrav->fill_ghost))
         pmb->pgrav->gbvar.SetupPersistentMPI();
-      if (CHEMRADIATION_ENABLED) {
-#ifdef INCLUDE_CHEMISTRY
+      if (CHEMRADIATION_ENABLED && CHEMISTRY_ENABLED) {
         pmb->pchemrad->pchemradintegrator->col_bvar.SetupPersistentMPI();
-#endif //INCLUDE_CHEMISTRY
       }
     }
 

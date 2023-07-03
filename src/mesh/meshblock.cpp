@@ -338,10 +338,10 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (NSCALARS > 0) {
     std::memcpy(pscalars->s.data(), &(mbdata[os]), pscalars->s.GetSizeInBytes());
     os += pscalars->s.GetSizeInBytes();
-#ifdef INCLUDE_CHEMISTRY
-    std::memcpy(pscalars->h.data(), &(mbdata[os]), pscalars->h.GetSizeInBytes());
-    os += pscalars->h.GetSizeInBytes();
-#endif
+    if (CHEMISTRY_ENABLED) {
+      std::memcpy(pscalars->h.data(), &(mbdata[os]), pscalars->h.GetSizeInBytes());
+      os += pscalars->h.GetSizeInBytes();
+    }
   }
 
   if (CHEMRADIATION_ENABLED) {
@@ -480,9 +480,9 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
              + pfield->b.x3f.GetSizeInBytes());
   if (NSCALARS > 0) {
     size += pscalars->s.GetSizeInBytes();
-#ifdef INCLUDE_CHEMISTRY
-    size += pscalars->h.GetSizeInBytes();
-#endif
+    if (CHEMISTRY_ENABLED) {
+      size += pscalars->h.GetSizeInBytes();
+    }
   }
   if (CHEMRADIATION_ENABLED) {
     size += pchemrad->ir.GetSizeInBytes();

@@ -17,9 +17,7 @@
 
 class MeshBlock;
 class ChemRadiation;
-#ifdef INCLUDE_CHEMISTRY
 class ChemNetwork;
-#endif //INCLUDE_CHEMISTRY
 
 //! \class ChemRadIntegrator
 //! \brief integrate algorithm for radiative transfer
@@ -34,7 +32,6 @@ class ChemRadIntegrator {
 
   ChemRadiation *pmy_rad;
   MeshBlock *pmy_mb;
-#ifdef INCLUDE_CHEMISTRY
   ChemNetwork* pmy_chemnet;
   int ncol; //number of column densities needed to track
   AthenaArray<Real> col; //column densitites
@@ -43,19 +40,16 @@ class ChemRadIntegrator {
 #ifdef DEBUG
   AthenaArray<Real> col_avg, col_Htot, col_CO, col_H2,  col_C;//for debug output
 #endif //DEBUG
-#endif //INCLUDE_CHEMISTRY
 
   void CopyToOutput();
 
   void UpdateRadiation();
 
  private:
-#ifdef INCLUDE_CHEMISTRY
   //calculate column densities within the meshblock, for six_ray
   void GetColMB(BoundaryFace direction);
   //update column density after boundary is received
   void UpdateCol(BoundaryFace direction);
-#endif //INCLUDE_CHEMISTRY
 };
 
 #endif // CHEM_RAD_INTEGRATORS_RAD_INTEGRATORS_HPP_

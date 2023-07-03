@@ -140,13 +140,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               pchemrad->ir(k, j, i, ifreq * pchemrad->nang + iang) = G0;
             }
           }
-#ifdef INCLUDE_CHEMISTRY
-          for (int iang=0; iang < pchemrad->nang; ++iang) {
-            //cr rate
-            pchemrad->ir(k, j, i,
-                pscalars->chemnet.index_cr_ * pchemrad->nang + iang) = cr_rate;
+          if (CHEMISTRY_ENABLED) {
+            for (int iang=0; iang < pchemrad->nang; ++iang) {
+              //cr rate
+              pchemrad->ir(k, j, i,
+                  pscalars->chemnet.index_cr_ * pchemrad->nang + iang) = cr_rate;
+            }
           }
-#endif
         }
       }
     }
@@ -159,13 +159,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         for (int i=is; i<=ie; ++i) {
           for (int ispec=0; ispec < NSPECIES; ++ispec) {
             pscalars->s(ispec, k, j, i) = r_init*nH;
-#ifdef INCLUDE_CHEMISTRY
-            Real s_ispec = pin->GetOrAddReal("problem",
-                "r_init_"+pscalars->chemnet.species_names[ispec], -1);
-            if (s_ispec >= 0.) {
-              pscalars->s(ispec, k, j, i) = s_ispec*nH;
+            if (CHEMISTRY_ENABLED) {
+              Real s_ispec = pin->GetOrAddReal("problem",
+                  "r_init_"+pscalars->chemnet.species_names[ispec], -1);
+              if (s_ispec >= 0.) {
+                pscalars->s(ispec, k, j, i) = s_ispec*nH;
+              }
             }
-#endif
           }
         }
       }

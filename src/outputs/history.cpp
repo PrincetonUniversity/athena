@@ -300,16 +300,16 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         std::fprintf(pfile,"[%d]=3-ME    ", iout++);
       }
       for (int n=0; n<NSCALARS; n++) {
-#ifdef INCLUDE_CHEMISTRY
-        if (n < NSPECIES) {
-          std::fprintf(pfile,"[%d]=%s    ", iout++,
-                       psclr->chemnet.species_names[n].c_str());
+        if (CHEMISTRY_ENABLED) {
+          if (n < NSPECIES) {
+            std::fprintf(pfile,"[%d]=%s    ", iout++,
+                         psclr->chemnet.species_names[n].c_str());
+          } else {
+            std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n-NSPECIES);
+          }
         } else {
-          std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n-NSPECIES);
+          std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n);
         }
-#else
-        std::fprintf(pfile,"[%d]=%d-scalar    ", iout++, n);
-#endif //INCLUDE_CHEMISTRY
       }
       if (CHEMRADIATION_ENABLED) {
         for (int n=0; n<pchemrad->nfreq; n++) {

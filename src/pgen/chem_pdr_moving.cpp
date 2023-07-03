@@ -78,8 +78,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const Real Tc = 40.;
   const Real nw = pin->GetOrAddReal("problem", "nw", 1e-1);
   const Real Tw = pin->GetOrAddReal("problem", "Tw", 4e4);
-  //const Real cv = Thermo::CvCold(0.5, 0.1, 0.);
-  const Real cv = 1.5 * Constants::k_boltzmann_cgs * 0.6;
+  const Real cv = Thermo::CvCold(0.5, 0.1, 0.);
   const Real Eunit = punit->code_energydensity_cgs;
   const Real Eth = nc * Tc * cv / Eunit;
   const Real xc_start = 5.;
@@ -122,13 +121,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               pchemrad->ir(k, j, i, ifreq * pchemrad->nang + iang) = G0_iang(iang);
             }
           }
-#ifdef INCLUDE_CHEMISTRY
-          for (int iang=0; iang < pchemrad->nang; ++iang) {
-            //cr rate
-            pchemrad->ir(k, j, i,
-                pscalars->chemnet.index_cr_ * pchemrad->nang + iang) = cr_rate;
+          if (CHEMISTRY_ENABLED) {
+            for (int iang=0; iang < pchemrad->nang; ++iang) {
+              //cr rate
+              pchemrad->ir(k, j, i,
+                  pscalars->chemnet.index_cr_ * pchemrad->nang + iang) = cr_rate;
+            }
           }
-#endif
         }
       }
     }
@@ -150,13 +149,13 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               nH = nw;
             }
             pscalars->s(ispec, k, j, i) = r_init*nH;
-#ifdef INCLUDE_CHEMISTRY
-            Real s_ispec = pin->GetOrAddReal("problem",
-                "r_init_"+pscalars->chemnet.species_names[ispec], -1);
-            if (s_ispec >= 0.) {
-              pscalars->s(ispec, k, j, i) = s_ispec*nH;
+            if (CHEMISTRY_ENABLED) {
+              Real s_ispec = pin->GetOrAddReal("problem",
+                  "r_init_"+pscalars->chemnet.species_names[ispec], -1);
+              if (s_ispec >= 0.) {
+                pscalars->s(ispec, k, j, i) = s_ispec*nH;
+              }
             }
-#endif
           }
         }
       }

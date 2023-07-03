@@ -12,6 +12,8 @@
 
 // Athena++ headers
 #include "../../bvals/bvals.hpp"
+#include "../../chemistry/utils/shielding.hpp"
+#include "../../chemistry/utils/thermo.hpp"
 #include "../../coordinates/coordinates.hpp"
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
@@ -19,10 +21,6 @@
 #include "../../scalars/scalars.hpp"
 #include "../../units/units.hpp"
 #include "../radiation.hpp"
-#ifdef INCLUDE_CHEMISTRY
-#include "../../chemistry/utils/shielding.hpp"
-#include "../../chemistry/utils/thermo.hpp"
-#endif
 
 // this class header
 #include "rad_integrators.hpp"
@@ -31,20 +29,15 @@ namespace {
   AthenaArray<Real> G0_iang; //diffuse radiation field strength in Draine 1987 unit
   Real G0, cr_rate; //cosmic ray ionisation rate
   Real f_cell, f_prev; //fraction of the column in the cell that goes to shielding
-#ifdef INCLUDE_CHEMISTRY
   Real lunit; //length unit in cm
-#endif //INCLUDE_CHEMISTRY
 }
 
 //----------------------------------------------------------------------------------------
 //! constructor, for six_ray radiation integrator
 ChemRadIntegrator::ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pin) :
-#ifdef INCLUDE_CHEMISTRY
     col(6, pchemrad->pmy_block->ncells3, pchemrad->pmy_block->ncells2,
         pchemrad->pmy_block->ncells1,  pchemrad->pmy_block->pscalars->chemnet.n_cols_),
-    col_bvar(pchemrad->pmy_block, &col)
-#endif //INCLUDE_CHEMISTRY
-{
+    col_bvar(pchemrad->pmy_block, &col) {
   pmy_mb = pchemrad->pmy_block;
   pmy_rad = pchemrad;
   G0 = pin->GetOrAddReal("chem_radiation", "G0", 0.);
@@ -65,23 +58,23 @@ ChemRadIntegrator::ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pi
       << "Six-ray scheme with nang != 6." << std::endl;
     ATHENA_ERROR(msg);
   }
-#ifdef INCLUDE_CHEMISTRY
-  pmy_chemnet = &pmy_mb->pscalars->chemnet;
-  lunit = pmy_mb->punit->code_length_cgs;
-  ncol = pmy_chemnet->n_cols_;
-  //allocate array for column density
-  //enroll SixRayBoundaryVariable object
-  //to enable functions such as yCopyVariableBufferSameProcess()
-  col_bvar.bvar_index = pmy_mb->pbval->bvars.size();
-  pmy_mb->pbval->bvars.push_back(&col_bvar);
+  if (CHEMISTRY_ENABLED) {
+    pmy_chemnet = &pmy_mb->pscalars->chemnet;
+    lunit = pmy_mb->punit->code_length_cgs;
+    ncol = pmy_chemnet->n_cols_;
+    //allocate array for column density
+    //enroll SixRayBoundaryVariable object
+    //to enable functions such as yCopyVariableBufferSameProcess()
+    col_bvar.bvar_index = pmy_mb->pbval->bvars.size();
+    pmy_mb->pbval->bvars.push_back(&col_bvar);
 #ifdef DEBUG
-  col_avg.NewAthenaArray(ncol, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
-  col_Htot.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
-  col_H2.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
-  col_CO.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
-  col_C.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
+    col_avg.NewAthenaArray(ncol, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
+    col_Htot.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
+    col_H2.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
+    col_CO.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
+    col_C.NewAthenaArray(6, pmy_mb->ncells3, pmy_mb->ncells2, pmy_mb->ncells1);
 #endif //DEBUG
-#endif //INCLUDE_CHEMISTRY
+  }
 }
 
 //----------------------------------------------------------------------------------------
@@ -119,21 +112,21 @@ void ChemRadIntegrator::CopyToOutput() {
       for (int i=is-NGHOST; i<=ie+NGHOST; ++i) {
         for (int iang=0; iang < 6; iang++) {
           //column densities
-#ifdef INCLUDE_CHEMISTRY
+          if (CHEMISTRY_ENABLED) {
 #ifdef DEBUG
-          col_Htot(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNHtot_);
-          col_H2(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNH2_);
-          col_CO(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNCO_);
-          col_C(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNC_);
-          //angel averaged column densities
-          for (int icol=0; icol<ncol; icol++) {
-            if (iang == 0) {
-              col_avg(icol, k, j, i) = 0;
+            col_Htot(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNHtot_);
+            col_H2(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNH2_);
+            col_CO(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNCO_);
+            col_C(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNC_);
+            //angel averaged column densities
+            for (int icol=0; icol<ncol; icol++) {
+              if (iang == 0) {
+                col_avg(icol, k, j, i) = 0;
+              }
+              col_avg(icol, k, j, i) += col(iang, k, j, i, icol)/6.;
             }
-            col_avg(icol, k, j, i) += col(iang, k, j, i, icol)/6.;
-          }
 #endif //DEBUG
-#endif //INCLUDE_CHEMISTRY
+          }
           //radiation
           for (int ifreq=0; ifreq < pmy_rad->nfreq; ++ifreq) {
             if (iang == 0) {
@@ -153,7 +146,6 @@ void ChemRadIntegrator::CopyToOutput() {
 //! \fn void ChemRadIntegrator::UpdateRadiation()
 //! \brief calcuate total column and update radiation
 void ChemRadIntegrator::UpdateRadiation() {
-#ifdef INCLUDE_CHEMISTRY
   const Real Zd = pmy_chemnet->zdg_;
   const Real bH2 = 3.0e5; //H2 velocity dispersion
   const int iph_H2 = ChemNetwork::iph_H2_;
@@ -206,11 +198,9 @@ void ChemRadIntegrator::UpdateRadiation() {
       }
     }
   }
-#endif //INCLUDE_CHEMISTRY
   return;
 }
 
-#ifdef INCLUDE_CHEMISTRY
 //----------------------------------------------------------------------------------------
 //! \fn void GetColMB(BoundaryFace direction)
 //! \brief calculate column densities within the meshblock
@@ -791,5 +781,3 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
   }
   return;
 }
-
-#endif //INCLUDE_CHEMISTRY

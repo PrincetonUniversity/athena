@@ -95,18 +95,18 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           for (int ispec=0; ispec < NSPECIES; ++ispec) {
-#ifdef INCLUDE_CHEMISTRY
-            Real x1 = pcoord->x1v(i);
-            //gaussian initial H abundance in [0, 1), and no H in [1, 2]
-            if (x1 <= 1) {
-              pscalars->s(0, k, j, i) = std::exp( -SQR(x1-gaussian_mean)
-                                               /(2.*SQR(gaussian_std)) )*nH; //H
-              pscalars->s(1, k, j, i) = 0.5*(nH - pscalars->s(0, k, j, i)); //H2
-            } else {
-              pscalars->s(0, k, j, i) = fH1*nH; //H
-              pscalars->s(1, k, j, i) = (1.-fH1)*0.5*nH; //H2
+            if (CHEMISTRY_ENABLED) {
+              Real x1 = pcoord->x1v(i);
+              //gaussian initial H abundance in [0, 1), and no H in [1, 2]
+              if (x1 <= 1) {
+                pscalars->s(0, k, j, i) = std::exp( -SQR(x1-gaussian_mean)
+                                                 /(2.*SQR(gaussian_std)) )*nH; //H
+                pscalars->s(1, k, j, i) = 0.5*(nH - pscalars->s(0, k, j, i)); //H2
+              } else {
+                pscalars->s(0, k, j, i) = fH1*nH; //H
+                pscalars->s(1, k, j, i) = (1.-fH1)*0.5*nH; //H2
+              }
             }
-#endif
           }
         }
       }

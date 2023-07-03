@@ -183,11 +183,11 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
       AthenaArray<Real> &s = pmb->pscalars->s;
       std::memcpy(pdata, s.data(), s.GetSizeInBytes());
       pdata += s.GetSizeInBytes();
-#ifdef INCLUDE_CHEMISTRY
-      //next step-size in chemistry solver
-      std::memcpy(pdata, pmb->pscalars->h.data(), pmb->pscalars->h.GetSizeInBytes());
-      pdata += pmb->pscalars->h.GetSizeInBytes();
-#endif
+      if (CHEMISTRY_ENABLED) {
+        //next step-size in chemistry solver
+        std::memcpy(pdata, pmb->pscalars->h.data(), pmb->pscalars->h.GetSizeInBytes());
+        pdata += pmb->pscalars->h.GetSizeInBytes();
+      }
     }
     // (primitive variable) density-normalized passive scalar concentrations
     // if ???

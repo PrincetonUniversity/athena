@@ -141,11 +141,9 @@ void ChemRadiationIntegratorTaskList::AddTask(const TaskID& id, const TaskID& de
 //! \fn void ChemRadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage)
 //! \brief Initialize boundary
 void ChemRadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
-#ifdef INCLUDE_CHEMISTRY
-  if (integrator == "six_ray") {
+  if (CHEMISTRY_ENABLED && integrator == "six_ray") {
     pmb->pchemrad->pchemradintegrator->col_bvar.StartReceiving(BoundaryCommSubset::all);
   }
-#endif
   return;
 }
 
@@ -154,44 +152,44 @@ void ChemRadiationIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage)
 
 //meshblock column densities
 TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ix1(MeshBlock *pmb, int step) {
-#ifdef INCLUDE_CHEMISTRY
-  pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::inner_x1);
-#endif
+  if (CHEMISTRY_ENABLED) {
+    pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::inner_x1);
+  }
   return TaskStatus::success;
 }
 
 TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox1(MeshBlock *pmb, int step) {
-#ifdef INCLUDE_CHEMISTRY
-  pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::outer_x1);
-#endif
+  if (CHEMISTRY_ENABLED) {
+    pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::outer_x1);
+  }
   return TaskStatus::success;
 }
 
 TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ix2(MeshBlock *pmb, int step) {
-#ifdef INCLUDE_CHEMISTRY
-  pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::inner_x2);
-#endif
+  if (CHEMISTRY_ENABLED) {
+    pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::inner_x2);
+  }
   return TaskStatus::success;
 }
 
 TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox2(MeshBlock *pmb, int step) {
-#ifdef INCLUDE_CHEMISTRY
-  pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::outer_x2);
-#endif
+  if (CHEMISTRY_ENABLED) {
+    pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::outer_x2);
+  }
   return TaskStatus::success;
 }
 
 TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ix3(MeshBlock *pmb, int step) {
-#ifdef INCLUDE_CHEMISTRY
-  pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::inner_x3);
-#endif
+  if (CHEMISTRY_ENABLED) {
+    pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::inner_x3);
+  }
   return TaskStatus::success;
 }
 
 TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox3(MeshBlock *pmb, int step) {
-#ifdef INCLUDE_CHEMISTRY
-  pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::outer_x3);
-#endif
+  if (CHEMISTRY_ENABLED) {
+    pmb->pchemrad->pchemradintegrator->GetColMB(BoundaryFace::outer_x3);
+  }
   return TaskStatus::success;
 }
 
@@ -199,28 +197,28 @@ TaskStatus ChemRadiationIntegratorTaskList::GetColMB_ox3(MeshBlock *pmb, int ste
 
 TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_direction(MeshBlock *pmb,
     int step, BoundaryFace direction) {
-#ifdef INCLUDE_CHEMISTRY
-  SixRayBoundaryVariable *pbvar = &pmb->pchemrad->pchemradintegrator->col_bvar;
-  BoundaryFace direction_opp = pbvar->GetOppositeBoundaryFace(direction);
-  NeighborBlock *pnb = pbvar->GetFaceNeighbor(direction);
-  NeighborBlock *pnb_opp = pbvar->GetFaceNeighbor(direction_opp);
-  bool ret = true;
-  if (pnb == nullptr) {
-    if (pnb_opp != nullptr) {
-      pbvar->SendSixRayBoundaryBuffers(direction_opp);
-    }
-  } else {
-    ret = pbvar->ReceiveAndSetSixRayBoundaryBuffers(direction);
-    if (ret == true) {
-      pmb->pchemrad->pchemradintegrator->UpdateCol(direction);
+  if (CHEMISTRY_ENABLED) {
+    SixRayBoundaryVariable *pbvar = &pmb->pchemrad->pchemradintegrator->col_bvar;
+    BoundaryFace direction_opp = pbvar->GetOppositeBoundaryFace(direction);
+    NeighborBlock *pnb = pbvar->GetFaceNeighbor(direction);
+    NeighborBlock *pnb_opp = pbvar->GetFaceNeighbor(direction_opp);
+    bool ret = true;
+    if (pnb == nullptr) {
       if (pnb_opp != nullptr) {
         pbvar->SendSixRayBoundaryBuffers(direction_opp);
       }
     } else {
-      return TaskStatus::fail;
+      ret = pbvar->ReceiveAndSetSixRayBoundaryBuffers(direction);
+      if (ret == true) {
+        pmb->pchemrad->pchemradintegrator->UpdateCol(direction);
+        if (pnb_opp != nullptr) {
+          pbvar->SendSixRayBoundaryBuffers(direction_opp);
+        }
+      } else {
+        return TaskStatus::fail;
+      }
     }
   }
-#endif
   return TaskStatus::success;
 }
 
@@ -250,19 +248,19 @@ TaskStatus ChemRadiationIntegratorTaskList::RecvAndSend_ox3(MeshBlock *pmb, int 
 
 TaskStatus ChemRadiationIntegratorTaskList::ClearSixrayReceive(MeshBlock *pmb,
                                                                int step) {
-#ifdef INCLUDE_CHEMISTRY
-  pmb->pchemrad->pchemradintegrator->col_bvar.ClearBoundary(BoundaryCommSubset::all);
-#endif
+  if (CHEMISTRY_ENABLED) {
+    pmb->pchemrad->pchemradintegrator->col_bvar.ClearBoundary(BoundaryCommSubset::all);
+  }
   return TaskStatus::success;
 }
 
 //update radiation variables
 TaskStatus ChemRadiationIntegratorTaskList::UpdateRadiationSixRay(MeshBlock *pmb,
                                                                   int step) {
-#ifdef INCLUDE_CHEMISTRY
-  pmb->pchemrad->pchemradintegrator->UpdateRadiation();
-  pmb->pchemrad->pchemradintegrator->CopyToOutput();
-#endif
+  if (CHEMISTRY_ENABLED) {
+    pmb->pchemrad->pchemradintegrator->UpdateRadiation();
+    pmb->pchemrad->pchemradintegrator->CopyToOutput();
+  }
   return TaskStatus::success;
 }
 
@@ -270,9 +268,9 @@ TaskStatus ChemRadiationIntegratorTaskList::UpdateRadiationSixRay(MeshBlock *pmb
 //----------------------------------------------------------------------------------------
 //! Trivial constant integrator
 TaskStatus ChemRadiationIntegratorTaskList::ConstRadiation(MeshBlock *pmb, int stage) {
-#ifdef INCLUDE_CHEMISTRY
-  pmb->pchemrad->pchemradintegrator->CopyToOutput();
-#endif
+  if (CHEMISTRY_ENABLED) {
+    pmb->pchemrad->pchemradintegrator->CopyToOutput();
+  }
   return TaskStatus::success;
 }
 

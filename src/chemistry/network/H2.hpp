@@ -56,7 +56,7 @@ class ChemNetwork : public NetworkWrapper {
   static const int iH_;
   static const int iH2_;
   static const Real kgr_;//H2 formation rate on grains
-  //cr indexing required by problem generator chem_uniform.cpp, not used.
+  //cr indexing required by problem generators chem_*.cpp not used.
   static const int index_cr_ = -1;
 
   Real xi_cr_; //primary CRIR in s-1 H-1, read from input file, default 2e-16.

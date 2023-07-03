@@ -18,6 +18,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../bvals/bvals.hpp"
+#include "../chemistry/network/network.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
@@ -31,9 +32,6 @@
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
 #include "task_list.hpp"
-#ifdef INCLUDE_CHEMISTRY
-#include "../chemistry/network/network.hpp"
-#endif
 
 //----------------------------------------------------------------------------------------
 //! TimeIntegratorTaskList constructor
@@ -2195,11 +2193,11 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
 
 TaskStatus TimeIntegratorTaskList::IntegrateChemistry(MeshBlock *pmb, int stage) {
 //integrate chemistry reactions
-#ifdef INCLUDE_CHEMISTRY
-  if (stage != nstages) return TaskStatus::success; // only do on last stage
+  if (CHEMISTRY_ENABLED) {
+    if (stage != nstages) return TaskStatus::success; // only do on last stage
 
-  pmb->pscalars->odew.Integrate(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
-#endif
+    pmb->pscalars->odew.Integrate(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
+  }
   return TaskStatus::next;
 }
 

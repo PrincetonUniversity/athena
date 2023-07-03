@@ -50,7 +50,7 @@ active   =   fixed        # post-processing
 
 <problem>
 vtkfile    = ../data/chem_cgk_input.vtk
-scalers    = density, pressure # scalar fields to be read in, separated by comma
+scalars    = density, pressure # scalar fields to be read in, separated by comma
 vectors    = velocity          # vector fields to be read in, separated by comma, assume 3 components
 # assume float format, and lookup_table default
 is_joined_vtk = 1              # 0/1 for unjoined/joined vtk files
