@@ -142,9 +142,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   // parse input parameters
   std::string vtkfile0 = pin->GetString("problem", "vtkfile");//id0 file
-  std::string str_scalers = pin->GetString("problem", "scalers");
+  std::string str_scalars = pin->GetString("problem", "scalars");
   std::string str_vectors = pin->GetString("problem", "vectors");
-  std::vector<std::string> scaler_fields = StringUtils::split(str_scalers, ',');
+  std::vector<std::string> scalar_fields = StringUtils::split(str_scalars, ',');
   std::vector<std::string> vector_fields = StringUtils::split(str_vectors, ',');
 
   if (isjoinedvtk != 0) {
@@ -161,8 +161,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
              gid, loc.lx1, loc.lx2, loc.lx3, loc.level, vtkfile.c_str());
     }
     // scalars
-    for(std::uint64_t i = 0; i < scaler_fields.size(); ++i) {
-      if (scaler_fields[i] == "density") {
+    for(std::uint64_t i = 0; i < scalar_fields.size(); ++i) {
+      if (scalar_fields[i] == "density") {
         if (Globals::my_rank == 0) {
 #ifdef DEBUG
           printf("Process 0: start to read density.\n");
@@ -188,7 +188,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
           }
         }
-      } else if (scaler_fields[i] == "pressure") {
+      } else if (scalar_fields[i] == "pressure") {
         if (Globals::my_rank == 0) {
 #ifdef DEBUG
           printf("Process 0: Start to read pressure.\n");
@@ -216,7 +216,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       } else {
         msg << "### FATAL ERROR in Problem Generator [ProblemGenerator]" << std::endl
-          << "Scaler field not recognized: " << scaler_fields[i] << std::endl;
+          << "Scalar field not recognized: " << scalar_fields[i] << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
     }
@@ -297,7 +297,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       } else {
         msg << "### FATAL ERROR in Problem Generator [ProblemGenerator]" << std::endl
-          << "Scaler field not recognized: " << scaler_fields[i] << std::endl;
+          << "Scalar field not recognized: " << scalar_fields[i] << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
     }
@@ -331,8 +331,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
            gid, loc.lx1, loc.lx2, loc.lx3, loc.level, vtkfile.c_str());
 
     // read scalars
-    for(std::uint64_t i = 0; i < scaler_fields.size(); ++i) {
-      if (scaler_fields[i] == "density") {
+    for(std::uint64_t i = 0; i < scalar_fields.size(); ++i) {
+      if (scalar_fields[i] == "density") {
         readvtk(this, vtkfile, "density", 0, data,isjoinedvtk);
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
@@ -341,7 +341,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
           }
         }
-      } else if (scaler_fields[i] == "pressure") {
+      } else if (scalar_fields[i] == "pressure") {
         readvtk(this, vtkfile, "pressure", 0, data,isjoinedvtk);
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
@@ -352,7 +352,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       } else {
         msg << "### FATAL ERROR in Problem Generator [ProblemGenerator]" << std::endl
-          << "Scaler field not recognized: " << scaler_fields[i] << std::endl;
+          << "Scalar field not recognized: " << scalar_fields[i] << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
     }
@@ -388,7 +388,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       } else {
         msg << "### FATAL ERROR in Problem Generator [ProblemGenerator]" << std::endl
-          << "Scaler field not recognized: " << scaler_fields[i] << std::endl;
+          << "Scalar field not recognized: " << scalar_fields[i] << std::endl;
         throw std::runtime_error(msg.str().c_str());
       }
     }
@@ -625,7 +625,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     }
 
     //determine variable type and read data
-    //read scalers
+    //read scalars
     if (std::strcmp(type, "SCALARS") == 0) {
       if (std::strcmp(variable, field.c_str()) == 0) {
         printf("  Reading %s...\n", variable);

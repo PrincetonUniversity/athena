@@ -47,7 +47,7 @@ iso_sound_speed = 1.0     # isothermal sound speed
 
 <problem>
 vtkfile    = ../data/chem_cgk_input.vtk # filename of the vtkfile to be read in
-scalers    = density, pressure          # scalar fields to be read in, separated by comma
+scalars    = density, pressure          # scalar fields to be read in, separated by comma
 vectors    = velocity                   # vector fields to be read in, separated by comma, assume 3 components
 # assume float format, and lookup_table default
 is_joined_vtk = 0                       # 0/1 for unjoined/joined vtk files
