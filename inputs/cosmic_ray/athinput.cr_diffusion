@@ -38,14 +38,6 @@ nx1 = 16
 nx2 = 256
 nx3 = 1
 
-<refinement1>
-x1min = 1
-x1max = 23.4414
-x2min = 0.698132
-x2max = 2.44346
-x3min = 0.0
-x3max = 6.283185307179586
-level = 2
 
 <hydro>
 gamma  = 1.6666666666667  # gamma = C_p/C_v
