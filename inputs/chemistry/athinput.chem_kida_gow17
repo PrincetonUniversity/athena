@@ -65,6 +65,7 @@ Z_d        = 1.           # dust metallicity for implicity grain reactions
 Z_PAH      = 1.           # PAH metallcity (abundance relative to solar)
 Z_g        = 1.           # gas metallicity
 is_Tcap_2body = false     # temperature cap for rates of 2 body reactions
+# directory for kida network files, needs absolute path
 network_dir = /home/user/athena/src/chemistry/network/kida_network_files/gow17
 # chemistry solver parameters
 reltol     = 1.0e-2       # relative tolerance, default 1.0e-2
