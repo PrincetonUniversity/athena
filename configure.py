@@ -478,7 +478,7 @@ if args['cxx'] == 'icpx':
     # Compiler options
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xhost -qopenmp-simd '
-      '-Wnotautological-constant-compare -Wnoarray-bounds'
+      '-Wno-tautological-constant-compare -Wno-array-bounds'
     )
     # Currently unsupported, but "options to be supported" according to icpx
     # -qnextgen-diag: '-inline-forceinline -qopt-prefetch=4 '
