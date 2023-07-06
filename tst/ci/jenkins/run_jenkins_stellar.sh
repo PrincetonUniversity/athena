@@ -85,8 +85,8 @@ time python -u ./run_tests.py diffusion --silent
 # Install CVODE
 wget https://github.com/LLNL/sundials/releases/download/v6.2.0/cvode-6.2.0.tar.gz
 tar -xvf cvode-6.2.0.tar.gz
-mkdir cvode_build
-mkdir cvode_install
+mkdir cvode_build || true
+mkdir cvode_install || true
 export CVODE_PATH=$PWD/cvode_install
 cd cvode_build
 
