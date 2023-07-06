@@ -597,8 +597,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
           scalar_name_prim = root_name_prim + std::to_string(n-NSPECIES);
         }
       } else {
-        std::string scalar_name_cons = root_name_cons + std::to_string(n);
-        std::string scalar_name_prim = root_name_prim + std::to_string(n);
+        scalar_name_cons = root_name_cons + std::to_string(n);
+        scalar_name_prim = root_name_prim + std::to_string(n);
       }
       if (ContainVariable(output_params.variable, scalar_name_cons) ||
           ContainVariable(output_params.variable, "cons")) {
