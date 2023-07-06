@@ -586,8 +586,8 @@ Real ChemNetwork::Edot(const Real t, const Real *y, const Real ED) {
   const Real y_H2 = y0[ispec_map_["H2"]];
   const Real y_H = y0[ispec_map_["H"]];
   Real y_e, y_He, y_Hplus;
-  Real kcr_H;
-  Real kcr_H2, kcr_He;
+  // Real kcr_H;
+  // Real kcr_H2, kcr_He;
   Real kgr_H;
   Real kph_H2, y_PAH;
   // explicit PAH abundance for heating and cooling
@@ -610,21 +610,21 @@ Real ChemNetwork::Edot(const Real t, const Real *y, const Real ED) {
   } else {
     y_Hplus = 0.;
   }
-  if (icr_H_ >= 0) {
-    kcr_H = kcr_(icr_H_);
-  } else {
-    kcr_H = 0.;
-  }
-  if (icr_H2_ >= 0) {
-    kcr_H2 = kcr_(icr_H2_);
-  } else {
-    kcr_H2 = 0.;
-  }
-  if (icr_He_ >= 0) {
-    kcr_He = kcr_(icr_He_);
-  } else {
-    kcr_He = 0.;
-  }
+  // if (icr_H_ >= 0) {
+  //   kcr_H = kcr_(icr_H_);
+  // } else {
+  //   kcr_H = 0.;
+  // }
+  // if (icr_H2_ >= 0) {
+  //   kcr_H2 = kcr_(icr_H2_);
+  // } else {
+  //   kcr_H2 = 0.;
+  // }
+  // if (icr_He_ >= 0) {
+  //   kcr_He = kcr_(icr_He_);
+  // } else {
+  //   kcr_He = 0.;
+  // }
   if (igr_H_ >= 0) {
     kgr_H = kgr_(igr_H_);
   } else {
@@ -1216,14 +1216,14 @@ void ChemNetwork::InitializeReactions() {
       }
       if (pr->formula_ == 3 || pr->formula_ == 4 || pr->formula_ == 5) {
         for (int jin=0; jin<n_in2body_; jin++) {
-          if (jin < pr->reactants_.size()) {
+          if (jin < static_cast<int>(pr->reactants_.size())) {
             in2body_(i2body, jin) = ispec_map_[pr->reactants_[jin]];
           } else {
             in2body_(i2body, jin) = -1;
           }
         }
         for (int jout=0; jout<n_out2body_; jout++) {
-          if (jout < pr->products_.size()) {
+          if (jout < static_cast<int>(pr->products_.size())) {
             out2body_(i2body, jout) = ispec_map_[pr->products_[jout]];
           } else {
             out2body_(i2body, jout) = -1;
@@ -1239,14 +1239,14 @@ void ChemNetwork::InitializeReactions() {
         i2body++;
       } else if (pr->formula_ == 7) {
         for (int jin=0; jin<n_in2body_; jin++) {
-          if (jin < pr->reactants_.size()) {
+          if (jin < static_cast<int>(pr->reactants_.size())) {
             in2body_(i2body, jin) = ispec_map_[pr->reactants_[jin]];
           } else {
             in2body_(i2body, jin) = -1;
           }
         }
         for (int jout=0; jout<n_out2body_; jout++) {
-          if (jout < pr->products_.size()) {
+          if (jout < static_cast<int>(pr->products_.size())) {
             out2body_(i2body, jout) = ispec_map_[pr->products_[jout]];
           } else {
             out2body_(i2body, jout) = -1;
@@ -1334,14 +1334,14 @@ void ChemNetwork::InitializeReactions() {
         id7type_(pr->id_) = ReactionType::special;
         ksr_(isr) = 0.;
         for (int jin=0; jin<n_insr_; jin++) {
-          if (jin < pr->reactants_.size()) {
+          if (jin < static_cast<int>(pr->reactants_.size())) {
             insr_(isr, jin) = ispec_map_[pr->reactants_[jin]];
           } else {
             insr_(isr, jin) = -1;
           }
         }
         for (int jout=0; jout<n_outsr_; jout++) {
-          if (jout < pr->products_.size()) {
+          if (jout < static_cast<int>(pr->products_.size())) {
             outsr_(isr, jout) = ispec_map_[pr->products_[jout]];
           } else {
             outsr_(isr, jout) = -1;
@@ -1362,14 +1362,14 @@ void ChemNetwork::InitializeReactions() {
         const Real q_charge = species_[ispec_map_[pr->reactants_[1]]].charge_;
         const Real qi = q_charge * Constants::echarge_cgs;
         for (int jin=0; jin<n_ingc_; jin++) {
-          if (jin < pr->reactants_.size()) {
+          if (jin < static_cast<int>(pr->reactants_.size())) {
             ingc_(igc, jin) = ispec_map_[pr->reactants_[jin]];
           } else {
             ingc_(igc, jin) = -1;
           }
         }
         for (int jout=0; jout<n_outgc_; jout++) {
-          if (jout < pr->products_.size()) {
+          if (jout < static_cast<int>(pr->products_.size())) {
             outgc_(igc, jout) = ispec_map_[pr->products_[jout]];
           } else {
             outgc_(igc, jout) = -1;
@@ -1393,14 +1393,14 @@ void ChemNetwork::InitializeReactions() {
         const Real ag = pr->gamma_;
         const Real mi = species_[ispec_map_[pr->reactants_[1]]].mass_;
         for (int jin=0; jin<n_ingc_; jin++) {
-          if (jin < pr->reactants_.size()) {
+          if (jin < static_cast<int>(pr->reactants_.size())) {
             ingc_(igc, jin) = ispec_map_[pr->reactants_[jin]];
           } else {
             ingc_(igc, jin) = -1;
           }
         }
         for (int jout=0; jout<n_outgc_; jout++) {
-          if (jout < pr->products_.size()) {
+          if (jout < static_cast<int>(pr->products_.size())) {
             outgc_(igc, jout) = ispec_map_[pr->products_[jout]];
           } else {
             outgc_(igc, jout) = -1;
@@ -1812,7 +1812,8 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
 
   //------------------ 10 - special reactions -----------------------
   } else if (pr->itype_ == 10) {
-    if (pr->reactants_.size() > n_insr_ || pr->products_.size() > n_outsr_) {
+    if (static_cast<int>(pr->reactants_.size()) > n_insr_
+        || static_cast<int>(pr->products_.size()) > n_outsr_) {
       std::stringstream msg;
       msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
           << std::endl << "Wrong format in special reaction ID=" << pr->id_
@@ -1823,7 +1824,7 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
 
   //-------11 - grain collision reactions with electron/ion  -----------
   } else if (pr->itype_ == 11) {
-    if (pr->reactants_.size() != 2 || (pr->products_.size() != 1 &&
+    if (static_cast<int>(pr->reactants_.size()) != 2 || (pr->products_.size() != 1 &&
           pr->products_.size() != 2 && pr->products_.size() != 3)) {
       std::stringstream msg;
       msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
