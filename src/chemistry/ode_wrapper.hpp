@@ -43,23 +43,21 @@ class ODEWrapper {
  private:
   PassiveScalars *pmy_spec_;
   MeshBlock *pmy_block_;
-  bool output_zone_sec_; //option to output solver performance
-  int dim_; //dimension  of the ODEs
+  bool output_zone_sec_; // option to output solver performance
+  int dim_; // dimension  of the ODEs
 #ifdef CVODE
-  //cvode variables
+  // cvode variables
   SUNContext sunctx_;
   SUNMatrix dense_matrix_;
   SUNLinearSolver dense_ls_;
   N_Vector y_;
   Real *ydata_;
   void *cvode_mem_;
-  //cvode functions
+  // cvode functions
   void SetInitStep(const Real h_init) const;
   Real GetLastStep() const;
   Real GetNextStep() const;
   long int GetNsteps() const; // NOLINT (runtime/int)
-#endif //CVODE
+#endif // CVODE
 };
-
-
 #endif // CHEMISTRY_ODE_WRAPPER_HPP_

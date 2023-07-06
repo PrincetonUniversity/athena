@@ -36,38 +36,38 @@ int NetworkWrapper::WrapJacobian(const realtype t,
                           SUNMatrix jac, void *user_data,
                           N_Vector tmp1, N_Vector tmp2, N_Vector tmp3) {
   Real t1 = t;
-  //copy y and ydot values
-  if (NON_BAROTROPIC_EOS) {//non-isothermal case
+  // copy y and ydot values
+  if (NON_BAROTROPIC_EOS) {  // non-isothermal case
     Real y1[NSPECIES+1];
     Real ydot1[NSPECIES+1];
     for (int i=0; i<NSPECIES+1; i++) {
       y1[i] = NV_Ith_S(y, i);
       ydot1[i] = NV_Ith_S(ydot, i);
     }
-    //temporary storage for return
+    // temporary storage for return
     AthenaArray<Real> jac1;
     jac1.NewAthenaArray(NSPECIES+1,NSPECIES+1);
     NetworkWrapper *meptr = static_cast<NetworkWrapper*>(user_data);
     meptr->Jacobian(t1, y1, ydot1, jac1);
-    //set J to return
+    // set J to return
     for (int i=0; i<NSPECIES+1; i++) {
       for (int j=0; j<NSPECIES+1; j++) {
         SM_ELEMENT_D(jac, i, j) = jac1(i,j);
       }
     }
-  } else {//isothermal case
+  } else { // isothermal case
     Real y1[NSPECIES];
     Real ydot1[NSPECIES];
     for (int i=0; i<NSPECIES; i++) {
       y1[i] = NV_Ith_S(y, i);
       ydot1[i] = NV_Ith_S(ydot, i);
     }
-    //temporary storage for return
+    // temporary storage for return
     AthenaArray<Real> jac1;
     jac1.NewAthenaArray(NSPECIES, NSPECIES);
     NetworkWrapper *meptr = static_cast<NetworkWrapper*>(user_data);
     meptr->Jacobian_isothermal(t1, y1, ydot1, jac1);
-    //set J to return
+    // set J to return
     for (int i=0; i<NSPECIES; i++) {
       for (int j=0; j<NSPECIES; j++) {
         SM_ELEMENT_D(jac, i, j) = jac1(i,j);
@@ -86,39 +86,38 @@ int NetworkWrapper::WrapRHS(const realtype t, const N_Vector y,
   Real t1 = t;
   Real y1[NSPECIES];
   Real E1;
-  //set y1 to y
+  // set y1 to y
   for (int i=0; i<NSPECIES; i++) {
     y1[i] = NV_Ith_S(y, i);
   }
   if (NON_BAROTROPIC_EOS) {
-    //set energy
+    // set energy
     E1 = NV_Ith_S(y, NSPECIES);
   }
-  //temporary storage for return
+  // temporary storage for return
   Real ydot1[NSPECIES];
   NetworkWrapper *meptr = static_cast<NetworkWrapper*>(user_data);
   meptr->RHS(t1, y1, E1, ydot1);
-  //set ydot to return
+  // set ydot to return
   for (int i=0; i<NSPECIES; i++) {
     NV_Ith_S(ydot, i) = ydot1[i];
   }
   if (NON_BAROTROPIC_EOS) {
-    //set dEdt
+    // set dEdt
     NV_Ith_S(ydot, NSPECIES) = meptr->Edot(t1, y1, E1);
   }
   return 0;
 }
-#endif //CVODE
+#endif // CVODE
 
 //----------------------------------------------------------------------------------------
-//! \fn void NetworkWrapper::Jacobian(const Real t,
-//!               const Real y[NSPECIES+1], const Real ydot[NSPECIES+1],
+//! \fn void NetworkWrapper::Jacobian(const Real t, const Real *y, const Real *ydot,
 //!               AthenaArray<Real> &jac)
 //! \brief Default Jacobian
-//TODO(Munan Gong) the default jacobian is not implemented
-void __attribute__((weak)) NetworkWrapper::Jacobian(const Real t,
-               const Real y[NSPECIES+1], const Real ydot[NSPECIES+1],
-               AthenaArray<Real> &jac) {
+// TODO(Munan Gong) the default jacobian is not implemented
+
+void __attribute__((weak)) NetworkWrapper::Jacobian(
+    const Real t, const Real *y, const Real *ydot, AthenaArray<Real> &jac) {
   std::stringstream msg;
   msg << "### FATAL ERROR in function NetworkWrapper::Jacobian: "
       << "Jacobian not implemented but used." << std::endl
@@ -130,13 +129,13 @@ void __attribute__((weak)) NetworkWrapper::Jacobian(const Real t,
 
 //----------------------------------------------------------------------------------------
 //! \fn void NetworkWrapper::Jacobian_isothermal(const Real t,
-//!               const Real y[NSPECIES], const Real ydot[NSPECIES],
+//!               const Real *y, const Real *ydot,
 //!              AthenaArray<Real> &jac)
 //! \brief Default Jacobian for isothermal EOS
 //TODO(Munan Gong) the default jacobian for isothermal EOS is not implemented
+
 void __attribute__((weak)) NetworkWrapper::Jacobian_isothermal(const Real t,
-               const Real y[NSPECIES], const Real ydot[NSPECIES],
-               AthenaArray<Real> &jac) {
+               const Real *y, const Real *ydot, AthenaArray<Real> &jac) {
   std::stringstream msg;
   msg << "### FATAL ERROR in function NetworkWrapper::Jacobian_isothermal: "
       << "Jacobian for isothermal EOS not implemented but used." << std::endl

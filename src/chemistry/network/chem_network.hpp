@@ -8,8 +8,11 @@
 //! \file chem_network.hpp
 //! \brief definitions for empty ChemNetwork when chemistry is not included.
 
-//c++ headers
-#include <string> //std::string
+// C headers
+
+// C++ headers
+#include <array>
+#include <string>
 
 // Athena++ classes headers
 #include "../../athena.hpp"
@@ -22,18 +25,17 @@ class ChemNetwork : public NetworkWrapper {
   ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {}
   ~ChemNetwork() {}
 
-  //species names required by output
-  static const std::string species_names[NSPECIES];
+  // species names required by output
+  //static const std::string species_names[NSPECIES];
+  static const std::array<std::string, NSPECIES> species_names;
 
   void InitializeNextStep(const int k, const int j, const int i) {}
+  void RHS(const Real t, const Real *y, const Real ED, Real *ydot) {}
+  Real Edot(const Real t, const Real *y, const Real ED) {return 0.0;}
 
-  void RHS(const Real t, const Real y[NSPECIES], const Real ED,
-           Real ydot[NSPECIES]) {}
-
-  Real Edot(const Real t, const Real y[NSPECIES], const Real ED) {return 0;}
  private:
-  //cr indexing required by problem generatorx chem_*.cpp, not used.
-  static const int index_cr_ = -1;
+  // cr indexing required by problem generatorx chem_*.cpp, not used.
+  static constexpr int index_cr_ = -1;
 };
 
 #endif // CHEMISTRY_NETWORK_CHEM_NETWORK_HPP_

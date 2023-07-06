@@ -6,13 +6,13 @@
 //! \file chemistry_utils.cpp
 //! \brief namespace containing chemistry utilities.
 
-//this class header
+// this class header
 #include "chemistry_utils.hpp"
 
-//c header
+// C header
 #include <math.h>
 
-//c++ header
+// C++ header
 #include <iostream>   // endl
 #include <sstream>    // stringstream
 #include <stdexcept>  // std::runtime_error()

@@ -8,17 +8,19 @@
 //! \file chemistry_utils.hpp
 //! \brief utility functions and constants for chemistry
 
-//c++ header
+// C headders
+
+// C++ header
 #include <string>
 
-//athena++ header
+// Athena++ headers
 #include "../../athena.hpp"
 
 //! \namespace ChemistryUtility
 //! \brief Utility functions for chemistry
 namespace ChemistryUtility {
-  //physical constants
-  const Real me = 9.1093897e-28;//electron mass
+  // physical constants
+  const Real me = 9.1093897e-28; // electron mass
   const Real mCO = 4.68e-23;
   int FindStrIndex(const std::string *str_arr, const int len,
                    const std::string name);

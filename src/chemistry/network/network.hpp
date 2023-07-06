@@ -6,21 +6,23 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file network.hpp
-//! \brief definitions for chemical  network.
+//! \brief definitions for chemical network.
 
-//c++ headers
+// C headers
+
+// C++ headers
 #include <string>
 
 // Athena++ classes headers
 #include "../../athena.hpp"
 #include "../../defs.hpp"
 
-//CVODE headers.
+// CVODE headers
 #ifdef CVODE
 #include <nvector/nvector_serial.h> // N_Vector type
 #include <sundials/sundials_types.h> // realtype type
 #include <sunmatrix/sunmatrix_dense.h> // access to dense SUNMatrix
-#endif //CVODE
+#endif // CVODE
 
 class PassiveScalars;
 class ParameterInput;
@@ -40,20 +42,18 @@ class NetworkWrapper {
                           N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
   static int WrapRHS(const realtype t, const N_Vector y,
                      N_Vector ydot, void *user_data);
-#endif //CVODE
+#endif // CVODE
 
-  //Jacobian, only necessary when the input parameter user_jac=1 in <chemistry>
-  //if user_jac=0 (default), then numerical jacobian is used.
-  //the dimension is NSCALSRS+1, because the last equation is energy equation
-  //(Edot).
-  virtual void Jacobian(const Real t,
-                        const Real y[NSPECIES+1], const Real ydot[NSPECIES+1],
+  // Jacobian, only necessary when the input parameter user_jac=1 in <chemistry>
+  // if user_jac=0 (default), then numerical jacobian is used.
+  // the dimension is NSCALSRS+1, because the last equation is energy equation
+  // (Edot).
+  virtual void Jacobian(const Real t, const Real *y, const Real *ydot,
                         AthenaArray<Real> &jac);
 
-  //Jacobian for isothermal EOS. The dimentions are NSPECIES because the lack
-  //of energy equation
-  virtual void Jacobian_isothermal(const Real t, const Real y[NSPECIES],
-                                   const Real ydot[NSPECIES],
+  // Jacobian for isothermal EOS. The dimentions are NSPECIES because the lack
+  // of energy equation
+  virtual void Jacobian_isothermal(const Real t, const Real *y, const Real *ydot,
                                    AthenaArray<Real> &jac);
 
   //------------All functions below has to be overloaded------------
@@ -75,15 +75,15 @@ class NetworkWrapper {
   //   E: internal energy
   // output:
   //   ydot: time-derivative of abundance y.
-  virtual void RHS(const Real t, const Real y[NSPECIES], const Real E,
-                   Real ydot[NSPECIES]) = 0;
+  virtual void RHS(const Real t, const Real *y, const Real E,
+                   Real *ydot) = 0;
   // Energy equation. Currently solved with chemistry as coupled ODE.
   // input:
   //    t: time in code unites
   //    y: chemical abundances, same as in RHS.
   //    E: internal energy
   // return: rate of energy change dE/dt.
-  virtual Real Edot(const Real t, const Real y[NSPECIES], const Real E) = 0;
+  virtual Real Edot(const Real t, const Real *y, const Real E) = 0;
 };
 
 #endif // CHEMISTRY_NETWORK_NETWORK_HPP_

@@ -66,15 +66,15 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
 //! \brief ODEWrapper destructor
 ODEWrapper::~ODEWrapper() {
   NV_DATA_S(y_) = ydata_;
-  //Free y_ vector
+  // Free y_ vector
   N_VDestroy(y_);
-  //Free integrator memory
+  // Free integrator memory
   CVodeFree(&cvode_mem_);
-  //Free linear solver memory
+  // Free linear solver memory
   SUNLinSolFree(dense_ls_);
-  //Free matrix memory
+  // Free matrix memory
   SUNMatDestroy(dense_matrix_);
-  //Free SUNDIALS context
+  // Free SUNDIALS context
   SUNContext_Free(&sunctx_);
 }
 
@@ -82,12 +82,12 @@ ODEWrapper::~ODEWrapper() {
 //! \fn void ODEWrapper::Initialize(ParameterInput *pin)
 //! \brief Initialize ODE solver parameters
 void ODEWrapper::Initialize(ParameterInput *pin) {
-  //Note: this cannot be in the constructor, since it needs the PassiveScalars
-  //class, and the ODEWrapper class is constructed in the PassiveScalars constructor.
+  // Note: this cannot be in the constructor, since it needs the PassiveScalars
+  // class, and the ODEWrapper class is constructed in the PassiveScalars constructor.
   int flag;
   pmy_spec_ = pmy_block_->pscalars;
 
-  //tolerance
+  // tolerance
   Real abstol_all = pin->GetOrAddReal("chemistry", "abstol", 1.0e-12);
   for (int i=0; i<NSPECIES; i++) {
     abstol_(i) = pin->GetOrAddReal("chemistry",
@@ -102,21 +102,21 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
       abstol_(dim_-1) = abstol_all;
     }
   }
-  //read initial step, default -1 uses CVODE estimation
+  // read initial step, default -1 uses CVODE estimation
   h_init_ = pin->GetOrAddReal("chemistry", "h_init", -1);
-  //choice of using the previous stepsize or default estimation from CVODE
+  // choice of using the previous stepsize or default estimation from CVODE
   use_previous_h_ = pin->GetOrAddBoolean("chemistry", "use_previous_h", true);
-  //user input Jacobian flag
+  // user input Jacobian flag
   int user_jac = pin->GetOrAddBoolean("chemistry", "user_jac", false);
-  //maximum number of steps
+  // maximum number of steps
   int64_t maxsteps = pin->GetOrAddInteger("chemistry", "maxsteps", 1000);
-  //maximum order
+  // maximum order
   int maxorder = pin->GetOrAddInteger("chemistry", "maxorder", 2);
-  //maximum number of error test fails
+  // maximum number of error test fails
   int maxerrtest = pin->GetOrAddInteger("chemistry", "maxerrtest", 7);
-  //maximum number of t = h+t warnings
+  // maximum number of t = h+t warnings
   int maxhnil = pin->GetOrAddInteger("chemistry", "maxhnil", 10);
-  //stability limit detection
+  // stability limit detection
   int stldet = pin->GetOrAddInteger("chemistry", "stldet", 0);
 
   // -----------Initialize absolute value vector----------
@@ -160,28 +160,28 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
   flag = CVodeSetLinearSolver(cvode_mem_, dense_ls_, dense_matrix_);
   CheckFlag(&flag, "CVodeSetLinearSolver", 1);
 
-  //set maximum number of steps
+  // set maximum number of steps
   flag = CVodeSetMaxNumSteps(cvode_mem_, maxsteps);
   CheckFlag(&flag, "CVodeSetMaxNumSteps", 1);
 
-  //set maximum number of convergence failure
+  // set maximum number of convergence failure
   flag = CVodeSetMaxConvFails(cvode_mem_, 100000);
   CheckFlag(&flag, "CVodeSetMaxNumSteps", 1);
 
-  //set maximum order
+  // set maximum order
   flag = CVodeSetMaxOrd(cvode_mem_, maxorder);
   CheckFlag(&flag, "CVodeSetMaxOrd", 1);
 
-  //set maximum number of error test fails
+  // set maximum number of error test fails
   flag = CVodeSetMaxErrTestFails(cvode_mem_, maxerrtest);
   CheckFlag(&flag, "CVodeSetMaxErrTestFails", 1);
 
-  //set maximum number of t+h=t warnings
+  // set maximum number of t+h=t warnings
   flag = CVodeSetMaxHnilWarns(cvode_mem_, maxhnil);
   CheckFlag(&flag, "CVodeSetMaxHnilWarns", 1);
 
-  //set whether enable stability limit detection
-  //Only used to reduce the order of the order is larger than 3
+  // set whether enable stability limit detection
+  // Only used to reduce the order of the order is larger than 3
   flag = CVodeSetStabLimDet(cvode_mem_, stldet);
   CheckFlag(&flag, "CVodeSetStabLimDet", 1);
 
@@ -191,7 +191,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
     CheckFlag(&flag, "CVDlsSetDenseJacFn", 1);
   }
 
-  //Free abstol_ vector
+  // Free abstol_ vector
   N_VDestroy(abstol_vec);
 
   return;
@@ -215,6 +215,7 @@ void ODEWrapper::Initialize(ParameterInput *pin) {
 //! cell over time dt.
 //!
 //! Note that this will be not vectorizable(?).
+
 void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   int is = pmy_block_->is;
   int js = pmy_block_->js;
@@ -227,25 +228,25 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   Real tfinal = tinit + dt;
   Real treturn = 0;
   int flag;
-  //primitive conserved variables
+  // primitive conserved variables
   AthenaArray<Real> &u = pmy_block_->phydro->u;
   AthenaArray<Real> &bcc = pmy_block_->pfield->bcc;
-  //constants
+  // constants
   const Real gm1 = pmy_block_->peos->GetGamma() - 1.0;
   const Real scalar_floor = pmy_block_->peos->GetScalarFloor();
-  //timing of the chemistry in each cycle
+  // timing of the chemistry in each cycle
   int nzones = (ie-is+1) * (je-js+1) * (ke-ks+1);
   clock_t tstart, tstop;
   tstart = std::clock();
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-      //copy s to r_copy
+      // copy s to r_copy
       for (int ispec=0; ispec<NSPECIES; ispec++) {
         for (int i=is; i<=ie; ++i) {
           pmy_spec_->r_copy(i, ispec) = pmy_spec_->s(ispec,k,j,i)/u(IDN,k,j,i);
         }
       }
-      //assign internal energy, if not isothermal eos
+      // assign internal energy, if not isothermal eos
       if (NON_BAROTROPIC_EOS) {
         for (int i=is; i<=ie; ++i) {
           pmy_spec_->r_copy(i, NSPECIES) = u(IEN,k,j,i)
@@ -257,48 +258,48 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
           }
         }
       }
-      //loop over each cell
+      // loop over each cell
       for (int i=is; i<=ie; ++i) {
-        //step 1: initialize chemistry network, eg: density, radiation
+        // step 1: initialize chemistry network, eg: density, radiation
         NV_DATA_S(y_) = pdata_r_copy + i*dim_;
         pmy_spec_->chemnet.InitializeNextStep(k, j, i);
-        //step 2: re-initialize CVODE with starting time t, and vector y
-        //allocate r_copy(i, *) to y_.
-        //TODO(Munan Gong): make sure Real and realtype are the same.
+        // step 2: re-initialize CVODE with starting time t, and vector y
+        // allocate r_copy(i, *) to y_.
+        // TODO(Munan Gong): make sure Real and realtype are the same.
         flag = CVodeReInit(cvode_mem_, tinit, y_);
         CheckFlag(&flag, "CVodeReInit", 1);
-        //set initial step
+        // set initial step
         if (ncycle == 0 && h_init_ > 0.) {
           SetInitStep(h_init_);
         }
         if (ncycle != 0 && use_previous_h_) {
           SetInitStep(pmy_spec_->h(k, j, i));
         }
-        //set maximum step to be a factor times dt
+        // set maximum step to be a factor times dt
         flag = CVodeSetMaxStep(cvode_mem_, dt*fac_dtmax_);
         CheckFlag(&flag, "CVodeSetMaxStep", 1);
-        //step 3: integration. update array abundance over time dt
-        //in CV_NORMAL model, treturn=tfinal (the time of output)
+        // step 3: integration. update array abundance over time dt
+        // in CV_NORMAL model, treturn=tfinal (the time of output)
         flag = CVode(cvode_mem_, tfinal, y_, &treturn, CV_NORMAL);
         CheckFlag(&flag, "CVode", 3);
 
-        //update next step size
+        // update next step size
         if (ncycle != 0) {
           pmy_spec_->h(k, j, i) = GetNextStep();
         }
       }
 
-      //copy r_copy back to s
+      // copy r_copy back to s
       for (int ispec=0; ispec<NSPECIES; ispec++) {
         for (int i=is; i<=ie; ++i) {
           Real& r_copy_i  = pmy_spec_->r_copy(i,ispec);
-          //apply floor to passive scalar concentrations
+          // apply floor to passive scalar concentrations
           r_copy_i = (r_copy_i < scalar_floor) ?  scalar_floor : r_copy_i;
           pmy_spec_->s(ispec,k,j,i) = r_copy_i*u(IDN,k,j,i);
         }
       }
 
-      //assign internal energy, if not isothermal eos
+      // assign internal energy, if not isothermal eos
       if (NON_BAROTROPIC_EOS) {
         for (int i=is; i<=ie; ++i) {
           u(IEN,k,j,i) = pmy_spec_->r_copy(i, NSPECIES)
@@ -318,7 +319,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
                        1.0)/static_cast<double> (CLOCKS_PER_SEC);
     std::uint64_t nzones =
       static_cast<std::uint64_t> (pmy_block_->GetNumberOfMeshBlockCells());
-    double zone_sec = static_cast<double> (nzones) / cpu_time;
+    //double zone_sec = static_cast<double> (nzones) / cpu_time;
     printf("chemistry ODE integration: ");
     printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n",
         ncycle, cpu_time, Real(nzones)/cpu_time);
@@ -329,6 +330,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
 //----------------------------------------------------------------------------------------
 //! \fn void ODEWrapper::SetInitStep(const Real h_init) const
 //! \brief Set initial stepsize for ODE solver
+
 void ODEWrapper::SetInitStep(const Real h_init) const {
   int flag = CVodeSetInitStep(cvode_mem_, h_init);
   CheckFlag(&flag, "CVodeSetInitStep", 1);
@@ -338,6 +340,7 @@ void ODEWrapper::SetInitStep(const Real h_init) const {
 //----------------------------------------------------------------------------------------
 //! \fn Real ODEWrapper::GetLastStep() const
 //! \brief Get last stepsize
+
 Real ODEWrapper::GetLastStep() const {
   Real hlast;
   int flag;
