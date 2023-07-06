@@ -14,6 +14,7 @@
 // macros which define physics and algorithms
 
 // configure.py dict(definitions) string values:
+
 // problem generator
 #define PROBLEM_GENERATOR "@PROBLEM@"
 
@@ -23,9 +24,16 @@
 // Riemann solver
 #define RIEMANN_SOLVER "@RSOLVER@"
 
-// configure.py dict(definitions) Boolean values:
-// Equation of state
+// equation of state
 #define EQUATION_OF_STATE "@EQUATION_OF_STATE@"
+
+// ChemNetwork class header file included in species.hpp
+#define CHEMNETWORK_HEADER "@CHEMNETWORK_HEADER@"
+
+// ChemRadiation integrator method, used in constructing chemradiation tasklist
+#define CHEMRADIATION_INTEGRATOR "@CHEMRADIATION_INTEGRATOR@"
+
+// configure.py dict(definitions) Boolean 1/0 macros:
 
 // use general EOS framework default=0 (false).
 #define GENERAL_EOS @GENERAL_EOS@
@@ -48,17 +56,8 @@
 // include chemistry? default=0 (false)
 #define CHEMISTRY_ENABLED @CHEMISTRY_ENABLED@
 
-// ChemNetwork class header file included in species.hpp
-#define CHEMNETWORK_HEADER "@CHEMNETWORK_HEADER@"
-
-// CVODE solver option (CVODE or NO_CVODE)
-#define @CVODE_OPTION@
-
 // include radiative transfer? default=0 (false)
 #define CHEMRADIATION_ENABLED @CHEMRADIATION_ENABLED@
-
-// ChemRadiation integrator method, used in constructing chemradiation tasklist
-#define CHEMRADIATION_INTEGRATOR "@CHEMRADIATION_INTEGRATOR@"
 
 // enable special or general relativity? default=0 (false)
 #define RELATIVISTIC_DYNAMICS @RELATIVISTIC_DYNAMICS@
@@ -72,11 +71,8 @@
 // use double precision for HDF5 output? default=0 (false; write out binary32)
 #define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
 
-
 // configure.py dict(definitions) Boolean string macros:
-// (these options have the latter (false) option as defaults, unless noted otherwise)
-// make use of FFT? (FFT or NO_FFT)
-#define @FFT_OPTION@
+// (these options are "false" by default, unless noted otherwise)
 
 // MPI parallelization (MPI_PARALLEL or NOT_MPI_PARALLEL)
 #define @MPI_OPTION@
@@ -86,6 +82,12 @@
 
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
+
+// FFTW library (FFT or NO_FFT)
+#define @FFT_OPTION@
+
+// CVODE solver (CVODE or NO_CVODE)
+#define @CVODE_OPTION@
 
 // debug build macros (DEBUG or NOT_DEBUG)
 #define @DEBUG_OPTION@
