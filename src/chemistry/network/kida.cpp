@@ -284,33 +284,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
 
 //----------------------------------------------------------------------------------------
 //! \brief ChemNetwork destructor
-ChemNetwork::~ChemNetwork() {
-  FILE *pf = fopen("chem_network.dat", "w");
-  OutputRates(pf);
-  fclose(pf);
-  // TODO(Munan Gong): test Jacobian: this can be deleted later or put a debug macro
-  const Real t=0;
-  Real *y = new Real[NSPECIES];
-  Real *ydot = new Real[NSPECIES];
-  AthenaArray<Real> jac_analytic;
-  AthenaArray<Real> jac_numerical;
-  for (int i=0; i<NSPECIES; i++) {
-    y[i] = 0.1;
-    ydot[i] = 0;
-  }
-  // analytic jacobian
-  jac_analytic.NewAthenaArray(NSPECIES, NSPECIES);
-  Jacobian_isothermal(t, y, ydot, jac_analytic);
-  FILE *pf1 = fopen("jac_analytic.dat", "w");
-  OutputJacobian(pf1, jac_analytic);
-  fclose(pf1);
-  // numerical jacobian
-  jac_numerical.NewAthenaArray(NSPECIES, NSPECIES);
-  Jacobian_isothermal_numerical(t, y, ydot, jac_numerical);
-  FILE *pf2 = fopen("jac_numerical.dat", "w");
-  OutputJacobian(pf2, jac_numerical);
-  fclose(pf2);
-}
+ChemNetwork::~ChemNetwork() {}
 
 //----------------------------------------------------------------------------------------
 //! \fn void ChemNetwork::InitializeNextStep(const int k, const int j, const int i)
