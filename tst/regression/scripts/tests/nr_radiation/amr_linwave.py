@@ -1,8 +1,6 @@
-# Regression test based on Newtonian 2D MHD linear wave test problem with AMR
-#
-# Runs a 2D linear wave test with AMR, using a refinement condition that tracks the
-# velocity maxima.  Then checks L1 and L_infty (max) error.  This test is very sensitive
-# to finding errors in AMR prolongation/restriction/boundaries
+# Regression test based on linear wave convergence problem
+# for full radiation hydro equations, using the
+# explicit radiation hydro module and AMR
 
 # Modules
 import logging

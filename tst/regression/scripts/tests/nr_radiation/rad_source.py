@@ -1,8 +1,6 @@
-# Regression test based on Newtonian hydro linear wave convergence problem
-#
-# Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
-# are computed by the executable automatically and stored in the temporary file
-# linearwave_errors.dat)
+# Regression test based on thermalize relaxation problem
+# for full radiation hydro equations, using the
+# explicit radiation hydro module
 
 # Modules
 import numpy as np
