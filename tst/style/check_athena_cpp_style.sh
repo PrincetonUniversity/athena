@@ -18,6 +18,8 @@
 
 exit_on_error=1
 
+grep -V | grep -q 'GNU grep'; if [ $? -eq 1 ]; then echo "WARNING: 'grep' does not appear to be GNU grep.\nNot all style checks are compatible with BSD grep"; fi
+
 # Apply Google C++ Style Linter to all source code files at once:
 echo "Starting Google C++ Style cpplint.py test"
 if [ $exit_on_error -eq 1 ]; then set -e; fi
