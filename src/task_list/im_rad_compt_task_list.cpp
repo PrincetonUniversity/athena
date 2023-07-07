@@ -52,10 +52,6 @@ IMRadComptTaskList::IMRadComptTaskList(Mesh *pm) {
   }
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn void FFTGravitySolverTaskList::AddTask(const TaskID& id, const TaskID& dep)
-//! \brief Sets id and dependency for "ntask" member of task_list_ array, then iterates
-//! value of ntask.
 
 void IMRadComptTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   task_list_[ntasks].task_id=id;
