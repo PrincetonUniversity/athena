@@ -71,6 +71,9 @@
 // use double precision for HDF5 output? default=0 (false; write out binary32)
 #define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
 
+// compile with debug symbols and use optional sections of source code? default=0 (false)
+#define DEBUG @DEBUG_OPTION@
+
 // configure.py dict(definitions) Boolean string macros:
 // (these options are "false" by default, unless noted otherwise)
 
@@ -88,9 +91,6 @@
 
 // CVODE solver (CVODE or NO_CVODE)
 #define @CVODE_OPTION@
-
-// debug build macros (DEBUG or NOT_DEBUG)
-#define @DEBUG_OPTION@
 
 // try/throw/catch C++ exception handling (ENABLE_EXCEPTIONS or DISABLE_EXCEPTIONS)
 // (enabled by default)
