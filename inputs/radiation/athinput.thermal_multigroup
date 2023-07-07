@@ -51,15 +51,7 @@ n_frequency   = 3
 frequency_min = -4.0
 frequency_max = -8.0
 
-Compton       = 0
-T_unit        = 1.e4
-unit          = 0
-density_unit  =  1.e-10
-length_unit   = 3.e14
 nlimit        = 500
-Split_compton = 0
-cfl_rad       = 1
-red_or_black  = 1
 
 <problem>
 er_1       = 10.0
