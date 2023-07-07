@@ -14,6 +14,7 @@
 // macros which define physics and algorithms
 
 // configure.py dict(definitions) string values:
+
 // problem generator
 #define PROBLEM_GENERATOR "@PROBLEM@"
 
@@ -24,6 +25,7 @@
 #define RIEMANN_SOLVER "@RSOLVER@"
 
 // configure.py dict(definitions) Boolean values:
+
 // Equation of state
 #define EQUATION_OF_STATE "@EQUATION_OF_STATE@"
 
@@ -66,9 +68,13 @@
 // use double precision for HDF5 output? default=0 (false; write out binary32)
 #define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
 
+// compile with debug symbols and use optional sections of source code? default=0 (false)
+#define DEBUG @DEBUG_OPTION@
+
 
 // configure.py dict(definitions) Boolean string macros:
 // (these options have the latter (false) option as defaults, unless noted otherwise)
+
 // make use of FFT? (FFT or NO_FFT)
 #define @FFT_OPTION@
 
@@ -80,10 +86,6 @@
 
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
-
-// debug build macros (DEBUG or NOT_DEBUG)
-#define @DEBUG_OPTION@
-
 
 // try/throw/catch C++ exception handling (ENABLE_EXCEPTIONS or DISABLE_EXCEPTIONS)
 // (enabled by default)

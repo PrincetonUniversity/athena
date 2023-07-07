@@ -532,6 +532,7 @@ if args['cxx'] == 'icpx':
     # Compiler options
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xhost -qopenmp-simd '
+      '-Wno-tautological-constant-compare -Wno-array-bounds'
     )
     # Currently unsupported, but "options to be supported" according to icpx
     # -qnextgen-diag: '-inline-forceinline -qopt-prefetch=4 '
@@ -638,7 +639,7 @@ else:
 
 # -debug argument
 if args['debug']:
-    definitions['DEBUG_OPTION'] = 'DEBUG'
+    definitions['DEBUG_OPTION'] = '1'
     # Completely replace the --cxx= sets of default compiler flags, disable optimization,
     # and emit debug symbols in the compiled binaries
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
@@ -654,7 +655,7 @@ if args['debug']:
     if args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g -xMIC-AVX512'
 else:
-    definitions['DEBUG_OPTION'] = 'NOT_DEBUG'
+    definitions['DEBUG_OPTION'] = '0'
 
 # -coverage argument
 if args['coverage']:
