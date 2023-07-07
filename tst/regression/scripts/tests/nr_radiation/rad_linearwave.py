@@ -24,7 +24,7 @@ def prepare(**kwargs):
 def run(**kwargs):
     # case 1
     for i in (32, 64, 128, 256):
-        arguments = ['problem/regime=1', 'radiation/Prat=0.01', 'radiation/Crat=10.0',
+        arguments = ['problem/regime=1', 'radiation/prat=0.01', 'radiation/crat=10.0',
                      'time/tlim=0.7745966144169111', 'problem/compute_error=true',
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
@@ -38,7 +38,7 @@ def run(**kwargs):
 
     # case 2
     for i in (32, 64, 128, 256):
-        arguments = ['problem/regime=2', 'radiation/Prat=0.01', 'radiation/Crat=10.0',
+        arguments = ['problem/regime=2', 'radiation/prat=0.01', 'radiation/crat=10.0',
                      'time/tlim=0.7745911961524788', 'problem/compute_error=true',
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
@@ -49,7 +49,7 @@ def run(**kwargs):
 
     # case 3
     for i in (32, 64, 128, 256):
-        arguments = ['problem/regime=3', 'radiation/Prat=0.01', 'radiation/Crat=10.0',
+        arguments = ['problem/regime=3', 'radiation/prat=0.01', 'radiation/crat=10.0',
                      'time/tlim=0.7741319089038714', 'problem/compute_error=true',
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
@@ -60,7 +60,7 @@ def run(**kwargs):
 
     # case 4
     for i in (32, 64, 128, 256):
-        arguments = ['problem/regime=4', 'radiation/Prat=0.01', 'radiation/Crat=10.0',
+        arguments = ['problem/regime=4', 'radiation/prat=0.01', 'radiation/crat=10.0',
                      'time/tlim=0.7739734114015662', 'problem/compute_error=true',
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
@@ -71,7 +71,7 @@ def run(**kwargs):
 
     # case 5
     for i in (32, 64, 128, 256):
-        arguments = ['problem/regime=5', 'radiation/Prat=0.01', 'radiation/Crat=10.0',
+        arguments = ['problem/regime=5', 'radiation/prat=0.01', 'radiation/crat=10.0',
                      'time/tlim=0.7746132569285668', 'problem/compute_error=true',
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
@@ -82,7 +82,7 @@ def run(**kwargs):
 
     # case 6
     for i in (32, 64, 128, 256):
-        arguments = ['problem/regime=6', 'radiation/Prat=1.0', 'radiation/Crat=10.0',
+        arguments = ['problem/regime=6', 'radiation/prat=1.0', 'radiation/crat=10.0',
                      'time/tlim=0.7747068066908429', 'problem/compute_error=true',
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
@@ -93,7 +93,7 @@ def run(**kwargs):
 
     # case 7
     for i in (32, 64, 128, 256):
-        arguments = ['problem/regime=7', 'radiation/Prat=1.0', 'radiation/Crat=10.0',
+        arguments = ['problem/regime=7', 'radiation/prat=1.0', 'radiation/crat=10.0',
                      'time/tlim=0.7856204848539599', 'problem/compute_error=true',
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),
@@ -104,7 +104,7 @@ def run(**kwargs):
 
     # case 8
     for i in (32, 64, 128, 256):
-        arguments = ['problem/regime=8', 'radiation/Prat=1.0', 'radiation/Crat=10.0',
+        arguments = ['problem/regime=8', 'radiation/prat=1.0', 'radiation/crat=10.0',
                      'time/tlim=0.9819810298708518', 'problem/compute_error=true',
                      'mesh/nx1=' + repr(i), 'mesh/nx2=8', 'mesh/nx3=1',
                      'meshblock/nx1=' + repr(i/2),

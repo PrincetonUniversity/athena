@@ -48,8 +48,8 @@ gamma = 1.6666666666667  # gamma = C_p/C_v
 
 <radiation>
 nmu         = 1
-Prat        = 0.01
-Crat        = 10
+prat        = 0.01
+crat        = 10
 error_limit = 1.e-12
 taucell     = 5
 

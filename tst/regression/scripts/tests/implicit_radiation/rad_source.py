@@ -25,7 +25,7 @@ def prepare(**kwargs):
 def run(**kwargs):
     # case 1
     arguments = ['problem/er=10.0', 'problem/tgas=1.0', 'problem/sigma=1.0',
-                 'radiation/Prat=0.01', 'radiation/Crat=10.0',
+                 'radiation/prat=0.01', 'radiation/crat=10.0',
                  'radiation/error_limit=1.e-12',
                  'time/ncycle_out=100']
     athena.run('radiation/athinput.thermal_relaxation', arguments)
@@ -33,7 +33,7 @@ def run(**kwargs):
     os.system(bashcommand)
     # case 2
     arguments = ['problem/er=10.0', 'problem/tgas=1.0', 'problem/sigma=100.0',
-                 'radiation/Prat=100.0', 'radiation/Crat=10.0',
+                 'radiation/prat=100.0', 'radiation/crat=10.0',
                  'radiation/error_limit=1.e-12',
                  'time/ncycle_out=100']
     athena.run('radiation/athinput.thermal_relaxation', arguments)
@@ -41,7 +41,7 @@ def run(**kwargs):
     os.system(bashcommand)
     # case 3
     arguments = ['problem/er=1.0', 'problem/tgas=10.0', 'problem/sigma=100.0',
-                 'radiation/Prat=1.0', 'radiation/Crat=10.0',
+                 'radiation/prat=1.0', 'radiation/crat=10.0',
                  'radiation/error_limit=1.e-12',
                  'time/ncycle_out=100']
     athena.run('radiation/athinput.thermal_relaxation', arguments)

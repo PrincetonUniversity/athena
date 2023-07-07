@@ -109,8 +109,8 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   kappa_es = kappa_es * rhounit * lunit; // dimensionless electron scattering
 
   if (user_unit_ == 0) {
-    prat = pin->GetReal("radiation","Prat");
-    crat = pin->GetReal("radiation","Crat");
+    prat = pin->GetReal("radiation","prat");
+    crat = pin->GetReal("radiation","crat");
   } else if (user_unit_ == 1) {
     // calculate prat and crat based on user provided unit
     Real r_ideal = 8.314462618e7/mol_weight;
@@ -335,8 +335,8 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     }
     // damp the angular grid in one cell
 
-    fprintf(pfile,"Prat          %4.2e \n",prat);
-    fprintf(pfile,"Crat          %4.2e \n",crat);
+    fprintf(pfile,"prat          %4.2e \n",prat);
+    fprintf(pfile,"crat          %4.2e \n",crat);
     fprintf(pfile,"reduced_c     %4.2e \n",reduced_c);
     fprintf(pfile,"Vmax          %4.2e \n",vmax);
     fprintf(pfile,"Tunit         %4.2e \n",tunit);

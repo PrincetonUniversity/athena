@@ -44,8 +44,8 @@ gamma = 1.6666666666667  # gamma = C_p/C_v
 
 <radiation>
 nmu           = 4
-Prat          = 1.0
-Crat          = 10
+prat          = 1.0
+crat          = 10
 error_limit   = 1.e-12
 n_frequency   = 3
 frequency_min = -4.0
