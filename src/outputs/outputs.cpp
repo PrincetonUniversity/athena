@@ -638,7 +638,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       if (CHEMISTRY_ENABLED) {
 #ifdef DEBUG
         //for testing six-ray. Not implemented in HDF5 output yet
-        if (RADIATION_INTEGRATOR == "six_ray") {
+        if (CHEMRADIATION_INTEGRATOR == "six_ray") {
           //average column density
           std::string name_col_avg = "col_avg";
           for (int i=0; i<pchemrad->pchemradintegrator->ncol; i++) {

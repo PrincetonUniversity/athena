@@ -360,27 +360,28 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
 //! dy/dt = ydot(t, y). Here y are the abundance
 //! of species. details see CVODE package documentation.
 //! all input/output variables are in code units
+
 void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
                       Real *ydot) {
   Real rate = 0;
   // energy per hydrogen atom
   Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
   // store previous y including negative abundance correction
-  Real *y0 = new Real[NSPECIES]; //correct negative abundance, only for UpdateRates()
+  Real *y0 = new Real[NSPECIES]; // correct negative abundance, only for UpdateRates()
   Real *ydotg = new Real[NSPECIES];
 
   for(int i=0; i<NSPECIES; i++) {
     ydotg[i] = 0.0;
   }
 
-  //correct negative abundance to zero, used in rate update
+  // correct negative abundance to zero, used in rate update
   for (int i=0; i<NSPECIES; i++) {
     if (y[i] < 0) {
       y0[i] = 0;
     } else {
       y0[i] = y[i];
     }
-    //throw error if nan, or inf, or large negative value occurs
+    // throw error if nan, or inf, or large negative value occurs
     if ( std::isnan(y[i]) || std::isinf(y[i]) ) {
       printf("RHS: ");
       for (int j=0; j<NSPECIES; j++) {
@@ -409,7 +410,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
     output_rates = false;
   }
 
-  //cosmic ray reactions
+  // cosmic ray reactions
   for (int i=0; i<n_cr_; i++) {
     rate = kcr_(i) * y[incr_(i)];
     ydotg[incr_(i)] -= rate;
@@ -420,7 +421,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
     }
   }
 
-  //cosmic ray induced photo reactions
+  // cosmic ray induced photo reactions
   for (int i=0; i<n_crp_; i++) {
     rate = kcrp_(i) * y[incrp_(i)];
     ydotg[incrp_(i)] -= rate;
@@ -428,7 +429,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
     ydotg[outcrp2_(i)] += rate;
   }
 
-  //FUV photo-dissociation and photo-ionisation
+  // FUV photo-dissociation and photo-ionisation
   for (int i=0; i<n_ph_; i++) {
     rate = kph_(i) * y[inph_(i)];
     ydotg[inph_(i)] -= rate;
@@ -436,7 +437,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
     ydotg[outph2_(i)] += rate;
   }
 
-  //2body reactions
+  // 2body reactions
   for (int i=0; i<n_2body_; i++) {
     rate =  k2body_(i) * y[in2body_(i, 0)] * y[in2body_(i, 1)] * nH_;
     if (y[in2body_(i, 0)] < 0 && y[in2body_(i, 1)] < 0) {
@@ -454,7 +455,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
     }
   }
 
-  //2bodytr reactions
+  // 2bodytr reactions
   for (int i=0; i<n_2bodytr_; i++) {
     rate =  k2bodytr_(i) * y[in2bodytr1_(i)] * y[in2bodytr2_(i)] * nH_;
     if (y[in2bodytr1_(i)] < 0 && y[in2bodytr2_(i)] < 0) {
@@ -471,7 +472,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
     }
   }
 
-  //grain assisted reactions
+  // grain assisted reactions
   for (int i=0; i<n_gr_; i++) {
     rate = kgr_(i) * y[ingr1_(i)];
     ydotg[ingr1_(i)] -= rate;
@@ -481,7 +482,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
     ydotg[outgr_(i)] += rate;
   }
 
-  //special reactions
+  // special reactions
   for (int i=0; i<n_sr_; i++) {
     rate = ksr_(i);
     for (int jin=0; jin<n_insr_; jin++) {
@@ -496,7 +497,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
     }
   }
 
-  //grain collision reactions
+  // grain collision reactions
   for (int i=0; i<n_gc_; i++) {
     rate =  kgc_(i) * y[ingc_(i, 0)] * y[ingc_(i, 1)] * nH_;
     if (y[ingc_(i, 0)] < 0 && y[ingc_(i, 1)] < 0) {
@@ -514,13 +515,13 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
     }
   }
 
-  //set ydot to return
+  // set ydot to return
   for (int i=0; i<NSPECIES; i++) {
-    //return in code units
+    // return in code units
     ydot[i] = ydotg[i] * pmy_mb_->punit->code_time_cgs;
   }
 
-  //throw error if nan, or inf, or large value occurs
+  // throw error if nan, or inf, or large value occurs
   for (int i=0; i<NSPECIES; i++) {
     if ( std::isnan(ydot[i]) || std::isinf(ydot[i]) ) {
       printf("ydot: ");
@@ -553,7 +554,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED,
       ATHENA_ERROR(msg);
     }
   }
-  delete[] y;
+  delete[] y0;
   delete[] ydotg;
   return;
 }
