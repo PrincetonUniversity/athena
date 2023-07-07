@@ -46,6 +46,17 @@ void ShowConfig() {
   } else {
     std::cout<<"  Radiative Transfer:         OFF" << std::endl;
   }
+  if (IM_RADIATION_ENABLED) {
+    std::cout<<"  Implicit Radiation:         ON" << std::endl;
+  } else {
+    std::cout<<"  Implicit Radiation:         OFF" << std::endl;
+  }
+  if (CR_ENABLED) {
+    std::cout<<"  Cosmic Ray Transport:       ON" << std::endl;
+  } else {
+    std::cout<<"  Cosmic Ray Transport:       OFF" << std::endl;
+  }
+
   // configure.py output: "Frame transformations"
   if (SELF_GRAVITY_ENABLED == 1) {
     std::cout<<"  Self-Gravity:               FFT" << std::endl;
