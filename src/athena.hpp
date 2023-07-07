@@ -169,7 +169,7 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mggrav,
                              mggrav_f, orbital_cc, orbital_fc};
 enum class HydroBoundaryQuantity {cons, prim};
-enum class BoundaryCommSubset {mesh_init, gr_amr, all, orbital, radiation,radhydro};
+enum class BoundaryCommSubset {mesh_init, gr_amr, all, orbital, radiation, radhydro};
 // TODO(felker): consider generalizing/renaming to QuantityFormulation
 enum class FluidFormulation {evolve, background, disabled}; // rename background -> fixed?
 enum class TaskType {op_split_before, main_int, op_split_after};
