@@ -865,74 +865,50 @@ if args['grav'] == 'fft':
 elif args['grav'] == 'mg':
     self_grav_string = 'Multigrid'
 
-print('Your Athena++ distribution has now been configured with the following options:')
-print('  Problem generator:          ' + args['prob'])
-print('  Coordinate system:          ' + args['coord'])
-print('  Equation of state:          ' + args['eos'])
-print('  Riemann solver:             ' + args['flux'])
-print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
-print('  Number of scalars:          ' + args['nscalars'])
-print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
-print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
-print('  Radiative Transfer:         ' + ('ON' if args['nr_radiation'] else 'OFF'))
-print('  Implicit Radiation:         ' + ('ON' if args['implicit_radiation'] else 'OFF'))
-print('  Cosmic Ray Transport:       ' + ('ON' if args['cr'] else 'OFF'))
-print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
-print('  Self-Gravity:               ' + self_grav_string)
-print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
-print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
-print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))
-print('  Linker flags:               ' + makefile_options['LINKER_FLAGS'] + ' '
-      + makefile_options['LIBRARY_FLAGS'])
-print('  Floating-point precision:   ' + ('single' if args['float'] else 'double'))
-print('  Number of ghost cells:      ' + args['nghost'])
-print('  MPI parallelism:            ' + ('ON' if args['mpi'] else 'OFF'))
-print('  OpenMP parallelism:         ' + ('ON' if args['omp'] else 'OFF'))
-print('  FFT:                        ' + ('ON' if args['fft'] else 'OFF'))
-print('  HDF5 output:                ' + ('ON' if args['hdf5'] else 'OFF'))
-if args['hdf5']:
-    print('  HDF5 precision:             ' + ('double' if args['h5double'] else 'single'))
-print('  Compiler:                   ' + args['cxx'])
-print('  Compilation command:        ' + makefile_options['COMPILER_COMMAND'] + ' '
-      + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])
+def output_config(opt_descr, opt_choice, filehandle=None):
+    first_col_width=32
+    first_col_indent=2
+    descr_len=len(opt_descr)
+    right_pad_len=first_col_width - (descr_len + first_col_indent + 2)  # include colon
+    right_pad= right_pad_len*' ' if right_pad_len>=0 else ''
+    line_str=first_col_indent*' ' + opt_descr + ': ' + right_pad + opt_choice
+    print(line_str)
+    if (filehandle is not None):
+        filehandle.write(line_str + '\n')
 
 # write the configuration optitions into a log file
 flog = open('./configure.log', 'w')
-flog.write('Your Athena++ distribution has now been configured with the following options:' + '\n')  # noqa
-flog.write('  Problem generator:          ' + args['prob'] + '\n')
-flog.write('  Coordinate system:          ' + args['coord'] + '\n')
-flog.write('  Equation of state:          ' + args['eos'] + '\n')
-flog.write('  Riemann solver:             ' + args['flux'] + '\n')
-flog.write('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF') + '\n')
-flog.write('  Number of scalars:          ' + args['nscalars'] + '\n')
-flog.write('  Special relativity:         ' + ('ON' if args['s'] else 'OFF') + '\n')
-flog.write('  General relativity:         ' + ('ON' if args['g'] else 'OFF') + '\n')
-flog.write('  Radiative Transfer:         ' + ('ON' if args['nr_radiation'] else 'OFF')
-           + '\n')
-flog.write('  Implicit Radiation:         ' + ('ON' if args['implicit_radiation']
-                                               else 'OFF') + '\n')
-flog.write('  Cosmic Ray Transport:       ' + ('ON' if args['cr'] else 'OFF') + '\n')
-flog.write('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF') + '\n')
-flog.write('  Self-Gravity:               ' + self_grav_string + '\n')
-flog.write('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF') + '\n')
-flog.write('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF') + '\n')
-flog.write('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF')
-           + '\n')
-flog.write('  Linker flags:               ' + makefile_options['LINKER_FLAGS'] + ' '
-           + makefile_options['LIBRARY_FLAGS'] + '\n')
-flog.write('  Floating-point precision:   ' + ('single' if args['float'] else 'double')
-           + '\n')
-flog.write('  Number of ghost cells:      ' + args['nghost'] + '\n')
-flog.write('  MPI parallelism:            ' + ('ON' if args['mpi'] else 'OFF') + '\n')
-flog.write('  OpenMP parallelism:         ' + ('ON' if args['omp'] else 'OFF') + '\n')
-flog.write('  FFT:                        ' + ('ON' if args['fft'] else 'OFF') + '\n')
-flog.write('  HDF5 output:                ' + ('ON' if args['hdf5'] else 'OFF') + '\n')
+
+output_config('Your Athena++ distribution has now been configured with the following options', '', flog)  # noqa
+output_config('Problem generator', args['prob'], flog)
+output_config('Coordinate system', args['coord'], flog)
+output_config('Equation of state', args['eos'], flog)
+output_config('Riemann solver', args['flux'], flog)
+output_config('Magnetic fields', ('ON' if args['b'] else 'OFF'), flog)
+output_config('Number of scalars', args['nscalars'], flog)
+output_config('Special relativity', ('ON' if args['s'] else 'OFF'), flog)
+output_config('General relativity', ('ON' if args['g'] else 'OFF'), flog)
+output_config('Radiative Transfer', ('ON' if args['nr_radiation'] else 'OFF'), flog)
+output_config('Implicit Radiation', ('ON' if args['implicit_radiation'] else 'OFF'), flog)
+output_config('Cosmic Ray Transport', ('ON' if args['cr'] else 'OFF'), flog)
+output_config('Frame transformations', ('ON' if args['t'] else 'OFF'), flog)
+output_config('Self-Gravity', self_grav_string, flog)
+output_config('Super-Time-Stepping', ('ON' if args['sts'] else 'OFF'), flog)
+output_config('Debug flags', ('ON' if args['debug'] else 'OFF'), flog)
+output_config('Code coverage flags', ('ON' if args['coverage'] else 'OFF'), flog)
+output_config('Linker flags', makefile_options['LINKER_FLAGS'] + ' '
+              + makefile_options['LIBRARY_FLAGS'], flog)
+output_config('Floating-point precision', ('single' if args['float'] else 'double'), flog)
+output_config('Number of ghost cells', args['nghost'], flog)
+output_config('MPI parallelism', ('ON' if args['mpi'] else 'OFF'), flog)
+output_config('OpenMP parallelism', ('ON' if args['omp'] else 'OFF'), flog)
+output_config('FFT', ('ON' if args['fft'] else 'OFF'), flog)
+output_config('HDF5 output', ('ON' if args['hdf5'] else 'OFF'), flog)
 if args['hdf5']:
-    flog.write('  HDF5 precision:             ' + ('double' if args['h5double']
-                                                   else 'single') + '\n')
-flog.write('  Compiler:                   ' + args['cxx'] + '\n')
-flog.write('  Compilation command:        ' + makefile_options['COMPILER_COMMAND'] + ' '
-           + makefile_options['PREPROCESSOR_FLAGS'] + ' '
-           + makefile_options['COMPILER_FLAGS'] + '\n')
+    output_config('HDF5 precision', ('double' if args['h5double'] else 'single'), flog)
+output_config('Compiler', args['cxx'], flog)
+output_config('Compilation command', makefile_options['COMPILER_COMMAND'] + ' '
+              + makefile_options['PREPROCESSOR_FLAGS'] + ' '
+              + makefile_options['COMPILER_FLAGS'], flog)
 
 flog.close()
