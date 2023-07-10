@@ -40,7 +40,6 @@ namespace {
 //----------------------------------------------------------------------------------------
 //! \brief ODEWrapper constructor
 ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
-
   int flag;
   pmy_block_ = pmb;
   dense_matrix_ = NULL;

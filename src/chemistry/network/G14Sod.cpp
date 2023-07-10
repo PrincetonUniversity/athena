@@ -176,7 +176,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED, Real *ydot) {
   Real *yprev = new Real[NSPECIES+ngs_];
   Real *yprev0 = new Real[NSPECIES+ngs_];
   Real *ydotg = new Real[NSPECIES+ngs_];
-  Real E_ergs = ED * pmy_mb_->pmy_mesh->punit->code_energydensity_cgs / nH_; // E in cgs unit
+  Real E_ergs = ED * pmy_mb_->pmy_mesh->punit->code_energydensity_cgs / nH_;
   // Real Xe = y[iHplus_] + y[iHeplus_] + 2.*y[iHe2plus_] + y[iH2plus_] - y[iHmin_];
 
   // temperature, definition follows G14, T = p/rho/kb*mu, mu = 1.25

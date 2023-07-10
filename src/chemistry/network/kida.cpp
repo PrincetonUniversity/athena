@@ -96,7 +96,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
     if (diff > eps) {
       std::stringstream msg1; // error message
       msg1 << "### FATAL ERROR in ChemNetwork constructor" << std::endl
-           << "kida network with energy equation: adiabatic index must be 5/3." << std::endl;
+           << "kida network with energy equation: adiabatic index must be 5/3."
+           << std::endl;
       ATHENA_ERROR(msg1);
     }
     temperature_ = 0.;
@@ -1591,8 +1592,8 @@ void ChemNetwork::UpdateRates(const Real *y, const Real E) {
           rate1 = a2bodytr_(i,irange1)*std::pow(Tcap/300., b2bodytr_(i,irange1))
                   *std::exp(-c2bodytr_(i,irange1)/Tcap);
         } else if (frml_2bodytr_(i,irange1) == 4) {
-          rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62
-                                                              + 0.4767*c2bodytr_(i,irange1)*std::sqrt(300./Tcap) );
+          rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)
+                  *( 0.62 + 0.4767*c2bodytr_(i,irange1)*std::sqrt(300./Tcap) );
         } else if (frml_2bodytr_(i,irange1) == 5) {
           rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*(
               1 + 0.0967*c2bodytr_(i,irange1)*std::sqrt(300./Tcap)
@@ -1605,8 +1606,8 @@ void ChemNetwork::UpdateRates(const Real *y, const Real E) {
             rate2 = a2bodytr_(i,irange2)*std::pow(Tcap/300., b2bodytr_(i,irange2))
                     *std::exp(-c2bodytr_(i,irange2)/Tcap);
           } else if (frml_2bodytr_(i,irange2) == 4) {
-            rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62
-                                                                + 0.4767*c2bodytr_(i,irange2)*std::sqrt(300./Tcap) );
+            rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)
+                    *( 0.62 + 0.4767*c2bodytr_(i,irange2)*std::sqrt(300./Tcap) );
           } else if (frml_2bodytr_(i,irange2) == 5) {
             rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*(
                 1 + 0.0967*c2bodytr_(i,irange2)*std::sqrt(300./Tcap)
@@ -1654,12 +1655,13 @@ void ChemNetwork::UpdateRates(const Real *y, const Real E) {
           }
         }
         // calculate rates
+        // TODO(munan): deduplicate code; modularize in a function?
         if (frml_2bodytr_(i,irange1) == 3) {
           rate1 = a2bodytr_(i,irange1)*std::pow(T/300., b2bodytr_(i,irange1))
                   *std::exp(-c2bodytr_(i,irange1)/T);
         } else if (frml_2bodytr_(i,irange1) == 4) {
-          rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*( 0.62
-                                                              + 0.4767*c2bodytr_(i,irange1)*std::sqrt(300./T) );
+          rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*
+                  ( 0.62 + 0.4767*c2bodytr_(i,irange1)*std::sqrt(300./T) );
         } else if (frml_2bodytr_(i,irange1) == 5) {
           rate1 = a2bodytr_(i,irange1)*b2bodytr_(i,irange1)*(
               1 + 0.0967*c2bodytr_(i,irange1)*std::sqrt(300./T)
@@ -1672,8 +1674,8 @@ void ChemNetwork::UpdateRates(const Real *y, const Real E) {
             rate2 = a2bodytr_(i,irange2)*std::pow(T/300., b2bodytr_(i,irange2))
                     *std::exp(-c2bodytr_(i,irange2)/T);
           } else if (frml_2bodytr_(i,irange2) == 4) {
-            rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*( 0.62
-                                                                + 0.4767*c2bodytr_(i,irange2)*std::sqrt(300./T) );
+            rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)
+                    *( 0.62 + 0.4767*c2bodytr_(i,irange2)*std::sqrt(300./T) );
           } else if (frml_2bodytr_(i,irange2) == 5) {
             rate2 = a2bodytr_(i,irange2)*b2bodytr_(i,irange2)*(
                 1 + 0.0967*c2bodytr_(i,irange2)*std::sqrt(300./T)
@@ -1797,8 +1799,9 @@ ReactionType ChemNetwork::SortReaction(KidaReaction* pr) const {
 
     //-------11 - grain collision reactions with electron/ion  -----------
   } else if (pr->itype_ == 11) {
-    if (static_cast<int>(pr->reactants_.size()) != 2 || (pr->products_.size() != 1 &&
-                                                         pr->products_.size() != 2 && pr->products_.size() != 3)) {
+    if (static_cast<int>(pr->reactants_.size()) != 2
+        || (pr->products_.size() != 1 && pr->products_.size() != 2
+            && pr->products_.size() != 3)) {
       std::stringstream msg;
       msg << "### FATAL ERROR in ChemNetwork SortReaction() [ChemNetwork]"
           << std::endl << "Wrong format in grain collsion reaction ID="
@@ -2195,8 +2198,8 @@ void ChemNetwork::OutputJacobian(FILE *pf, const AthenaArray<Real> &jac) const {
 //! \fn void ChemNetwork::Jacobian_isothermal_numerical(const Real t,
 //!    const Real *y, const Real *ydot, AthenaArray<Real> &jac)
 //! \brief calculate Jacobian with numerical differentiation
-void ChemNetwork::Jacobian_isothermal_numerical(const Real t,
-                                                const Real *y, const Real *ydot, AthenaArray<Real> &jac) {
+void ChemNetwork::Jacobian_isothermal_numerical(
+    const Real t, const Real *y, const Real *ydot, AthenaArray<Real> &jac) {
   const Real dy = 1e-3;
   Real *y1 = new Real[NSPECIES];
   Real *y2 = new Real[NSPECIES];

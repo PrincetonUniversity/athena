@@ -920,12 +920,7 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
     k2body_[16] = std::pow(10, std::log10(k10h) *  n2ncr/(1. + n2ncr)
                            + std::log10(k10l) / (1. + n2ncr)) * nH_;
     // (17) *H + *e -> H+ + 2 *e       --(11) Relates to Te
-    k2body_[17] *= std::exp( -3.271396786e1 +
-                             (1.35365560e1 + (- 5.73932875 + (1.56315498
-                                                              + (- 2.877056e-1 + (3.48255977e-2 + (- 2.63197617e-3
-                                                                                                   + (1.11954395e-4 + (-2.03914985e-6)
-                                                                                                      *lnTecoll)*lnTecoll)*lnTecoll)*lnTecoll)*lnTecoll)*lnTecoll)*lnTecoll)
-                             *lnTecoll);
+    k2body_[17] *= std::exp( -3.271396786e1 + (1.35365560e1 + (- 5.73932875 + (1.56315498 + (- 2.877056e-1 + (3.48255977e-2 + (- 2.63197617e-3 + (1.11954395e-4 + (-2.03914985e-6) *lnTecoll)*lnTecoll)*lnTecoll)*lnTecoll)*lnTecoll)*lnTecoll)*lnTecoll) *lnTecoll); // NOLINT
   } else {
     k2body_[15] = 0.;
     k2body_[16] = 0.;
