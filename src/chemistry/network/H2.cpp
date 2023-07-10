@@ -100,7 +100,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED, Real *ydot) {
   ydot[iH_] = -2*rate_gr + 2*rate_cr;
   for (int i=0; i<NSPECIES; i++) {
     // return in code units
-    ydot[i] *= pmy_mb_->punit->code_time_cgs;
+    ydot[i] *= pmy_mb_->pmy_mesh->punit->code_time_cgs;
   }
   return;
 }
@@ -126,14 +126,14 @@ Real ChemNetwork::Edot(const Real t, const Real *y, const Real ED) {
   }
   const Real T_floor = 1.; // temperature floor for cooling
   // ernergy per hydrogen atom
-  const Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
+  const Real E_ergs = ED * pmy_mb_->pmy_mesh->punit->code_energydensity_cgs / nH_;
   Real T = E_ergs / Thermo::CvCold(x_H2, x_He, x_e);
   if (T < T_floor) {
     return 0;
   }
   Real dEdt = - Thermo::alpha_GD_ * nH_ * std::sqrt(T) * T;
   // return in code units
-  Real dEDdt = (dEdt * nH_ / pmy_mb_->punit->code_energydensity_cgs)
-                * pmy_mb_->punit->code_time_cgs;
+  Real dEDdt = (dEdt * nH_ / pmy_mb_->pmy_mesh->punit->code_energydensity_cgs)
+                * pmy_mb_->pmy_mesh->punit->code_time_cgs;
   return dEDdt;
 }

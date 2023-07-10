@@ -121,7 +121,6 @@ class MeshBlock {
   EquationOfState *peos;
   ChemRadiation *pchemrad;
   OrbitalAdvection *porb;
-  Units *punit;
 
   // functions
   std::size_t GetBlockSizeInBytes();

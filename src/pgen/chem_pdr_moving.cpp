@@ -65,21 +65,21 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //! \brief initialize problem of uniform chemistry and radiation
 //======================================================================================
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  //dimensions of meshblock
-  const int Nx = ie - is + 1;
-  const int Ny = je - js + 1;
-  const int Nz = ke - ks + 1;
-  //read density and radiation field strength
+  // dimensions of meshblock
+  // const int Nx = ie - is + 1;
+  // const int Ny = je - js + 1;
+  // const int Nz = ke - ks + 1;
+
+  // read density and radiation field strength
   const Real vx = pin->GetReal("problem", "vx_kms");
   const Real r_init = pin->GetOrAddReal("problem", "r_init", 0.);
-  const Real gm1  = peos->GetGamma() - 1.0;
-  //2 phase initial condition
+  // 2 phase initial condition
   const Real nc = 100.;
   const Real Tc = 40.;
   const Real nw = pin->GetOrAddReal("problem", "nw", 1e-1);
-  const Real Tw = pin->GetOrAddReal("problem", "Tw", 4e4);
+  //const Real Tw = pin->GetOrAddReal("problem", "Tw", 4e4);
   const Real cv = Thermo::CvCold(0.5, 0.1, 0.);
-  const Real Eunit = punit->code_energydensity_cgs;
+  const Real Eunit = pmy_mesh->punit->code_energydensity_cgs;
   const Real Eth = nc * Tc * cv / Eunit;
   const Real xc_start = 5.;
   const Real xc_end = 45.;
@@ -89,20 +89,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int i=is; i<=ie; ++i) {
         Real x1 = pcoord->x1v(i);
         if (x1 >= xc_start && x1 <= xc_end) {
-          //density, cold
+          // density, cold
           phydro->u(IDN, k, j, i) = nc;
-          //velocity, x direction, cold
+          // velocity, x direction, cold
           phydro->u(IM1, k, j, i) = nc*vx;
-          //energy, cold
+          // energy, cold
           if (NON_BAROTROPIC_EOS) {
             phydro->u(IEN, k, j, i) = Eth + 0.5*nc*SQR(vx);
           }
         } else {
-          //density, warm
+          // density, warm
           phydro->u(IDN, k, j, i) = nw;
-          //velocity, x direction, warm
+          // velocity, x direction, warm
           phydro->u(IM1, k, j, i) = nw*vx;
-          //energy, warm
+          // energy, warm
           if (NON_BAROTROPIC_EOS) {
             phydro->u(IEN, k, j, i) = Eth + 0.5*nw*SQR(vx);
           }
@@ -111,7 +111,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
-  //intialize radiation field
+  // intialize radiation field
   if (CHEMRADIATION_ENABLED) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -123,7 +123,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           }
           if (CHEMISTRY_ENABLED) {
             for (int iang=0; iang < pchemrad->nang; ++iang) {
-              //cr rate
+              // cr rate
               pchemrad->ir(k, j, i,
                   pscalars->chemnet.index_cr_ * pchemrad->nang + iang) = cr_rate;
             }
@@ -131,11 +131,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    //calculate the average radiation field for output of the initial condition
+    // calculate the average radiation field for output of the initial condition
     pchemrad->pchemradintegrator->CopyToOutput();
   }
 
-  //intialize chemical species
+  // intialize chemical species
   if (NSPECIES > 0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {

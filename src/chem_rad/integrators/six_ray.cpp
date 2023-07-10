@@ -61,7 +61,7 @@ ChemRadIntegrator::ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pi
   }
   if (CHEMISTRY_ENABLED) {
     pmy_chemnet = &pmy_mb->pscalars->chemnet;
-    lunit = pmy_mb->punit->code_length_cgs;
+    lunit = pmy_mb->pmy_mesh->punit->code_length_cgs;
     ncol = pmy_chemnet->n_cols_;
     // allocate array for column density
     // enroll SixRayBoundaryVariable object

@@ -50,7 +50,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
            BoundaryFlag *input_bcs, Mesh *pm, ParameterInput *pin, bool ref_flag) :
     pmy_mesh(pm), loc(iloc), block_size(input_block),
     gid(igid), lid(ilid), nuser_out_var(),
-    punit(pm->punit),
     new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(1.0) {
@@ -204,7 +203,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
                      BoundaryFlag *input_bcs, double icost, char *mbdata) :
     pmy_mesh(pm), loc(iloc), block_size(input_block),
     gid(igid), lid(ilid), nuser_out_var(),
-    punit(pm->punit),
     new_block_dt_{}, new_block_dt_hyperbolic_{}, new_block_dt_parabolic_{},
     new_block_dt_user_{},
     nreal_user_meshblock_data_(), nint_user_meshblock_data_(), cost_(icost) {

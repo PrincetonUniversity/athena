@@ -176,7 +176,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED, Real *ydot) {
   Real *yprev = new Real[NSPECIES+ngs_];
   Real *yprev0 = new Real[NSPECIES+ngs_];
   Real *ydotg = new Real[NSPECIES+ngs_];
-  Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_; // E in cgs unit
+  Real E_ergs = ED * pmy_mb_->pmy_mesh->punit->code_energydensity_cgs / nH_; // E in cgs unit
   // Real Xe = y[iHplus_] + y[iHeplus_] + 2.*y[iHe2plus_] + y[iH2plus_] - y[iHmin_];
 
   // temperature, definition follows G14, T = p/rho/kb*mu, mu = 1.25
@@ -241,7 +241,7 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED, Real *ydot) {
   // set ydot to return
   for (int i=0; i<NSPECIES; i++) {
     // return in code units
-    ydot[i] = ydotg[i] * pmy_mb_->punit->code_time_cgs * nH_;
+    ydot[i] = ydotg[i] * pmy_mb_->pmy_mesh->punit->code_time_cgs * nH_;
   }
   if (DEBUG) {
     OutputRates(stdout);
@@ -416,7 +416,7 @@ Real ChemNetwork::Edot(const Real t, const Real *y, const Real ED) {
   // function of evolution of energy
   // return dEdt;
   Real LH2; // Define H2 Cooling Term
-  Real E_ergs = ED * pmy_mb_->punit->code_energydensity_cgs / nH_;
+  Real E_ergs = ED * pmy_mb_->pmy_mesh->punit->code_energydensity_cgs / nH_;
 
   // temperature, definition follows G14, T = p/rho/kb*mu, mu = 1.25
   Real T = E_ergs/Thermo::kb_*(gamma_ - 1.0)*mu_/muH_;
@@ -438,8 +438,8 @@ Real ChemNetwork::Edot(const Real t, const Real *y, const Real ED) {
           T);
 
   // return in code units
-  Real dEDdt = - LH2* nH_ / pmy_mb_->punit->code_energydensity_cgs
-               * pmy_mb_->punit->code_time_cgs;
+  Real dEDdt = - LH2* nH_ / pmy_mb_->pmy_mesh->punit->code_energydensity_cgs
+               * pmy_mb_->pmy_mesh->punit->code_time_cgs;
   if (DEBUG) {
     printf("T=%.4e, dEDdt=%.2e, E=%.2e, E_ergs=%.2e, nH=%.2e\n",
            T, dEDdt, ED, E_ergs, nH_);

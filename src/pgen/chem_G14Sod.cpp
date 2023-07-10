@@ -47,13 +47,14 @@
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief initialize problem
 //======================================================================================
+
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Define the constants
   const Real mu = pin->GetReal("problem", "mu");
   const Real k_b = Constants::k_boltzmann_cgs;
   const Real m_h = Constants::hydrogen_mass_cgs;
 
-  //read density and temperature
+  // read density and temperature
   const Real dl_cgs = pin->GetReal("problem", "LHS_rho_cgs");
   const Real dr_cgs = pin->GetReal("problem", "RHS_rho_cgs");
   const Real TL   = pin->GetReal("problem", "LHS_T_cgs");  // unit in K
@@ -62,11 +63,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const Real r_init = pin->GetOrAddReal("problem", "r_init", 0.);
   const Real gm1  = peos->GetGamma() - 1.0;;
 
-  //calculate density and pressure in code units
-  const Real dl = dl_cgs / punit->code_density_cgs;
-  const Real dr = dr_cgs / punit->code_density_cgs;
-  const Real Lpres = dl_cgs*TL*k_b/mu/m_h / punit->code_pressure_cgs;
-  const Real Rpres = dr_cgs*TR*k_b/mu/m_h / punit->code_pressure_cgs;
+  // calculate density and pressure in code units
+  const Real dl = dl_cgs / pmy_mesh->punit->code_density_cgs;
+  const Real dr = dr_cgs / pmy_mesh->punit->code_density_cgs;
+  const Real Lpres = dl_cgs*TL*k_b/mu/m_h / pmy_mesh->punit->code_pressure_cgs;
+  const Real Rpres = dr_cgs*TR*k_b/mu/m_h / pmy_mesh->punit->code_pressure_cgs;
   // parse shock location (must be inside grid)
   Real xshock = pin->GetReal("problem","xshock");
 
@@ -95,7 +96,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-  //intialize chemical species
+  // intialize chemical species
   if (NSCALARS > 0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
