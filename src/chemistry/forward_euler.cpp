@@ -80,7 +80,9 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   int ke = pmy_block_->ke;
   int ncycle = pmy_block_->pmy_mesh->ncycle;
   clock_t tstart, tstop;
-  tstart = std::clock();
+  if (output_zone_sec_) {
+    tstart = std::clock();
+  }
   const Real scalar_floor = pmy_block_->peos->GetScalarFloor();
   // primitive conserved variables
   AthenaArray<Real> &u = pmy_block_->phydro->u;
@@ -170,8 +172,8 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
       }
     }
   }
-  tstop = std::clock();
   if (output_zone_sec_) {
+    tstop = std::clock();
     double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
                        1.0)/static_cast<double> (CLOCKS_PER_SEC);
     std::uint64_t nzones =

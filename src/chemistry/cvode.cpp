@@ -25,13 +25,13 @@
 #include "ode_wrapper.hpp"
 
 namespace {
-  //solver tolerance
-  Real reltol_;//relative tolerance
+  // solver tolerance
+  Real reltol_; // relative tolerance
   AthenaArray<Real> abstol_;
-  //solver stepsize
+  // solver stepsize
   Real h_init_;
   bool use_previous_h_;
-  //factor of the max timestep in solver relative to the hydrostep
+  // factor of the max timestep in solver relative to the hydrostep
   Real fac_dtmax_;
   void CheckFlag(const void *flagvalue, const char *funcname,
                  const int opt);
@@ -40,6 +40,7 @@ namespace {
 //----------------------------------------------------------------------------------------
 //! \brief ODEWrapper constructor
 ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
+
   int flag;
   pmy_block_ = pmb;
   dense_matrix_ = NULL;
@@ -50,10 +51,10 @@ ODEWrapper::ODEWrapper(MeshBlock *pmb, ParameterInput *pin) {
     dim_ = NSPECIES;
   }
   abstol_.NewAthenaArray(dim_);
-  //Create the SUNDIALS context
+  // Create the SUNDIALS context
   flag = SUNContext_Create(NULL, &sunctx_);
   CheckFlag(&flag, "SUNContext_Create", 1);
-  //allocate y_
+  // allocate y_
   y_ = N_VNew_Serial(dim_, sunctx_);
   CheckFlag(static_cast<void *>(y_), "N_VNew_Serial", 0);
   ydata_ = NV_DATA_S(y_);
@@ -232,12 +233,13 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   AthenaArray<Real> &u = pmy_block_->phydro->u;
   AthenaArray<Real> &bcc = pmy_block_->pfield->bcc;
   // constants
-  const Real gm1 = pmy_block_->peos->GetGamma() - 1.0;
+  //const Real gm1 = pmy_block_->peos->GetGamma() - 1.0;
   const Real scalar_floor = pmy_block_->peos->GetScalarFloor();
   // timing of the chemistry in each cycle
-  int nzones = (ie-is+1) * (je-js+1) * (ke-ks+1);
   clock_t tstart, tstop;
-  tstart = std::clock();
+  if (output_zone_sec_) {
+    tstart = std::clock();
+  }
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       // copy s to r_copy
@@ -313,13 +315,13 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
       }
     }
   }
-  tstop = std::clock();
   if (output_zone_sec_) {
+    tstop = std::clock();
     double cpu_time = (tstop>tstart ? static_cast<double> (tstop-tstart) :
                        1.0)/static_cast<double> (CLOCKS_PER_SEC);
     std::uint64_t nzones =
       static_cast<std::uint64_t> (pmy_block_->GetNumberOfMeshBlockCells());
-    //double zone_sec = static_cast<double> (nzones) / cpu_time;
+    // double zone_sec = static_cast<double> (nzones) / cpu_time;
     printf("chemistry ODE integration: ");
     printf("ncycle = %d, total time in sec = %.2e, zone/sec=%.2e\n",
         ncycle, cpu_time, Real(nzones)/cpu_time);
