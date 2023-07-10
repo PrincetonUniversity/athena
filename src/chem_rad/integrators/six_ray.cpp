@@ -113,21 +113,21 @@ void ChemRadIntegrator::CopyToOutput() {
         for (int iang=0; iang < 6; iang++) {
           //column densities
           if (CHEMISTRY_ENABLED) {
-#ifdef DEBUG
+            if (DEBUG) {
             col_Htot(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNHtot_);
             col_H2(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNH2_);
             col_CO(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNCO_);
             col_C(iang, k, j, i) = col(iang_arr[iang], k, j, i, pmy_chemnet->iNC_);
-            //angel averaged column densities
+            // angle-averaged column densities
             for (int icol=0; icol<ncol; icol++) {
               if (iang == 0) {
                 col_avg(icol, k, j, i) = 0;
               }
               col_avg(icol, k, j, i) += col(iang, k, j, i, icol)/6.;
             }
-#endif //DEBUG
+            }
           }
-          //radiation
+          // radiation
           for (int ifreq=0; ifreq < pmy_rad->nfreq; ++ifreq) {
             if (iang == 0) {
               pmy_rad->ir_avg(ifreq, k, j, i) = 0;
