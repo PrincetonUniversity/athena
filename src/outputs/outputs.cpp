@@ -237,7 +237,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0 ||
             std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0)
           op.cartesian_vector = pin->GetOrAddBoolean(op.block_name, "cartesian_vector",
-                                                   false);
+                                                     false);
         else
           op.cartesian_vector = false;
 
@@ -589,9 +589,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       if (CHEMISTRY_ENABLED) {
         if (n < NSPECIES) {
           scalar_name_cons = root_name_cons +
-                                          psclr->chemnet.species_names[n];
+                             psclr->chemnet.species_names[n];
           scalar_name_prim = root_name_prim +
-                                          psclr->chemnet.species_names[n];
+                             psclr->chemnet.species_names[n];
         } else {
           scalar_name_cons = root_name_cons + std::to_string(n-NSPECIES);
           scalar_name_prim = root_name_prim + std::to_string(n-NSPECIES);
@@ -636,71 +636,71 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         num_vars_++;
       }
       if (CHEMISTRY_ENABLED) {
-#ifdef DEBUG
-        //for testing six-ray. Not implemented in HDF5 output yet
-        if (CHEMRADIATION_INTEGRATOR == "six_ray") {
-          //average column density
-          std::string name_col_avg = "col_avg";
-          for (int i=0; i<pchemrad->pchemradintegrator->ncol; i++) {
-            std::string vi = name_col_avg + std::to_string(i);
+        if (DEBUG) {
+          // for testing six-ray. Not implemented in HDF5 output yet
+          if (std::strcmp(CHEMRADIATION_INTEGRATOR, "six_ray") == 0) {
+            // average column density
+            std::string name_col_avg = "col_avg";
+            for (int i=0; i<pchemrad->pchemradintegrator->ncol; i++) {
+              std::string vi = name_col_avg + std::to_string(i);
+              pod = new OutputData;
+              pod->type = "SCALARS";
+              pod->name = vi;
+              pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_avg,4,i,1);
+              AppendOutputDataNode(pod);
+              num_vars_++;
+            }
+            // column density components
             pod = new OutputData;
-            pod->type = "SCALARS";
-            pod->name = vi;
-            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_avg,4,i,1);
+            pod->type = "VECTORS";
+            pod->name = "col_Htot_p";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_Htot,4,0,3);
             AppendOutputDataNode(pod);
-            num_vars_++;
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_H2_p";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_H2,4,0,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_CO_p";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_CO,4,0,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_C_p";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_C,4,0,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_Htot_m";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_Htot,4,3,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_H2_m";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_H2,4,3,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_CO_m";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_CO,4,3,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_C_m";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_C,4,3,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
           }
-          //column density components
-          pod = new OutputData;
-          pod->type = "VECTORS";
-          pod->name = "col_Htot_p";
-          pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_Htot,4,0,3);
-          AppendOutputDataNode(pod);
-          num_vars_ += 3;
-          pod = new OutputData;
-          pod->type = "VECTORS";
-          pod->name = "col_H2_p";
-          pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_H2,4,0,3);
-          AppendOutputDataNode(pod);
-          num_vars_ += 3;
-          pod = new OutputData;
-          pod->type = "VECTORS";
-          pod->name = "col_CO_p";
-          pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_CO,4,0,3);
-          AppendOutputDataNode(pod);
-          num_vars_ += 3;
-          pod = new OutputData;
-          pod->type = "VECTORS";
-          pod->name = "col_C_p";
-          pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_C,4,0,3);
-          AppendOutputDataNode(pod);
-          num_vars_ += 3;
-          pod = new OutputData;
-          pod->type = "VECTORS";
-          pod->name = "col_Htot_m";
-          pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_Htot,4,3,3);
-          AppendOutputDataNode(pod);
-          num_vars_ += 3;
-          pod = new OutputData;
-          pod->type = "VECTORS";
-          pod->name = "col_H2_m";
-          pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_H2,4,3,3);
-          AppendOutputDataNode(pod);
-          num_vars_ += 3;
-          pod = new OutputData;
-          pod->type = "VECTORS";
-          pod->name = "col_CO_m";
-          pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_CO,4,3,3);
-          AppendOutputDataNode(pod);
-          num_vars_ += 3;
-          pod = new OutputData;
-          pod->type = "VECTORS";
-          pod->name = "col_C_m";
-          pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_C,4,3,3);
-          AppendOutputDataNode(pod);
-          num_vars_ += 3;
         }
-#endif //DEBUG
       }
     }
   }
@@ -892,10 +892,10 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
   while (ptype != nullptr) {
     if (((pm->time == pm->start_time) // output initial conditions, unless next_time set
          && (ptype->output_params.next_time <= pm->start_time ))
-      || (ptype->output_params.dt > 0.0 && pm->time >= ptype->output_params.next_time)
-      || (ptype->output_params.dcycle > 0 && pm->ncycle%ptype->output_params.dcycle == 0)
-      || (pm->time >= pm->tlim)
-      || (wtflag && ptype->output_params.file_type == "rst")) {
+        || (ptype->output_params.dt > 0.0 && pm->time >= ptype->output_params.next_time)
+        || (ptype->output_params.dcycle > 0 && pm->ncycle%ptype->output_params.dcycle == 0)
+        || (pm->time >= pm->tlim)
+        || (wtflag && ptype->output_params.file_type == "rst")) {
       if (first && ptype->output_params.file_type != "hst") {
         pm->ApplyUserWorkBeforeOutput(pin);
         first = false;
@@ -1189,7 +1189,7 @@ bool OutputType::ContainVariable(const std::string &haystack, const std::string 
   if (haystack.find(needle + ',') == 0)
     return true;
   if (haystack.find(',' + needle) != std::string::npos
-    && haystack.find(',' + needle) == haystack.length() - needle.length() - 1)
+      && haystack.find(',' + needle) == haystack.length() - needle.length() - 1)
     return true;
   return false;
 }

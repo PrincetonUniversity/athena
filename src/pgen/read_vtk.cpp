@@ -121,17 +121,17 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   AthenaArray<Real> data; //temporary array to store data;
   AthenaArray<Real> b; //needed for PrimitiveToConserved()
   if (isjoinedvtk != 0) {
-#ifdef DEBUG
-    printf("Joined vtk file. data size = (%d, %d, %d)\n",
-           Nz_mesh, Ny_mesh, Nx_mesh);
-#endif
+    if (DEBUG) {
+      printf("Joined vtk file. data size = (%d, %d, %d)\n",
+             Nz_mesh, Ny_mesh, Nx_mesh);
+    }
     data.NewAthenaArray(Nz_mesh, Ny_mesh, Nx_mesh);
     b.NewAthenaArray(Nz_mesh, Ny_mesh, Nx_mesh);
   } else {
-#ifdef DEBUG
-    printf("Unjoined vtk file. data size = (%d, %d, %d)\n",
-           Nz, Ny, Nx);
-#endif
+    if (DEBUG) {
+      printf("Unjoined vtk file. data size = (%d, %d, %d)\n",
+             Nz, Ny, Nx);
+    }
     data.NewAthenaArray(Nz, Ny, Nx);
     b.NewAthenaArray(Nz, Ny, Nx);
   }
@@ -164,23 +164,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for(std::uint64_t i = 0; i < scalar_fields.size(); ++i) {
       if (scalar_fields[i] == "density") {
         if (Globals::my_rank == 0) {
-#ifdef DEBUG
-          printf("Process 0: start to read density.\n");
-#endif
+          if (DEBUG) {
+            printf("Process 0: start to read density.\n");
+          }
           readvtk(this, vtkfile, "density", 0, data, isjoinedvtk);
         }
 #ifdef MPI_PARALLEL
-#ifdef DEBUG
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf("Start to MPI broadcast density.\n");
-#endif
+        if (DEBUG) {
+          MPI_Barrier(MPI_COMM_WORLD);
+          printf("Start to MPI broadcast density.\n");
+        }
         ierr = MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
-            MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
-#ifdef DEBUG
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf("End MPI brocast density.\n");
-#endif
-#endif //MPI_PARALLEL
+                         MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
+        if (DEBUG) {
+          MPI_Barrier(MPI_COMM_WORLD);
+          printf("End MPI brocast density.\n");
+        }
+#endif // MPI_PARALLEL
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
             for (int i=is; i<=ie; ++i) {
@@ -190,23 +190,23 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       } else if (scalar_fields[i] == "pressure") {
         if (Globals::my_rank == 0) {
-#ifdef DEBUG
-          printf("Process 0: Start to read pressure.\n");
-#endif
+          if (DEBUG) {
+            printf("Process 0: Start to read pressure.\n");
+          }
           readvtk(this, vtkfile, "pressure", 0, data, isjoinedvtk);
         }
 #ifdef MPI_PARALLEL
-#ifdef DEBUG
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf("Start to MPI broadcast pressure.\n");
-#endif
+        if (DEBUG) {
+          MPI_Barrier(MPI_COMM_WORLD);
+          printf("Start to MPI broadcast pressure.\n");
+        }
         ierr = MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
-            MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
-#ifdef DEBUG
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf("End MPI brocast pressure.\n");
-#endif
-#endif //MPI_PARRLLEL
+                         MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
+        if (DEBUG) {
+          MPI_Barrier(MPI_COMM_WORLD);
+          printf("End MPI brocast pressure.\n");
+        }
+#endif // MPI_PARRLLEL
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
             for (int i=is; i<=ie; ++i) {
@@ -220,28 +220,28 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         throw std::runtime_error(msg.str().c_str());
       }
     }
-    //vectors
+    // vectors
     for(std::uint64_t i = 0; i < vector_fields.size(); ++i) {
       if (vector_fields[i] == "velocity") {
-        //vx
+        // vx
         if (Globals::my_rank == 0) {
-#ifdef DEBUG
-          printf("Process 0: Start to read velocity.\n");
-#endif
+          if (DEBUG) {
+            printf("Process 0: Start to read velocity.\n");
+          }
           readvtk(this, vtkfile, "velocity", 0, data,isjoinedvtk);
         }
 #ifdef MPI_PARALLEL
-#ifdef DEBUG
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf("Start to MPI broadcast velocity 0.\n");
-#endif
+        if (DEBUG) {
+          MPI_Barrier(MPI_COMM_WORLD);
+          printf("Start to MPI broadcast velocity 0.\n");
+        }
         ierr = MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
-            MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
-#ifdef DEBUG
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf("End MPI brocast velocity 0.\n");
-#endif
-#endif //MPI_PARRLLEL
+                         MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
+        if (DEBUG) {
+          MPI_Barrier(MPI_COMM_WORLD);
+          printf("End MPI brocast velocity 0.\n");
+        }
+#endif // MPI_PARRLLEL
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
             for (int i=is; i<=ie; ++i) {
@@ -249,22 +249,22 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
           }
         }
-        //vy
+        // vy
         if (Globals::my_rank == 0) {
           readvtk(this, vtkfile, "velocity", 1, data,isjoinedvtk);
         }
 #ifdef MPI_PARALLEL
-#ifdef DEBUG
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf("Start to MPI broadcast velocity 1.\n");
-#endif
+        if (DEBUG) {
+          MPI_Barrier(MPI_COMM_WORLD);
+          printf("Start to MPI broadcast velocity 1.\n");
+        }
         ierr = MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
-            MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
-#ifdef DEBUG
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf("End MPI brocast velocity 1.\n");
-#endif
-#endif //MPI_PARRLLEL
+                         MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
+        if (DEBUG) {
+          MPI_Barrier(MPI_COMM_WORLD);
+          printf("End MPI brocast velocity 1.\n");
+        }
+#endif // MPI_PARRLLEL
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
             for (int i=is; i<=ie; ++i) {
@@ -272,22 +272,22 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
           }
         }
-        //vz
+        // vz
         if (Globals::my_rank == 0) {
           readvtk(this, vtkfile, "velocity", 2, data,isjoinedvtk);
         }
 #ifdef MPI_PARALLEL
-#ifdef DEBUG
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf("Start to MPI broadcast velocity 2.\n");
-#endif
+        if (DEBUG) {
+          MPI_Barrier(MPI_COMM_WORLD);
+          printf("Start to MPI broadcast velocity 2.\n");
+        }
         ierr = MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
-            MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
-#ifdef DEBUG
-        MPI_Barrier(MPI_COMM_WORLD);
-        printf("End MPI brocast velocity 2.\n");
-#endif
-#endif //MPI_PARRLLEL
+                         MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
+        if (DEBUG) {
+          MPI_Barrier(MPI_COMM_WORLD);
+          printf("End MPI brocast velocity 2.\n");
+        }
+#endif // MPI_PARRLLEL
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
             for (int i=is; i<=ie; ++i) {
@@ -303,21 +303,21 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
 
   } else {
-    //find coresponding filename.
+    // find coresponding filename.
     if (loc.lx1 == 0 && loc.lx2 == 0 && loc.lx3 == 0) {
       vtkfile = vtkfile0;
     } else {
-      //find the corespoinding athena4.2 global id
+      // find the corespoinding athena4.2 global id
       int64_t id_old = loc.lx1 + loc.lx2 * pmy_mesh->nrbx1
         + loc.lx3 * pmy_mesh->nrbx1 * pmy_mesh->nrbx2;
-      //get vtk file name .../id#/problem-id#.????.vtk
+      // get vtk file name .../id#/problem-id#.????.vtk
       std::stringstream id_str_stream;
-      id_str_stream << "id" << id_old;// id#
+      id_str_stream << "id" << id_old; // id#
       std::string id_str = id_str_stream.str();
-      std::size_t pos1 = vtkfile0.find_last_of('/');//last /
-      std::size_t pos2 = vtkfile0.find_last_of('/', pos1-1);//second last /
-      std::string base_dir = vtkfile0.substr(0, pos2+1);// "base_directory/"
-      std::string vtk_name0 = vtkfile0.substr(pos1);// "/bala.????.vtk"
+      std::size_t pos1 = vtkfile0.find_last_of('/'); //last /
+      std::size_t pos2 = vtkfile0.find_last_of('/', pos1-1); //second last /
+      std::string base_dir = vtkfile0.substr(0, pos2+1); // "base_directory/"
+      std::string vtk_name0 = vtkfile0.substr(pos1); // "/bala.????.vtk"
       std::size_t pos3 = vtk_name0.find_first_of('.');
       std::string vtk_name = vtk_name0.substr(0, pos3) + "-" + id_str
         + vtk_name0.substr(pos3);
@@ -356,10 +356,10 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         throw std::runtime_error(msg.str().c_str());
       }
     }
-    //read vectors
+    // read vectors
     for (std::uint64_t i = 0; i < vector_fields.size(); ++i) {
       if (vector_fields[i] == "velocity") {
-        //vx
+        // vx
         readvtk(this, vtkfile, "velocity", 0, data,isjoinedvtk);
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
@@ -368,7 +368,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
           }
         }
-        //vy
+        // vy
         readvtk(this, vtkfile, "velocity", 1, data,isjoinedvtk);
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
@@ -377,7 +377,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             }
           }
         }
-        //vz
+        // vz
         readvtk(this, vtkfile, "velocity", 2, data,isjoinedvtk);
         for (int k=ks; k<=ke; ++k) {
           for (int j=js; j<=je; ++j) {
@@ -394,11 +394,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
-  //change primative variables to conservative variables.
+  // change primative variables to conservative variables.
   peos->PrimitiveToConserved(phydro->w, b, phydro->u, pcoord,
                                      is, ie, js, je, ks, ke);
 
-  //intialize radiation field
+  // intialize radiation field
   if (CHEMRADIATION_ENABLED) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -410,7 +410,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           }
           if (CHEMISTRY_ENABLED) {
             for (int iang=0; iang < pchemrad->nang; ++iang) {
-              //cr rate
+              // cr rate
               pchemrad->ir(k, j, i,
                   pscalars->chemnet.index_cr_ * pchemrad->nang + iang) = cr_rate;
             }
@@ -418,11 +418,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    //calculate the average radiation field for output of the initial condition
+    // calculate the average radiation field for output of the initial condition
     pchemrad->pchemradintegrator->CopyToOutput();
   }
 
-  //intialize chemical species
+  // intialize chemical species
   if (NSPECIES > 0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -445,6 +445,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+
 //======================================================================================
 //! \fn static void readvtk(MeshBlock *, std::string , std::string,
 //!                         int , AthenaArray<Real> &, int)
@@ -457,11 +458,11 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   FILE *fp = NULL;
   char cline[256], type[256], variable[256], format[256], t_type[256], t_format[256];
   std::string line;
-  const std::string athena_header = "# vtk DataFile Version 2.0"; //athena4.2 header
-  const std::string athena_header3 = "# vtk DataFile Version 3.0"; //athena4.2 header
+  const std::string athena_header = "# vtk DataFile Version 2.0"; // athena4.2 header
+  const std::string athena_header3 = "# vtk DataFile Version 3.0"; // athena4.2 header
   bool SHOW_OUTPUT = false;
-  int Nx_vtk, Ny_vtk, Nz_vtk; //dimensions of vtk files
-  //dimensions of meshblock
+  int Nx_vtk, Ny_vtk, Nz_vtk; // dimensions of vtk files
+  // dimensions of meshblock
   int Nx_mb, Ny_mb, Nz_mb;
   if (isjoinedvtk != 0) {
     Nx_mb = mb->pmy_mesh->mesh_size.nx1;
@@ -472,14 +473,14 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     Ny_mb = mb->je - mb->js + 1;
     Nz_mb = mb->ke - mb->ks + 1;
   }
-  double ox_vtk, oy_vtk, oz_vtk; //origins of vtk file
-  double dx_vtk, dy_vtk, dz_vtk; //spacings of vtk file
-  int cell_dat_vtk; //total number of cells in vtk file
-  //total number of cells in MeshBlock
+  double ox_vtk, oy_vtk, oz_vtk; // origins of vtk file
+  double dx_vtk, dy_vtk, dz_vtk; // spacings of vtk file
+  int cell_dat_vtk; // total number of cells in vtk file
+  // total number of cells in MeshBlock
   const int cell_dat_mb = Nx_mb * Ny_mb * Nz_mb;
   int retval;
-  size_t nread; //file handler return value
-  float fdat, fvec[3]; //, ften[9];//store float format scalar, vector, and tensor
+  size_t nread; // file handler return value
+  float fdat, fvec[3]; // , ften[9];// store float format scalar, vector, and tensor
 
   if ( (fp = fopen(filename.c_str(),"r")) == NULL ) {
     msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
@@ -487,7 +488,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     throw std::runtime_error(msg.str().c_str());
   }
 
-  //get header
+  // get header
   fgets(cline,256,fp);
   line.assign(cline);
   StringUtils::trim(line);
@@ -502,7 +503,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     throw std::runtime_error(msg.str().c_str());
   }
 
-  //get comment field
+  // get comment field
   fgets(cline,256,fp);
   line.assign(cline);
   StringUtils::trim(line);
@@ -510,7 +511,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     std::cout << line << std::endl;
   }
 
-  //get BINARY or ASCII
+  // get BINARY or ASCII
   fgets(cline,256,fp);
   line.assign(cline);
   StringUtils::trim(line);
@@ -524,7 +525,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     throw std::runtime_error(msg.str().c_str());
   }
 
-  //get DATASET STRUCTURED_POINTS or DATASET UNSTRUCTURED_GRID
+  // get DATASET STRUCTURED_POINTS or DATASET UNSTRUCTURED_GRID
   fgets(cline,256,fp);
   line.assign(cline);
   StringUtils::trim(line);
@@ -538,16 +539,16 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     throw std::runtime_error(msg.str().c_str());
   }
 
-  //I'm assuming from this point on that the header is in good shape
+  // I'm assuming from this point on that the header is in good shape
 
-  //read dimensions
+  // read dimensions
   fgets(cline,256,fp);
   if (SHOW_OUTPUT) {
     std::cout << cline;
   }
   sscanf(cline,"DIMENSIONS %d %d %d\n",&Nx_vtk,&Ny_vtk,&Nz_vtk);
-  //We want to store the number of grid cells, not the number of grid
-  //cell corners.
+  // We want to store the number of grid cells, not the number of grid
+  // cell corners.
   Nx_vtk--;
   Ny_vtk--;
   Nz_vtk--;
@@ -590,24 +591,24 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     throw std::runtime_error(msg.str().c_str());
   }
 
-  //-------------read data--------------
+  // -------------read data--------------
   while (true) {
     retval = std::fscanf(fp,"%s %s %s\n", type, variable, format);
     if (retval == EOF) { // Assuming no errors, we are done.
-      fclose(fp); //close file
+      fclose(fp); // close file
       return;
     }
     if (SHOW_OUTPUT) {
       printf("%s %s %s\n", type, variable ,format);
     }
-    //check format
+    // check format
     if (std::strcmp(format, "float") != 0) {
       fclose(fp);
       msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
         << "expected  \"float\" format, found " << type << std::endl;
       throw std::runtime_error(msg.str().c_str());
     }
-    //check lookup table
+    // check lookup table
     if (std::strcmp(type, "SCALARS") == 0) {
       // Read in the LOOKUP_TABLE (only default supported for now)
       fscanf(fp,"%s %s\n", t_type, t_format);
@@ -624,8 +625,8 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
       }
     }
 
-    //determine variable type and read data
-    //read scalars
+    // determine variable type and read data
+    // read scalars
     if (std::strcmp(type, "SCALARS") == 0) {
       if (std::strcmp(variable, field.c_str()) == 0) {
         printf("  Reading %s...\n", variable);
@@ -649,7 +650,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
         if (SHOW_OUTPUT) printf("  Skipping %s...\n",variable);
         std::fseek(fp, cell_dat_vtk*sizeof(float), SEEK_CUR);
       }
-    //read vectors
+    // read vectors
     } else if (std::strcmp(type, "VECTORS") == 0) {
       if (std::strcmp(variable, field.c_str()) == 0) {
         printf("  Reading %s%d...\n", variable, component);
@@ -673,7 +674,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
         if (SHOW_OUTPUT) printf("  Skipping %s...\n", variable);
         std::fseek(fp, 3*cell_dat_vtk*sizeof(float), SEEK_CUR);
       }
-    //read tensors, not supported yet
+    // read tensors, not supported yet
     } else if (std::strcmp(type, "TENSORS") == 0) {
       if (std::strcmp(variable, field.c_str()) == 0) {
         fclose(fp);
@@ -692,6 +693,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     }
   }
 }
+
 
 //======================================================================================
 //! \fn static void ath_bswap(void *vdat, int len, int cnt)
@@ -734,7 +736,7 @@ static void ath_bswap(void *vdat, int len, int cnt) {
 void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  //set species and column boundary to zero
+  // set species and column boundary to zero
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -745,7 +747,7 @@ void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
       }
     }
   }
-  //set hydro variables to zero
+  // set hydro variables to zero
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -762,7 +764,7 @@ void SixRayBoundaryInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
 void SixRayBoundaryInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  //set species and column boundary to zero
+  // set species and column boundary to zero
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
@@ -773,7 +775,7 @@ void SixRayBoundaryInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
       }
     }
   }
-  //set hydro variables to zero
+  // set hydro variables to zero
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
@@ -790,7 +792,7 @@ void SixRayBoundaryInnerX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
 void SixRayBoundaryInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  //set species and column boundary to zero
+  // set species and column boundary to zero
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -801,7 +803,7 @@ void SixRayBoundaryInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
       }
     }
   }
-  //set hydro variables to zero
+  // set hydro variables to zero
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -818,7 +820,7 @@ void SixRayBoundaryInnerX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
 void SixRayBoundaryOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  //set species and column boundary to zero
+  // set species and column boundary to zero
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -829,7 +831,7 @@ void SixRayBoundaryOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
       }
     }
   }
-  //set hydro variables to zero
+  // set hydro variables to zero
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -846,7 +848,7 @@ void SixRayBoundaryOuterX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
 void SixRayBoundaryOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  //set species and column boundary to zero
+  // set species and column boundary to zero
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
@@ -857,7 +859,7 @@ void SixRayBoundaryOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
       }
     }
   }
-  //set hydro variables to zero
+  // set hydro variables to zero
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=1; j<=ngh; ++j) {
@@ -874,7 +876,7 @@ void SixRayBoundaryOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
 void SixRayBoundaryOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,
                            FaceField &b, Real time, Real dt,
                            int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
-  //set species and column boundary to zero
+  // set species and column boundary to zero
   for (int n=0; n<(NSPECIES); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -885,7 +887,7 @@ void SixRayBoundaryOuterX3(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &
       }
     }
   }
-  //set hydro variables to zero
+  // set hydro variables to zero
   for (int n=0; n<(NHYDRO); ++n) {
     for (int k=1; k<=ngh; ++k) {
       for (int j=jl; j<=ju; ++j) {

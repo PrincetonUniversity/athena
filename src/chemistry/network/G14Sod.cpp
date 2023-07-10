@@ -217,23 +217,22 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED, Real *ydot) {
     if (yprev0[in2body1_[i]] < 0 && yprev0[in2body2_[i]] < 0) {
       rate *= -1.;
     }
-#ifdef DEBUG
-    if (species_names_all_[in2body1_[i]] == "H2"
-        || species_names_all_[in2body2_[i]]== "H2") {
-      printf("Dec: k2body_[%.2i]*(X_%s)*(X_%s) = %.2e* %.2e * %.2e = %.2e \n",
-          i, species_names_all_[in2body1_[i]].c_str(),
-          species_names_all_[in2body2_[i]].c_str(),
-          k2body_[i], yprev0[in2body1_[i]], yprev0[in2body2_[i]],rate);
+    if (DEBUG) {
+      if (species_names_all_[in2body1_[i]] == "H2"
+          || species_names_all_[in2body2_[i]]== "H2") {
+        printf("Dec: k2body_[%.2i]*(X_%s)*(X_%s) = %.2e* %.2e * %.2e = %.2e \n",
+               i, species_names_all_[in2body1_[i]].c_str(),
+               species_names_all_[in2body2_[i]].c_str(),
+               k2body_[i], yprev0[in2body1_[i]], yprev0[in2body2_[i]],rate);
+      }
+      if (species_names_all_[out2body1_[i]] == "H2"
+          || species_names_all_[out2body2_[i]]== "H2") {
+        printf("Inc: k2body_[%.2i]*(X_%s)*(X_%s) = %.2e* %.2e * %.2e = %.2e \n",
+               i, species_names_all_[in2body1_[i]].c_str(),
+               species_names_all_[in2body2_[i]].c_str(),
+               k2body_[i] ,yprev0[in2body1_[i]], yprev0[in2body2_[i]],rate);
+      }
     }
-    if (species_names_all_[out2body1_[i]] == "H2"
-        || species_names_all_[out2body2_[i]]== "H2") {
-      printf("Inc: k2body_[%.2i]*(X_%s)*(X_%s) = %.2e* %.2e * %.2e = %.2e \n",
-          i, species_names_all_[in2body1_[i]].c_str(),
-          species_names_all_[in2body2_[i]].c_str(),
-          k2body_[i] ,yprev0[in2body1_[i]], yprev0[in2body2_[i]],rate);
-    }
-
-#endif
     ydotg[in2body1_[i]]  -= stoich_in2body1[i]*rate;
     ydotg[in2body2_[i]]  -= stoich_in2body2[i]*rate;
     ydotg[out2body1_[i]] += stoich_out2body1[i]*rate;
@@ -244,16 +243,16 @@ void ChemNetwork::RHS(const Real t, const Real *y, const Real ED, Real *ydot) {
     // return in code units
     ydot[i] = ydotg[i] * pmy_mb_->punit->code_time_cgs * nH_;
   }
-#ifdef DEBUG
-  OutputRates(stdout);
-  printf("nH_ = %2.e \n",nH_);
-  printf("one loop finish, ydot, ydotg yprev = \n");
-  for (int j=0; j<NSPECIES+ngs_; j++) {
-    printf("%s: %.2e , %.2e, %.2e ", species_names_all_[j].c_str(),
-                                     ydot[j],ydotg[j],yprev[j]);
-    printf("\n");
+  if (DEBUG) {
+    OutputRates(stdout);
+    printf("nH_ = %2.e \n",nH_);
+    printf("one loop finish, ydot, ydotg yprev = \n");
+    for (int j=0; j<NSPECIES+ngs_; j++) {
+      printf("%s: %.2e , %.2e, %.2e ", species_names_all_[j].c_str(),
+             ydot[j],ydotg[j],yprev[j]);
+      printf("\n");
+    }
   }
-#endif
   delete[] yprev;
   delete[] yprev0;
   delete[] ydotg;
@@ -440,16 +439,16 @@ Real ChemNetwork::Edot(const Real t, const Real *y, const Real ED) {
 
   // return in code units
   Real dEDdt = - LH2* nH_ / pmy_mb_->punit->code_energydensity_cgs
-                  * pmy_mb_->punit->code_time_cgs;
-#ifdef DEBUG
-  printf("T=%.4e, dEDdt=%.2e, E=%.2e, dEergsdt=%.2e, E_ergs=%.2e, nH=%.2e\n",
-      T, dEDdt, ED, dEdt, E_ergs,nH_);
-  for (int i=0; i<NSPECIES+ngs_; i++) {
-    printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
+               * pmy_mb_->punit->code_time_cgs;
+  if (DEBUG) {
+    printf("T=%.4e, dEDdt=%.2e, E=%.2e, E_ergs=%.2e, nH=%.2e\n",
+           T, dEDdt, ED, E_ergs, nH_);
+    for (int i=0; i<NSPECIES+ngs_; i++) {
+      printf("%s: %.2e  ", species_names_all_[i].c_str(), yprev[i]);
+    }
+    printf("\n");
+    printf("=============================\n");
   }
-  printf("\n");
-  printf("=============================\n");
-#endif
   delete[] yprev;
   return dEDdt;
 }

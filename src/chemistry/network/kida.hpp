@@ -62,7 +62,7 @@ class ChemNetwork : public NetworkWrapper {
   int nices_;// number of ice species
 
   // physical quantities
-  constexpr Real xHe_ = 0.1;// Helium abundance
+  constexpr Real xHe_ = 0.1; // Helium abundance
   // whether to cap temperature if the reaction is outside of the temperature range
   // only for 2body reactions. Default is false, which means extrapolation
   bool is_Tcap_2body_;

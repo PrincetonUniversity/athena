@@ -30,7 +30,7 @@
 // ChemNetwork class header file included in species.hpp
 #define CHEMNETWORK_HEADER "@CHEMNETWORK_HEADER@"
 
-// ChemRadiation integrator method, used in constructing chemradiation tasklist
+// ChemRadiation integrator method, used in constructing ChemRadiationIntegratorTaskList
 #define CHEMRADIATION_INTEGRATOR "@CHEMRADIATION_INTEGRATOR@"
 
 // configure.py dict(definitions) Boolean 1/0 macros:
@@ -56,7 +56,7 @@
 // include chemistry? default=0 (false)
 #define CHEMISTRY_ENABLED @CHEMISTRY_ENABLED@
 
-// include radiative transfer? default=0 (false)
+// include radiative transfer in chemistry calculations? default=0 (false)
 #define CHEMRADIATION_ENABLED @CHEMRADIATION_ENABLED@
 
 // enable special or general relativity? default=0 (false)

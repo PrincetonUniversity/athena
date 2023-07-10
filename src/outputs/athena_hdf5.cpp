@@ -143,12 +143,12 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       num_variables[n_dataset] += NSCALARS;
     if (CHEMRADIATION_ENABLED) {
       num_variables[n_dataset] += pmb->pchemrad->nfreq;
-#ifdef DEBUG
-      if (CHEMISTRY_ENABLED) {
-        //for testing six-ray
-        num_variables[n_dataset] += pmb->pchemrad->pchemradintegrator->ncol + 3*8;
+      if (DEBUG) {
+        if (CHEMISTRY_ENABLED) {
+          // for testing six-ray
+          num_variables[n_dataset] += pmb->pchemrad->pchemradintegrator->ncol + 3*8;
+        }
       }
-#endif //DEBUG
     }
 
     // n_dataset = 1: face-centered FaceField variable data

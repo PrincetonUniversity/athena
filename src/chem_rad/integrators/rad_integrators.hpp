@@ -33,22 +33,20 @@ class ChemRadIntegrator {
   ChemRadiation *pmy_rad;
   MeshBlock *pmy_mb;
   ChemNetwork* pmy_chemnet;
-  int ncol; //number of column densities needed to track
-  AthenaArray<Real> col; //column densitites
-  //boundary for column densities
+  int ncol; // number of column densities needed to track
+  AthenaArray<Real> col; // column densitites
+  // boundary for column densities
   SixRayBoundaryVariable col_bvar;
-#ifdef DEBUG
-  AthenaArray<Real> col_avg, col_Htot, col_CO, col_H2,  col_C;//for debug output
-#endif //DEBUG
+  AthenaArray<Real> col_avg, col_Htot, col_CO, col_H2,  col_C; // for debug output
 
   void CopyToOutput();
 
   void UpdateRadiation();
 
  private:
-  //calculate column densities within the meshblock, for six_ray
+  // calculate column densities within the meshblock, for six_ray
   void GetColMB(BoundaryFace direction);
-  //update column density after boundary is received
+  // update column density after boundary is received
   void UpdateCol(BoundaryFace direction);
 };
 
