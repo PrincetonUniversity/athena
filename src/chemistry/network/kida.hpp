@@ -62,7 +62,7 @@ class ChemNetwork : public NetworkWrapper {
   int nices_;// number of ice species
 
   // physical quantities
-  constexpr Real xHe_ = 0.1; // Helium abundance
+  static constexpr Real xHe_ = 0.1; // Helium abundance
   // whether to cap temperature if the reaction is outside of the temperature range
   // only for 2body reactions. Default is false, which means extrapolation
   bool is_Tcap_2body_;
@@ -132,8 +132,8 @@ class ChemNetwork : public NetworkWrapper {
   int iph_H2_;
   // 2body reactions
   int n_2body_;
-  constexpr int n_in2body_ = 2;
-  constexpr int n_out2body_ = 4;
+  static constexpr int n_in2body_ = 2;
+  static constexpr int n_out2body_ = 4;
   AthenaArray<int> in2body_;
   AthenaArray<int> out2body_;
   AthenaArray<int> frml_2body_;
@@ -150,7 +150,7 @@ class ChemNetwork : public NetworkWrapper {
   // they have to be the same reaction, same ID, and arranged next to each other
   // with ascending temperature ranges
   int n_2bodytr_;
-  constexpr int n_range_ = 3; // maximum number of temperature ranges
+  static constexpr int n_range_ = 3; // maximum number of temperature ranges
   AthenaArray<int> in2bodytr1_;
   AthenaArray<int> in2bodytr2_;
   AthenaArray<int> out2bodytr1_;
@@ -176,15 +176,15 @@ class ChemNetwork : public NetworkWrapper {
   int igr_H_;  // index for gr fromation of H2 for its heating
   // special reactions
   int n_sr_;
-  constexpr int n_insr_ = 3;
-  constexpr int n_outsr_ = 5;
+  static constexpr int n_insr_ = 3;
+  static constexpr int n_outsr_ = 5;
   AthenaArray<int> insr_;
   AthenaArray<int> outsr_;
   AthenaArray<Real> ksr_;
   // grain collision: grain - electron/ion reactions
   int n_gc_;
-  constexpr int n_ingc_ = 2;
-  constexpr int n_outgc_ = 3;
+  static constexpr int n_ingc_ = 2;
+  static constexpr int n_outgc_ = 3;
   AthenaArray<int> ingc_;
   AthenaArray<int> outgc_;
   AthenaArray<int> nu_gc_; // nu={0, -1} for rate formula
