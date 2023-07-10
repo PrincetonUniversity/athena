@@ -244,7 +244,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -267,14 +267,14 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             xCI_prev = xCtot - pmy_mb->pscalars->r(iCO, k, j, i-1)
                   - pmy_mb->pscalars->r(iCplus, k, j, i-1)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i-1)
                   - pmy_mb->pscalars->r(iCHx, k, j, i-1);
-            if (xCI_prev < 0) {
+            if (xCI_prev < 0.0) {
               xCI_prev = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -302,7 +302,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -325,14 +325,14 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             xCI_prev = xCtot - pmy_mb->pscalars->r(iCO, k, j, i+1)
                   - pmy_mb->pscalars->r(iCplus, k, j, i+1)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i+1)
                   - pmy_mb->pscalars->r(iCHx, k, j, i+1);
-            if (xCI_prev < 0) {
+            if (xCI_prev < 0.0) {
               xCI_prev = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -360,7 +360,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -383,14 +383,14 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             xCI_prev = xCtot - pmy_mb->pscalars->r(iCO, k, j-1, i)
                   - pmy_mb->pscalars->r(iCplus, k, j-1, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j-1, i)
                   - pmy_mb->pscalars->r(iCHx, k, j-1, i);
-            if (xCI_prev < 0) {
+            if (xCI_prev < 0.0) {
               xCI_prev = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -418,7 +418,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -441,14 +441,14 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             xCI_prev = xCtot - pmy_mb->pscalars->r(iCO, k, j+1, i)
                   - pmy_mb->pscalars->r(iCplus, k, j+1, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j+1, i)
                   - pmy_mb->pscalars->r(iCHx, k, j+1, i);
-            if (xCI_prev < 0) {
+            if (xCI_prev < 0.0) {
               xCI_prev = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -476,7 +476,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -499,14 +499,14 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             xCI_prev = xCtot - pmy_mb->pscalars->r(iCO, k-1, j, i)
                   - pmy_mb->pscalars->r(iCplus, k-1, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k-1, j, i)
                   - pmy_mb->pscalars->r(iCHx, k-1, j, i);
-            if (xCI_prev < 0) {
+            if (xCI_prev < 0.0) {
               xCI_prev = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -534,7 +534,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -557,14 +557,14 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
                   - pmy_mb->pscalars->r(iCplus, k, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k, j, i)
                   - pmy_mb->pscalars->r(iCHx, k, j, i);
-            if (xCI < 0) {
+            if (xCI < 0.0) {
               xCI = 0.;
             }
             xCI_prev = xCtot - pmy_mb->pscalars->r(iCO, k+1, j, i)
                   - pmy_mb->pscalars->r(iCplus, k+1, j, i)
                   - pmy_mb->pscalars->r(iHCOplus, k+1, j, i)
                   - pmy_mb->pscalars->r(iCHx, k+1, j, i);
-            if (xCI_prev < 0) {
+            if (xCI_prev < 0.0) {
               xCI_prev = 0.;
             }
             col(direction, k, j, i, pmy_chemnet->iNC_) =
@@ -618,7 +618,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
           - pmy_mb->pscalars->r(iCplus, k, j, is-1)
           - pmy_mb->pscalars->r(iHCOplus, k, j, is-1)
           - pmy_mb->pscalars->r(iCHx, k, j, is-1);
-        if (xCI < 0) {
+        if (xCI < 0.0) {
           xCI = 0.;
         }
         NC_boundary = col(direction, k, j, is-1, pmy_chemnet->iNC_)
@@ -646,7 +646,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
           - pmy_mb->pscalars->r(iCplus, k, j, ie+1)
           - pmy_mb->pscalars->r(iHCOplus, k, j, ie+1)
           - pmy_mb->pscalars->r(iCHx, k, j, ie+1);
-        if (xCI < 0) {
+        if (xCI < 0.0) {
           xCI = 0.;
         }
         NC_boundary = col(direction, k, j, ie+1, pmy_chemnet->iNC_)
@@ -675,7 +675,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
             - pmy_mb->pscalars->r(iCplus, k, js-1, i)
             - pmy_mb->pscalars->r(iHCOplus, k, js-1, i)
             - pmy_mb->pscalars->r(iCHx, k, js-1, i);
-          if (xCI < 0) {
+          if (xCI < 0.0) {
             xCI = 0.;
           }
           NC_boundary = col(direction, k, js-1, i, pmy_chemnet->iNC_)
@@ -705,7 +705,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
             - pmy_mb->pscalars->r(iCplus, k, je+1, i)
             - pmy_mb->pscalars->r(iHCOplus, k, je+1, i)
             - pmy_mb->pscalars->r(iCHx, k, je+1, i);
-          if (xCI < 0) {
+          if (xCI < 0.0) {
             xCI = 0.;
           }
           NC_boundary = col(direction, k, je+1, i, pmy_chemnet->iNC_)
@@ -735,7 +735,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
             - pmy_mb->pscalars->r(iCplus, ks-1, j, i)
             - pmy_mb->pscalars->r(iHCOplus, ks-1, j, i)
             - pmy_mb->pscalars->r(iCHx, ks-1, j, i);
-          if (xCI < 0) {
+          if (xCI < 0.0) {
             xCI = 0.;
           }
           NC_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNC_)
@@ -765,7 +765,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
             - pmy_mb->pscalars->r(iCplus, ke+1, j, i)
             - pmy_mb->pscalars->r(iHCOplus, ke+1, j, i)
             - pmy_mb->pscalars->r(iCHx, ke+1, j, i);
-          if (xCI < 0) {
+          if (xCI < 0.0) {
             xCI = 0.;
           }
           NC_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNC_)
