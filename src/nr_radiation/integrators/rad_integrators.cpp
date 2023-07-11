@@ -36,6 +36,7 @@
 #include "../radiation.hpp"
 #include "rad_integrators.hpp"
 
+static constexpr Real tau_asymptotic_lim=1.0e-3;
 
 RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin) {
   pmy_rad = prad;
@@ -778,7 +779,7 @@ void RadIntegrator::GetTaufactor(const Real tau, Real &factor1, int dir) {
     if (tau_flag_ == 1) {
       Real tausq = tau * tau;
       factor1 = 1.0 - 0.5 * tausq;
-      if (tausq > 1.e-3) {
+      if (tausq > tau_asymptotic_lim) {
         factor1  = (1.0 - std::exp(-tausq))/tausq;
       }
       factor1 = std::sqrt(factor1);
@@ -798,7 +799,7 @@ void RadIntegrator::GetTaufactor(const Real tau, Real &factor1, int dir) {
     if (tau_flag_ == 1) {
       Real tausq = tau * tau;
       factor1 = tausq;
-      if (tausq > 1.e-3) {
+      if (tausq > tau_asymptotic_lim) {
         factor1  = (1.0 - std::exp(-tausq*tausq))/tausq;
       }
       factor1 = std::sqrt(factor1);
@@ -821,7 +822,7 @@ void RadIntegrator::GetTaufactor(const Real tau, Real &factor1, int dir) {
 void RadIntegrator::GetTaufactorAdv(const Real tau, Real &factor) {
   Real tausq = tau * tau;
   factor = tausq - 0.5 * tausq * tausq;
-  if (tausq > 1.e-3)
+  if (tausq > tau_asymptotic_lim)
     factor = (1.0 - std::exp(-tausq));
   return;
 }

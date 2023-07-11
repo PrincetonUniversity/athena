@@ -46,6 +46,7 @@
 #include <omp.h>
 #endif
 
+static constexpr Real tau_asymptotic_lim=1.0e-3;
 
 void CRIntegrator::CalculateFluxes(
     AthenaArray<Real> &w, AthenaArray<Real> &bcc,
@@ -54,7 +55,6 @@ void CRIntegrator::CalculateFluxes(
   MeshBlock *pmb=pcr->pmy_block;
   Coordinates *pco = pmb->pcoord;
   Real invlim = 1.0/pcr->vmax;
-
 
   int ncells1 = pmb->ncells1, ncells2 = pmb->ncells2,
       ncells3 = pmb->ncells3;
@@ -90,7 +90,7 @@ void CRIntegrator::CalculateFluxes(
         taux = taux * taux/(2.0 * eddxx);
         Real diffv = 1.0;
 
-        if (taux < 1.e-3) {
+        if (taux < tau_asymptotic_lim) {
           diffv = std::sqrt((1.0 - 0.5* taux));
         } else {
           diffv = std::sqrt((1.0 - std::exp(-taux)) / taux);
@@ -113,7 +113,7 @@ void CRIntegrator::CalculateFluxes(
 
           Real diffv = 1.0;
 
-          if (tauy < 1.e-3) {
+          if (tauy < tau_asymptotic_lim) {
             diffv = std::sqrt((1.0 - 0.5* tauy));
           } else {
             diffv = std::sqrt((1.0 - std::exp(-tauy)) / tauy);
@@ -140,7 +140,7 @@ void CRIntegrator::CalculateFluxes(
 
           Real diffv = 1.0;
 
-          if (tauz < 1.e-3) {
+          if (tauz < tau_asymptotic_lim) {
             diffv = std::sqrt((1.0 - 0.5* tauz));
           } else {
             diffv = std::sqrt((1.0 - std::exp(-tauz)) / tauz);

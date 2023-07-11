@@ -36,7 +36,7 @@ int FouthPolyRoot(const Real coef4, const Real tconst, Real &root) {
       return -1;
   }
   Real zroot = 0.0;
-  if (delta1 > 1.e10) {
+  if (delta1 > BIG_NUMBER) {
     // to avoid small number cancellation
     zroot = std::pow(delta1,-2.0/3.0)/3.0;
   } else {

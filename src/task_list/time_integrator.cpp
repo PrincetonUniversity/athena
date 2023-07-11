@@ -2923,9 +2923,8 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
       ave_wghts[4] = 0.0;
       if (CR_ENABLED) {
         pmb->WeightedAve(pcr->u_cr1, pcr->u_cr, pcr->u_cr2, pcr->u_cr2, pcr->u_cr2,
-                                                                            ave_wghts);
+                         ave_wghts);
       }
-
       ave_wghts[0] = stage_wghts[stage-1].gamma_1;
       ave_wghts[1] = stage_wghts[stage-1].gamma_2;
       ave_wghts[2] = stage_wghts[stage-1].gamma_3;
@@ -2933,18 +2932,15 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
         if (CR_ENABLED)
           pcr->u_cr1.SwapAthenaArray(pcr->u_cr);
       } else {
-        //ave_wghts[3] and ave_wght[4] = 0
+        // ave_wghts[3] and ave_wght[4] = 0
         if (CR_ENABLED)
           pmb->WeightedAve(pcr->u_cr, pcr->u_cr1, pcr->u_cr2, pcr->u_cr2, pcr->u_cr2,
-                                                                           ave_wghts);
+                           ave_wghts);
       }
-
       const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
-
       if (CR_ENABLED) {
         pcr->pcrintegrator->FluxDivergence(wght, pcr->u_cr);
       }
-
     }
     return TaskStatus::next;
   }
