@@ -381,11 +381,6 @@ void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
       case BoundaryCommSubset::radiation:
         break;
       case BoundaryCommSubset::radhydro:
-        for (auto bvars_it = bvars_subset.begin(); bvars_it != bvars_subset.end();
-             ++bvars_it) {
-          (*bvars_it)->StartReceivingShear(phase);
-        }
-        break;
       case BoundaryCommSubset::all:
       case BoundaryCommSubset::orbital:
         for (auto bvars_it = bvars_subset.begin(); bvars_it != bvars_subset.end();
