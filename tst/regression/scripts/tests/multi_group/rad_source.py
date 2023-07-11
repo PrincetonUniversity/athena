@@ -6,7 +6,6 @@
 import numpy as np
 import sys
 import scripts.utils.athena as athena
-import os
 sys.path.insert(0, '../../vis/python')
 
 # Prepare Athena++
