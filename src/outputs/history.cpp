@@ -406,7 +406,7 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         std::fprintf(pfile,"[%d]=Fc3    ", iout++);
       }
       for (int n=0; n<pm->nuser_history_output_; n++)
-        std::fprintf(pfile,"[%d]=%-7s", iout++,
+        std::fprintf(pfile,"[%d]=%-7s ", iout++,
                      pm->user_history_output_names_[n].c_str());
       std::fprintf(pfile,"\n");                              // terminate line
     }
