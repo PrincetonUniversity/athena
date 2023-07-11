@@ -2915,12 +2915,15 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
 
   if (stage <= nstages) {
     if (stage_wghts[stage-1].main_stage) {
-      Real ave_wghts[3];
+      Real ave_wghts[5];
       ave_wghts[0] = 1.0;
       ave_wghts[1] = stage_wghts[stage-1].delta;
       ave_wghts[2] = 0.0;
+      ave_wghts[3] = 0.0;
+      ave_wghts[4] = 0.0;
       if (CR_ENABLED) {
-        pmb->WeightedAve(pcr->u_cr1, pcr->u_cr, pcr->u_cr2, ave_wghts,2);
+        pmb->WeightedAve(pcr->u_cr1, pcr->u_cr, pcr->u_cr2, pcr->u_cr2, pcr->u_cr2,
+                                                                            ave_wghts);
       }
 
       ave_wghts[0] = stage_wghts[stage-1].gamma_1;
@@ -2930,8 +2933,10 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
         if (CR_ENABLED)
           pcr->u_cr1.SwapAthenaArray(pcr->u_cr);
       } else {
+        //ave_wghts[3] and ave_wght[4] = 0
         if (CR_ENABLED)
-          pmb->WeightedAve(pcr->u_cr, pcr->u_cr1, pcr->u_cr2, ave_wghts,2);
+          pmb->WeightedAve(pcr->u_cr, pcr->u_cr1, pcr->u_cr2, pcr->u_cr2, pcr->u_cr2,
+                                                                           ave_wghts);
       }
 
       const Real wght = stage_wghts[stage-1].beta*pmb->pmy_mesh->dt;
@@ -2939,23 +2944,7 @@ TaskStatus TimeIntegratorTaskList::IntegrateCRTC(MeshBlock *pmb, int stage) {
       if (CR_ENABLED) {
         pcr->pcrintegrator->FluxDivergence(wght, pcr->u_cr);
       }
-      // no geometric source term for radiation
 
-      // Hardcode an additional flux divergence weighted average for the penultimate
-      // stage of SSPRK(5,4) since it cannot be expressed in a 3S* framework
-      if (stage == 4 && integrator == "ssprk5_4") {
-      // From Gottlieb (2009), u^(n+1) partial calculation
-        ave_wghts[0] = -1.0; // -u^(n) coeff.
-        ave_wghts[1] = 0.0;
-        ave_wghts[2] = 0.0;
-        const Real beta = 0.063692468666290; // F(u^(3)) coeff.
-        const Real wght_ssp = beta*pmb->pmy_mesh->dt;
-        // writing out to u2 register
-        if (CR_ENABLED) {
-          pmb->WeightedAve(pcr->u_cr2, pcr->u_cr1, pcr->u_cr2, ave_wghts,2);
-          pcr->pcrintegrator->FluxDivergence(wght_ssp, pcr->u_cr2);
-        }
-      }
     }
     return TaskStatus::next;
   }

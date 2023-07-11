@@ -11,6 +11,8 @@
 // C++ headers
 #include <algorithm>  // std::binary_search
 #include <vector>     // std::vector
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -344,110 +346,15 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
         }
       }
     }
-  } else if(flag == 2) {
-    const int nu = u_out.GetDim4() - 1;
-    // u_in2 may be an unallocated AthenaArray if using a 2S time integrator
-    if (wght[0] == 1.0) {
-      if (wght[2] != 0.0) {
-        for (int n=0; n<=nu; ++n) {
-          for (int k=ks; k<=ke; ++k) {
-            for (int j=js; j<=je; ++j) {
-#pragma omp simd
-              for (int i=is; i<=ie; ++i) {
-                u_out(n,k,j,i) += wght[1]*u_in1(n,k,j,i) + wght[2]*u_in2(n,k,j,i);
-              }
-            }
-          }
-        }
-      } else { // do not dereference u_in2
-        if (wght[1] != 0.0) {
-          for (int n=0; n<=nu; ++n) {
-            for (int k=ks; k<=ke; ++k) {
-              for (int j=js; j<=je; ++j) {
-#pragma omp simd
-                for (int i=is; i<=ie; ++i) {
-                  u_out(n,k,j,i) += wght[1]*u_in1(n,k,j,i);
-                }
-              }
-            }
-          }
-        }
-      }
-    } else if (wght[0] == 0.0) {
-      if (wght[2] != 0.0) {
-        for (int n=0; n<=nu; ++n) {
-          for (int k=ks; k<=ke; ++k) {
-            for (int j=js; j<=je; ++j) {
-#pragma omp simd
-              for (int i=is; i<=ie; ++i) {
-                u_out(n,k,j,i) = wght[1]*u_in1(n,k,j,i) + wght[2]*u_in2(n,k,j,i);
-              }
-            }
-          }
-        }
-      } else if (wght[1] == 1.0) {
-        // just deep copy
-        for (int n=0; n<=nu; ++n) {
-          for (int k=ks; k<=ke; ++k) {
-            for (int j=js; j<=je; ++j) {
-#pragma omp simd
-              for (int i=is; i<=ie; ++i) {
-                u_out(n,k,j,i) = u_in1(n,k,j,i);
-              }
-            }
-          }
-        }
-      } else {
-        for (int n=0; n<=nu; ++n) {
-          for (int k=ks; k<=ke; ++k) {
-            for (int j=js; j<=je; ++j) {
-#pragma omp simd
-              for (int i=is; i<=ie; ++i) {
-                u_out(n,k,j,i) = wght[1]*u_in1(n,k,j,i);
-              }
-            }
-          }
-        }
-      }
-    } else {
-      if (wght[2] != 0.0) {
-        for (int n=0; n<=nu; ++n) {
-          for (int k=ks; k<=ke; ++k) {
-            for (int j=js; j<=je; ++j) {
-#pragma omp simd
-              for (int i=is; i<=ie; ++i) {
-                u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i)
-                                 + wght[2]*u_in2(n,k,j,i);
-              }
-            }
-          }
-        }
-      } else { // do not dereference u_in2
-        if (wght[1] != 0.0) {
-          for (int n=0; n<=nu; ++n) {
-            for (int k=ks; k<=ke; ++k) {
-              for (int j=js; j<=je; ++j) {
-#pragma omp simd
-                for (int i=is; i<=ie; ++i) {
-                  u_out(n,k,j,i) = wght[0]*u_out(n,k,j,i) + wght[1]*u_in1(n,k,j,i);
-                }
-              }
-            }
-          }
-        } else { // do not dereference u_in1
-          for (int n=0; n<=nu; ++n) {
-            for (int k=ks; k<=ke; ++k) {
-              for (int j=js; j<=je; ++j) {
-#pragma omp simd
-                for (int i=is; i<=ie; ++i) {
-                  u_out(n,k,j,i) *= wght[0];
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+  } else {
+
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MeshBlock::WeightedAve" << std::endl
+          << "flag=" << flag << " not supported!."
+          << std::endl;
+      ATHENA_ERROR(msg);
+
+
   }
   return;
 }
