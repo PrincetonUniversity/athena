@@ -246,15 +246,15 @@ CosmicRay::CosmicRay(MeshBlock *pmb, ParameterInput *pin):
   pmb->pbval->bvars.push_back(&cr_bvar);
   pmb->pbval->bvars_main_int.push_back(&cr_bvar);
 
-  vmax = pin->GetOrAddReal("cr","vmax",1.0);
-  vlim = pin->GetOrAddReal("cr","vlim",0.9);
-  max_opacity = pin->GetOrAddReal("cr","max_opacity",1.e10);
-  stream_flag = pin->GetOrAddInteger("cr","vs_flag",1);
-  src_flag = pin->GetOrAddInteger("cr","src_flag",1);
+  vmax = pin->GetOrAddReal("cr", "vmax", 1.0);
+  vlim = pin->GetOrAddReal("cr", "vlim", 0.9);
+  max_opacity = pin->GetOrAddReal("cr", "max_opacity", BIG_NUMBER);
+  stream_flag = pin->GetOrAddInteger("cr", "vs_flag", 1);
+  src_flag = pin->GetOrAddInteger("cr", "src_flag", 1);
 
   int nc1 = pmb->ncells1, nc2 = pmb->ncells2, nc3 = pmb->ncells3;
-  b_grad_pc.NewAthenaArray(nc3,nc2,nc1);
-  b_angle.NewAthenaArray(4,nc3,nc2,nc1);
+  b_grad_pc.NewAthenaArray(nc3, nc2, nc1);
+  b_angle.NewAthenaArray(4, nc3, nc2, nc1);
 
   cwidth.NewAthenaArray(nc1);
   cwidth1.NewAthenaArray(nc1);

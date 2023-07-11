@@ -121,6 +121,7 @@
 #define ONE_3RD 0.33333333333333333
 #define TWO_3RD 0.66666666666666667
 #define TINY_NUMBER 1.0e-20
+#define BIG_NUMBER 1.0e+10
 #define HUGE_NUMBER 1.0e+36
 #define SQR(x) ( (x)*(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
