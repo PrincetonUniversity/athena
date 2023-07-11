@@ -175,9 +175,9 @@ inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
 
   for(int i=is; i<=ie; ++i) {
     Real inv_sqrt_rho = 1.0/std::sqrt(prim(IDN,k,j,i));
-    Real pb= bcc(IB1,k,j,i)*bcc(IB1,k,j,i)
-            +bcc(IB2,k,j,i)*bcc(IB2,k,j,i)
-            +bcc(IB3,k,j,i)*bcc(IB3,k,j,i);
+    Real bsq = bcc(IB1,k,j,i)*bcc(IB1,k,j,i)
+              +bcc(IB2,k,j,i)*bcc(IB2,k,j,i)
+              +bcc(IB3,k,j,i)*bcc(IB3,k,j,i);
 
     Real b_grad_pc = bcc(IB1,k,j,i) * grad_pc(0,k,j,i)
                    + bcc(IB2,k,j,i) * grad_pc(1,k,j,i)
@@ -187,7 +187,7 @@ inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
     Real va2 = bcc(IB2,k,j,i) * inv_sqrt_rho;
     Real va3 = bcc(IB3,k,j,i) * inv_sqrt_rho;
 
-    Real va = std::sqrt(pb) * inv_sqrt_rho;
+    Real va = std::sqrt(bsq) * inv_sqrt_rho;
     Real dpc_sign = 0.0;
 
     if (b_grad_pc > TINY_NUMBER) dpc_sign = 1.0;
@@ -198,7 +198,7 @@ inline void DefaultStreaming(MeshBlock *pmb, AthenaArray<Real> &u_cr,
       pcr->v_adv(1,k,j,i) = -va2 * dpc_sign;
       pcr->v_adv(2,k,j,i) = -va3 * dpc_sign;
       if (va > TINY_NUMBER) {
-        pcr->sigma_adv(0,k,j,i) = std::abs(b_grad_pc)/(std::sqrt(pb) * va *
+        pcr->sigma_adv(0,k,j,i) = std::abs(b_grad_pc)/(std::sqrt(bsq) * va *
                                (4.0/3.0) * invlim * u_cr(CRE,k,j,i));
         pcr->sigma_adv(1,k,j,i) = pcr->max_opacity;
         pcr->sigma_adv(2,k,j,i) = pcr->max_opacity;
