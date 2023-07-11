@@ -115,7 +115,9 @@ void NRRadiation::FrequencyGrid() {
 // return the integral (15/pi^4)\int_0^{nu/T} x^3 dx/(exp(x)-1)
 // frequency is scaled with kT_0/h
 // using fitting formula to return \int_0^nu_min and \int_0^nu_max
-
+// The fitting formula is based on asymptotic expression of the integral,
+// as well as polynomial fitting to the numerical values calculated by
+// directly integrating the function in mathematica
 Real NRRadiation::FitBlackBody(Real nu_t) {
   // the integral at nu_t=1.5 is 0.6154949828394710
   Real integral = 0.0;
