@@ -82,6 +82,10 @@ void RadIntegrator::FirstOrderFluxDivergenceCoef(const Real wght) {
           Real f_r = 1.0;
           taul *= taufact(k,j,i-1);
           taur *= taufact(k,j,i);
+          // the choice of taufactor = sum of L and R cell optical depths is made after
+          // many trial experiments, particularly to minimize artifacts when there is a
+          // sharp opacity jump. other choices such as arithmetic and harmonic mean may
+          // work well in some applications
           GetTaufactor(taul+taur,f_r,1);
           GetTaufactor(taul+taur,f_l,-1);
 
