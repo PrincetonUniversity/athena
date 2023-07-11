@@ -69,7 +69,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     if (MAGNETIC_FIELDS_ENABLED) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
-          << "xorder=" << input_recon << " should not be used with MHD"<< std::endl;
+          << "xorder=" << input_recon << " should not be used with MHD"<< std::endl
           << "4th-order constrained transport algorithm is not yet merged" << std::endl;
       ATHENA_ERROR(msg);
     }
