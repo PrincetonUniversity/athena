@@ -66,6 +66,13 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     xorder = 4;
     if (input_recon == "4c")
       characteristic_projection = true;
+    if (MAGNETIC_FIELDS_ENABLED) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "xorder=" << input_recon << " should not be used with MHD"<< std::endl;
+          << "4th-order constrained transport algorithm is not yet merged" << std::endl;
+      ATHENA_ERROR(msg);
+    }
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
