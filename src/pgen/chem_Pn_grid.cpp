@@ -58,7 +58,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   const Real gm1  = peos->GetGamma() - 1.0;
   Real pres = 0.;
   // factors between the logspace grids cells
-  const Real fac_nH = ( log10(nH_max) - log10(nH_min) ) / (Nx-1.);
+  const Real fac_nH = (std::log10(nH_max) - std::log10(nH_min) ) / (Nx-1.);
   // arrays for storing chi and crir
   AthenaArray<Real> chi;
   AthenaArray<Real> cr;
