@@ -235,7 +235,8 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   //const Real gm1 = pmy_block_->peos->GetGamma() - 1.0;
   const Real scalar_floor = pmy_block_->peos->GetScalarFloor();
   // timing of the chemistry in each cycle
-  clock_t tstart, tstop;
+  clock_t tstart=0.0;
+  clock_t tstop;
   if (output_zone_sec_) {
     tstart = std::clock();
   }

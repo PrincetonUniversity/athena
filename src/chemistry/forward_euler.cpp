@@ -79,7 +79,8 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   int je = pmy_block_->je;
   int ke = pmy_block_->ke;
   int ncycle = pmy_block_->pmy_mesh->ncycle;
-  clock_t tstart, tstop;
+  clock_t tstart=0.0;
+  clock_t tstop;
   if (output_zone_sec_) {
     tstart = std::clock();
   }
