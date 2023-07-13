@@ -30,7 +30,7 @@ Real DenProfileCyl(const Real rad, const Real phi, const Real z);
 Real PoverR(const Real rad, const Real phi, const Real z);
 Real VelProfileCyl(const Real rad, const Real phi, const Real z);
 // problem parameters which are useful to make global to this file
-Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, z, phi, r, rp, phip, F_g, g_mag, d, dfloor, Omega0, cosine_term, sine_term;
+Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, z, phi, r, rp, phip, d, dfloor, Omega0, cosine_term, sine_term, epsilon, R_H;
 } // namespace
 
 // User-defined boundary conditions for disk simulations
@@ -177,21 +177,46 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
         Real dens = prim(IDN,k,j,i);
         Real velocity_x = prim(IVX,k,j,i);
         Real velocity_y = prim(IVY,k,j,i);
-        if (d > 0.05) {
-          F_g = (dens)*(gm_planet / pow(d,2));
-        }
-        else {
-          F_g = (dens)*((gm_planet*d) / pow(0.05,3));
-        }
+        epsilon = 0.3;
+        R_H = cbrt(gm_planet/3);
+        Real F_g = -(dens)* ((gm_planet*d) / (sqrt(pow(pow(d,2) + pow(epsilon,2)*pow(R_H,2), 3))));
         cosine_term = (pow(r,2)*(pow(cos(phi),2)) - r*rp*cos(phi)*cos(phip) + pow(r,2)*(pow(sin(phi),2)) - r*rp*sin(phi)*sin(phip)) / (r*d);
-        sine_term = (-1*r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
-        Real Fg_x = -1*F_g*cosine_term;
-        Real Fg_y = F_g*sine_term;
+        sine_term = (r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
+        Real Fg_x = F_g*cosine_term;
+        Real Fg_y = -F_g*sine_term;
         Real delta_momentum_x = Fg_x * dt;
         Real delta_momentum_y = Fg_y * dt;
         cons(IM1, k,j,i) += delta_momentum_x;
         cons(IM2, k,j,i) += delta_momentum_y;
         if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += (Fg_x * velocity_x + Fg_y * velocity_y) * dt;
+      }
+    }
+  }
+}
+
+void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
+    AllocateUserOutputVariables(2);
+    return;
+}
+
+void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
+  Real time1 = pmy_mesh -> time;
+  for (int k = ks; k <= ke; ++k) {
+    z = pcoord->x3v(k);
+    for (int j = js; j <= je; ++j) {
+      phi = pcoord->x2v(j);
+      for (int i = is; i <= ie; ++i) {
+        r = pcoord->x1v(i);
+        Real period = 2*M_PI*sqrt(pow(rp,3)/gm0);
+        phip = 2*(M_PI / period)*time1;
+        d = sqrt(pow(rp,2) + pow(r,2) - 2*rp*r*cos(phi - phip));
+        epsilon = 0.3;
+        R_H = cbrt(gm_planet/3);
+        Real g_mag = -1*((gm_planet*d) / (sqrt(pow(pow(d,2) + pow(epsilon,2)*pow(R_H,2), 3))));
+        cosine_term = (pow(r,2)*(pow(cos(phi),2)) - r*rp*cos(phi)*cos(phip) + pow(r,2)*(pow(sin(phi),2)) - r*rp*sin(phi)*sin(phip)) / (r*d);
+        sine_term = (r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
+        user_out_var(0,k,j,i) = g_mag*cosine_term;
+        user_out_var(1,k,j,i) = -g_mag*sine_term;
       }
     }
   }
