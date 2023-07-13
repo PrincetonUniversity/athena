@@ -431,7 +431,6 @@ else:
 # -s, -g, and -t arguments
 definitions['RELATIVISTIC_DYNAMICS'] = '1' if args['s'] or args['g'] else '0'
 definitions['GENERAL_RELATIVITY'] = '1' if args['g'] else '0'
-definitions['FRAME_TRANSFORMATIONS'] = '1' if args['t'] else '0'
 if args['s']:
     makefile_options['EOS_FILE'] += '_sr'
     if definitions['GENERAL_EOS'] != '0':
@@ -479,6 +478,7 @@ if args['cxx'] == 'icpx':
     # Compiler options
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xhost -qopenmp-simd '
+      '-Wno-tautological-constant-compare -Wno-array-bounds'
     )
     # Currently unsupported, but "options to be supported" according to icpx
     # -qnextgen-diag: '-inline-forceinline -qopt-prefetch=4 '
@@ -491,7 +491,8 @@ if args['cxx'] == 'icpc':
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -ipo -xhost -inline-forceinline -qopenmp-simd -qopt-prefetch=4 '
-      '-qoverride-limits'  # -qopt-report-phase=ipo (does nothing without -ipo)
+      '-qoverride-limits '  # -qopt-report-phase=ipo (does nothing without -ipo)
+      '-diag-disable=10441'  # The Intel(R) C++ Compiler Classic (ICC) is deprecated
     )
     # -qopt-zmm-usage=high'  # typically harms multi-core performance on Skylake Xeon
     makefile_options['LINKER_FLAGS'] = ''
@@ -504,7 +505,8 @@ if args['cxx'] == 'icpc-debug':
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = (
       '-O3 -std=c++11 -xhost -qopenmp-simd -fp-model precise -qopt-prefetch=4 '
-      '-qopt-report=5 -qopt-report-phase=openmp,vec -g -qoverride-limits'
+      '-qopt-report=5 -qopt-report-phase=openmp,vec -g -qoverride-limits '
+      '-diag-disable=10441'
     )
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
@@ -583,7 +585,7 @@ else:
 
 # -debug argument
 if args['debug']:
-    definitions['DEBUG_OPTION'] = 'DEBUG'
+    definitions['DEBUG_OPTION'] = '1'
     # Completely replace the --cxx= sets of default compiler flags, disable optimization,
     # and emit debug symbols in the compiled binaries
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
@@ -599,7 +601,7 @@ if args['debug']:
     if args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g -xMIC-AVX512'
 else:
-    definitions['DEBUG_OPTION'] = 'NOT_DEBUG'
+    definitions['DEBUG_OPTION'] = '0'
 
 # -coverage argument
 if args['coverage']:

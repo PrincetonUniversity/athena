@@ -475,7 +475,7 @@ Real Historydvyc(MeshBlock *pmb, int iout) {
     }
   }
   Real dvy0 = iso_cs*amp
-              *std::fabs(static_cast<Real>(nwy)/static_cast<Real>(nwx));
+              *std::abs(static_cast<Real>(nwy)/static_cast<Real>(nwx));
   return dvyc/(dvy0*tvol);
 }
 
@@ -495,7 +495,7 @@ Real Historyvxs(MeshBlock *pmb, int iout) {
       for (int j=0; j<nx2; j++) {
         vxs_temp += vs(k,j,i);
       }
-      vxs += std::fabs(vxs_temp);
+      vxs += std::abs(vxs_temp);
     }
   }
   Real vx0 = iso_cs*amp;
@@ -519,11 +519,11 @@ Real Historydvys(MeshBlock *pmb, int iout) {
       for (int j=0; j<nx2; j++) {
         dvys_temp += vs(k,j,i);
       }
-      dvys += std::fabs(dvys_temp);
+      dvys += std::abs(dvys_temp);
     }
   }
   Real dvy0 = iso_cs*amp
-              *std::fabs(static_cast<Real>(nwy)/static_cast<Real>(nwx));
+              *std::abs(static_cast<Real>(nwy)/static_cast<Real>(nwx));
   return dvys/(dvy0*tvol);
 }
 } // namespace

@@ -54,14 +54,14 @@
 // enable general relativity? default=0 (false)
 #define GENERAL_RELATIVITY @GENERAL_RELATIVITY@
 
-// enable GR frame transformations? default=0 (false)
-#define FRAME_TRANSFORMATIONS @FRAME_TRANSFORMATIONS@
-
 // use single precision floating-point values (binary32)? default=0 (false; use binary64)
 #define SINGLE_PRECISION_ENABLED @SINGLE_PRECISION_ENABLED@
 
 // use double precision for HDF5 output? default=0 (false; write out binary32)
 #define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
+
+// compile with debug symbols and use optional sections of source code? default=0 (false)
+#define DEBUG @DEBUG_OPTION@
 
 
 // configure.py dict(definitions) Boolean string macros:
@@ -77,9 +77,6 @@
 
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
-
-// debug build macros (DEBUG or NOT_DEBUG)
-#define @DEBUG_OPTION@
 
 // try/throw/catch C++ exception handling (ENABLE_EXCEPTIONS or DISABLE_EXCEPTIONS)
 // (enabled by default)

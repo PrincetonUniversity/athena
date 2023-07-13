@@ -16,6 +16,8 @@
 # Jenkins build time may be misleading, since it includes time sitting in Slurm queue.
 sacct --jobs=$SLURM_JOB_ID --format=JobID,JobName%50,Submit,Start,Elapsed,Timelimit  #--noheader
 
+git clean -f -d
+
 set -e # terminate script at first error/non-zero exit status
 # Store absolute path of project's root directory for Lcov (realpath is GNU coreutils, not macOS)
 athena_rel_path='./'
@@ -102,11 +104,12 @@ module list
 
 time python -u ./run_tests.py pgen/hdf5_reader_serial --silent --config=--cxx=icpx
 time python -u ./run_tests.py grav --config=--cxx=icpx --mpirun=srun --mpirun_opts=--job-name='ICC grav/jeans_3d' --silent
-#(changgoo) use icpc to make mpi and serial identical
+#(changgoo) use icpc instead of icpx to make mpi and serial solutions identical
+#(KGF)      stellar intel-mpi/ modules are built against icpc, not icpx
 time python -u ./run_tests.py turb --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC turb/' --silent
-time python -u ./run_tests.py mpi --config=--cxx=icpx --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
+time python -u ./run_tests.py mpi --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
 time python -u ./run_tests.py omp --config=--cxx=icpx --silent
-timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --config=--cxx=icpx \
+timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --config=--cxx=icpc \
 	--mpirun=srun --mpirun_opts=--job-name='ICC hybrid/hybrid_linwave' --silent
 time python -u ./run_tests.py hydro --config=--cxx=icpx --silent
 time python -u ./run_tests.py mhd --config=--cxx=icpx --silent
@@ -138,7 +141,7 @@ mpi_hdf5_library_path='/usr/local/hdf5/intel-2021.1/intel-mpi/1.10.6/lib64'
 module list
 # Workaround issue with parallel HDF5 modules compiled with OpenMPI on Perseus--- linker still takes serial HDF5 library in /usr/lib64/
 # due to presence of -L flag in mpicxx wrapper that overrides LIBRARY_PATH environment variable
-time python -u ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icpx \
+time python -u ./run_tests.py pgen/hdf5_reader_parallel --config=--cxx=icpc \
      --mpirun=srun --mpirun_opts=--job-name='ICC pgen/hdf5_reader_parallel' \
      --config=--lib_path=${mpi_hdf5_library_path} --silent
 
