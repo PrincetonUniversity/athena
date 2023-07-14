@@ -189,6 +189,13 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
         cons(IM1, k,j,i) += delta_momentum_x;
         cons(IM2, k,j,i) += delta_momentum_y;
         if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += (Fg_x * velocity_x + Fg_y * velocity_y) * dt;
+        Real gamma = (rho0*p0_over_r0) / (pow(r0, dslope));
+        Real beta = rho0/(pow(r0, dslope));
+        Real pressure_0 = gamma * pow(r,pslope+dslope);
+        Real surface_density_0 = beta * pow(r, dslope);
+        Real pressure = dens * (pressure_0/surface_density_0); //definition of isothermal eos
+        //if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) = (3.0/2.0 * pressure + 0.5*dens*((pow(velocity_x,2) + pow(velocity_y,2))))
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += 3.0/2.0 * (pressure-prim(IPR,k,j,i));
       }
     }
   }
