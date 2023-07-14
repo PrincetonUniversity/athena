@@ -79,9 +79,9 @@ void RadIntegrator::CalSourceTerms(MeshBlock *pmb, const Real dt,
   Real vx = vel_source_(k,j,i,0);
   Real vy = vel_source_(k,j,i,1);
   Real vz = vel_source_(k,j,i,2);
-  Real vel = vx*vx + vy*vy + vz*vz;
+  Real vsq = vx*vx + vy*vy + vz*vz;
 
-  Real lorzsq = 1.0/(1.0 - vel  * invcrat * invcrat);
+  Real lorzsq = 1.0/(1.0 - vsq  * invcrat * invcrat);
   Real lorz = std::sqrt(lorzsq);
 
   sigma_at = &(prad->sigma_a(k,j,i,0));
@@ -295,9 +295,9 @@ void RadIntegrator::AddMultiGroupCompt(MeshBlock *pmb, const Real dt,
           Real vx = vel_source_(k,j,i,0);
           Real vy = vel_source_(k,j,i,1);
           Real vz = vel_source_(k,j,i,2);
-          Real vel = vx*vx + vy*vy + vz*vz;
+          Real vsq = vx*vx + vy*vy + vz*vz;
 
-          Real lorzsq = 1.0/(1.0 - vel  * invcrat * invcrat);
+          Real lorzsq = 1.0/(1.0 - vsq  * invcrat * invcrat);
           Real lorz = std::sqrt(lorzsq);
 
           // Prepare the transformation coefficients
@@ -539,8 +539,8 @@ void RadIntegrator::AddSourceTerms(MeshBlock *pmb, AthenaArray<Real> &u) {
         Real vx = u(IM1,k,j,i)/u(IDN,k,j,i);
         Real vy = u(IM2,k,j,i)/u(IDN,k,j,i);
         Real vz = u(IM3,k,j,i)/u(IDN,k,j,i);
-        Real vel = vx*vx+vy*vy+vz*vz;
-        vel = std::sqrt(vel);
+        Real vsq = vx*vx+vy*vy+vz*vz;
+        Real vel = std::sqrt(vsq);
         Real ratio = vel * invcrat;
         if (ratio > prad->vmax) {
           Real factor = prad->vmax/ratio;
