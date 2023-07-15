@@ -36,7 +36,7 @@ struct IMRadTask {
 };
 
 //----------------------------------------------------------------------------------------
-//! \class MultigridTaskList
+//! \class IMRadTaskList
 //! \brief data and function definitions for IMRadTaskList class
 
 class IMRadTaskList {
@@ -121,7 +121,7 @@ class IMRadComptTaskList : public IMRadTaskList {
 
 
 //----------------------------------------------------------------------------------------
-//! 64-bit integers with "1" in different bit positions used to ID each Multigrid task.
+//! 64-bit integers with "1" in different bit positions used to ID each IMRadITT task.
 
 namespace IMRadITTaskNames {
 const TaskID NONE(0);
