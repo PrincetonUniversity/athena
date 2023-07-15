@@ -34,10 +34,8 @@
 #include "radiation_implicit.hpp"
 
 //--------------------------------------------------------------------------------------
-// \!fn void CalculateMoment()
-// \brief function to create the radiation moments
-// calculate the frequency integrated moments of the radiation field
-// including the ghost zones
+// \!fn void Iteration()
+// \brief function to perform iterations
 void IMRadiation::Iteration(
     Mesh *pm, TimeIntegratorTaskList *ptlist, int stage) {
   // perform Jacobi iteration including both source and flux terms
