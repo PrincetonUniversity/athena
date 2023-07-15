@@ -574,8 +574,8 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
           pb = 0.5*(SQR(bcc(IB1,k,j,i))+SQR(bcc(IB2,k,j,i))
                     +SQR(bcc(IB3,k,j,i)));
 
-        Real vel = vx * vx + vy * vy + vz * vz;
-        Real tgas = u(IEN,k,j,i) - pb - 0.5*rho*vel;
+        Real vsq = vx * vx + vy * vy + vz * vz;
+        Real tgas = u(IEN,k,j,i) - pb - 0.5*rho*vsq;
         tgas = gm1*tgas/rho;
         tgas = std::max(tgas,pmb->pnrrad->t_floor_(k,j,i));
         tgas = std::min(tgas,pmb->pnrrad->t_ceiling_(k,j,i));
@@ -602,13 +602,13 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
         vx = w(IVX,k,j,i);
         vy = w(IVY,k,j,i);
         vz = w(IVZ,k,j,i);
-        vel = vx * vx + vy * vy + vz * vz;
+        vsq = vx * vx + vy * vy + vz * vz;
         if (prat * er * invcrat * invcrat > rho) {
           PredictVel(ir,k,j,i, 0.5 * dt, rho, &vx, &vy, &vz);
-          vel = vx * vx + vy * vy + vz * vz;
+          vsq = vx * vx + vy * vy + vz * vz;
         }
 
-        Real ratio = std::sqrt(vel) * invcrat;
+        Real ratio = std::sqrt(vsq) * invcrat;
         // Limit the velocity to be smaller than the speed of light
         if (ratio > prad->vmax) {
           Real factor = prad->vmax/ratio;

@@ -865,16 +865,18 @@ if args['grav'] == 'fft':
 elif args['grav'] == 'mg':
     self_grav_string = 'Multigrid'
 
+
 def output_config(opt_descr, opt_choice, filehandle=None):
-    first_col_width=32
-    first_col_indent=2
-    descr_len=len(opt_descr)
-    right_pad_len=first_col_width - (descr_len + first_col_indent + 2)  # include colon
-    right_pad= right_pad_len*' ' if right_pad_len>=0 else ''
-    line_str=first_col_indent*' ' + opt_descr + ': ' + right_pad + opt_choice
+    first_col_width = 32
+    first_col_indent = 2
+    descr_len = len(opt_descr)
+    right_pad_len = first_col_width - (descr_len + first_col_indent + 2)  # include colon
+    right_pad = right_pad_len*' ' if right_pad_len >= 0 else ''
+    line_str = first_col_indent*' ' + opt_descr + ': ' + right_pad + opt_choice
     print(line_str)
     if (filehandle is not None):
         filehandle.write(line_str + '\n')
+
 
 # write the configuration optitions into a log file
 flog = open('./configure.log', 'w')

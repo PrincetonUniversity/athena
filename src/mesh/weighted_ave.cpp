@@ -10,9 +10,9 @@
 
 // C++ headers
 #include <algorithm>  // std::binary_search
-#include <vector>     // std::vector
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
+#include <vector>     // std::vector
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -347,14 +347,11 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
       }
     }
   } else {
-
       std::stringstream msg;
       msg << "### FATAL ERROR in MeshBlock::WeightedAve" << std::endl
           << "flag=" << flag << " not supported!."
           << std::endl;
       ATHENA_ERROR(msg);
-
-
   }
   return;
 }
