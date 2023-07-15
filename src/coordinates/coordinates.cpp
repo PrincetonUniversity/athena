@@ -739,13 +739,12 @@ void Coordinates::AddCoordTermsDivergence(
   return;
 }
 
-void Coordinates::AddCoordTermsDivergence(int flag,
-                                          const AthenaArray<Real> &u_cr1,
-                                          AthenaArray<Real> &u_cr) {
+void Coordinates::AddCRCoordTermsDivergence(
+          const AthenaArray<Real> &u_cr1, AthenaArray<Real> &u_cr) {
   return;
 }
 
-void Coordinates::AddCoordTermsDivergence(const AthenaArray<Real> &u_cr,
+void Coordinates::CRGradPcCoordTermsDivergence(const AthenaArray<Real> &u_cr,
                                           AthenaArray<Real> &grad_pc) {
   return;
 }

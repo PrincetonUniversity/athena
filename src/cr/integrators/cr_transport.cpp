@@ -406,7 +406,7 @@ void CRIntegrator::CalculateFluxes(
 
         // need to subtract the coordinate source term to get the actual grad Pc for c
         // curlinear coordinate system
-        pmb->pcoord->AddCoordTermsDivergence(cr, grad_pc_);
+        pmb->pcoord->CRGradPcCoordTermsDivergence(cr, grad_pc_);
 
         // update streaming with grad_pc
 
@@ -439,7 +439,7 @@ void CRIntegrator::CalculateFluxes(
   }
   //-----------------------------------------------------------------------
   // calculate coordinate source terms for Cosmic ray
-  pco->AddCoordTermsDivergence(1,cr,coord_source_);
+  pco->AddCRCoordTermsDivergence(cr,coord_source_);
 }
 
 

@@ -128,11 +128,11 @@ class Coordinates {
                              AthenaArray<Real> &u);
 
   // coordinate source term for cosmic rays
-  virtual void AddCoordTermsDivergence(int flag, const AthenaArray<Real> &u_cr,
+  virtual void AddCRCoordTermsDivergence(const AthenaArray<Real> &u_cr,
                                        AthenaArray<Real> &coord_src);
 
-  // subtract coordinate source term for grad_pc
-  virtual void AddCoordTermsDivergence(const AthenaArray<Real> &u_cr,
+  // Coordinate (Geometric) source term for Grad Pc
+  virtual void CRGradPcCoordTermsDivergence(const AthenaArray<Real> &u_cr,
                                        AthenaArray<Real> &grad_pc);
 
   virtual void AddCoordTermsDivergence_STS(const Real dt, int stage,
@@ -365,11 +365,11 @@ class Cylindrical : public Coordinates {
                      AthenaArray<Real> &u) final;
 
   // coordinate source term for cosmic rays
-  void AddCoordTermsDivergence(int flag, const AthenaArray<Real> &u_cr,
+  void AddCRCoordTermsDivergence(const AthenaArray<Real> &u_cr,
                                AthenaArray<Real> &coord_src) final;
 
-  // subtract coordinate source term for grad_pc
-  void AddCoordTermsDivergence(const AthenaArray<Real> &u_cr,
+// Coordinate (Geometric) source term for Grad Pc
+  void CRGradPcCoordTermsDivergence(const AthenaArray<Real> &u_cr,
                                AthenaArray<Real> &grad_pc) final;
 
   void AddCoordTermsDivergence_STS(const Real dt, int stage,
@@ -440,11 +440,11 @@ class SphericalPolar : public Coordinates {
                                const AthenaArray<Real> &bcc, AthenaArray<Real> &u) final;
 
   // coordinate source term for cosmic rays
-  void AddCoordTermsDivergence(int flag, const AthenaArray<Real> &u_cr,
+  void AddCRCoordTermsDivergence(const AthenaArray<Real> &u_cr,
                                AthenaArray<Real> &coord_src) final;
 
-  // subtract coordinate source term for grad_pc
-  void AddCoordTermsDivergence(const AthenaArray<Real> &u_cr,
+// Coordinate (Geometric) source term for Grad Pc
+  void CRGradPcCoordTermsDivergence(const AthenaArray<Real> &u_cr,
                                AthenaArray<Real> &grad_pc) final;
 
   //for radiation functions...

@@ -365,11 +365,12 @@ void Cylindrical::AddCoordTermsDivergence_STS(
   return;
 }
 
+//----------------------------------------------------------------------------------------
+// Coordinate (Geometric) source term function for cosmic rays
 
-void Cylindrical::AddCoordTermsDivergence(int flag,
-                                          const AthenaArray<Real> &u_input,
-                                          AthenaArray<Real> &coord_src) {
-  if (CR_ENABLED && (flag == 1)) {
+void Cylindrical::AddCRCoordTermsDivergence(
+  const AthenaArray<Real> &u_input, AthenaArray<Real> &coord_src) {
+  if (CR_ENABLED) {
     CosmicRay *pcr=pmy_block->pcr;
     for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
       for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
@@ -391,9 +392,9 @@ void Cylindrical::AddCoordTermsDivergence(int flag,
 
 
 //----------------------------------------------------------------------------------------
-// subtract Coordinate (Geometric) source term to get Grad Pc
+// Coordinate (Geometric) source term for Grad Pc
 
-void Cylindrical::AddCoordTermsDivergence(
+void Cylindrical::CRGradPcCoordTermsDivergence(
     const AthenaArray<Real> &u_cr, AthenaArray<Real> &grad_pc) {
   // Go through cellscosmicay
   if (CR_ENABLED) {
