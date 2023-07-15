@@ -164,9 +164,9 @@ void RadIntegrator::ForwardSplitting(
       // nu_l/kt
     Real nu_tr = pmy_rad->EffectiveBlackBody(ir_cm(nfreq-1), nu_l);
 
-      // FitBlackBody is integral _0 to nu_tr
+      // FitIntPlanckFunc is integral _0 to nu_tr
       // the integral we need is 1 - ori_norm
-    Real ori_norm = pmy_rad->FitBlackBody(nu_tr);
+    Real ori_norm = pmy_rad->FitIntPlanckFunc(nu_tr);
     Real div_ori = 0.0;
     if (1.0 - ori_norm > TINY_NUMBER)
       div_ori = 1.0/(1.0 - ori_norm);
@@ -174,15 +174,15 @@ void RadIntegrator::ForwardSplitting(
 
       // the first bin
       // the effective temperature 1/T = nu_tr/nu_l
-    Real ratio = pmy_rad->FitBlackBody(nu_tr*nu_lab[l_bd+1]/nu_l);
+    Real ratio = pmy_rad->FitIntPlanckFunc(nu_tr*nu_lab[l_bd+1]/nu_l);
 
       // the difference is (1 - ori_norm) - (1 - ratio)
     split_ratio(nfreq-1,0) = (ratio - ori_norm) * div_ori;
     Real sum = split_ratio(nfreq-1,0);
 
     for (int m=l_bd+1; m<r_bd; ++m) {
-      Real ratio_r = pmy_rad->FitBlackBody(nu_tr*nu_lab[m+1]/nu_l);
-      Real ratio_l = pmy_rad->FitBlackBody(nu_tr*nu_lab[m]/nu_l);
+      Real ratio_r = pmy_rad->FitIntPlanckFunc(nu_tr*nu_lab[m+1]/nu_l);
+      Real ratio_l = pmy_rad->FitIntPlanckFunc(nu_tr*nu_lab[m]/nu_l);
       split_ratio(nfreq-1,m-l_bd) = (ratio_r - ratio_l) * div_ori;
       sum += split_ratio(nfreq-1,m-l_bd);
     }
@@ -479,24 +479,24 @@ void RadIntegrator::BackwardSplitting(Real &tran_coef,
     // nu_l/kt
     Real nu_tr = pmy_rad->EffectiveBlackBody(ir_cm(nfreq-1), nu_l);
 
-    // FitBlackBody is integral _0 to nu_tr
+    // FitIntPlanckFunc is integral _0 to nu_tr
     // the integral we need is 1 - ori_norm
-    Real ori_norm = pmy_rad->FitBlackBody(nu_tr);
+    Real ori_norm = pmy_rad->FitIntPlanckFunc(nu_tr);
     Real div_ori = 0.0;
     if (1.0 - ori_norm > TINY_NUMBER) {
       div_ori = 1.0/(1.0 - ori_norm);
     }
     // the first bin
     // the effective temperature 1/T = nu_tr/nu_l
-    Real ratio = pmy_rad->FitBlackBody(nu_tr*nu_shift[l_bd+1]/nu_l);
+    Real ratio = pmy_rad->FitIntPlanckFunc(nu_tr*nu_shift[l_bd+1]/nu_l);
 
       // the difference is (1 - ori_norm) - (1 - ratio)
     split_ratio(nfreq-1,0) = (ratio - ori_norm) * div_ori;
     Real sum = split_ratio(nfreq-1,0);
 
     for (int m=l_bd+1; m<r_bd; ++m) {
-      Real ratio_r = pmy_rad->FitBlackBody(nu_tr*nu_shift[m+1]/nu_l);
-      Real ratio_l = pmy_rad->FitBlackBody(nu_tr*nu_shift[m]/nu_l);
+      Real ratio_r = pmy_rad->FitIntPlanckFunc(nu_tr*nu_shift[m+1]/nu_l);
+      Real ratio_l = pmy_rad->FitIntPlanckFunc(nu_tr*nu_shift[m]/nu_l);
       split_ratio(nfreq-1,m-l_bd) = (ratio_r - ratio_l) * div_ori;
       sum += split_ratio(nfreq-1,m-l_bd);
     }

@@ -491,7 +491,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
             // now split to different frequency bins
             for (int ifr=0; ifr<pnrrad->nfreq; ++ifr) {
-              fre_ratio(ifr) = pnrrad->BlackBodySpec(pnrrad->nu_grid(ifr)/tr,
+              fre_ratio(ifr) = pnrrad->IntPlanckFunc(pnrrad->nu_grid(ifr)/tr,
                                       pnrrad->nu_grid(ifr+1)/tr);
             }
 

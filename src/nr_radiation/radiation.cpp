@@ -50,9 +50,9 @@ inline void DefaultEmission(NRRadiation *prad, Real tgas) {
   if (nfreq > 1) {
     for(int ifr=0; ifr<nfreq-1; ++ifr) {
       prad->emission_spec(ifr) =
-          prad->BlackBodySpec(prad->nu_grid(ifr)/tgas, prad->nu_grid(ifr+1)/tgas);
+          prad->IntPlanckFunc(prad->nu_grid(ifr)/tgas, prad->nu_grid(ifr+1)/tgas);
     }
-    prad->emission_spec(nfreq-1) = 1.0 - prad->FitBlackBody(prad->nu_grid(nfreq-1)/tgas);
+    prad->emission_spec(nfreq-1) = 1.0 - prad->FitIntPlanckFunc(prad->nu_grid(nfreq-1)/tgas);
   }
   return;
 }

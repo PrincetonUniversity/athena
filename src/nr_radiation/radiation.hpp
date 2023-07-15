@@ -128,9 +128,9 @@ class NRRadiation {
 
   void FrequencyGrid();
 
-  Real FitBlackBody(Real nu_t);
+  Real FitIntPlanckFunc(Real nu_t);
 
-  Real BlackBodySpec(Real nu_min, Real nu_max);
+  Real IntPlanckFunc(Real nu_min, Real nu_max);
   Real EffectiveBlackBody(Real intensity, Real nu);
   Real EffectiveBlackBodyNNu2(Real n_nu2, Real nu);
   Real IntegrateBBNuJ(Real nu_t); // integral of

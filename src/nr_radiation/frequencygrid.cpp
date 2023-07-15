@@ -106,9 +106,9 @@ void NRRadiation::FrequencyGrid() {
     emission_spec(0) = 1.0;
   } else {
     for (int ifr=0; ifr<nfreq-1; ++ifr) {
-      emission_spec(ifr) =  BlackBodySpec(nu_grid(ifr), nu_grid(ifr+1));
+      emission_spec(ifr) =  IntPlanckFunc(nu_grid(ifr), nu_grid(ifr+1));
     }
-      emission_spec(nfreq-1) = 1.0 - FitBlackBody(nu_grid(nfreq-1));
+      emission_spec(nfreq-1) = 1.0 - FitIntPlanckFunc(nu_grid(nfreq-1));
   }
 }
 
@@ -118,7 +118,7 @@ void NRRadiation::FrequencyGrid() {
 // The fitting formula is based on asymptotic expression of the integral,
 // as well as polynomial fitting to the numerical values calculated by
 // directly integrating the function in mathematica
-Real NRRadiation::FitBlackBody(Real nu_t) {
+Real NRRadiation::FitIntPlanckFunc(Real nu_t) {
   // the integral at nu_t=1.5 is 0.6154949828394710
   Real integral = 0.0;
   Real nu_2 = nu_t * nu_t;
@@ -143,8 +143,8 @@ Real NRRadiation::FitBlackBody(Real nu_t) {
 }
 
 
-Real NRRadiation::BlackBodySpec(Real nu_min, Real nu_max) {
-  return (FitBlackBody(nu_max) - FitBlackBody(nu_min));
+Real NRRadiation::IntPlanckFunc(Real nu_min, Real nu_max) {
+  return (FitIntPlanckFunc(nu_max) - FitIntPlanckFunc(nu_min));
 }
 
 // In the last frequency bin, [nu, infty]
