@@ -52,7 +52,8 @@ inline void DefaultEmission(NRRadiation *prad, Real tgas) {
       prad->emission_spec(ifr) =
           prad->IntPlanckFunc(prad->nu_grid(ifr)/tgas, prad->nu_grid(ifr+1)/tgas);
     }
-    prad->emission_spec(nfreq-1) = 1.0 - prad->FitIntPlanckFunc(prad->nu_grid(nfreq-1)/tgas);
+    prad->emission_spec(nfreq-1) = 1.0 - prad->FitIntPlanckFunc(
+        prad->nu_grid(nfreq-1)/tgas);
   }
   return;
 }
