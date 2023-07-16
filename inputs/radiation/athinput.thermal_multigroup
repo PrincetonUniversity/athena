@@ -1,0 +1,65 @@
+<comment>
+problem   = Radiation thermal relaxation with multi-group
+reference =
+configure = --prob=thermal_multigroup -nr_radiation
+or
+configure = --prob=thermal_multigroup -implicit_radiation
+
+<job>
+problem_id = thermal  # problem ID: basename of output filenames
+
+
+<time>
+cfl_number = 0.4     # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = 100000  # cycle limit
+tlim       = 2.0     # time limit
+ncycle_out = 1       # interval for stdout summary info
+
+<mesh>
+nx1        = 32        # Number of zones in X1-direction
+x1min      = 0.0       # minimum value of X1
+x1max      = 1.0       # maximum value of X1
+ix1_bc     = periodic  # inner-X1 boundary flag
+ox1_bc     = periodic  # inner-X1 boundary flag
+
+nx2        = 1         # Number of zones in X2-direction
+x2min      = 0.0       # minimum value of X2
+x2max      = 1.0       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # inner-X2 boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = 0.0       # minimum value of X3
+x3max      = 1.0       # maximum value of X3
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # inner-X3 boundary flag
+
+<meshblock>
+
+nx1 = 32
+nx2 = 1
+
+<hydro>
+gamma = 1.6666666666667  # gamma = C_p/C_v
+
+<radiation>
+nmu           = 4
+prat          = 1.0
+crat          = 10
+error_limit   = 1.e-12
+n_frequency   = 3
+frequency_min = -4.0
+frequency_max = -8.0
+
+nlimit        = 500
+
+<problem>
+er_1       = 10.0
+er_2       = 20
+er_3       = 30
+tgas       = 1.0
+sigma_1    = 100.0
+sigma_2    = 200.0
+sigma_3    = 300.0
+kappa_es   = 0
+black_body = 0

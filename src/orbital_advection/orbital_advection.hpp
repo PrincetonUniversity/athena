@@ -60,9 +60,17 @@ class OrbitalAdvection{
   void RemapFluxPlm(AthenaArray<Real> &pflux_, const AthenaArray<Real> &pbuf_,
                     const Real eps_, const int osgn_, const int k, const int j,
                     const int il, const int iu, const int shift_ = 0);
+  void RemapFluxPlm(AthenaArray<Real> &pflux_, const AthenaArray<Real> &pbuf_,
+                    const Real eps_, const int osgn_, const int k, const int j,
+                    const int il, const int iu, const int nl, const int nu,
+                    const int shift_ = 0);
   void RemapFluxPpm(AthenaArray<Real> &pflux_, AthenaArray<Real> &pbuf_,
                     const Real eps_, const int osgn_, const int k, const int j,
                     const int il, const int iu, const int shift_ = 0);
+  void RemapFluxPpm(AthenaArray<Real> &pflux_, AthenaArray<Real> &pbuf_,
+                    const Real eps_, const int osgn_, const int k, const int j,
+                    const int il, const int iu, const int nl, const int nu,
+                    const int shift_ = 0);
 
   // accessor to orbital velocity
   OrbitalVelocityFunc OrbitalVelocity, OrbitalVelocityDerivative[2];

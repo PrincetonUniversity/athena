@@ -27,6 +27,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../cr/cr.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
@@ -35,6 +36,7 @@
 #include "../mesh/mesh.hpp"
 #include "../mesh/mesh_refinement.hpp"
 #include "../multigrid/multigrid.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../scalars/scalars.hpp"
@@ -265,7 +267,6 @@ void BoundaryValues::SetupPersistentMPI() {
   // initialize the shearing block lists
   if (shearing_box != 0) {
     MeshBlock *pmb = pmy_block_;
-    int nbtotal = pmy_mesh_->nbtotal;
     int *ranklist = pmy_mesh_->ranklist;
     int *nslist = pmy_mesh_->nslist;
     LogicalLocation *loclist = pmy_mesh_->loclist;
@@ -333,6 +334,27 @@ void BoundaryValues::CheckUserBoundaries() {
             << "is not enrolled in direction " << i  << " (in [0,6])." << std::endl;
         ATHENA_ERROR(msg);
       }
+
+      if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+        if (pmy_mesh_->RadBoundaryFunc_[i] == nullptr) {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
+              << "A user-defined boundary is specified but the actual RadBoundaryFunc_ "
+              << "is not enrolled in direction " << i  << " (in [0,6])."
+              << std::endl;
+          ATHENA_ERROR(msg);
+        }
+      }
+      if (CR_ENABLED) {
+        if (pmy_mesh_->CRBoundaryFunc_[i] == nullptr) {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in BoundaryValues::CheckBoundary" << std::endl
+              << "A user-defined boundary is specified but the actual CRBoundaryFunc_ "
+              << "is not enrolled in direction " << i  << " (in [0,6])."
+              << std::endl;
+          ATHENA_ERROR(msg);
+        }
+      }
     }
   }
   return;
@@ -356,6 +378,9 @@ void BoundaryValues::StartReceivingSubset(BoundaryCommSubset phase,
     switch (phase) {
       case BoundaryCommSubset::mesh_init:
         break;
+      case BoundaryCommSubset::radiation:
+        break;
+      case BoundaryCommSubset::radhydro:
       case BoundaryCommSubset::all:
       case BoundaryCommSubset::orbital:
         for (auto bvars_it = bvars_subset.begin(); bvars_it != bvars_subset.end();
@@ -448,12 +473,29 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
     ps = pmb->pscalars;
   }
 
+
+  NRRadiation *prad = nullptr;
+  RadBoundaryVariable *pradbvar = nullptr;
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+    prad = pmb->pnrrad;
+    pradbvar = &(prad->rad_bvar);
+  }
+
+  CosmicRay *pcr = nullptr;
+  //CellCenteredBoundaryVariable *pcrbvar = nullptr;
+  if (CR_ENABLED) {
+    pcr = pmb->pcr;
+    //pcrbvar = &(pcr->cr_bvar);
+  }
+
+
+
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
   if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
     DispatchBoundaryFunctions(pmb, pco, time, dt,
                               pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
-                              ph->w, pf->b, BoundaryFace::inner_x1,
-                              bvars_subset);
+                              ph->w, pf->b, prad->ir, pcr->u_cr,
+                              BoundaryFace::inner_x1, bvars_subset);
     // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -472,8 +514,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
   if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
     DispatchBoundaryFunctions(pmb, pco, time, dt,
                               pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
-                              ph->w, pf->b, BoundaryFace::outer_x1,
-                              bvars_subset);
+                              ph->w, pf->b, prad->ir, pcr->u_cr,
+                              BoundaryFace::outer_x1, bvars_subset);
     // KGF: COUPLING OF QUANTITIES (must be manually specified)
     if (MAGNETIC_FIELDS_ENABLED) {
       pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -493,8 +535,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
     if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::inner_x2,
-                                bvars_subset);
+                                ph->w, pf->b, prad->ir, pcr->u_cr,
+                                BoundaryFace::inner_x2, bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -509,12 +551,19 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
       }
     }
 
+    if ((NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) &&
+           (block_bcs[BoundaryFace::inner_x2] != BoundaryFlag::block)) {
+      if (prad->rotate_theta == 1) {
+        pradbvar->RotateHPi_InnerX2(time, dt, bis, bie, pmb->js, bks, bke, NGHOST);
+      }
+    }// end radiation
+
     // Apply boundary function on outer-x2 and update W,bcc (if not periodic)
     if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::outer_x2,
-                                bvars_subset);
+                                ph->w, pf->b, prad->ir, pcr->u_cr,
+                                BoundaryFace::outer_x2, bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -538,8 +587,8 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
     if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::inner_x3,
-                                bvars_subset);
+                                ph->w, pf->b, prad->ir, pcr->u_cr,
+                                BoundaryFace::inner_x3, bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -554,12 +603,21 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
       }
     }
 
+    if ((NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) &&
+           (block_bcs[BoundaryFace::inner_x3] != BoundaryFlag::block)) {
+      if (prad->rotate_phi == 1) {
+        pradbvar->RotateHPi_InnerX3(time, dt, bis, bie, bjs, bje, pmb->ks, NGHOST);
+      } else if (prad->rotate_phi == 2) {
+        pradbvar->RotatePi_InnerX3(time, dt, bis, bie, bjs, bje, pmb->ks,NGHOST);
+      }
+    }
+
     // Apply boundary function on outer-x3 and update W,bcc (if not periodic)
     if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
       DispatchBoundaryFunctions(pmb, pco, time, dt,
                                 bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
-                                ph->w, pf->b, BoundaryFace::outer_x3,
-                                bvars_subset);
+                                ph->w, pf->b, prad->ir, pcr->u_cr,
+                                BoundaryFace::outer_x3, bvars_subset);
       // KGF: COUPLING OF QUANTITIES (must be manually specified)
       if (MAGNETIC_FIELDS_ENABLED) {
         pmb->pfield->CalculateCellCenteredField(pf->b, pf->bcc, pco,
@@ -573,6 +631,14 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
             ps->r, ph->u, ps->s, pco, bis, bie, bjs, bje, pmb->ke+1, pmb->ke+NGHOST);
       }
     }
+    if ((NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) &&
+           (block_bcs[BoundaryFace::outer_x3] != BoundaryFlag::block)) {
+      if (prad->rotate_phi == 1) {
+        pradbvar->RotateHPi_OuterX3(time, dt, bis, bie, bjs, bje, pmb->ke, NGHOST);
+      } else if (prad->rotate_phi == 2) {
+        pradbvar->RotatePi_OuterX3(time, dt, bis, bie, bjs, bje, pmb->ke, NGHOST);
+      }
+    }
   }
   return;
 }
@@ -584,11 +650,23 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
 void BoundaryValues::DispatchBoundaryFunctions(
     MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
     int il, int iu, int jl, int ju, int kl, int ku, int ngh,
-    AthenaArray<Real> &prim, FaceField &b, BoundaryFace face,
+    AthenaArray<Real> &prim, FaceField &b, AthenaArray<Real> &ir,
+    AthenaArray<Real> &u_cr,  BoundaryFace face,
     std::vector<BoundaryVariable *> bvars_subset) {
   if (block_bcs[face] ==  BoundaryFlag::user) {  // user-enrolled BCs
     pmy_mesh_->BoundaryFunction_[face](pmb, pco, prim, b, time, dt,
                                        il, iu, jl, ju, kl, ku, NGHOST);
+
+    // user-defined  boundary for radiation
+    if ((NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)) {
+      pmy_mesh_->RadBoundaryFunc_[face](pmb,pco,pmb->pnrrad,prim,b, ir,time,dt,
+                                             il,iu,jl,ju,kl,ku,NGHOST);
+    }
+
+    if (CR_ENABLED) {
+      pmy_mesh_->CRBoundaryFunc_[face](pmb,pco,pmb->pcr,prim, b, u_cr,time,dt,
+                                              il,iu,jl,ju,kl,ku,NGHOST);
+    }
   }
   // KGF: this is only to silence the compiler -Wswitch warnings about not handling the
   // "undef" case when considering all possible BoundaryFace enumerator values. If "undef"
@@ -650,6 +728,30 @@ void BoundaryValues::DispatchBoundaryFunctions(
             break;
           case BoundaryFace::outer_x3:
             (*bvars_it)->OutflowOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+            break;
+        }
+        break;
+      case BoundaryFlag::vacuum: // special boundary condition type for radiation
+        switch (face) {
+          case BoundaryFace::undef:
+            ATHENA_ERROR(msg);
+          case BoundaryFace::inner_x1:
+            (*bvars_it)->VacuumInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::outer_x1:
+            (*bvars_it)->VacuumOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::inner_x2:
+            (*bvars_it)->VacuumInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::outer_x2:
+            (*bvars_it)->VacuumOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+            break;
+          case BoundaryFace::inner_x3:
+            (*bvars_it)->VacuumInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+            break;
+          case BoundaryFace::outer_x3:
+            (*bvars_it)->VacuumOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
             break;
         }
         break;

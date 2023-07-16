@@ -30,6 +30,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/cc/fft_grav/*.cpp) \
 	     $(wildcard src/bvals/cc/hydro/*.cpp) \
 	     $(wildcard src/bvals/cc/mg/*.cpp) \
+             $(wildcard src/bvals/cc/nr_radiation/*.cpp) \
 	     $(wildcard src/bvals/fc/*.cpp) \
 	     $(wildcard src/bvals/orbital/*.cpp) \
 	     $(wildcard src/bvals/utils/*.cpp) \
@@ -45,6 +46,12 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/hydro/*.cpp) \
 	     $(wildcard src/hydro/srcterms/*.cpp) \
 	     $(wildcard src/hydro/hydro_diffusion/*.cpp) \
+             $(wildcard src/nr_radiation/*.cpp) \
+             $(wildcard src/nr_radiation/integrators/*.cpp) \
+             $(wildcard src/nr_radiation/integrators/srcterms/*.cpp) \
+             $(wildcard src/nr_radiation/implicit/*.cpp) \
+             $(wildcard src/cr/*.cpp) \
+             $(wildcard src/cr/integrators/*.cpp) \
 	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
 	     $(wildcard src/inputs/*.cpp) \
 	     $(wildcard src/mesh/*.cpp) \

@@ -33,6 +33,10 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   CellCenteredBoundaryVariable(MeshBlock *pmb,
                                AthenaArray<Real> *var, AthenaArray<Real> *coarse_var,
                                AthenaArray<Real> *var_flux, bool fflux);
+    //override function for arrays need different initialization of nu_
+  CellCenteredBoundaryVariable(MeshBlock *pmb,
+                               AthenaArray<Real> *var, AthenaArray<Real> *coarse_var,
+                               AthenaArray<Real> *var_flux, bool fflux, int flag);
   ~CellCenteredBoundaryVariable();
 
   //! \note
@@ -116,6 +120,19 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void OutflowOuterX3(Real time, Real dt,
                       int il, int iu, int jl, int ju, int ku, int ngh) override;
 
+  void VacuumInnerX1(Real time, Real dt,
+                     int il, int jl, int ju, int kl, int ku, int ngh) override {return;};
+  void VacuumOuterX1(Real time, Real dt,
+                     int iu, int jl, int ju, int kl, int ku, int ngh) override {return;};
+  void VacuumInnerX2(Real time, Real dt,
+                     int il, int iu, int jl, int kl, int ku, int ngh) override {return;};
+  void VacuumOuterX2(Real time, Real dt,
+                     int il, int iu, int ju, int kl, int ku, int ngh) override {return;};
+  void VacuumInnerX3(Real time, Real dt,
+                     int il, int iu, int jl, int ju, int kl, int ngh) override {return;};
+  void VacuumOuterX3(Real time, Real dt,
+                     int il, int iu, int jl, int ju, int ku, int ngh) override {return;};
+
   void PolarWedgeInnerX2(Real time, Real dt,
                          int il, int iu, int jl, int kl, int ku, int ngh) override;
   void PolarWedgeOuterX2(Real time, Real dt,
@@ -180,6 +197,8 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
                                             Real *buf, int nb);
   void SetFluxShearingBoxBoundarySameLevel(AthenaArray<Real> &src,
                                            Real *buf, const int nb);
+  friend class ParticleMeshBoundaryVariable;
+  friend class RadBoundaryVariable;
 };
 
 #endif // BVALS_CC_BVALS_CC_HPP_

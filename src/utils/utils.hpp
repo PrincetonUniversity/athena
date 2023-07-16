@@ -13,12 +13,36 @@
 // C++ headers
 #include <csignal>   // sigset_t POSIX C extension
 #include <cstdint>   // std::int64_t
+#include "../athena.hpp"
+#include "../athena_arrays.hpp"
 
 // Athena++ headers
 
 void ChangeRunDir(const char *pdir);
 double ran2(std::int64_t *idum);
 void ShowConfig();
+double MarkTime();
+
+void InverseMatrix(int n, AthenaArray<Real> &a, AthenaArray<Real> &b);
+int FouthPolyRoot(const Real coef4, const Real tconst, Real &root);
+void MatrixMult(int m, int n, AthenaArray<Real> &a,
+                AthenaArray<Real> &b, AthenaArray<Real> &c);
+int Permutation(int i, int j, int k, int np, AthenaArray<int> &pl);
+void Gauleg(int n, Real x1, Real x2,  AthenaArray<Real> &x,
+            AthenaArray<Real> &w);
+void Ludcmp_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
+               Real *d);
+void Lubksb_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
+               AthenaArray<Real> &b);
+
+void RotateVec(const Real sint, const Real cost,
+                 const Real sinp, const Real cosp,
+                    Real &v1, Real &v2, Real &v3);
+
+void InvRotateVec(const Real sint, const Real cost,
+                 const Real sinp, const Real cosp,
+                 Real &v1, Real &v2, Real &v3);
+
 
 //----------------------------------------------------------------------------------------
 //! \namespace SignalHandler
