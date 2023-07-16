@@ -111,9 +111,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               Real emission = er1;
               // Initialize with blackbody spectrum
               if (ifr == nfreq-1) {
-                emission *= (1.0-pnrrad->FitBlackBody(pnrrad->nu_grid(ifr)/tr_ini));
+                emission *= (1.0-pnrrad->FitIntPlanckFunc(pnrrad->nu_grid(ifr)/tr_ini));
               } else {
-                emission *= pnrrad->BlackBodySpec(pnrrad->nu_grid(ifr)/tr_ini,
+                emission *= pnrrad->IntPlanckFunc(pnrrad->nu_grid(ifr)/tr_ini,
                                                   pnrrad->nu_grid(ifr+1)/tr_ini);
               }
               for (int n=0; n<pnrrad->nang; n++) {
