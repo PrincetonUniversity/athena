@@ -428,7 +428,7 @@ if args['chem_radiation'] == 'six_ray' and (
 
 if args['ode_solver'] == 'cvode' and args['cvode_path'] == '':
     raise SystemExit('### CONFIGURE ERROR: must provide library path to cvode.')
-    
+
 if args['g'] and (args['nr_radiation'] or args['implicit_radiation']):
     raise SystemExit('### CONFIGURE ERROR: '
                      + ' GR is incompatible with nr_radiation or implicit_radiation')
@@ -995,7 +995,7 @@ if args['grav'] == 'fft':
     self_grav_string = 'FFT'
 elif args['grav'] == 'mg':
     self_grav_string = 'Multigrid'
-    
+
 
 def output_config(opt_descr, opt_choice, filehandle=None):
     first_col_width = 32
@@ -1028,10 +1028,14 @@ output_config('Cosmic Ray Transport', ('ON' if args['cr'] else 'OFF'), flog)
 output_config('Frame transformations', ('ON' if args['t'] else 'OFF'), flog)
 output_config('Self-Gravity', self_grav_string, flog)
 output_config('Super-Time-Stepping', ('ON' if args['sts'] else 'OFF'), flog)
-output_config('Chemistry', (args['chemistry'] if args['chemistry'] is not None else 'OFF'), flog)
-output_config('KIDA rates', (args['kida_rates'] if args['kida_rates'] is not None else 'OFF') , flog)
-output_config('ChemRadiation', (args['chem_radiation'] if args['chem_radiation'] is not None else 'OFF') , flog)
-output_config('ode_solver', (args['ode_solver'] if args['ode_solver'] is not None else 'OFF'), flog)
+output_config('Chemistry', (args['chemistry']
+                            if args['chemistry'] is not None else 'OFF'), flog)
+output_config('KIDA rates', (args['kida_rates']
+                             if args['kida_rates'] is not None else 'OFF'), flog)
+output_config('ChemRadiation', (args['chem_radiation']
+                                if args['chem_radiation'] is not None else 'OFF'), flog)
+output_config('ode_solver', (args['ode_solver']
+                             if args['ode_solver'] is not None else 'OFF'), flog)
 output_config('Debug flags', ('ON' if args['debug'] else 'OFF'), flog)
 output_config('Code coverage flags', ('ON' if args['coverage'] else 'OFF'), flog)
 output_config('Linker flags', makefile_options['LINKER_FLAGS'] + ' '
