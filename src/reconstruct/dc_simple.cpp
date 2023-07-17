@@ -39,6 +39,25 @@ void Reconstruction::DonorCellX1(const int k, const int j, const int il, const i
   return;
 }
 
+// function for arrays with different order
+void Reconstruction::DonorCellX1(const int k, const int j, const int il, const int iu,
+                                 AthenaArray<Real> &q, const int array_order,
+                                 AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
+  if (array_order < 0) {
+    const int nu = q.GetDim1() - 1;
+    // compute L/R states for each variable
+    for (int i=il; i<=iu; ++i) {
+      Real *qn = &(q(k,j,i,0));
+      Real *qln = &(ql(i+1,0));
+      Real *qrn = &(qr(i,0));
+      for (int n=0; n<=nu; ++n) {
+        qln[n] =  qrn[n] = qn[n];
+      }
+    }
+  }
+  return;
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn Reconstruction::DonorCellX2(const int k, const int j,
 //!                              const int il, const int iu,
@@ -56,6 +75,25 @@ void Reconstruction::DonorCellX2(const int k, const int j, const int il, const i
     for (int i=il; i<=iu; ++i) {
       ql(n,i) = qr(n,i) = q(n,k,j,i);
     }
+  }
+  return;
+}
+
+// function for arrys with different order
+void Reconstruction::DonorCellX2(const int k, const int j, const int il, const int iu,
+                                 AthenaArray<Real> &q, const int array_order,
+                                 AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
+  if (array_order < 0) {
+    const int nu = q.GetDim1() - 1;
+    // compute L/R states for each variable
+    for (int i=il; i<=iu; ++i) {
+      Real *qln = &(ql(i,0));
+      Real *qrn = &(qr(i,0));
+      Real *qn = &(q(k,j,i,0));
+      for (int n=0; n<=nu; ++n) {
+      qln[n] = qrn[n] = qn[n];
+    }
+  }
   }
   return;
 }
@@ -78,5 +116,54 @@ void Reconstruction::DonorCellX3(const int k, const int j, const int il, const i
       ql(n,i) = qr(n,i) = q(n,k,j,i);
     }
   }
+  return;
+}
+
+
+
+void Reconstruction::DonorCellX3(const int k, const int j, const int il, const int iu,
+                                 AthenaArray<Real> &q, const int array_order,
+                                 AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
+  const int nu = q.GetDim1() - 1;
+  // compute L/R states for each variable
+  for (int i=il; i<=iu; ++i) {
+    Real *qln = &(ql(i,0));
+    Real *qrn = &(qr(i,0));
+    Real *qn = &(q(k,j,i,0));
+    for (int n=0; n<=nu; ++n) {
+      qln[n] = qrn[n] = qn[n];
+    }
+  }
+  return;
+}
+
+void Reconstruction::DonorCellZeta(
+    NRRadiation *prad, const int zs, const int ze,
+    AthenaArray<Real> &q,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
+
+    Real *qln = &(ql(zs+1));
+    Real *qrn = &(qr(zs));
+    Real *qn = &(q(zs));
+    for (int n=0; n<=ze-zs; ++n) {
+      qln[n] =  qrn[n] = qn[n];
+    }
+
+  return;
+}
+
+
+void Reconstruction::DonorCellPsi(
+    NRRadiation *prad, const int ps, const int pe,
+    AthenaArray<Real> &q,
+    AthenaArray<Real> &ql, AthenaArray<Real> &qr) {
+
+    Real *qln = &(ql(ps+1));
+    Real *qrn = &(qr(ps));
+    Real *qn = &(q(ps));
+    for (int m=0; m<=pe-ps; ++m) {
+      // renamed dw* -> dq* from plm.cpp
+      qln[m] =  qrn[m] = qn[m];
+    }
   return;
 }

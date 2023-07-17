@@ -19,10 +19,12 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../cr/cr.hpp"
 #include "../eos/eos.hpp"
 #include "../hydro/hydro.hpp"
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
 #include "../mesh/mesh.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../parameter_input.hpp"
 #include "coordinates.hpp"
 
@@ -529,7 +531,6 @@ void SphericalPolar::AddCoordTermsDivergence(const Real dt, const AthenaArray<Re
 void SphericalPolar::AddCoordTermsDivergence_STS(const Real dt, int stage,
                                    const AthenaArray<Real> *flux,
                                    AthenaArray<Real> &u, AthenaArray<Real> &flux_div) {
-  Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
   bool use_x2_fluxes = pmy_block->block_size.nx2 > 1;
 
   HydroDiffusion &hd = pmy_block->phydro->hdif;
@@ -611,4 +612,153 @@ void SphericalPolar::AddCoordTermsDivergence_STS(const Real dt, int stage,
     }
   }
   return;
+}
+
+//----------------------------------------------------------------------------------------
+// Coordinate (Geometric) source term function for cosmic rays
+
+void SphericalPolar::AddCRCoordTermsDivergence(
+  const AthenaArray<Real> &u_input, AthenaArray<Real> &coord_src) {
+  // Go through cellscosmicay
+  if (CR_ENABLED) {
+    CosmicRay *pcr=pmy_block->pcr;
+    for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
+      for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
+        for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
+          // src_1 = < M_{theta theta} + M_{phi phi} ><1/r>
+          Real m_ii = (2.0/3.0) * u_input(CRE,k,j,i);
+          coord_src(CRF1,k,j,i) = pcr->vmax * coord_src1_i_(i)*m_ii;
+          // src_2 = < M_{phi phi} ><cot theta/r>
+          Real m_pp=(1.0/3.0) * u_input(CRE,k,j,i);
+          coord_src(CRF2,k,j,i) = pcr->vmax * coord_src1_i_(i)*coord_src1_j_(j)*m_pp;
+          // set 0 for other components
+          coord_src(CRE,k,j,i) = 0.0;
+          coord_src(CRF3,k,j,i) = 0.0;
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// Coordinate (Geometric) source term for Grad Pc
+
+void SphericalPolar::CRGradPcCoordTermsDivergence(
+  const AthenaArray<Real> &u_cr, AthenaArray<Real> &grad_pc) {
+  // Go through cellscosmicay
+  if (CR_ENABLED) {
+    for (int k=pmy_block->ks; k<=pmy_block->ke; ++k) {
+      for (int j=pmy_block->js; j<=pmy_block->je; ++j) {
+        for (int i=pmy_block->is; i<=pmy_block->ie; ++i) {
+          // src_1 = < M_{theta theta} + M_{phi phi} ><1/r>
+          Real m_ii = (2.0/3.0) * u_cr(CRE,k,j,i);
+          grad_pc(0,k,j,i) -= coord_src1_i_(i)*m_ii;
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+// For radiation angles
+void SphericalPolar::AxisDirection(int *axisx, int *axisy, int *axisz) {
+  *axisx = 1;
+  *axisy = 2;
+  *axisz = 0;
+  return;
+}
+
+
+
+void SphericalPolar::ConvertAngle(MeshBlock *pmb, const int nang,
+                                  AthenaArray<Real> &mu) {
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+    int n1z = pmb->ncells1, n2z = pmb->ncells2, n3z = pmb->ncells3;
+
+    for(int k=0; k<n3z; ++k) {
+      Real x3 = x3v(k);
+      Real cosx3 = cos(x3);
+      Real sinx3 = sin(x3);
+      if (n3z == 1) {
+        cosx3 = 1.0;
+        sinx3 = 0.0;
+      }
+      for(int j=0; j<n2z; ++j) {
+        Real x2 = x2v(j);
+        Real cosx2 = cos(x2);
+        Real sinx2 = sin(x2);
+        if (n2z == 1) {
+          cosx2 = 1.0;
+          sinx2 = 0.0;
+        }
+        for(int i=0; i<n1z; ++i) {
+          Real *miur = &(mu(0,k,j,i,0));
+          Real *miutheta = &(mu(1,k,j,i,0));
+          Real *miuphi = &(mu(2,k,j,i,0));
+          // now rotate angles
+          for(int mi=0; mi<nang; ++mi) {
+            Real miuz0 = miur[mi];
+            Real miux0 = miutheta[mi];
+            Real miuy0 = miuphi[mi];
+            miur[mi]     = sinx2*cosx3*miux0 + sinx2*sinx3*miuy0 + cosx2*miuz0;
+            miutheta[mi] = cosx2*cosx3*miux0 + cosx2*sinx3*miuy0 - sinx2*miuz0;
+            miuphi[mi]   = -sinx3*miux0      + cosx3*miuy0;
+          }
+        }
+      }
+    }
+  }
+}
+
+
+// get the geometry factor for zeta flux
+// this needs to go throug all the nzeta
+void SphericalPolar::GetGeometryZeta(NRRadiation *prad, const int k, const int j,
+                                     const int i, AthenaArray<Real> &g_zeta) {
+  int &nzeta = prad->nzeta;
+  Real radius = x1v(i);
+  for(int n=0; n<nzeta*2+1; ++n) {
+    g_zeta(n) = 1./radius;
+  }
+}
+
+// get the geometry factor for psi flux
+// this needs to go throug all the nzeta
+void SphericalPolar::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
+                                    const int i, const int n_zeta,
+                                    AthenaArray<Real> &g_psi) {
+  int &npsi = prad->npsi;
+  Real radius = x1v(i);
+  Real sinzeta_v = 1.0 - prad->coszeta_v(n_zeta) * prad->coszeta_v(n_zeta);
+  sinzeta_v = std::sqrt(sinzeta_v);
+  Real &cottheta = prad->cot_theta(j);
+  if (npsi == 1) {
+    for(int n=0; n<2*npsi+1; ++n) {
+      g_psi(n) = 0.0;
+    }
+  } else {
+    for(int n=0; n<2*npsi+1; ++n) {
+      g_psi(n) = sinzeta_v * cottheta * prad->sin_psi_f(n)/radius;
+    }
+  }
+}
+
+
+void SphericalPolar::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
+                        const int i, AthenaArray<Real> &g_psi) {
+  int &npsi = prad->npsi;
+  Real radius = x1v(i);
+
+  Real &cottheta = prad->cot_theta(j);
+  if (npsi == 1) {
+    for(int n=0; n<2*npsi+1; ++n) {
+      g_psi(n) = 0.0;
+    }
+  } else {
+    for(int n=0; n<2*npsi+1; ++n) {
+      g_psi(n) = cottheta * prad->sin_psi_f(n)/radius;
+    }
+  }
 }

@@ -46,6 +46,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   // Read and set type of spatial reconstruction
   // --------------------------------
   std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
+  nvar_ = pmb->nfre_ang;
 
   if (input_recon == "1") {
     xorder = 1;
@@ -66,6 +67,13 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     xorder = 4;
     if (input_recon == "4c")
       characteristic_projection = true;
+    if (MAGNETIC_FIELDS_ENABLED) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "xorder=" << input_recon << " should not be used with MHD"<< std::endl
+          << "4th-order constrained transport algorithm is not yet merged" << std::endl;
+      ATHENA_ERROR(msg);
+    }
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
@@ -222,12 +230,43 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   scr01_i_.NewAthenaArray(nc1);
   scr02_i_.NewAthenaArray(nc1);
 
-  scr1_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
-  scr2_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
-  scr3_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
-  scr4_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
+  int nsize = std::max(NWAVE, NSCALARS);
+  if(CR_ENABLED)
+    nsize = std::max(nsize,5);
 
-  if ((xorder == 3) || (xorder == 4)) {
+
+  scr1_ni_.NewAthenaArray(nsize, nc1);
+  scr2_ni_.NewAthenaArray(nsize, nc1);
+  scr3_ni_.NewAthenaArray(nsize, nc1);
+  scr4_ni_.NewAthenaArray(nsize, nc1);
+
+  scr1_in_.NewAthenaArray(nvar_, nc1);
+  scr2_in_.NewAthenaArray(nvar_, nc1);
+  scr3_in_.NewAthenaArray(nvar_, nc1);
+  scr4_in_.NewAthenaArray(nvar_, nc1);
+
+  // temporary array for reconstruction in angular space
+  scr1_nn_.NewAthenaArray(nvar_+2*NGHOST,nvar_+2*NGHOST);
+  scr2_nn_.NewAthenaArray(nvar_+2*NGHOST,nvar_+2*NGHOST);
+  scr3_nn_.NewAthenaArray(nvar_+2*NGHOST,nvar_+2*NGHOST);
+  scr4_nn_.NewAthenaArray(nvar_+2*NGHOST,nvar_+2*NGHOST);
+
+  scr1_in2_.NewAthenaArray(nc1, nvar_);
+  scr2_in2_.NewAthenaArray(nc1, nvar_);
+  scr3_in2_.NewAthenaArray(nc1, nvar_);
+  scr4_in2_.NewAthenaArray(nc1, nvar_);
+
+  int order_flag = xorder;
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+    int rad_order = pin->GetOrAddInteger("time", "rad_xorder", 2);
+    order_flag = std::max(rad_order,xorder);
+  }
+  if (CR_ENABLED) {
+    int cr_order=pin->GetOrAddInteger("time", "cr_xorder", 2);
+    order_flag = std::max(cr_order,order_flag);
+  }
+
+  if ((order_flag == 3) || (order_flag == 4)) {
     Coordinates *pco = pmb->pcoord;
     scr03_i_.NewAthenaArray(nc1);
     scr04_i_.NewAthenaArray(nc1);
@@ -242,10 +281,15 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     scr13_i_.NewAthenaArray(nc1);
     scr14_i_.NewAthenaArray(nc1);
 
-    scr5_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
-    scr6_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
-    scr7_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
-    scr8_ni_.NewAthenaArray(std::max(NWAVE, NSCALARS), nc1);
+    scr5_ni_.NewAthenaArray(nsize, nc1);
+    scr6_ni_.NewAthenaArray(nsize, nc1);
+    scr7_ni_.NewAthenaArray(nsize, nc1);
+    scr8_ni_.NewAthenaArray(nsize, nc1);
+
+    scr5_in_.NewAthenaArray(nvar_, nc1);
+    scr6_in_.NewAthenaArray(nvar_, nc1);
+    scr7_in_.NewAthenaArray(nvar_, nc1);
+    scr8_in_.NewAthenaArray(nvar_, nc1);
 
     // Precompute PPM coefficients in x1-direction ---------------------------------------
     c1i.NewAthenaArray(nc1);

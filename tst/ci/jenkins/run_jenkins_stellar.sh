@@ -80,6 +80,10 @@ time python -u ./run_tests.py gr/hydro_shocks_hlle_no_transform gr/hydro_shocks_
 time python -u ./run_tests.py mhd --silent  # (mhd/mhd_linwave.py is currenlty the slowest regression test):
 time python -u ./run_tests.py shearingbox --silent
 time python -u ./run_tests.py diffusion --silent
+time python -u ./run_tests.py cr --silent
+time python -u ./run_tests.py nr_radiation --silent
+time python -u ./run_tests.py implicit_radiation --silent
+time python -u ./run_tests.py multi_group --silent
 
 # ----------------
 # Install CVODE
@@ -144,6 +148,11 @@ time python -u ./run_tests.py shearingbox --config=--cxx=icpx --silent
 time python -u ./run_tests.py symmetry --config=--cxx=icpx --silent
 time python -u ./run_tests.py eos --config=--cxx=icpx --silent
 time python -u ./run_tests.py scalars/mignone_radial_1d --config=--cxx=icpx --silent
+
+time python -u ./run_tests.py cr --config=--cxx=icpx --silent
+time python -u ./run_tests.py nr_radiation --config=--cxx=icpx --silent
+time python -u ./run_tests.py implicit_radiation --config=--cxx=icpx --silent
+time python -u ./run_tests.py multi_group --config=--cxx=icpx --silent
 
 time python -u ./run_tests.py chemistry --config=--cxx=icpx --silent
 

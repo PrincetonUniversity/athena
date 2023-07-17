@@ -132,7 +132,10 @@ void VTKOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     float *data;
     int ndata = std::max(ncoord1, ncoord2);
     ndata = std::max(ndata, ncoord3);
-    data = new float[3*ndata];
+    int array_size = 3*ndata;
+    if(NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+      array_size = 9 * ndata;
+    data = new float[array_size];
 
     // Specify the type of data, dimensions, and coordinates.  If N>1, then write N+1
     // cell faces as binary floats.  If N=1, then write 1 cell center position.

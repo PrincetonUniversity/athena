@@ -33,6 +33,7 @@
 #include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../chem_rad/radiation.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../cr/cr.hpp"
 #include "../eos/eos.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../fft/turbulence.hpp"
@@ -45,6 +46,8 @@
 #include "../hydro/hydro.hpp"
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
 #include "../multigrid/multigrid.hpp"
+#include "../nr_radiation/implicit/radiation_implicit.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../outputs/io_wrapper.hpp"
 #include "../parameter_input.hpp"
@@ -532,6 +535,10 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     pmgrd = new MGGravityDriver(this, pin);
   }
 
+  if (IM_RADIATION_ENABLED) {
+    pimrad = new IMRadiation(this, pin);
+  }
+
   // create MeshBlock list for this process
   gids_ = nslist[Globals::my_rank];
   gide_ = gids_ + nblist[Globals::my_rank] - 1;
@@ -855,6 +862,11 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     pmgrd = new MGGravityDriver(this, pin);
   }
 
+  if (IM_RADIATION_ENABLED) {
+    pimrad = new IMRadiation(this, pin);
+  }
+
+
   // allocate data buffer
   int nbmin = nblist[0];
   for (int n = 1; n < Globals::nranks; ++n) {
@@ -892,11 +904,21 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
   }
   delete [] mbdata;
   // check consistency
-  if (datasize != my_blocks(0)->GetBlockSizeInBytes()) {
-    msg << "### FATAL ERROR in Mesh constructor" << std::endl
-        << "The restart file is broken or input parameters are inconsistent."
-        << std::endl;
-    ATHENA_ERROR(msg);
+  if ( (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) &&
+                    my_blocks(0)->pnrrad->restart_from_gray > 0) {
+    if (datasize != my_blocks(0)->GetBlockSizeInBytesGray()) {
+        msg << "### FATAL ERROR in Mesh constructor" << std::endl
+            << "The restart file is broken or input parameters are inconsistent."
+            << std::endl;
+        ATHENA_ERROR(msg);
+    }
+  } else {
+    if (datasize != my_blocks(0)->GetBlockSizeInBytes()) {
+        msg << "### FATAL ERROR in Mesh constructor" << std::endl
+            << "The restart file is broken or input parameters are inconsistent."
+            << std::endl;
+        ATHENA_ERROR(msg);
+    }
   }
 
   ResetLoadBalanceVariables();
@@ -922,6 +944,7 @@ Mesh::~Mesh() {
   delete [] loclist;
   if (SELF_GRAVITY_ENABLED == 1) delete pfgrd;
   else if (SELF_GRAVITY_ENABLED == 2) delete pmgrd;
+  if (IM_RADIATION_ENABLED) delete pimrad;
   if (turb_flag > 0) delete ptrbd;
   if (adaptive) { // deallocate arrays for AMR
     delete [] nref;
@@ -1198,6 +1221,59 @@ void Mesh::EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask) {
   return;
 }
 
+
+//----------------------------------------------------------------------------------------
+// radiation related boundaries
+
+void Mesh::EnrollUserRadBoundaryFunction(BoundaryFace dir, RadBoundaryFunc my_bc) {
+  std::stringstream msg;
+  if (dir < 0 || dir > 5) {
+    msg << "### FATAL ERROR in EnrollUserRadBoundaryCondition function" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  if (mesh_bcs[dir] != BoundaryFlag::user) {
+    msg << "### FATAL ERROR in EnrollUserRadBoundaryFunction" << std::endl
+        << "The boundary condition flag must be set to the string 'user' in the "
+        << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  RadBoundaryFunc_[static_cast<int>(dir)]=my_bc;
+  return;
+}
+
+//! * provide trivial overloads for old-style BoundaryFace enum argument
+void Mesh::EnrollUserRadBoundaryFunction(int dir, RadBoundaryFunc my_bc) {
+  EnrollUserRadBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
+  return;
+}
+
+
+void Mesh::EnrollUserCRBoundaryFunction(BoundaryFace dir, CRBoundaryFunc my_bc) {
+  std::stringstream msg;
+  if (dir < 0 || dir > 5) {
+    msg << "### FATAL ERROR in EnrollUserCRBoundaryCondition function" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  if (mesh_bcs[dir] != BoundaryFlag::user) {
+    msg << "### FATAL ERROR in EnrollUserCRBoundaryFunction" << std::endl
+        << "The boundary condition flag must be set to the string 'user' in the "
+        << " <mesh> block in the input file to use user-enrolled BCs" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  CRBoundaryFunc_[static_cast<int>(dir)]=my_bc;
+  return;
+}
+
+void Mesh::EnrollUserCRBoundaryFunction(int dir, CRBoundaryFunc my_bc) {
+  EnrollUserCRBoundaryFunction(static_cast<BoundaryFace>(dir), my_bc);
+  return;
+}
+
+
+
+
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserRefinementCondition(AMRFlagFunc amrflag)
 //! \brief Enroll a user-defined function for checking refinement criteria
@@ -1431,6 +1507,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       if (CHEMRADIATION_ENABLED && CHEMISTRY_ENABLED) {
         pmb->pchemrad->pchemradintegrator->col_bvar.SetupPersistentMPI();
       }
+      if (IM_RADIATION_ENABLED)
+        pmb->pnrrad->rad_bvar.SetupPersistentMPI();
     }
 
     // solve gravity for the first time
@@ -1453,6 +1531,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
         pbval->StartReceivingSubset(BoundaryCommSubset::mesh_init,
                                     pbval->bvars_main_int);
+        if (IM_RADIATION_ENABLED)
+          pmb->pnrrad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);
       }
 
       // send conserved variables
@@ -1472,8 +1552,15 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           }
           pmb->pscalars->sbvar.SendBoundaryBuffers();
         }
-      }
 
+
+        if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+          pmb->pnrrad->rad_bvar.SendBoundaryBuffers();
+        }
+        if (CR_ENABLED) {
+          pmb->pcr->cr_bvar.SendBoundaryBuffers();
+        }
+      }
       // wait to receive conserved variables
 #pragma omp for private(pmb,pbval)
       for (int i=0; i<nblocal; ++i) {
@@ -1483,11 +1570,22 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->pfield->fbvar.ReceiveAndSetBoundariesWithWait();
         if (NSCALARS > 0)
           pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
+
+        if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+          pmb->pnrrad->rad_bvar.ReceiveAndSetBoundariesWithWait();
+        if (CR_ENABLED)
+          pmb->pcr->cr_bvar.ReceiveAndSetBoundariesWithWait();
+
         if (shear_periodic && orbital_advection==0) {
           pmb->phydro->hbvar.AddHydroShearForInit();
+
+          if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+            pmb->pnrrad->rad_bvar.AddRadShearForInit();
         }
         pbval->ClearBoundarySubset(BoundaryCommSubset::mesh_init,
                                    pbval->bvars_main_int);
+        if (IM_RADIATION_ENABLED)
+          pmb->pnrrad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);
       }
 
       // With AMR/SMR GR send primitives to enable cons->prim before prolongation
@@ -1634,6 +1732,25 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
         pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
       }
+      // for radiation, calculate opacity and moments
+      if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+        for (int i=0; i<nblocal; ++i) {
+          pmb = my_blocks(i); ph = pmb->phydro;
+          NRRadiation *prad = pmb->pnrrad;
+          prad->UserFrequency(prad);
+          prad->CalculateMoment(prad->ir);
+          prad->UpdateOpacity(pmb,ph->w);
+        }
+      }
+      // calculate opacity
+      if (CR_ENABLED) {
+        for(int i=0; i<nblocal; ++i) {
+          pmb=my_blocks(i); ph=pmb->phydro;
+          CosmicRay *pcr = pmb->pcr;
+          pf=pmb->pfield;
+          pcr->UpdateOpacity(pmb,pcr->u_cr,ph->w,pf->bcc);
+        }
+      }
 
       // Calc initial diffusion coefficients
 #pragma omp for private(pmb,ph,pf)
@@ -1653,7 +1770,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           my_blocks(i)->pmr->CheckRefinementCondition();
         }
       }
-    } // omp parallel
+    }
 
     if (!res_flag && adaptive) {
       iflag = false;
@@ -1869,6 +1986,9 @@ void Mesh::CorrectMidpointInitialCondition() {
     // no need to re-SetupPersistentMPI() the MPI requests for boundary values
     pbval->StartReceivingSubset(BoundaryCommSubset::mesh_init,
                                 pbval->bvars_main_int);
+
+    if (IM_RADIATION_ENABLED)
+      pmb->pnrrad->rad_bvar.StartReceiving(BoundaryCommSubset::radiation);
   }
 
 #pragma omp for private(pmb,pbval)
@@ -1887,6 +2007,11 @@ void Mesh::CorrectMidpointInitialCondition() {
       }
       pmb->pscalars->sbvar.SendBoundaryBuffers();
     }
+
+    if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+      pmb->pnrrad->rad_bvar.SendBoundaryBuffers();
+    if (CR_ENABLED)
+      pmb->pcr->cr_bvar.SendBoundaryBuffers();
   }
 
   // wait to receive conserved variables
@@ -1905,11 +2030,25 @@ void Mesh::CorrectMidpointInitialCondition() {
       }
       pmb->pscalars->sbvar.ReceiveAndSetBoundariesWithWait();
     }
+
+
+    if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+      pmb->pnrrad->rad_bvar.ReceiveAndSetBoundariesWithWait();
+    if (CR_ENABLED)
+      pmb->pcr->cr_bvar.ReceiveAndSetBoundariesWithWait();
+
+
     if (shear_periodic && orbital_advection==0) {
       pmb->phydro->hbvar.AddHydroShearForInit();
+      if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+        pmb->pnrrad->rad_bvar.AddRadShearForInit();
+      }
     }
     pbval->ClearBoundarySubset(BoundaryCommSubset::mesh_init,
                                pbval->bvars_main_int);
+    if (IM_RADIATION_ENABLED) {
+      pmb->pnrrad->rad_bvar.ClearBoundary(BoundaryCommSubset::radiation);
+    }
   } // end second exchange of ghost cells
   return;
 }
@@ -1963,6 +2102,12 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   }
   if (CHEMRADIATION_ENABLED) {
     ReserveTagPhysIDs(SixRayBoundaryVariable::max_phys_id);
+  }
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+    ReserveTagPhysIDs(RadBoundaryVariable::max_phys_id);
+  }
+  if (CR_ENABLED) {
+    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
 #endif
   return;

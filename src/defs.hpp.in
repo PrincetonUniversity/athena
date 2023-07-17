@@ -24,7 +24,9 @@
 // Riemann solver
 #define RIEMANN_SOLVER "@RSOLVER@"
 
-// equation of state
+// configure.py dict(definitions) Boolean values:
+
+// Equation of state
 #define EQUATION_OF_STATE "@EQUATION_OF_STATE@"
 
 // ChemNetwork class header file included in species.hpp
@@ -59,6 +61,15 @@
 // include radiative transfer in chemistry calculations? default=0 (false)
 #define CHEMRADIATION_ENABLED @CHEMRADIATION_ENABLED@
 
+// include nonrelativistic radiative transfer? default=0 (false)
+#define NR_RADIATION_ENABLED @NR_RADIATION_ENABLED@
+
+// include radiative transfer evolved with implicit method? default=0 (false)
+#define IM_RADIATION_ENABLED @IM_RADIATION_ENABLED@
+
+// include cosmic ray transport? default=0 (false)
+#define CR_ENABLED @CR_ENABLED@
+
 // enable special or general relativity? default=0 (false)
 #define RELATIVISTIC_DYNAMICS @RELATIVISTIC_DYNAMICS@
 
@@ -75,7 +86,10 @@
 #define DEBUG @DEBUG_OPTION@
 
 // configure.py dict(definitions) Boolean string macros:
-// (these options are "false" by default, unless noted otherwise)
+// (these options have the latter (false) option as defaults, unless noted otherwise)
+
+// make use of FFT? (FFT or NO_FFT)
+#define @FFT_OPTION@
 
 // MPI parallelization (MPI_PARALLEL or NOT_MPI_PARALLEL)
 #define @MPI_OPTION@
@@ -110,6 +124,9 @@
 #define NSCALARS @NUMBER_PASSIVE_SCALARS@
 #define NSPECIES @NUMBER_CHEMICAL_SPECIES@
 #define NGHOST @NUMBER_GHOST_CELLS@
+#define NGRAV @NGRAV_VARIABLES@
+#define NCR @NCR_VARIABLES@   // cosmic ray transport module variable
+#define NRAD @NRAD_VARIABLES@  // Radiation variables for history output
 #define MAX_NSTAGE 6     // maximum number of stages per cycle for time-integrator
 #define MAX_NREGISTER 3  // maximum number of (u, b) register pairs for time-integrator
 
@@ -124,10 +141,13 @@
 #define ONE_3RD 0.33333333333333333
 #define TWO_3RD 0.66666666666666667
 #define TINY_NUMBER 1.0e-20
+#define BIG_NUMBER 1.0e+10
 #define HUGE_NUMBER 1.0e+36
 #define SQR(x) ( (x)*(x) )
 #define CUBE(x) ( (x)*(x)*(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
+#define PI_FOUR_POWER 97.409091034002415
+#define ONE_PI_FOUR_POWER 0.010265982254684
 
 #ifdef ENABLE_EXCEPTIONS
 #define ATHENA_ERROR(x) throw std::runtime_error(x.str().c_str())
