@@ -29,7 +29,7 @@
 
 class SixRayBoundaryVariable : public BoundaryVariable {
  public:
-  //only works for uniform mesh for now
+  // only works for uniform mesh for now
   SixRayBoundaryVariable(MeshBlock *pmb, AthenaArray<Real> *var);
   ~SixRayBoundaryVariable();
 
@@ -86,23 +86,36 @@ class SixRayBoundaryVariable : public BoundaryVariable {
   void OutflowOuterX3(Real time, Real dt,
                       int il, int iu, int jl, int ju, int ku, int ngh) override;
 
+  void VacuumInnerX1(Real time, Real dt,
+                     int il, int jl, int ju, int kl, int ku, int ngh) override {return;};
+  void VacuumOuterX1(Real time, Real dt,
+                     int iu, int jl, int ju, int kl, int ku, int ngh) override {return;};
+  void VacuumInnerX2(Real time, Real dt,
+                     int il, int iu, int jl, int kl, int ku, int ngh) override {return;};
+  void VacuumOuterX2(Real time, Real dt,
+                     int il, int iu, int ju, int kl, int ku, int ngh) override {return;};
+  void VacuumInnerX3(Real time, Real dt,
+                     int il, int iu, int jl, int ju, int kl, int ngh) override {return;};
+  void VacuumOuterX3(Real time, Real dt,
+                     int il, int iu, int jl, int ju, int ku, int ngh) override {return;};
+
   void PolarWedgeInnerX2(Real time, Real dt,
                          int il, int iu, int jl, int kl, int ku, int ngh) override;
   void PolarWedgeOuterX2(Real time, Real dt,
                          int il, int iu, int ju, int kl, int ku, int ngh) override;
   //!@}
 
-  //send to specific direction
+  // send to specific direction
   void SendSixRayBoundaryBuffers(const BoundaryFace direction);
-  //receive from specific direction
+  // receive from specific direction
   bool ReceiveAndSetSixRayBoundaryBuffers(const BoundaryFace direction);
-  //get opposite direction of face boundary
+  // get opposite direction of face boundary
   BoundaryFace GetOppositeBoundaryFace(const BoundaryFace direction);
-  //get face neighbor
+  // get face neighbor
   NeighborBlock *GetFaceNeighbor(const BoundaryFace direction);
 
  private:
-  int mu_, ml_; //indexing of the first dimension (chemical species)
+  int mu_, ml_;  // indexing of the first dimension (chemical species)
 #ifdef MPI_PARALLEL
   int sixray_phys_id_;
 #endif
