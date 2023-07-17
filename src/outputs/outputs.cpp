@@ -1337,7 +1337,6 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
             && pm->ncycle%ptype->output_params.dcycle == 0)
         || (pm->time >= pm->tlim)
         || (wtflag && ptype->output_params.file_type == "rst")) {
-
       if (rad_mom && (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)) {
         for(int b=0; b<pm->nblocal; ++b) {
           pmb = pm->my_blocks(b);
