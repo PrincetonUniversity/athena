@@ -21,7 +21,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-hem_rad/chem_rad.hpp/g
+#include "../chem_rad/radiation.hpp"
 #include "../cr/cr.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"

@@ -23,7 +23,7 @@
 #include <sstream>    // stringstream
 
 // Athena++ header
-hem_rad/chem_rad.hpp/g
+#include "../../chem_rad/radiation.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
 #include "../../globals.hpp"

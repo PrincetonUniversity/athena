@@ -15,7 +15,7 @@
 // Athena++ classes headers
 #include "../athena.hpp"
 #include "../chem_rad/integrators/rad_integrators.hpp"
-hem_rad/chem_rad.hpp/g
+#include "../chem_rad/radiation.hpp"
 #include "../defs.hpp"
 #include "../mesh/mesh.hpp"
 #include "chem_rad_task_list.hpp"
