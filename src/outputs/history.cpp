@@ -87,7 +87,6 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     NRRadiation *prad = pmb->pnrrad;
     CosmicRay *pcr = pmb->pcr;
 
-
     // Sum history variables over cells. Note ghost cells are never included in sums
     if(porb->orbital_advection_defined
        && !output_params.orbital_system_output) {

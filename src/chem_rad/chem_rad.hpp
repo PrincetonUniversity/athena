@@ -8,10 +8,10 @@
 //! \file radiation.hpp
 //! \brief definitions for ChemRadiation class
 
-//c++ header
+// c++ header
 #include <string>
 
-//Athena++ classes headers
+// Athena++ classes headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../defs.hpp"
@@ -28,7 +28,7 @@ class ChemRadiation {
   ~ChemRadiation();
 
   MeshBlock* pmy_block;    // ptr to MeshBlock containing this Fluid
-  ChemRadIntegrator* pchemradintegrator; //ptr to radiation integrator
+  ChemRadIntegrator* pchemradintegrator; // ptr to radiation integrator
   std::string integrator;
 
   AthenaArray<Real> ir; // radiation specific intensity

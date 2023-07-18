@@ -129,13 +129,11 @@ void SixRayBoundaryVariable::SetupPersistentMPI() {
 //! \fn void SixRayBoundaryVariable::StartReceiving(BoundaryCommSubset phase)
 //! \brief call MPI_Start for six-ray boundary
 void SixRayBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
-  MeshBlock *pmb = pmy_block_;
 #ifdef MPI_PARALLEL
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    //only face neighbors are used in six-ray
-    if (nb.ni.type == NeighborConnect::face
-        && nb.snb.rank != Globals::my_rank) {
+    // only face neighbors are used in six-ray
+    if (nb.ni.type == NeighborConnect::face && nb.snb.rank != Globals::my_rank) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
     }
   }
@@ -149,7 +147,7 @@ void SixRayBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
 void SixRayBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
-    //only face neighbors are used in six-ray
+    // only face neighbors are used in six-ray
     if (nb.ni.type == NeighborConnect::face) {
       bd_var_.flag[nb.bufid] = BoundaryStatus::waiting;
       bd_var_.sflag[nb.bufid] = BoundaryStatus::waiting;
@@ -273,10 +271,10 @@ bool SixRayBoundaryVariable::ReceiveFluxCorrection() {
   return true;
 }
 
-//shearing box not implemented
+// shearing box not implemented
 void SixRayBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {}
 
-//polar boundary not implemented
+// polar boundary not implemented
 void SixRayBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {}
 
 //physical boundary not implemented. Use user defined boundary for six-ray
