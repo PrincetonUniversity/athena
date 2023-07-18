@@ -22,7 +22,7 @@
 
 // Athena++ header
 #include "../../chem_rad/integrators/rad_integrators.hpp"
-#include "../../chem_rad/radiation.hpp"
+#include "../../chem_rad/chem_rad.hpp"
 #include "../../coordinates/coordinates.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"

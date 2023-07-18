@@ -22,7 +22,7 @@
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
 #include "../chem_rad/integrators/rad_integrators.hpp"
-#include "../chem_rad/radiation.hpp"
+#include "../chem_rad/chem_rad.hpp"
 #include "../chemistry/utils/thermo.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"

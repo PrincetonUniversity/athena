@@ -24,7 +24,7 @@
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
 #include "../bvals/sixray/bvals_sixray.hpp" //SixRayBoundaryVariable
-#include "../chem_rad/radiation.hpp"
+#include "../chem_rad/chem_rad.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../cr/cr.hpp"
 #include "../eos/eos.hpp"
