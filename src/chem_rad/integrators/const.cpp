@@ -12,7 +12,7 @@
 // Athena++ headers
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
-#include "../radiation.hpp"
+#include "../chem_rad.hpp"
 
 //----------------------------------------------------------------------------------------
 //! constructor, for constant radiation integrator

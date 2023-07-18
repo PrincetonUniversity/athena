@@ -20,7 +20,7 @@
 #include "../../parameter_input.hpp"
 #include "../../scalars/scalars.hpp"
 #include "../../units/units.hpp"
-#include "../radiation.hpp"
+#include "../chem_rad.hpp"
 
 // this class header
 #include "rad_integrators.hpp"

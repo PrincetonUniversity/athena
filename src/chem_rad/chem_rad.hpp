@@ -5,13 +5,15 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file radiation.hpp
+//! \file chem_rad.hpp
 //! \brief definitions for ChemRadiation class
 
-// c++ header
+// C headers
+
+// C++ headers
 #include <string>
 
-// Athena++ classes headers
+// Athena++ class headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../defs.hpp"

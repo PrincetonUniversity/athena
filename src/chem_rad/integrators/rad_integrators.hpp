@@ -13,7 +13,7 @@
 #include "../../athena_arrays.hpp"
 #include "../../bvals/sixray/bvals_sixray.hpp"
 #include "../../scalars/scalars.hpp"
-#include "../radiation.hpp" // radiation
+#include "../chem_rad.hpp" // radiation
 
 class MeshBlock;
 class ChemRadiation;

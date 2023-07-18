@@ -3,10 +3,12 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file radiation.cpp
+//! \file chem_rad.cpp
 //! \brief implementation of functions in class ChemRadiation
 
-//C++ headers
+// C headers
+
+// C++ headers
 #include <iostream>   // endl
 #include <sstream>    // sstream
 #include <stdexcept>  // runtime_error
@@ -15,7 +17,7 @@
 // Athena++ headers
 #include "../mesh/mesh.hpp"
 #include "integrators/rad_integrators.hpp"
-#include "radiation.hpp"
+#include "chem_rad.hpp"
 
 //! ChemRadiation constructor, initializes data structures and parameters
 
