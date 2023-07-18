@@ -121,7 +121,7 @@ void SixRayBoundaryVariable::SetupPersistentMPI() {
                     nb.snb.rank, tag, MPI_COMM_WORLD, &(bd_var_.req_recv[nb.bufid]));
     }
   }
-#endif //MPI_PARALLEL
+#endif
   return;
 }
 
@@ -163,6 +163,7 @@ void SixRayBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   return;
 }
 
+
 //----------------------------------------------------------------------------------------
 //! \fn int SixRayBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
 //!                                                             const NeighborBlock& nb)
@@ -188,6 +189,7 @@ int SixRayBoundaryVariable::LoadBoundaryBufferSameLevel(Real *buf,
   }
   return p;
 }
+
 
 //----------------------------------------------------------------------------------------
 //! \fn void SixRayBoundaryVariable::SetBoundarySameLevel(Real *buf,
@@ -216,12 +218,13 @@ void SixRayBoundaryVariable::SetBoundarySameLevel(Real *buf, const NeighborBlock
       << "Chemistry BC not yet working with polar coordinates yet." << std::endl;
     ATHENA_ERROR(msg);
   } else {
-    //Set the same direction
+    // Set the same direction
     BufferUtility::UnpackData(buf, *var, nb.fid, nb.fid, ml_, mu_,
                               si, ei, sj, ej, sk, ek, p);
   }
   return;
 }
+
 
 //----------------------------------------------------------------------------------------
 //! \fn int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
@@ -229,9 +232,10 @@ void SixRayBoundaryVariable::SetBoundarySameLevel(Real *buf, const NeighborBlock
 //! \brief
 int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
                                                         const NeighborBlock& nb) {
-  //mesh refinement not implemented yet
+  // mesh refinement not implemented yet
   return 0;
 }
+
 
 //----------------------------------------------------------------------------------------
 //! \fn int SixRayBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
@@ -239,73 +243,30 @@ int SixRayBoundaryVariable::LoadBoundaryBufferToCoarser(Real *buf,
 //! \brief
 int SixRayBoundaryVariable::LoadBoundaryBufferToFiner(Real *buf,
                                                       const NeighborBlock& nb) {
-  //mesh refinement not implemented yet
+  // mesh refinement not implemented yet
   return 0;
 }
+
 
 //----------------------------------------------------------------------------------------
 //! \fn void SixRayBoundaryVariable::SetBoundaryFromCoarser(Real *buf,
 //!                                                         const NeighborBlock& nb)
 //! \brief
 void SixRayBoundaryVariable::SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) {
-  //mesh refinement not implemented yet
+  // mesh refinement not implemented yet
   return;
 }
+
 
 //----------------------------------------------------------------------------------------
 //! \fn void SixRayBoundaryVariable::SetBoundaryFromFiner(Real *buf,
 //!                                                       const NeighborBlock& nb)
 //! \brief
 void SixRayBoundaryVariable::SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) {
-  //mesh refinement not implemented yet
+  // mesh refinement not implemented yet
   return;
 }
 
-//no flux correction
-int SixRayBoundaryVariable::ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni,
-                                                            int cng) {
-  return 0;
-}
-void SixRayBoundaryVariable::SendFluxCorrection() {}
-bool SixRayBoundaryVariable::ReceiveFluxCorrection() {
-  return true;
-}
-
-// shearing box not implemented
-void SixRayBoundaryVariable::StartReceivingShear(BoundaryCommSubset phase) {}
-
-// polar boundary not implemented
-void SixRayBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {}
-
-//physical boundary not implemented. Use user defined boundary for six-ray
-void SixRayBoundaryVariable::ReflectInnerX1(Real time, Real dt,
-                    int il, int jl, int ju, int kl, int ku, int ngh) {}
-void SixRayBoundaryVariable::ReflectOuterX1(Real time, Real dt,
-                    int iu, int jl, int ju, int kl, int ku, int ngh) {}
-void SixRayBoundaryVariable::ReflectInnerX2(Real time, Real dt,
-                    int il, int iu, int jl, int kl, int ku, int ngh) {}
-void SixRayBoundaryVariable::ReflectOuterX2(Real time, Real dt,
-                    int il, int iu, int ju, int kl, int ku, int ngh) {}
-void SixRayBoundaryVariable::ReflectInnerX3(Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ngh) {}
-void SixRayBoundaryVariable::ReflectOuterX3(Real time, Real dt,
-                    int il, int iu, int jl, int ju, int ku, int ngh) {}
-void SixRayBoundaryVariable::OutflowInnerX1(Real time, Real dt,
-                    int il, int jl, int ju, int kl, int ku, int ngh) {}
-void SixRayBoundaryVariable::OutflowOuterX1(Real time, Real dt,
-                    int iu, int jl, int ju, int kl, int ku, int ngh) {}
-void SixRayBoundaryVariable::OutflowInnerX2(Real time, Real dt,
-                    int il, int iu, int jl, int kl, int ku, int ngh) {}
-void SixRayBoundaryVariable::OutflowOuterX2(Real time, Real dt,
-                    int il, int iu, int ju, int kl, int ku, int ngh) {}
-void SixRayBoundaryVariable::OutflowInnerX3(Real time, Real dt,
-                    int il, int iu, int jl, int ju, int kl, int ngh) {}
-void SixRayBoundaryVariable::OutflowOuterX3(Real time, Real dt,
-                    int il, int iu, int jl, int ju, int ku, int ngh) {}
-void SixRayBoundaryVariable::PolarWedgeInnerX2(Real time, Real dt,
-                       int il, int iu, int jl, int kl, int ku, int ngh) {}
-void SixRayBoundaryVariable::PolarWedgeOuterX2(Real time, Real dt,
-                       int il, int iu, int ju, int kl, int ku, int ngh) {}
 
 BoundaryFace SixRayBoundaryVariable::GetOppositeBoundaryFace(
                                        const BoundaryFace direction) {
@@ -336,8 +297,8 @@ NeighborBlock *SixRayBoundaryVariable::GetFaceNeighbor(const BoundaryFace direct
   NeighborBlock *pnb = nullptr;
   for (int n=0; n<pbval_->nneighbor; n++) {
     pnb = &pbval_->neighbor[n];
-    //Only done for the first match, and should be the only match for uniform mesh
-    //AMR needed to be add later
+    // Only done for the first match, and should be the only match for uniform mesh
+    // AMR needed to be added at a later date
     if (pnb->ni.type == NeighborConnect::face && pnb->fid == direction) {
       return pnb;
     }
@@ -345,8 +306,8 @@ NeighborBlock *SixRayBoundaryVariable::GetFaceNeighbor(const BoundaryFace direct
   return nullptr;
 }
 
+
 void SixRayBoundaryVariable::SendSixRayBoundaryBuffers(const BoundaryFace direction) {
-  MeshBlock *pmb = pmy_block_;
   NeighborBlock *pnb = GetFaceNeighbor(direction);
   //only for face neigbor in the specified direction
   if (pnb != nullptr) {
@@ -376,12 +337,12 @@ void SixRayBoundaryVariable::SendSixRayBoundaryBuffers(const BoundaryFace direct
   return;
 }
 
+
 bool SixRayBoundaryVariable::ReceiveAndSetSixRayBoundaryBuffers(
                                const BoundaryFace direction) {
   bool bflag = true;
-
   NeighborBlock *pnb = GetFaceNeighbor(direction);
-  //only for face neigbor in the specified direction
+  // only for face neigbor in the specified direction
   if (pnb != nullptr) {
     if (bd_var_.flag[pnb->bufid] == BoundaryStatus::arrived
         || bd_var_.flag[pnb->bufid] == BoundaryStatus::completed) {
@@ -404,7 +365,7 @@ bool SixRayBoundaryVariable::ReceiveAndSetSixRayBoundaryBuffers(
       }
 #endif
     }
-    //set boundary
+    // set boundary
     if (bd_var_.flag[pnb->bufid] == BoundaryStatus::arrived) {
 #ifdef MPI_PARALLEL
       if (pnb->snb.rank != Globals::my_rank) {

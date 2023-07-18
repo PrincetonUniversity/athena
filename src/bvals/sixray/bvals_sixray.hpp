@@ -41,7 +41,7 @@ class SixRayBoundaryVariable : public BoundaryVariable {
   //!@{
   //! BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
-  int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) override;
+  int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) override {0;};
   //!@}
 
   //!@{
@@ -54,37 +54,37 @@ class SixRayBoundaryVariable : public BoundaryVariable {
 
   //!@{
   //! BoundaryBuffer:
-  void SendFluxCorrection() override;
-  bool ReceiveFluxCorrection() override;
+  void SendFluxCorrection() override {return;};
+  bool ReceiveFluxCorrection() override {return true;};
   //!@}
 
   //!@{
   //! BoundaryPhysics:
   void ReflectInnerX1(Real time, Real dt,
-                      int il, int jl, int ju, int kl, int ku, int ngh) override;
+                      int il, int jl, int ju, int kl, int ku, int ngh) override {return;};
   void ReflectOuterX1(Real time, Real dt,
-                      int iu, int jl, int ju, int kl, int ku, int ngh) override;
+                      int iu, int jl, int ju, int kl, int ku, int ngh) override {return;};
   void ReflectInnerX2(Real time, Real dt,
-                      int il, int iu, int jl, int kl, int ku, int ngh) override;
+                      int il, int iu, int jl, int kl, int ku, int ngh) override {return;};
   void ReflectOuterX2(Real time, Real dt,
-                      int il, int iu, int ju, int kl, int ku, int ngh) override;
+                      int il, int iu, int ju, int kl, int ku, int ngh) override {return;};
   void ReflectInnerX3(Real time, Real dt,
-                      int il, int iu, int jl, int ju, int kl, int ngh) override;
+                      int il, int iu, int jl, int ju, int kl, int ngh) override {return;};
   void ReflectOuterX3(Real time, Real dt,
-                      int il, int iu, int jl, int ju, int ku, int ngh) override;
+                      int il, int iu, int jl, int ju, int ku, int ngh) override {return;};
 
   void OutflowInnerX1(Real time, Real dt,
-                      int il, int jl, int ju, int kl, int ku, int ngh) override;
+                      int il, int jl, int ju, int kl, int ku, int ngh) override {return;};
   void OutflowOuterX1(Real time, Real dt,
-                      int iu, int jl, int ju, int kl, int ku, int ngh) override;
+                      int iu, int jl, int ju, int kl, int ku, int ngh) override {return;};
   void OutflowInnerX2(Real time, Real dt,
-                      int il, int iu, int jl, int kl, int ku, int ngh) override;
+                      int il, int iu, int jl, int kl, int ku, int ngh) override {return;};
   void OutflowOuterX2(Real time, Real dt,
-                      int il, int iu, int ju, int kl, int ku, int ngh) override;
+                      int il, int iu, int ju, int kl, int ku, int ngh) override {return;};
   void OutflowInnerX3(Real time, Real dt,
-                      int il, int iu, int jl, int ju, int kl, int ngh) override;
+                      int il, int iu, int jl, int ju, int kl, int ngh) override {return;};
   void OutflowOuterX3(Real time, Real dt,
-                      int il, int iu, int jl, int ju, int ku, int ngh) override;
+                      int il, int iu, int jl, int ju, int ku, int ngh) override {return;};
 
   void VacuumInnerX1(Real time, Real dt,
                      int il, int jl, int ju, int kl, int ku, int ngh) override {return;};
@@ -99,10 +99,10 @@ class SixRayBoundaryVariable : public BoundaryVariable {
   void VacuumOuterX3(Real time, Real dt,
                      int il, int iu, int jl, int ju, int ku, int ngh) override {return;};
 
-  void PolarWedgeInnerX2(Real time, Real dt,
-                         int il, int iu, int jl, int kl, int ku, int ngh) override;
-  void PolarWedgeOuterX2(Real time, Real dt,
-                         int il, int iu, int ju, int kl, int ku, int ngh) override;
+  void PolarWedgeInnerX2(Real time, Real dt, int il, int iu, int jl,
+                         int kl, int ku, int ngh) override {return;};
+  void PolarWedgeOuterX2(Real time, Real dt, int il, int iu, int ju,
+                         int kl, int ku, int ngh) override {return;};
   //!@}
 
   // send to specific direction
