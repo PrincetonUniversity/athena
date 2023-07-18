@@ -16,8 +16,8 @@
 
 // Athena++ headers
 #include "../mesh/mesh.hpp"
-#include "integrators/rad_integrators.hpp"
 #include "chem_rad.hpp"
+#include "integrators/rad_integrators.hpp"
 
 //! ChemRadiation constructor, initializes data structures and parameters
 
