@@ -21,8 +21,8 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
-#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../chem_rad/chem_rad.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../chemistry/utils/thermo.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
@@ -34,11 +34,11 @@
 #include "../scalars/scalars.hpp"
 #include "../units/units.hpp"
 
-//Radiation boundary
+// Radiation boundary
 namespace {
   AthenaArray<Real> G0_iang;
   Real G0, cr_rate;
-} //namespace
+} // namespace
 
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
@@ -64,12 +64,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //! \brief initialize problem of uniform chemistry and radiation
 //======================================================================================
-void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  // dimensions of meshblock
-  // const int Nx = ie - is + 1;
-  // const int Ny = je - js + 1;
-  // const int Nz = ke - ks + 1;
 
+void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // read density and radiation field strength
   const Real vx = pin->GetReal("problem", "vx_kms");
   const Real r_init = pin->GetOrAddReal("problem", "r_init", 0.);

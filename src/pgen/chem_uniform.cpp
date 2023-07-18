@@ -20,8 +20,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../chem_rad/chem_rad.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../chemistry/utils/thermo.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
@@ -36,12 +36,14 @@
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //! \brief initialize problem with uniform chemistry and radiation
 //======================================================================================
+
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
-  //dimensions of meshblock
-  const int Nx = ie - is + 1;
-  const int Ny = je - js + 1;
-  const int Nz = ke - ks + 1;
-  //read density and radiation field strength
+  // dimensions of meshblock
+  // const int Nx = ie - is + 1;
+  // const int Ny = je - js + 1;
+  // const int Nz = ke - ks + 1;
+
+  // read density and radiation field strength
   const Real nH = pin->GetReal("problem", "nH");
   const Real vx = pin->GetOrAddReal("problem", "vx_kms", 0);
   const Real r_init = pin->GetOrAddReal("problem", "r_init", 0.);
@@ -52,11 +54,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie; ++i) {
-        //density
+        // density
         phydro->u(IDN, k, j, i) = nH;
-        //velocity, x direction
+        // velocity, x direction
         phydro->u(IM1, k, j, i) = nH*vx;
-        //energy
+        // energy
         if (NON_BAROTROPIC_EOS) {
           phydro->u(IEN, k, j, i) = pres/gm1 + 0.5*nH*SQR(vx);
         }
@@ -64,7 +66,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
-  //intialize radiation field
+  // intialize radiation field
   if (CHEMRADIATION_ENABLED) {
     const Real G0 = pin->GetReal("chem_radiation", "G0");
     const Real cr_rate = pin->GetOrAddReal("chem_radiation", "CR", 2e-16);
@@ -78,7 +80,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           }
           if (CHEMISTRY_ENABLED) {
             for (int iang=0; iang < pchemrad->nang; ++iang) {
-              //cr rate
+              // cr rate
               pchemrad->ir(k, j, i,
                   pscalars->chemnet.index_cr_ * pchemrad->nang + iang) = cr_rate;
             }
@@ -86,11 +88,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    //calculate the average radiation field for output of the initial condition
+    // calculate the average radiation field for output of the initial condition
     pchemrad->pchemradintegrator->CopyToOutput();
   }
 
-  //intialize chemical species
+  // intialize chemical species
   if (NSPECIES > 0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -109,6 +111,5 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       }
     }
   }
-
   return;
 }

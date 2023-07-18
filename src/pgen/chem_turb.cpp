@@ -17,8 +17,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../chem_rad/chem_rad.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../eos/eos.hpp"
 #include "../fft/athena_fft.hpp"
@@ -38,6 +38,7 @@ Real dfloor, pfloor;
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief
 //========================================================================================
+
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (SELF_GRAVITY_ENABLED) {
     Real four_pi_G = pin->GetReal("problem","four_pi_G");
@@ -128,7 +129,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
-  //intialize radiation field
+  // intialize radiation field
   if (CHEMRADIATION_ENABLED) {
     const Real G0 = pin->GetReal("chem_radiation", "G0");
     const Real cr_rate = pin->GetOrAddReal("chemistry", "CR", 2e-16);
@@ -142,7 +143,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           }
           if (CHEMISTRY_ENABLED) {
             for (int iang=0; iang < pchemrad->nang; ++iang) {
-              //cr rate
+              // cr rate
               pchemrad->ir(k, j, i,
                   pscalars->chemnet.index_cr_ * pchemrad->nang + iang) = cr_rate;
             }
@@ -152,7 +153,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     }
   }
 
-  //intialize chemical species
+  // intialize chemical species
   if (NSPECIES > 0) {
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
@@ -178,8 +179,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 //! \fn void Mesh::UserWorkInLoop(ParameterInput *pin)
 //  \brief
 //========================================================================================
+
 void MeshBlock::UserWorkInLoop() {
-  //set density and pressure floors
+  // set density and pressure floors
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {

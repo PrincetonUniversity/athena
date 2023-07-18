@@ -21,8 +21,8 @@
 #include <sstream>   // stringstream
 
 // Athena++ header
-#include "../../chem_rad/integrators/rad_integrators.hpp"
 #include "../../chem_rad/chem_rad.hpp"
+#include "../../chem_rad/integrators/rad_integrators.hpp"
 #include "../../coordinates/coordinates.hpp"
 #include "../../defs.hpp"
 #include "../../eos/eos.hpp"
