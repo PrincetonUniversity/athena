@@ -50,7 +50,7 @@ class SixRayBoundaryVariable : public BoundaryVariable {
   void SetupPersistentMPI() override;
   void StartReceiving(BoundaryCommSubset phase) override;
   void ClearBoundary(BoundaryCommSubset phase) override;
-  void StartReceivingShear(BoundaryCommSubset phase) override;
+  void StartReceivingShear(BoundaryCommSubset phase) override {return;};
   //!@}
 
   //!@{
@@ -131,7 +131,7 @@ class SixRayBoundaryVariable : public BoundaryVariable {
 
   void SetBoundaryFromCoarser(Real *buf, const NeighborBlock& nb) override;
   void SetBoundaryFromFiner(Real *buf, const NeighborBlock& nb) override;
-  void PolarBoundarySingleAzimuthalBlock() override;
+  void PolarBoundarySingleAzimuthalBlock() override {return;};
   //!@}
 };
 
