@@ -31,7 +31,7 @@
 #include "../bvals/bvals.hpp"
 #include "../bvals/sixray/bvals_sixray.hpp"
 #include "../chem_rad/integrators/rad_integrators.hpp"
-#include "../chem_rad/radiation.hpp"
+hem_rad/chem_rad.hpp/g
 #include "../coordinates/coordinates.hpp"
 #include "../cr/cr.hpp"
 #include "../eos/eos.hpp"

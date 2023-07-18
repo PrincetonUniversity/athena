@@ -34,7 +34,7 @@
 
 // Athena++ headers
 #include "athena.hpp"
-#include "chem_rad/radiation.hpp"
+hem_rad/chem_rad.hpp/g
 #include "fft/turbulence.hpp"
 #include "globals.hpp"
 #include "gravity/fft_gravity.hpp"

@@ -23,7 +23,7 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
-#include "../chem_rad/radiation.hpp"
+hem_rad/chem_rad.hpp/g
 #include "../coordinates/coordinates.hpp"
 #include "../cr/cr.hpp"
 #include "../field/field.hpp"
