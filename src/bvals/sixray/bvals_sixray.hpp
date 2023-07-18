@@ -41,7 +41,8 @@ class SixRayBoundaryVariable : public BoundaryVariable {
   //!@{
   //! BoundaryVariable:
   int ComputeVariableBufferSize(const NeighborIndexes& ni, int cng) override;
-  int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni, int cng) override {0;};
+  int ComputeFluxCorrectionBufferSize(const NeighborIndexes& ni,
+                                      int cng) override {return 0;};
   //!@}
 
   //!@{
