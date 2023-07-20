@@ -52,6 +52,12 @@ class MeshRefinement {
   void RestrictCellCenteredValues(const AthenaArray<Real> &fine,
                                   AthenaArray<Real> &coarse, int sn, int en,
                                   int csi, int cei, int csj, int cej, int csk, int cek);
+
+  // over-write function for radiation variables
+  void RestrictCellCenteredValues(
+      const AthenaArray<Real> &fine, AthenaArray<Real> &coarse, int array_order,
+      int sn, int en, int csi, int cei, int csj, int cej, int csk, int cek);
+
   void RestrictFieldX1(const AthenaArray<Real> &fine, AthenaArray<Real> &coarse,
                        int csi, int cei, int csj, int cej, int csk, int cek);
   void RestrictFieldX2(const AthenaArray<Real> &fine, AthenaArray<Real> &coarse,
@@ -61,6 +67,12 @@ class MeshRefinement {
   void ProlongateCellCenteredValues(const AthenaArray<Real> &coarse,
                                     AthenaArray<Real> &fine, int sn, int en,
                                     int si, int ei, int sj, int ej, int sk, int ek);
+
+  void ProlongateCellCenteredValues(const AthenaArray<Real> &coarse,
+                                    AthenaArray<Real> &fine, int array_order,
+                                    int sn, int en, int si, int ei, int sj, int ej,
+                                    int sk, int ek);
+
   void ProlongateSharedFieldX1(const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,
                                int si, int ei, int sj, int ej, int sk, int ek);
   void ProlongateSharedFieldX2(const AthenaArray<Real> &coarse, AthenaArray<Real> &fine,

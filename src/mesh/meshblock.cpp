@@ -24,6 +24,7 @@
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../cr/cr.hpp"
 #include "../eos/eos.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../field/field.hpp"
@@ -31,6 +32,9 @@
 #include "../gravity/gravity.hpp"
 #include "../gravity/mg_gravity.hpp"
 #include "../hydro/hydro.hpp"
+#include "../nr_radiation/implicit/radiation_implicit.hpp"
+#include "../nr_radiation/integrators/rad_integrators.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
@@ -57,11 +61,13 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   ncells1 = block_size.nx1 + 2*NGHOST;
   ncc1 = block_size.nx1/2 + 2*NGHOST;
+  int ndim = 1;
   if (pmy_mesh->f2) {
     js = NGHOST;
     je = js + block_size.nx2 - 1;
     ncells2 = block_size.nx2 + 2*NGHOST;
     ncc2 = block_size.nx2/2 + 2*NGHOST;
+    ndim = 2;
   } else {
     js = je = 0;
     ncells2 = 1;
@@ -73,6 +79,7 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     ke = ks + block_size.nx3 - 1;
     ncells3 = block_size.nx3 + 2*NGHOST;
     ncc3 = block_size.nx3/2 + 2*NGHOST;
+    ndim = 3;
   } else {
     ks = ke = 0;
     ncells3 = 1;
@@ -118,6 +125,62 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     pcoord = new GRUser(this, pin, false);
   }
 
+
+//=================================================================
+//set the total number of frequency x angles
+
+  nfre_ang = 0;
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+    int nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
+    int nmu = pin->GetInteger("radiation","nmu");
+    int nzeta = pin->GetOrAddInteger("radiation","nzeta",0);
+    // total number of azimuthal angles covering 0 to pi
+    int npsi = pin->GetOrAddInteger("radiation","npsi",0);
+    int angle_flag = pin->GetOrAddInteger("radiation","angle_flag",0);
+    int n_ang=1; // number of angles per octant and number of octant
+    int noct=2;
+    // calculate total number of angles based on dimensions
+    if (angle_flag == 1) {
+      if (ndim == 1) {
+        noct = 2;
+        n_ang = nzeta;
+      } else if (ndim == 2) {
+        if (npsi <= 1) {
+          n_ang = nzeta;
+        } else if (nzeta == 0) {
+          n_ang = npsi/2;
+        } else {
+          n_ang = nzeta*npsi;
+        }
+        noct = 4;
+      } else if (ndim == 3) {
+        n_ang = nzeta*npsi/2;
+        noct = 8;
+      }
+
+    } else {
+      if (ndim == 1) {
+        n_ang = nmu;
+        noct = 2;
+      } else if (ndim == 2) {
+        noct = 4;
+        if (angle_flag == 0) {
+          n_ang = nmu * (nmu + 1)/2;
+        } else if (angle_flag == 10) {
+          n_ang = nmu;
+        }
+      } else if (ndim == 3) {
+        noct = 8;
+        if (angle_flag == 0) {
+          n_ang = nmu * (nmu + 1)/2;
+        } else if (angle_flag == 10) {
+          n_ang = nmu * nmu/2;
+        }
+      }
+    }
+    nfre_ang = n_ang * noct * nfreq;
+  }
+  //========================================================
   // Reconstruction: constructor may implicitly depend on Coordinates, and PPM variable
   // floors depend on EOS, but EOS isn't needed in Reconstruction constructor-> this is ok
   precon = new Reconstruction(this, pin);
@@ -175,6 +238,19 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   peos = new EquationOfState(this, pin);
 
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+       //radiation constructor needs the parameter nfre_ang
+    pnrrad = new NRRadiation(this, pin);
+  }
+  if (NR_RADIATION_ENABLED) {
+    pbval->AdvanceCounterPhysID(RadBoundaryVariable::max_phys_id);
+  }
+
+  if (CR_ENABLED) {
+    pcr = new CosmicRay(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+
   // OrbitalAdvection: constructor depends on Coordinates, Hydro, Field, PassiveScalars.
   porb = new OrbitalAdvection(this, pin);
 
@@ -201,11 +277,13 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   ncells1 = block_size.nx1 + 2*NGHOST;
   ncc1 = block_size.nx1/2 + 2*NGHOST;
+  int ndim = 1;
   if (pmy_mesh->f2) {
     js = NGHOST;
     je = js + block_size.nx2 - 1;
     ncells2 = block_size.nx2 + 2*NGHOST;
     ncc2 = block_size.nx2/2 + 2*NGHOST;
+    ndim = 2;
   } else {
     js = je = 0;
     ncells2 = 1;
@@ -217,6 +295,7 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     ke = ks + block_size.nx3 - 1;
     ncells3 = block_size.nx3 + 2*NGHOST;
     ncc3 = block_size.nx3/2 + 2*NGHOST;
+    ndim = 3;
   } else {
     ks = ke = 0;
     ncells3 = 1;
@@ -253,6 +332,65 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     pcoord = new KerrSchild(this, pin, false);
   } else if (std::strcmp(COORDINATE_SYSTEM, "gr_user") == 0) {
     pcoord = new GRUser(this, pin, false);
+  }
+
+
+  //======================================================================
+  // radiation constructor needs to be done before reconstruction
+  //======================================================================
+
+  nfre_ang = 0;
+
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+    int nfreq = pin->GetOrAddInteger("radiation","n_frequency",1);
+    int nmu = pin->GetInteger("radiation","nmu");
+    int nzeta = pin->GetOrAddInteger("radiation","nzeta",0);
+    // total number of azimuthal angles covering 0 to pi
+    int npsi = pin->GetOrAddInteger("radiation","npsi",0);
+    int angle_flag = pin->GetOrAddInteger("radiation","angle_flag",0);
+    int n_ang=1; // number of angles per octant and number of octant
+    int noct=2;
+
+    // calculate total number of angles based on dimensions
+    if (angle_flag == 1) {
+      if (ndim == 1) {
+        noct = 2;
+        n_ang = nzeta;
+      } else if (ndim == 2) {
+        if (npsi <= 1) {
+          n_ang = nzeta;
+        } else if (nzeta == 0) {
+          n_ang = npsi/2;
+        } else {
+          n_ang = nzeta*npsi;
+        }
+        noct = 4;
+      } else if (ndim == 3) {
+        n_ang = nzeta*npsi/2;
+        noct = 8;
+      }
+
+    } else {
+      if (ndim == 1) {
+        n_ang = nmu;
+        noct = 2;
+      } else if (ndim == 2) {
+        noct = 4;
+        if (angle_flag == 0) {
+          n_ang = nmu * (nmu + 1)/2;
+        } else if (angle_flag == 10) {
+          n_ang = nmu;
+        }
+      } else if (ndim == 3) {
+        noct = 8;
+        if (angle_flag == 0) {
+          n_ang = nmu * (nmu + 1)/2;
+        } else if (angle_flag == 10) {
+          n_ang = nmu * nmu/2;
+        }
+      }
+    }
+    nfre_ang = n_ang * noct * nfreq;
   }
 
   // Reconstruction (constructor may implicitly depend on Coordinates)
@@ -292,6 +430,21 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
 
   peos = new EquationOfState(this, pin);
 
+
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+       //radiation constructor needs the parameter nfre_ang
+    pnrrad = new NRRadiation(this, pin);
+  }
+  if (NR_RADIATION_ENABLED) {
+    pbval->AdvanceCounterPhysID(RadBoundaryVariable::max_phys_id);
+  }
+
+  if (CR_ENABLED) {
+    pcr = new CosmicRay(this, pin);
+    pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
+  }
+
+
   // OrbitalAdvection: constructor depends on Coordinates, Hydro, Field, PassiveScalars.
   porb = new OrbitalAdvection(this, pin);
 
@@ -318,12 +471,60 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     os += pfield->b.x3f.GetSizeInBytes();
   }
 
+
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+    if (pnrrad->restart_from_gray) {
+      std::memcpy(pnrrad->ir_gray.data(), &(mbdata[os]),
+                  pnrrad->ir_gray.GetSizeInBytes());
+      AthenaArray<Real> fre_ratio;
+
+      fre_ratio.NewAthenaArray(pnrrad->nfreq);
+      // Real invcrat = 1.0/pnrrad->crat;
+      for (int k=ks; k<=ke; ++k) {
+        for (int j=js; j<=je; ++j) {
+          for (int i=is; i<=ie; ++i) {
+            Real Er = 0.0;
+            for (int n=0; n<pnrrad->nang; ++n) {
+              Er += pnrrad->ir_gray(k,j,i,n) * pnrrad->wmu(n);
+            }
+            Real tr = std::pow(Er,0.25);
+
+            // now split to different frequency bins
+            for (int ifr=0; ifr<pnrrad->nfreq; ++ifr) {
+              fre_ratio(ifr) = pnrrad->IntPlanckFunc(pnrrad->nu_grid(ifr)/tr,
+                                      pnrrad->nu_grid(ifr+1)/tr);
+            }
+
+            for (int ifr=0; ifr<pnrrad->nfreq; ++ifr) {
+              for (int n=0; n<pnrrad->nang; ++n) {
+                pnrrad->ir(k,j,i,ifr*pnrrad->nang+n) = pnrrad->ir_gray(k,j,i,n)
+                                                       * fre_ratio(ifr);
+              }
+            }
+          }
+        }
+      }
+      fre_ratio.DeleteAthenaArray();
+      os += pnrrad->ir_gray.GetSizeInBytes();
+    } else {
+      std::memcpy(pnrrad->ir.data(), &(mbdata[os]), pnrrad->ir.GetSizeInBytes());
+      os += pnrrad->ir.GetSizeInBytes();
+    }
+    //    std::memcpy(prad->ir1.data(), &(mbdata[os]), prad->ir1.GetSizeInBytes());
+    // copy the data
+    pnrrad->ir1 = pnrrad->ir;
+  }
+
+  if (CR_ENABLED) {
+    std::memcpy(pcr->u_cr.data(), &(mbdata[os]), pcr->u_cr.GetSizeInBytes());
+    std::memcpy(pcr->u_cr1.data(), &(mbdata[os]), pcr->u_cr1.GetSizeInBytes());
+    os += pcr->u_cr.GetSizeInBytes();
+  }
   // (conserved variable) Passive scalars:
   if (NSCALARS > 0) {
     std::memcpy(pscalars->s.data(), &(mbdata[os]), pscalars->s.GetSizeInBytes());
     os += pscalars->s.GetSizeInBytes();
   }
-
   // load user MeshBlock data
   for (int n=0; n<nint_user_meshblock_data_; n++) {
     std::memcpy(iuser_meshblock_data[n].data(), &(mbdata[os]),
@@ -335,7 +536,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
                 ruser_meshblock_data[n].GetSizeInBytes());
     os += ruser_meshblock_data[n].GetSizeInBytes();
   }
-
   return;
 }
 
@@ -354,6 +554,9 @@ MeshBlock::~MeshBlock() {
   if (SELF_GRAVITY_ENABLED) delete pgrav;
   if (SELF_GRAVITY_ENABLED == 2) delete pmg;
   if (NSCALARS > 0) delete pscalars;
+
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) delete pnrrad;
+  if (CR_ENABLED) delete pcr;
 
   // BoundaryValues should be destructed AFTER all BoundaryVariable objects are destroyed
   delete pbval;
@@ -453,6 +656,11 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
   if (NSCALARS > 0)
     size += pscalars->s.GetSizeInBytes();
 
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+    size += pnrrad->ir.GetSizeInBytes();
+  if (CR_ENABLED)
+    size += pcr->u_cr.GetSizeInBytes();
+
   // calculate user MeshBlock data size
   for (int n=0; n<nint_user_meshblock_data_; n++)
     size += iuser_meshblock_data[n].GetSizeInBytes();
@@ -461,6 +669,42 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
 
   return size;
 }
+
+
+std::size_t MeshBlock::GetBlockSizeInBytesGray() {
+  std::size_t size;
+  // NEW_OUTPUT_TYPES:
+  size = phydro->u.GetSizeInBytes();
+  if (GENERAL_RELATIVITY) {
+    size += phydro->w.GetSizeInBytes();
+    size += phydro->w1.GetSizeInBytes();
+  }
+  if (MAGNETIC_FIELDS_ENABLED)
+    size += (pfield->b.x1f.GetSizeInBytes() + pfield->b.x2f.GetSizeInBytes()
+             + pfield->b.x3f.GetSizeInBytes());
+
+  if (NSCALARS > 0)
+    size += pscalars->s.GetSizeInBytes();
+
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
+    if (pnrrad->restart_from_gray > 0)
+      size += pnrrad->ir_gray.GetSizeInBytes();
+    else
+      size += pnrrad->ir.GetSizeInBytes();
+  }
+  if (CR_ENABLED)
+    size += pcr->u_cr.GetSizeInBytes();
+
+
+  // calculate user MeshBlock data size
+  for (int n=0; n<nint_user_meshblock_data_; n++)
+    size += iuser_meshblock_data[n].GetSizeInBytes();
+  for (int n=0; n<nreal_user_meshblock_data_; n++)
+    size += ruser_meshblock_data[n].GetSizeInBytes();
+
+  return size;
+}
+
 
 //----------------------------------------------------------------------------------------
 //! \fn void MeshBlock::SetCostForLoadBalancing(double cost)

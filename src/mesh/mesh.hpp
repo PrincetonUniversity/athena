@@ -25,6 +25,7 @@
 #include "../bvals/bvals.hpp"
 #include "../outputs/io_wrapper.hpp"
 #include "../parameter_input.hpp"
+#include "../task_list/im_rad_task_list.hpp"
 #include "../task_list/task_list.hpp"
 #include "../utils/interp_table.hpp"
 #include "mesh_refinement.hpp"
@@ -39,11 +40,16 @@ class BoundaryValues;
 class CellCenteredBoundaryVariable;
 class FaceCenteredBoundaryVariable;
 class TaskList;
+class IMRadTaskList;
 struct TaskStates;
 class Coordinates;
 class Reconstruction;
 class Hydro;
+class NRRadiation;
+class IMRadiation;
+class CosmicRay;
 class Field;
+class Particles;
 class PassiveScalars;
 class Gravity;
 class MGGravity;
@@ -68,6 +74,7 @@ class MeshBlock {
   friend class Mesh;
   friend class Hydro;
   friend class TaskList;
+  friend class IMRadTaskList;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -89,9 +96,11 @@ class MeshBlock {
   int ncells1, ncells2, ncells3;
   // on 1x coarser level MeshBlock (i.e. ncc2=nx2/2 + 2*NGHOST, if nx2>1)
   int ncc1, ncc2, ncc3;
+  int nfre_ang; //total number of frequency x total number of angles
   int is, ie, js, je, ks, ke;
   int gid, lid;
   int cis, cie, cjs, cje, cks, cke, cnghost;
+  int gflag;
 
   // user output variables for analysis
   int nuser_out_var;
@@ -110,6 +119,8 @@ class MeshBlock {
 
   // physics-related objects (possibly containing their derived bvals classes)
   Hydro *phydro;
+  NRRadiation *pnrrad;
+  CosmicRay *pcr;
   Field *pfield;
   Gravity *pgrav;
   MGGravity* pmg;
@@ -117,8 +128,10 @@ class MeshBlock {
   EquationOfState *peos;
   OrbitalAdvection *porb;
 
+
   // functions
   std::size_t GetBlockSizeInBytes();
+  std::size_t GetBlockSizeInBytesGray();
   int GetNumberOfMeshBlockCells() {
     return block_size.nx1*block_size.nx2*block_size.nx3; }
   void SearchAndSetNeighbors(MeshBlockTree &tree, int *ranklist, int *nslist);
@@ -126,6 +139,11 @@ class MeshBlock {
                   AthenaArray<Real> &u_in1, AthenaArray<Real> &u_in2,
                   AthenaArray<Real> &u_in3, AthenaArray<Real> &u_in4,
                   const Real wght[5]);
+
+  // weightedAve for radiation variable
+  void WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
+                   AthenaArray<Real> &u_in2, const Real wght[3], int flag);
+
   void WeightedAve(FaceField &b_out,
                    FaceField &b_in1, FaceField &b_in2,
                    FaceField &b_in3, FaceField &b_in4,
@@ -185,11 +203,15 @@ class Mesh {
   friend class BoundaryValues;
   friend class CellCenteredBoundaryVariable;
   friend class FaceCenteredBoundaryVariable;
+  friend class RadBoundaryVariable;
   friend class MGBoundaryValues;
   friend class Coordinates;
   friend class MeshRefinement;
   friend class HydroSourceTerms;
   friend class Hydro;
+  friend class NRRadiation;
+  friend class IMRadiation;
+  friend class CosmicRay;
   friend class FFTDriver;
   friend class FFTGravityDriver;
   friend class TurbulenceDriver;
@@ -199,6 +221,7 @@ class Mesh {
   friend class HydroDiffusion;
   friend class FieldDiffusion;
   friend class OrbitalAdvection;
+  friend class Particles;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
 #endif
@@ -241,6 +264,9 @@ class Mesh {
   TurbulenceDriver *ptrbd;
   FFTGravityDriver *pfgrd;
   MGGravityDriver *pmgrd;
+
+  // implicit radiation iteration
+  IMRadiation *pimrad;
 
   AthenaArray<Real> *ruser_mesh_data;
   AthenaArray<int> *iuser_mesh_data;
@@ -307,6 +333,10 @@ class Mesh {
   // functions
   MeshGenFunc MeshGenerator_[3];
   BValFunc BoundaryFunction_[6];
+  // radiation boundaries
+  RadBoundaryFunc RadBoundaryFunc_[6];
+  CRBoundaryFunc CRBoundaryFunc_[6];
+
   AMRFlagFunc AMRFlag_;
   SrcTermFunc UserSourceTerm_;
   TimeStepFunc UserTimeStep_;
@@ -356,9 +386,15 @@ class Mesh {
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
   void EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
   void EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask);
+
+  void EnrollUserRadBoundaryFunction(BoundaryFace face, RadBoundaryFunc my_func);
+  void EnrollUserCRBoundaryFunction(BoundaryFace face, CRBoundaryFunc my_func);
+
   //! \deprecated (felker):
   //! * provide trivial overload for old-style BoundaryFace enum argument
   void EnrollUserBoundaryFunction(int face, BValFunc my_func);
+  void EnrollUserRadBoundaryFunction(int face, RadBoundaryFunc my_func);
+  void EnrollUserCRBoundaryFunction(int face, CRBoundaryFunc my_func);
 
   void EnrollUserRefinementCondition(AMRFlagFunc amrflag);
   void EnrollUserMeshGenerator(CoordinateDirection dir, MeshGenFunc my_mg);

@@ -129,6 +129,61 @@ class Reconstruction {
                             const AthenaArray<Real> &q,
                             AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
+  // overloads for cell centered variables with memory order as [k,j,i,n]
+  // Notice that the default order in Athena++ is [n,k,j,i]
+  void DonorCellX1(const int k, const int j, const int il, const int iu,
+                   AthenaArray<Real> &q, const int array_order,
+                   AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void DonorCellX2(const int k, const int j, const int il, const int iu,
+                   AthenaArray<Real> &q, const int array_order,
+                   AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void DonorCellX3(const int k, const int j, const int il, const int iu,
+                   AthenaArray<Real> &q, const int array_order,
+                   AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void PiecewiseLinearX1(const int k, const int j, const int il, const int iu,
+                         AthenaArray<Real> &q, const int array_order,
+                         AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void PiecewiseLinearX2(const int k, const int j, const int il, const int iu,
+                         AthenaArray<Real> &q, const int array_order,
+                         AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void PiecewiseLinearX3(const int k, const int j, const int il, const int iu,
+                         AthenaArray<Real> &q, const int array_order,
+                         AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void PiecewiseParabolicX1(const int k, const int j, const int il, const int iu,
+                            const AthenaArray<Real> &q, const int array_order,
+                            AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void PiecewiseParabolicX2(const int k, const int j, const int il, const int iu,
+                            const AthenaArray<Real> &q, const int array_order,
+                            AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void PiecewiseParabolicX3(const int k, const int j, const int il, const int iu,
+                            const AthenaArray<Real> &q, const int array_order,
+                            AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void DonorCellZeta(NRRadiation *prad, const int zs, const int ze,
+      AthenaArray<Real> &q,
+      AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void DonorCellPsi(NRRadiation *prad, const int ps, const int pe,
+      AthenaArray<Real> &q,
+      AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void PiecewiseLinearZeta(NRRadiation *prad,
+      const int zs, const int ze, AthenaArray<Real> &q,
+      AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+
+  void PiecewiseLinearPsi(NRRadiation *prad,
+      const int zs, const int ze, AthenaArray<Real> &q,
+      AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
  private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
 
@@ -138,5 +193,12 @@ class Reconstruction {
   AthenaArray<Real> scr11_i_, scr12_i_, scr13_i_, scr14_i_;
   AthenaArray<Real> scr1_ni_, scr2_ni_, scr3_ni_, scr4_ni_, scr5_ni_;
   AthenaArray<Real> scr6_ni_, scr7_ni_, scr8_ni_;
+
+  // scratch arrays for arrays with different ordering
+  int nvar_;// the maximum numver of variables for reconstruction
+  AthenaArray<Real> scr1_in_, scr2_in_, scr3_in_, scr4_in_, scr5_in_;
+  AthenaArray<Real> scr1_in2_, scr2_in2_, scr3_in2_, scr4_in2_;
+  AthenaArray<Real> scr1_nn_, scr2_nn_, scr3_nn_, scr4_nn_;
+  AthenaArray<Real> scr6_in_, scr7_in_, scr8_in_;
 };
 #endif // RECONSTRUCT_RECONSTRUCTION_HPP_

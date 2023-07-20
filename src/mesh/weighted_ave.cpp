@@ -10,6 +10,8 @@
 
 // C++ headers
 #include <algorithm>  // std::binary_search
+#include <sstream>    // sstream
+#include <stdexcept>  // runtime_error
 #include <vector>     // std::vector
 
 // Athena++ headers
@@ -224,6 +226,132 @@ void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
         }
       }
     }
+  }
+  return;
+}
+
+
+
+//override function for arrays with different order
+void MeshBlock::WeightedAve(AthenaArray<Real> &u_out, AthenaArray<Real> &u_in1,
+                            AthenaArray<Real> &u_in2, const Real wght[3], int flag) {
+  // consider every possible simplified form of weighted sum operator:
+  // U = a*U + b*U1 + c*U2
+
+  // assuming all 3x arrays are of the same size (or at least u_out is equal or larger
+  // than each input array) in each array dimension, and full range is desired:
+  // nx4*(3D real MeshBlock cells)
+
+  if (flag == 1) {
+    const int nu = u_out.GetDim1() - 1;
+    // u_in2 may be an unallocated AthenaArray if using a 2S time integrator
+    if (wght[0] == 1.0) {
+      if (wght[2] != 0.0) {
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+            for (int i=is; i<=ie; ++i) {
+#pragma omp simd
+              for (int n=0; n<=nu; ++n) {
+                u_out(k,j,i,n) += wght[1]*u_in1(k,j,i,n) + wght[2]*u_in2(k,j,i,n);
+              }
+            }
+          }
+        }
+      } else { // do not dereference u_in2
+        if (wght[1] != 0.0) {
+          for (int k=ks; k<=ke; ++k) {
+            for (int j=js; j<=je; ++j) {
+              for (int i=is; i<=ie; ++i) {
+#pragma omp simd
+                for (int n=0; n<=nu; ++n) {
+                  u_out(k,j,i,n) += wght[1]*u_in1(k,j,i,n);
+                }
+              }
+            }
+          }
+        }
+      }
+    } else if (wght[0] == 0.0) {
+      if (wght[2] != 0.0) {
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+            for (int i=is; i<=ie; ++i) {
+#pragma omp simd
+              for (int n=0; n<=nu; ++n) {
+                u_out(k,j,i,n) = wght[1]*u_in1(k,j,i,n) + wght[2]*u_in2(k,j,i,n);
+              }
+            }
+          }
+        }
+      } else if (wght[1] == 1.0) {
+        // just deep copy
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+            for (int i=is; i<=ie; ++i) {
+#pragma omp simd
+              for (int n=0; n<=nu; ++n) {
+                u_out(k,j,i,n) = u_in1(k,j,i,n);
+              }
+            }
+          }
+        }
+      } else {
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+            for (int i=is; i<=ie; ++i) {
+#pragma omp simd
+              for (int n=0; n<=nu; ++n) {
+                u_out(k,j,i,n) = wght[1]*u_in1(k,j,i,n);
+              }
+            }
+          }
+        }
+      }
+    } else {
+      if (wght[2] != 0.0) {
+        for (int k=ks; k<=ke; ++k) {
+          for (int j=js; j<=je; ++j) {
+            for (int i=is; i<=ie; ++i) {
+#pragma omp simd
+              for (int n=0; n<=nu; ++n) {
+                u_out(k,j,i,n) = wght[0]*u_out(k,j,i,n) + wght[1]*u_in1(k,j,i,n)
+                                 + wght[2]*u_in2(k,j,i,n);
+              }
+            }
+          }
+        }
+      } else { // do not dereference u_in2
+        if (wght[1] != 0.0) {
+          for (int k=ks; k<=ke; ++k) {
+            for (int j=js; j<=je; ++j) {
+              for (int i=is; i<=ie; ++i) {
+#pragma omp simd
+                for (int n=0; n<=nu; ++n) {
+                  u_out(k,j,i,n) = wght[0]*u_out(k,j,i,n) + wght[1]*u_in1(k,j,i,n);
+                }
+              }
+            }
+          }
+        } else { // do not dereference u_in1
+          for (int k=ks; k<=ke; ++k) {
+            for (int j=js; j<=je; ++j) {
+              for (int i=is; i<=ie; ++i) {
+#pragma omp simd
+                for (int n=0; n<=nu; ++n) {
+                  u_out(k,j,i,n) *= wght[0];
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  } else {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in MeshBlock::WeightedAve" << std::endl
+          << "flag=" << flag << " not supported!."
+          << std::endl;
+      ATHENA_ERROR(msg);
   }
   return;
 }

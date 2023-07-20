@@ -39,6 +39,8 @@
 #include "gravity/fft_gravity.hpp"
 #include "gravity/mg_gravity.hpp"
 #include "mesh/mesh.hpp"
+#include "nr_radiation/implicit/radiation_implicit.hpp"
+#include "nr_radiation/radiation.hpp"
 #include "outputs/io_wrapper.hpp"
 #include "outputs/outputs.hpp"
 #include "parameter_input.hpp"
@@ -465,6 +467,9 @@ int main(int argc, char *argv[]) {
           pmesh->pfgrd->Solve(stage, 0);
         else if (SELF_GRAVITY_ENABLED == 2) // multigrid
           pmesh->pmgrd->Solve(stage);
+      }
+      if (IM_RADIATION_ENABLED) {
+        pmesh->pimrad->Iteration(pmesh,ptlist,stage);
       }
     }
 

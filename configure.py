@@ -7,36 +7,39 @@
 # Makefile.in and src/defs.hpp.in respectively.
 #
 # The following options are implememted:
-#   -h  --help        help message
-#   --prob=name       use src/pgen/name.cpp as the problem generator
-#   --coord=xxx       use xxx as the coordinate system
-#   --eos=xxx         use xxx as the equation of state
-#   --flux=xxx        use xxx as the Riemann solver
-#   --nghost=xxx      set NGHOST=xxx
-#   --nscalars=xxx    set NSCALARS=xxx
-#   -eos_table        enable EOS table
-#   -b                enable magnetic fields
-#   -s                enable special relativity
-#   -g                enable general relativity
-#   -t                enable interface frame transformations for GR
-#   -debug            enable debug flags (-g -O0); override other compiler options
-#   -coverage         enable compiler-dependent code coverage flags
-#   -float            enable single precision (default is double)
-#   -mpi              enable parallelization with MPI
-#   -omp              enable parallelization with OpenMP
-#   -hdf5             enable HDF5 output (requires the HDF5 library)
-#   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
-#   -fft              enable FFT (requires the FFTW library)
-#   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
-#   --grav=xxx        use xxx as the self-gravity solver
-#   --cxx=xxx         use xxx as the C++ compiler (works w/ or w/o -mpi)
-#   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
-#   --mpiccmd=name    use name as the command to call the MPI C++ compiler
-#   --gcovcmd=name    use name as the command to call the gcov utility
-#   --cflag=string    append string whenever invoking compiler/linker
-#   --include=path    use -Ipath when compiling
-#   --lib_path=path   use -Lpath when linking
-#   --lib=xxx         use -lxxx when linking
+#   -h  --help           help message
+#   --prob=name          use src/pgen/name.cpp as the problem generator
+#   --coord=xxx          use xxx as the coordinate system
+#   --eos=xxx            use xxx as the equation of state
+#   --flux=xxx           use xxx as the Riemann solver
+#   --nghost=xxx         set NGHOST=xxx
+#   --nscalars=xxx       set NSCALARS=xxx
+#   -eos_table           enable EOS table
+#   -b                   enable magnetic fields
+#   -s                   enable special relativity
+#   -g                   enable general relativity
+#   -t                   enable interface frame transformations for GR
+#   -debug               enable debug flags (-g -O0); override other compiler options
+#   -coverage            enable compiler-dependent code coverage flags
+#   -float               enable single precision (default is double)
+#   -mpi                 enable parallelization with MPI
+#   -omp                 enable parallelization with OpenMP
+#   -hdf5                enable HDF5 output (requires the HDF5 library)
+#   --hdf5_path=path     path to HDF5 libraries (requires the HDF5 library)
+#   -fft                 enable FFT (requires the FFTW library)
+#   --fftw_path=path     path to FFTW libraries (requires the FFTW library)
+#   --grav=xxx           use xxx as the self-gravity solver
+#   --cxx=xxx            use xxx as the C++ compiler (works w/ or w/o -mpi)
+#   --ccmd=name          use name as the command to call the (non-MPI) C++ compiler
+#   --mpiccmd=name       use name as the command to call the MPI C++ compiler
+#   --gcovcmd=name       use name as the command to call the gcov utility
+#   --cflag=string       append string whenever invoking compiler/linker
+#   --include=path       use -Ipath when compiling
+#   --lib_path=path      use -Lpath when linking
+#   --lib=xxx            use -lxxx when linking
+#   -nr_radiation        turn on non-relativistic radiation transport
+#   -implicit_radiation  implicit radiation transport module
+#   -cr                  enable cosmic ray transport
 # ----------------------------------------------------------------------------------------
 
 # Modules
@@ -205,6 +208,24 @@ parser.add_argument('--hdf5_path',
                     default='',
                     help='path to HDF5 libraries')
 
+# -nr_radiation argument
+parser.add_argument('-nr_radiation',
+                    action='store_true',
+                    default=False,
+                    help='enable non-relativistic radiative transfer')
+
+# -implicit_radiation argument
+parser.add_argument('-implicit_radiation',
+                    action='store_true',
+                    default=False,
+                    help='enable radiative transfer')
+
+# -cosmic ray argument
+parser.add_argument('-cr',
+                    action='store_true',
+                    default=False,
+                    help='enable cosmic ray transport')
+
 # The main choices for --cxx flag, using "ctype[-suffix]" formatting, where "ctype" is the
 # major family/suite/group of compilers and "suffix" may represent variants of the
 # compiler version and/or predefined sets of compiler options. The C++ compiler front ends
@@ -350,6 +371,14 @@ if args['eos'][:8] == 'general/':
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
+if args['g'] and (args['nr_radiation'] or args['implicit_radiation']):
+    raise SystemExit('### CONFIGURE ERROR: '
+                     + ' GR is incompatible with nr_radiation or implicit_radiation')
+
+if args['nr_radiation'] and args['implicit_radiation']:
+    raise SystemExit('### CONFIGURE ERROR: '
+                     + ' nr_radiation and implicit_radiation cannot be used together')
+
 # --- Step 3. Set definitions and Makefile options based on above argument
 
 # Prepare dictionaries of substitutions to be made
@@ -443,6 +472,31 @@ if args['g']:
     makefile_options['RSOLVER_FILE'] += '_rel'
     if not args['t']:
         makefile_options['RSOLVER_FILE'] += '_no_transform'
+
+
+# -radiation argument
+definitions['NRAD_VARIABLES'] = '0'
+
+if args['nr_radiation']:
+    definitions['NR_RADIATION_ENABLED'] = '1'
+    definitions['NRAD_VARIABLES'] = '14'
+else:
+    definitions['NR_RADIATION_ENABLED'] = '0'
+
+if args['implicit_radiation']:
+    definitions['IM_RADIATION_ENABLED'] = '1'
+    definitions['NRAD_VARIABLES'] = '14'
+else:
+    definitions['IM_RADIATION_ENABLED'] = '0'
+
+# -cr argument
+definitions['NCR_VARIABLES'] = '0'
+if args['cr']:
+    definitions['CR_ENABLED'] = '1'
+    definitions['NCR_VARIABLES'] = '4'
+else:
+    definitions['CR_ENABLED'] = '0'
+
 
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
@@ -811,30 +865,52 @@ if args['grav'] == 'fft':
 elif args['grav'] == 'mg':
     self_grav_string = 'Multigrid'
 
-print('Your Athena++ distribution has now been configured with the following options:')
-print('  Problem generator:          ' + args['prob'])
-print('  Coordinate system:          ' + args['coord'])
-print('  Equation of state:          ' + args['eos'])
-print('  Riemann solver:             ' + args['flux'])
-print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
-print('  Number of scalars:          ' + args['nscalars'])
-print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
-print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
-print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
-print('  Self-Gravity:               ' + self_grav_string)
-print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
-print('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF'))
-print('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF'))
-print('  Linker flags:               ' + makefile_options['LINKER_FLAGS'] + ' '
-      + makefile_options['LIBRARY_FLAGS'])
-print('  Floating-point precision:   ' + ('single' if args['float'] else 'double'))
-print('  Number of ghost cells:      ' + args['nghost'])
-print('  MPI parallelism:            ' + ('ON' if args['mpi'] else 'OFF'))
-print('  OpenMP parallelism:         ' + ('ON' if args['omp'] else 'OFF'))
-print('  FFT:                        ' + ('ON' if args['fft'] else 'OFF'))
-print('  HDF5 output:                ' + ('ON' if args['hdf5'] else 'OFF'))
+
+def output_config(opt_descr, opt_choice, filehandle=None):
+    first_col_width = 32
+    first_col_indent = 2
+    descr_len = len(opt_descr)
+    right_pad_len = first_col_width - (descr_len + first_col_indent + 2)  # include colon
+    right_pad = right_pad_len*' ' if right_pad_len >= 0 else ''
+    line_str = first_col_indent*' ' + opt_descr + ': ' + right_pad + opt_choice
+    print(line_str)
+    if (filehandle is not None):
+        filehandle.write(line_str + '\n')
+
+
+# write the configuration optitions into a log file
+flog = open('./configure.log', 'w')
+
+output_config('Your Athena++ distribution has now been configured with the following options', '', flog)  # noqa
+output_config('Problem generator', args['prob'], flog)
+output_config('Coordinate system', args['coord'], flog)
+output_config('Equation of state', args['eos'], flog)
+output_config('Riemann solver', args['flux'], flog)
+output_config('Magnetic fields', ('ON' if args['b'] else 'OFF'), flog)
+output_config('Number of scalars', args['nscalars'], flog)
+output_config('Special relativity', ('ON' if args['s'] else 'OFF'), flog)
+output_config('General relativity', ('ON' if args['g'] else 'OFF'), flog)
+output_config('Radiative Transfer', ('ON' if args['nr_radiation'] else 'OFF'), flog)
+output_config('Implicit Radiation', ('ON' if args['implicit_radiation'] else 'OFF'), flog)
+output_config('Cosmic Ray Transport', ('ON' if args['cr'] else 'OFF'), flog)
+output_config('Frame transformations', ('ON' if args['t'] else 'OFF'), flog)
+output_config('Self-Gravity', self_grav_string, flog)
+output_config('Super-Time-Stepping', ('ON' if args['sts'] else 'OFF'), flog)
+output_config('Debug flags', ('ON' if args['debug'] else 'OFF'), flog)
+output_config('Code coverage flags', ('ON' if args['coverage'] else 'OFF'), flog)
+output_config('Linker flags', makefile_options['LINKER_FLAGS'] + ' '
+              + makefile_options['LIBRARY_FLAGS'], flog)
+output_config('Floating-point precision', ('single' if args['float'] else 'double'), flog)
+output_config('Number of ghost cells', args['nghost'], flog)
+output_config('MPI parallelism', ('ON' if args['mpi'] else 'OFF'), flog)
+output_config('OpenMP parallelism', ('ON' if args['omp'] else 'OFF'), flog)
+output_config('FFT', ('ON' if args['fft'] else 'OFF'), flog)
+output_config('HDF5 output', ('ON' if args['hdf5'] else 'OFF'), flog)
 if args['hdf5']:
-    print('  HDF5 precision:             ' + ('double' if args['h5double'] else 'single'))
-print('  Compiler:                   ' + args['cxx'])
-print('  Compilation command:        ' + makefile_options['COMPILER_COMMAND'] + ' '
-      + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])
+    output_config('HDF5 precision', ('double' if args['h5double'] else 'single'), flog)
+output_config('Compiler', args['cxx'], flog)
+output_config('Compilation command', makefile_options['COMPILER_COMMAND'] + ' '
+              + makefile_options['PREPROCESSOR_FLAGS'] + ' '
+              + makefile_options['COMPILER_FLAGS'], flog)
+
+flog.close()

@@ -1,0 +1,58 @@
+<comment>
+problem   = Radiation linear wave test
+reference =
+configure = --prob=rad_linearwave -nr_radiation
+or
+configure = --prob=rad_linearwave -implicit_radiation
+
+<job>
+problem_id = radwave  # problem ID: basename of output filenames
+
+<output1>
+file_type = hst   # History data dump
+dt        = 0.01  # time increment between outputs
+
+
+<time>
+cfl_number = 0.4                 # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = 100000              # cycle limit
+tlim       = 0.7745966144169111  # time limit
+ncycle_out = 1                   # interval for stdout summary info
+
+<mesh>
+nx1        = 256       # Number of zones in X1-direction
+x1min      = 0.0       # minimum value of X1
+x1max      =  1.0      # maximum value of X1
+ix1_bc     = periodic  # inner-X1 boundary flag
+ox1_bc     = periodic  # inner-X1 boundary flag
+
+nx2        = 8         # Number of zones in X2-direction
+x2min      = -0.5      # minimum value of X2
+x2max      = 0.5       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # inner-X2 boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -0.5      # minimum value of X3
+x3max      = 0.5       # maximum value of X3
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # inner-X3 boundary flag
+
+<meshblock>
+nx1 = 64
+nx2 = 8
+nx3 = 1
+
+<hydro>
+gamma = 1.6666666666667  # gamma = C_p/C_v
+
+<radiation>
+nmu         = 1
+prat        = 0.01
+crat        = 10
+error_limit = 1.e-12
+taucell     = 5
+
+<problem>
+regime        = 1
+compute_error = true

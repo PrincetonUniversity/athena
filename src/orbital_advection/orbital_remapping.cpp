@@ -25,8 +25,7 @@
 #include "../mesh/mesh.hpp"
 
 // this class header
-#include "orbital_advection.hpp"
-
+#include "./orbital_advection.hpp"
 
 //----------------------------------------------------------------------------------------
 //! \fn void OrbitalAdvection::RemapFluxPlm(AthenaArray<Real> &pflux_,
@@ -51,6 +50,26 @@ void OrbitalAdvection::RemapFluxPlm(AthenaArray<Real> &pflux_,
     Real dum  = 2.0*du2/(dul+dur);
     if (du2 <= 0.0) dum = 0.0;
     pflux_(i) = eps_*(pbuf_(k,j,i+shift_)+coeff*dum);
+  }
+  return;
+}
+
+void OrbitalAdvection::RemapFluxPlm(AthenaArray<Real> &pflux_,
+                                    const AthenaArray<Real> &pbuf_,
+                                    const Real eps_, const int osgn_, const int k,
+                                    const int j, const int il, const int iu,
+                                    const int nl, const int nu, const int shift_) {
+  const Real odi     = osgn_-0.5;
+  const Real coeff   = odi*(1.0-2.0*odi*eps_);
+  for (int i = il; i <= iu; i++) {
+    for (int n=nl; n<=nu; ++n) {
+      Real dul  = pbuf_(k,j,i+shift_,n)-pbuf_(k,j,i+shift_-1,n);
+      Real dur  = pbuf_(k,j,i+shift_+1,n)-pbuf_(k,j,i+shift_,n);
+      Real du2  = dul*dur;
+      Real dum  = 2.0*du2/(dul+dur);
+      if (du2 <= 0.0) dum = 0.0;
+      pflux_(i,n) = eps_*(pbuf_(k,j,i+shift_,n)+coeff*dum);
+    }
   }
   return;
 }
@@ -87,7 +106,7 @@ void OrbitalAdvection::RemapFluxPpm(AthenaArray<Real> &pflux_,
 
 //--- Step 1. -------------------------------------------------------------------------
 #pragma omp simd
-  for(int i = il; i <= iu; i++) {
+  for (int i = il; i <= iu; i++) {
     Real qa = q   (i) -q_m1(i);
     Real qb = q_p1(i) -q   (i);
     dd_m1(i) = 0.5*(qa+q_m1(i)-q_m2(i));
@@ -99,14 +118,14 @@ void OrbitalAdvection::RemapFluxPpm(AthenaArray<Real> &pflux_,
   }
 //--- Step 2. -----------------------------------------------------------------------
 #pragma omp simd simdlen(SIMD_WIDTH)
-  for(int i = il; i <= iu; i++) {
+  for (int i = il; i <= iu; i++) {
     d2qc_m1(i) = q_m2(i)+q   (i)-2.0*q_m1(i);
     d2qc   (i) = q_m1(i)+q_p1(i)-2.0*q   (i);
     d2qc_p1(i) = q   (i)+q_p2(i)-2.0*q_p1(i);
   }
   // i-1/2
 #pragma omp simd simdlen(SIMD_WIDTH)
-  for(int i = il; i <= iu; i++) {
+  for (int i = il; i <= iu; i++) {
     Real qa_tmp = dph(i) - q_m1(i); // (CD eq 84a)
     Real qb_tmp = q  (i) - dph (i);     // (CD eq 84b)
     Real qa = 3.0*(q_m1(i) + q(i) - 2.0*dph(i));  // (CD eq 85b)
@@ -223,5 +242,15 @@ void OrbitalAdvection::RemapFluxPpm(AthenaArray<Real> &pflux_,
     pflux_(i) = eps_*(osgn_*qplus(i)+(1-osgn_)*qminus(i)
                       -0.5*eps_*(dU-odi*(1.0-qx)*U6));
   }
+  return;
+}
+
+void OrbitalAdvection::RemapFluxPpm(AthenaArray<Real> &pflux_,
+                                    AthenaArray<Real> &pbuf_,
+                                    const Real eps_, const int osgn_,
+                                    const int k, const int j, const int il,
+                                    const int iu, const int nl, const int nu,
+                                    const int shift_) {
+  // will implement later
   return;
 }

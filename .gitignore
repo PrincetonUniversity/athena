@@ -1,6 +1,7 @@
 # Configured outputs
 Makefile
 src/defs.hpp
+configure.log
 
 # Object and binary directories
 obj/

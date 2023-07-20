@@ -17,6 +17,7 @@
 #include "../bvals/bvals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
+#include "../nr_radiation/radiation.hpp"
 #include "../parameter_input.hpp"
 #include "coordinates.hpp"
 
@@ -123,7 +124,6 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
                   << std::endl;
       }
     }
-
   } else {
     // uniform grid: use UniformMeshGeneratorX1()
     Real dx = (block_size.x1max - block_size.x1min)/(iu-il+1);
@@ -579,13 +579,13 @@ void Coordinates::LaplacianX1(const AthenaArray<Real> &s, AthenaArray<Real> &del
                               const int il, const int iu) {
   if (pmy_block->block_size.nx3 > 1) {
 #pragma omp simd
-    for(int i=il; i<=iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j))
                    + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i)) / (dx3f(k)*dx3f(k));
     }
   } else if (pmy_block->block_size.nx2 > 1) {
 #pragma omp simd
-    for(int i=il; i<=iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j));
     }
   } else {
@@ -635,13 +635,13 @@ void Coordinates::LaplacianX2(const AthenaArray<Real> &s, AthenaArray<Real> &del
                               const int il, const int iu) {
   if (pmy_block->block_size.nx3 > 1) {
 #pragma omp simd
-    for(int i=il; i<=iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i))
                    + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i)) / (dx3f(k)*dx3f(k));
     }
   } else {
 #pragma omp simd
-    for(int i=il; i<=iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i));
     }
   }
@@ -685,13 +685,13 @@ void Coordinates::LaplacianX3(const AthenaArray<Real> &s, AthenaArray<Real> &del
                               const int il, const int iu) {
   if (pmy_block->block_size.nx2 > 1) {
 #pragma omp simd
-    for(int i=il; i<=iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i))
                    + (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j));
     }
   } else {
 #pragma omp simd
-    for(int i=il; i<=iu; ++i) {
+    for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i));
     }
   }
@@ -737,6 +737,108 @@ void Coordinates::AddCoordTermsDivergence(
     const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   return;
+}
+
+void Coordinates::AddCRCoordTermsDivergence(
+          const AthenaArray<Real> &u_cr1, AthenaArray<Real> &u_cr) {
+  return;
+}
+
+void Coordinates::CRGradPcCoordTermsDivergence(const AthenaArray<Real> &u_cr,
+                                          AthenaArray<Real> &grad_pc) {
+  return;
+}
+
+void Coordinates::ConvertAngle(MeshBlock *pmb, const int nang, AthenaArray<Real> &mu) {
+  return;
+}
+
+void Coordinates::AxisDirection(int *axisx, int *axisy, int *axisz) {
+  return;
+}
+
+void Coordinates::ZetaArea(NRRadiation *prad, AthenaArray<Real> &area) {
+  if (prad->angle_flag == 1) {
+    int nzeta = prad->nzeta;
+    int npsi = prad->npsi;
+    if (npsi * nzeta > 0) {
+      for (int m=0; m<2*npsi; ++m) {
+        for (int n=0; n<2*nzeta+1; ++n) {
+          Real sinzeta_sq= 1.0 - prad->coszeta_f(n) * prad->coszeta_f(n);
+          area(m,n) = sinzeta_sq * prad->len_psi(m);
+        }// end psi
+      }// end zeta
+    } else if (nzeta > 0) {
+      for (int n=0; n<2*nzeta+1; ++n) {
+        area(n) = 1.0 - prad->coszeta_f(n) * prad->coszeta_f(n);
+      }
+    }
+  }
+}
+
+void Coordinates::PsiArea(NRRadiation *prad, AthenaArray<Real> &area) {
+  if (prad->angle_flag == 1) {
+    int nzeta = prad->nzeta;
+    int npsi = prad->npsi;
+    if (npsi * nzeta > 0) {
+      for (int n=0; n<2*nzeta; ++n) {
+        for (int m=0; m<2*npsi+1; ++m) {
+          area(n,m) = prad->len_zeta(n);
+        }
+      }
+    } else if (npsi > 0) {
+      for (int m=0; m<2*npsi+1; ++m) {
+        area(m) = 1.0;
+      }
+    }
+  }
+}
+
+void Coordinates::AngularVol(NRRadiation *prad, AthenaArray<Real> &vol) {
+  if (prad->angle_flag == 1) {
+    int nzeta = prad->nzeta;
+    int npsi = prad->npsi;
+    if (npsi * nzeta > 0) {
+      for (int n=0; n<2*nzeta; ++n) {
+        for (int m=0; m<2*npsi; ++m) {
+          int ang_num = n*(2*npsi)+m;
+          vol(ang_num) = prad->len_zeta(n) * prad->len_psi(m);
+        }
+      }
+    } else if (npsi > 0) {
+      for (int m=0; m<2*npsi; ++m)
+        vol(m) = prad->len_psi(m);
+    } else if (nzeta > 0) {
+      for (int n=0; n<2*nzeta; ++n)
+        vol(n) = prad->len_zeta(n);
+    }
+  }
+}
+
+void Coordinates::GetGeometryZeta(NRRadiation *prad, const int k, const int j,
+                                  const int i, AthenaArray<Real> &g_zeta) {
+  int &nzeta = prad->nzeta;
+  for (int n=0; n<nzeta*2+1; ++n) {
+    g_zeta(n) = 1.0;
+  }
+}
+
+void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
+                                 const int i, const int n_zeta,
+                                 AthenaArray<Real> &g_psi) {
+  int &npsi = prad->npsi;
+  for (int n=0; n<2*npsi+1; ++n) {
+    g_psi(n) = 1.0;
+  }
+}
+
+// function overwirte in case nzeta = 0
+void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
+                                 const int i, AthenaArray<Real> &g_psi) {
+  int &npsi = prad->npsi;
+  for (int n=0; n<2*npsi+1; ++n) {
+    g_psi(n) = 1.0;
+  }
 }
 
 //----------------------------------------------------------------------------------------

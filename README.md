@@ -17,7 +17,7 @@ athena
 	  <img width="345" height="345" src="https://user-images.githubusercontent.com/1410981/115276281-759d8580-a108-11eb-9fc9-833480b97f95.png">
 </p>
 
-Athena++ GRMHD code and adaptive mesh refinement (AMR) framework
+Athena++ radiation GRMHD code and adaptive mesh refinement (AMR) framework
 
 Please read [our contributing guidelines](./CONTRIBUTING.md) for details on how to participate.
 
