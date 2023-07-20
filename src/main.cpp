@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
 #endif // ENABLE_EXCEPTIONS
   }
 
-//radiation
+  // chemistry radiation
   ChemRadiationIntegratorTaskList *pchemradlist = nullptr;
   if (CHEMRADIATION_ENABLED) {
 #ifdef ENABLE_EXCEPTIONS
