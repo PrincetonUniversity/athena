@@ -30,10 +30,18 @@ Real DenProfileCyl(const Real rad, const Real phi, const Real z);
 Real PoverR(const Real rad, const Real phi, const Real z);
 Real VelProfileCyl(const Real rad, const Real phi, const Real z);
 // problem parameters which are useful to make global to this file
-Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, z, phi, r, rp, phip, d, dfloor, Omega0, cosine_term, sine_term, epsilon, R_H;
+Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, alpha, nu_iso, z, phi, r, rp, phip, d, dfloor, Omega0, cosine_term, sine_term, epsilon, R_H;
 } // namespace
 
 // User-defined boundary conditions for disk simulations
+void Steady_State_Inner(MeshBlock *pmb, Coordinates *pco,
+                  AthenaArray<Real> &prim, FaceField &b,
+                  Real time, Real dt,
+                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
+void Steady_State_Outer(MeshBlock *pmb, Coordinates *pco,
+                  AthenaArray<Real> &prim, FaceField &b,
+                  Real time, Real dt,
+                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);                  
 void DiskInnerX1(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim,FaceField &b,
                  Real time, Real dt,
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
@@ -74,6 +82,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   gm_planet = pin -> GetOrAddReal("problem", "planetgm", 0.0);
   rp = pin -> GetOrAddReal("problem", "ptosr", 1.0);
 
+  // Get viscosity parameters
+  alpha = pin -> GetOrAddReal("problem", "alpha", 0.0);
+  nu_iso = pin -> GetOrAddReal("problem", "nu_iso", 0.0);
+
   // Get parameters of initial pressure and cooling parameters
   if (NON_BAROTROPIC_EOS) {
     p0_over_r0 = pin->GetOrAddReal("problem","p0_over_r0",0.0025);
@@ -89,11 +101,17 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // enroll user-defined boundary condition
   if (mesh_bcs[BoundaryFace::inner_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::inner_x1, Steady_State_Inner);
+  }
+  /*if (mesh_bcs[BoundaryFace::inner_x1] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(BoundaryFace::inner_x1, DiskInnerX1);
+  }*/
+  if (mesh_bcs[BoundaryFace::inner_x1] == GetBoundaryFlag("user")) {
+    EnrollUserBoundaryFunction(BoundaryFace::outer_x1, Steady_State_Outer);
   }
-  if (mesh_bcs[BoundaryFace::outer_x1] == GetBoundaryFlag("user")) {
+  /*if (mesh_bcs[BoundaryFace::outer_x1] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(BoundaryFace::outer_x1, DiskOuterX1);
-  }
+  }*/
   if (mesh_bcs[BoundaryFace::inner_x2] == GetBoundaryFlag("user")) {
     EnrollUserBoundaryFunction(BoundaryFace::inner_x2, DiskInnerX2);
   }
@@ -112,6 +130,10 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
               AthenaArray<Real> &cons, AthenaArray<Real> &cons_scalar);
   EnrollUserExplicitSourceFunction(Planet);
 
+  void Viscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, 
+            int is, int ie, int js, int je, int ks, int ke);
+  EnrollViscosityCoefficient(Viscosity);
+
   return;
 }
   
@@ -123,11 +145,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real rad(0.0), phi(0.0), z(0.0);
   Real den, vel;
-  Real x1, x2, x3;
+  Real x1,x2,x3;
 
   OrbitalVelocityFunc &vK = porb->OrbitalVelocity;
   //  Initialize density and momenta
-  for (int k=ks; k<=ke; ++k) {
+  /*for (int k=ks; k<=ke; ++k) {
     x3 = pcoord->x3v(k);
     for (int j=js; j<=je; ++j) {
       x2 = pcoord->x2v(j);
@@ -149,6 +171,37 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           phydro->u(IM3,k,j,i) = den*vel;
         }
 
+        if (NON_BAROTROPIC_EOS) {
+          Real p_over_r = PoverR(rad,phi,z);
+          phydro->u(IEN,k,j,i) = p_over_r*phydro->u(IDN,k,j,i)/(gamma_gas - 1.0);
+          phydro->u(IEN,k,j,i) += 0.5*(SQR(phydro->u(IM1,k,j,i))+SQR(phydro->u(IM2,k,j,i))
+                                       + SQR(phydro->u(IM3,k,j,i)))/phydro->u(IDN,k,j,i);
+        }
+      }
+    }
+  }
+
+  return;*/
+
+  for (int k=ks; k<=ke; ++k) {
+    z = pcoord->x3v(k);
+    for (int j=js; j<=je; ++j) {
+      phi = pcoord->x2v(j);
+      for (int i=is; i<=ie; ++i) {
+        r = pcoord->x1v(i);
+        GetCylCoord(pcoord,rad,phi,z,i,j,k); // convert to cylindrical coordinates
+        Real surface_density = rho0 / sqrt(r/rp);
+        Real v_r = -3.0/2.0 * alpha * pow(0.04,2) * sqrt((gm0+gm_planet)/r);
+        Real v_phi = r * sqrt(1-0.5*pow(0.04,2)) * sqrt(gm0+gm_planet)* sqrt(1 / pow(r,3));
+        // compute initial conditions in cylindrical coordinates
+        //den = DenProfileCyl(rad,phi,z);
+        //vel = VelProfileCyl(rad,phi,z);
+        phydro->u(IDN,k,j,i) = surface_density;
+        phydro->u(IM1,k,j,i) = surface_density * v_r;
+        if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+          phydro->u(IM2,k,j,i) = surface_density * v_phi;
+          phydro->u(IM3,k,j,i) = 0.0;
+        }
         if (NON_BAROTROPIC_EOS) {
           Real p_over_r = PoverR(rad,phi,z);
           phydro->u(IEN,k,j,i) = p_over_r*phydro->u(IDN,k,j,i)/(gamma_gas - 1.0);
@@ -194,8 +247,27 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
         Real pressure_0 = gamma * pow(r,pslope+dslope);
         Real surface_density_0 = beta * pow(r, dslope);
         Real pressure = dens * (pressure_0/surface_density_0); //definition of isothermal eos
-        //if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) = (3.0/2.0 * pressure + 0.5*dens*((pow(velocity_x,2) + pow(velocity_y,2))))
+        //if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) = (3.0/2.0 * pressure + 0.5*dens*((pow(velocity_x,2) + pow(velocity_y,2))));
         if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += 3.0/2.0 * (pressure-prim(IPR,k,j,i));
+      }
+    }
+  }
+}
+
+void Viscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, 
+               int is, int ie, int js, int je, int ks, int ke) {
+    if (phdif->nu_iso > 0.0) {
+      for (int k = ks; k <= ke; ++k) {
+        z = pmb->pcoord->x3v(k);
+        for (int j = js; j <= je; ++j) {
+          phi = pmb->pcoord->x2v(j);
+          for (int i = is; i <= ie; ++i) {
+            r = pmb->pcoord->x1v(i);
+            Real omega = sqrt(gm0/(pow(r,3)));
+            Real sound_speed = 0.04 * omega*r;
+            Real kinematic_viscosity = alpha * sound_speed * (sound_speed/omega); 
+            phdif->nu(HydroDiffusion::DiffProcess::iso,k,j,i) = kinematic_viscosity;
+        }
       }
     }
   }
@@ -280,6 +352,64 @@ Real VelProfileCyl(const Real rad, const Real phi, const Real z) {
   return vel;
 }
 } // namespace
+
+//----------------------------------------------------------------------------------------
+//! User-defined Boundary and Initial Conditions
+void Steady_State_Inner(MeshBlock *pmb, Coordinates *pco,
+                    AthenaArray<Real> &prim, FaceField &b,
+                    Real time, Real dt,
+                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  for (int k=kl; k<=ku; ++k) {
+    z = pmb->pcoord->x3v(k);
+    for (int j=jl; j<=ju; ++j) {
+      phi = pmb->pcoord->x2v(j);
+      for (int i=1; i<=ngh; ++i) {
+        r = pmb->pcoord->x1v(il-i);
+        Real gamma = (rho0*p0_over_r0) / (pow(r0, dslope));
+        Real beta = rho0/(pow(r0, dslope));
+        Real pressure_0 = gamma * pow(r, pslope+dslope);
+        Real surface_density_0 = beta * pow(r, dslope);
+        Real surface_density = rho0 / sqrt(r/rp);
+        Real pressure = surface_density * (pressure_0/surface_density_0);
+        Real v_r = -3.0/2.0 * alpha * pow(0.04,2) * sqrt((gm0+gm_planet)/r);
+        Real v_phi = r * sqrt(1-0.5*pow(0.04,2)) * sqrt(gm0+gm_planet)* sqrt(1 / pow(r,3));
+        prim(IDN,k,j,il-i) = surface_density;
+        prim(IPR,k,j,il-i) = pressure;
+        prim(IVX,k,j,il-i) = v_r;
+        prim(IVY,k,j,il-i) = v_phi;
+      }
+    }
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! User-defined Boundary and Initial Conditions
+void Steady_State_Outer(MeshBlock *pmb, Coordinates *pco,
+                    AthenaArray<Real> &prim, FaceField &b,
+                    Real time, Real dt,
+                    int il, int iu, int jl, int ju, int kl, int ku, int ngh) {
+  for (int k=kl; k<=ku; ++k) {
+    z = pmb->pcoord->x3v(k);
+    for (int j=jl; j<=ju; ++j) {
+      phi = pmb->pcoord->x2v(j);
+      for (int i=1; i<=ngh; ++i) {
+        r = pmb->pcoord->x1v(iu+1);
+        Real gamma = (rho0*p0_over_r0) / (pow(r0, dslope));
+        Real beta = rho0/(pow(r0, dslope));
+        Real pressure_0 = gamma * pow(r, pslope+dslope);
+        Real surface_density_0 = beta * pow(r, dslope);
+        Real surface_density = rho0 / sqrt(r/rp);
+        Real pressure = surface_density * (pressure_0/surface_density_0);
+        Real v_r = -3.0/2.0 * alpha * pow(0.04,2) * sqrt((gm0+gm_planet)/r);
+        Real v_phi = r * sqrt(1-0.5*pow(0.04,2)) * sqrt(gm0+gm_planet)* sqrt(1 / pow(r,3));
+        prim(IDN,k,j,iu+1) = surface_density;
+        prim(IPR,k,j,iu+1) = pressure;
+        prim(IVX,k,j,iu+1) = v_r;
+        prim(IVY,k,j,iu+1) = v_phi;
+      }
+    }
+  }
+}
 
 //----------------------------------------------------------------------------------------
 //! User-defined boundary Conditions: sets solution in ghost zones to initial values
