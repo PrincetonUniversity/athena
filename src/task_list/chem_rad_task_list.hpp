@@ -33,7 +33,7 @@ class ChemRadiationIntegratorTaskList : public TaskList {
   ChemRadiationIntegratorTaskList(ParameterInput *pin, Mesh *pm);
   std::string integrator;
 
-  //six-ray
+  // six-ray
   enum TaskStatus GetColMB_ix1(MeshBlock *pmb, int step);
   enum TaskStatus GetColMB_ox1(MeshBlock *pmb, int step);
   enum TaskStatus GetColMB_ix2(MeshBlock *pmb, int step);
@@ -48,7 +48,7 @@ class ChemRadiationIntegratorTaskList : public TaskList {
   enum TaskStatus RecvAndSend_ox3(MeshBlock *pmb, int step);
   enum TaskStatus ClearSixrayReceive(MeshBlock *pmb, int step);
   enum TaskStatus UpdateRadiationSixRay(MeshBlock *pmb, int step);
-  //constant radiation
+  // constant radiation
   enum TaskStatus ConstRadiation(MeshBlock *pmb, int step);
 
  private:
@@ -57,10 +57,11 @@ class ChemRadiationIntegratorTaskList : public TaskList {
   enum TaskStatus RecvAndSend_direction(MeshBlock *pmb, int step, BoundaryFace direction);
 };
 
+
 namespace ChemRadiationIntegratorTaskNames {
 const TaskID NONE(0);
-const TaskID INT_CONST(1); //constant radiation, do nothing
-//six-ray radiation
+const TaskID INT_CONST(1); // constant radiation, do nothing
+// six-ray radiation
 const TaskID GET_COL_MB_IX1(2);
 const TaskID GET_COL_MB_OX1(3);
 const TaskID GET_COL_MB_IX2(4);

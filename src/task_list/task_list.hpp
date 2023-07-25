@@ -210,8 +210,6 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus ReceiveFieldOrbital(MeshBlock *pmb, int stage);
   TaskStatus CalculateFieldOrbital(MeshBlock *pmb, int stage);
 
-
-// Tasks for radiation transport
   TaskStatus CalculateRadFlux(MeshBlock *pmb, int stage);
   TaskStatus IntegrateRad(MeshBlock *pmb, int stage);
   TaskStatus AddSourceTermsRad(MeshBlock *pmb, int stage);
@@ -222,14 +220,12 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus ReceiveRad(MeshBlock *pmb, int stage);
   TaskStatus SetBoundariesRad(MeshBlock *pmb, int stage);
   TaskStatus RadMomOpacity(MeshBlock *pmb, int stage);
-  // shearing box
+
   TaskStatus SendRadFluxShear(MeshBlock *pmb, int stage);
   TaskStatus ReceiveRadFluxShear(MeshBlock *pmb, int stage);
   TaskStatus SendRadShear(MeshBlock *pmb, int stage);
   TaskStatus ReceiveRadShear(MeshBlock *pmb, int stage);
 
-
-  // Task functions for cosmic rays
   TaskStatus CalculateCRTCFlux(MeshBlock *pmb, int stage);
   TaskStatus IntegrateCRTC(MeshBlock *pmb, int stage);
   TaskStatus AddSourceTermsCRTC(MeshBlock *pmb, int stage);
@@ -239,7 +235,6 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus ReceiveCRTC(MeshBlock *pmb, int stage);
   TaskStatus SetBoundariesCRTC(MeshBlock *pmb, int stage);
   TaskStatus CRTCOpacity(MeshBlock *pmb, int stage);
-
 
   bool CheckNextMainStage(int stage) const {return stage_wghts[stage%nstages].main_stage;}
 
