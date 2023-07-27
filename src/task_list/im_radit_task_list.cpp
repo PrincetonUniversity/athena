@@ -28,9 +28,7 @@
 
 IMRadITTaskList::IMRadITTaskList(Mesh *pm) {
   pmy_mesh = pm;
-  // Now assemble list of tasks for each stage of time integrator
   {using namespace IMRadITTaskNames; // NOLINT (build/namespace)
-    // compute hydro fluxes, integrate hydro variables
     AddTask(FLX_AND_SCR,NONE);
     AddTask(SEND_RAD_BND,FLX_AND_SCR);
     AddTask(RECV_RAD_BND,FLX_AND_SCR);

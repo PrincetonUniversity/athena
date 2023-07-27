@@ -25,7 +25,7 @@
 #include <string>
 #include <vector>
 
-//Athena++ headers
+// Athena++ headers
 #include "../../athena.hpp"
 #include "../../athena_arrays.hpp"
 #include "../../coordinates/coordinates.hpp" //
@@ -227,7 +227,7 @@ void RadIntegrator::CalSourceTerms(MeshBlock *pmb, const Real dt,
     }
   }
 
-  //update specific intensity in the lab frame
+  // update specific intensity in the lab frame
   // do not modify ir_ini
   Real omega = 1.0;
   if (IM_RADIATION_ENABLED) {
@@ -278,12 +278,11 @@ void RadIntegrator::AddMultiGroupCompt(MeshBlock *pmb, const Real dt,
 
   // only apply for multi-grou case
   if ((nfreq > 1) && (compton_flag_ > 0) && (split_compton_ > 0)) {
-  // Get the temporary arrays
+    // Get the temporary arrays
     AthenaArray<Real> &wmu_cm = wmu_cm_;
     AthenaArray<Real> &tran_coef = tran_coef_;
     AthenaArray<Real> &ir_cm = ir_cm_;
     AthenaArray<Real> &cm_to_lab = cm_to_lab_;
-
 
     int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
     int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -354,7 +353,7 @@ void RadIntegrator::AddMultiGroupCompt(MeshBlock *pmb, const Real dt,
           Real t_old;
           int count=0;
           Real relative_error = 1;
-          while((count < iteration_compton_) && (relative_error > compton_error_)) {
+          while ((count < iteration_compton_) && (relative_error > compton_error_)) {
             ir_buff_ = ir_cm;
             t_old = tgas_new_(k,j,i);
             MultiGroupCompton(wmu_cm,tran_coef,dt,lorz,rho,t_ini,tgas_new_(k,j,i),
