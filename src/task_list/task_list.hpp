@@ -213,7 +213,6 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus CalculateRadFlux(MeshBlock *pmb, int stage);
   TaskStatus IntegrateRad(MeshBlock *pmb, int stage);
   TaskStatus AddSourceTermsRad(MeshBlock *pmb, int stage);
-  TaskStatus AddSourceTermsIMRad(MeshBlock *pmb, int stage);
   TaskStatus SendRadFlux(MeshBlock *pmb, int stage);
   TaskStatus ReceiveAndCorrectRadFlux(MeshBlock *pmb, int stage);
   TaskStatus SendRad(MeshBlock *pmb, int stage);

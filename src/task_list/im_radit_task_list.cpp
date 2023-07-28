@@ -29,9 +29,9 @@
 IMRadITTaskList::IMRadITTaskList(Mesh *pm) {
   pmy_mesh = pm;
   {using namespace IMRadITTaskNames; // NOLINT (build/namespace)
-    AddTask(FLX_AND_SCR,NONE);
-    AddTask(SEND_RAD_BND,FLX_AND_SCR);
-    AddTask(RECV_RAD_BND,FLX_AND_SCR);
+    AddTask(FLX_AND_SRC,NONE);
+    AddTask(SEND_RAD_BND,FLX_AND_SRC);
+    AddTask(RECV_RAD_BND,FLX_AND_SRC);
     AddTask(SETB_RAD_BND,(RECV_RAD_BND|SEND_RAD_BND));
     if (pm->shear_periodic) {
       AddTask(SEND_RAD_SH,SETB_RAD_BND);
@@ -48,7 +48,7 @@ IMRadITTaskList::IMRadITTaskList(Mesh *pm) {
     }
     AddTask(CLEAR_RAD, RAD_PHYS_BND);
     // check residual does not need ghost zones
-    AddTask(CHK_RAD_RES,FLX_AND_SCR);
+    AddTask(CHK_RAD_RES,FLX_AND_SRC);
   } // end of using namespace block
 }
 
@@ -94,7 +94,7 @@ void IMRadITTaskList::AddTask(const TaskID& id, const TaskID& dep) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadITTaskList::CheckResidual);
-  } else if (id == FLX_AND_SCR) {
+  } else if (id == FLX_AND_SRC) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadITTaskList::AddFluxAndSourceTerms);
@@ -123,12 +123,10 @@ TaskStatus IMRadITTaskList::AddFluxAndSourceTerms(MeshBlock *pmb) {
         for (int i=is; i<=ie; ++i) {
           prad->pradintegrator->FirstOrderFluxDivergence(k, j, i,
                                                          prad->ir_old);
-
           // add angular flux
           if (prad->angle_flag == 1) {
             prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);
-          }// end angular flux
-
+          }
           // add the source terms together
           prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u,
                                                prad->ir1, prad->ir);
@@ -143,12 +141,10 @@ TaskStatus IMRadITTaskList::AddFluxAndSourceTerms(MeshBlock *pmb) {
           if (((i-is)+(j-js)+(k-ks))%2 == 0) {
             prad->pradintegrator->FirstOrderFluxDivergence(k, j, i,
                                                            prad->ir);
-
             // add angular flux
             if (prad->angle_flag == 1) {
               prad->pradintegrator->ImplicitAngularFluxes(k,j,i,prad->ir);
             }
-
             // add the source terms together
             prad->pradintegrator->CalSourceTerms(pmb, dt, k,j,i, ph->u,
                                                  prad->ir1, prad->ir);

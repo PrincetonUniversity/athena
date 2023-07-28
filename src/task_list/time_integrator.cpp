@@ -1098,9 +1098,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
             setb=(setb|RECV_RADSH);
         }
 
-        if (CR_ENABLED)
+        if (CR_ENABLED) {
           setb=(setb|SEND_CRTC|SETB_CRTC);
-
+        }
 
         AddTask(PROLONG,setb);
         AddTask(CONS2PRIM,PROLONG);

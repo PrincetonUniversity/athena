@@ -534,7 +534,7 @@ void RadIntegrator::AddSourceTerms(MeshBlock *pmb, AthenaArray<Real> &u) {
         u(IM2,k,j,i) += rad_source(2,k,j,i);
         u(IM3,k,j,i) += rad_source(3,k,j,i);
 
-        //limit the velocity by speed of light
+        // limit the velocity by speed of light
         Real vx = u(IM1,k,j,i)/u(IDN,k,j,i);
         Real vy = u(IM2,k,j,i)/u(IDN,k,j,i);
         Real vz = u(IM3,k,j,i)/u(IDN,k,j,i);
@@ -549,11 +549,11 @@ void RadIntegrator::AddSourceTerms(MeshBlock *pmb, AthenaArray<Real> &u) {
         }
 
         Real ekin = 0.5 *(SQR(u(IM1,k,j,i))+SQR(u(IM2,k,j,i))
-                  +SQR(u(IM3,k,j,i)))/u(IDN,k,j,i);
+                          + SQR(u(IM3,k,j,i)))/u(IDN,k,j,i);
         Real pb = 0.0;
         if (MAGNETIC_FIELDS_ENABLED) {
           pb = 0.5*(SQR(pfield->bcc(IB1,k,j,i))+SQR(pfield->bcc(IB2,k,j,i))
-               +SQR(pfield->bcc(IB3,k,j,i)));
+                    + SQR(pfield->bcc(IB3,k,j,i)));
         }
 
         if (prad->set_source_flag == 2) {
