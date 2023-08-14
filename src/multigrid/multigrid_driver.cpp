@@ -139,7 +139,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -164,7 +166,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -189,7 +193,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -214,7 +220,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -239,7 +247,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -264,7 +274,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
