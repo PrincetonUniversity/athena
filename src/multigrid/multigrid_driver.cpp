@@ -139,7 +139,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -164,7 +166,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -189,7 +193,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -214,7 +220,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -239,7 +247,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -264,7 +274,9 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
     case BoundaryFlag::periodic:
     case BoundaryFlag::mg_zerograd:
+      break;
     case BoundaryFlag::mg_zerofixed:
+      fsubtract_average_ = false;
       break;
     case BoundaryFlag::mg_multipole:
       mporder_ = 0;
@@ -471,7 +483,7 @@ void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
     MPI_Allgather(MPI_IN_PLACE, nb_rank_*nv, MPI_ATHENA_REAL,
                   rootbuf_, nb_rank_*nv, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
   } else {
-    if (!initflag)
+    if (ffas_ && !initflag)
       MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*nv, MPI_ATHENA_REAL,
                      rootbuf_, nvlist_, nvslist_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
     else
