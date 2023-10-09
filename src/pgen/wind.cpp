@@ -16,7 +16,12 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>     // fopen(), fprintf(), freopen()
+#include <cstdlib>
 #include <cstring>    // strcmp()
+#include <sstream>
+#include <stdexcept>
+#include <fstream>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -84,6 +89,7 @@ namespace {
   Real wave_rad;
   Real wave_mult;
   Real omega_sun;
+  bool import_1d_data;
   
   Real CME_start;
   Real CME_duration;
@@ -211,7 +217,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   } else {
     // Only check legality of COORDINATE_SYSTEM once in this function
     std::stringstream msg;
-    msg << "### FATAL ERROR in wind.cpp ProblemGenerator" << std::endl
+    msg << "### FATAL ERROR in wind1d.cpp ProblemGenerator" << std::endl
         << "Unrecognized COORDINATE_SYSTEM=" << COORDINATE_SYSTEM << std::endl;
     ATHENA_ERROR(msg);
   }
@@ -337,9 +343,44 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   wave_mult = pin->GetOrAddReal("problem", "wave_mult", 1.0);
 #endif
 
+  import_1d_data = pin->GetOrAddBooleanl("problem", "import_1d_data", false);
+
   // setup uniform ambient medium
   // Modifies density, and energy (non-barotropic eos and relativistic dynamics)
   Real rad, den, energy, x, y, z;
+ 
+  if(import_1d_data) {
+    int nx=pin->GetReal("mesh", "nx1");
+    Real rho_1d[nx],press_1d[nx],vel1_1d[nx],vel2_1d[nx],vel3_1d[nx],Bcc1_1d[nx],Bcc2_1d[nx],Bcc3_1d[nx];
+    int tab_index = 0;
+    std::fstream datafile;
+    std::stringstream stream;
+
+    datafile.open("solar_wind_1d.tab",std::ios::in); //open a file to perform read operation using file object
+    if (datafile.is_open()){ //checking whether the file is open
+      std::string line;
+      while(std::getline(datafile, line)){ //read data from file object and put it into string.
+        stream.str(line);
+        rho_1d[tab_index] = static_cast<Real>(atof(line.substr(18,12).c_str()));
+        press_1d[tab_index] = static_cast<Real>(atof(line.substr(18+13,12).c_str()));
+        vel1_1d[tab_index] = static_cast<Real>(atof(line.substr(18+2*13,12).c_str()));
+        vel2_1d[tab_index] = static_cast<Real>(atof(line.substr(18+3*13,12).c_str()));
+        vel3_1d[tab_index] = static_cast<Real>(atof(line.substr(18+4*13,12).c_str()));
+        Bcc1_1d[tab_index] = static_cast<Real>(atof(line.substr(18+5*13,12).c_str()));
+        Bcc2_1d[tab_index] = static_cast<Real>(atof(line.substr(18+6*13,12).c_str()));
+        Bcc3_1d[tab_index] = static_cast<Real>(atof(line.substr(18+7*13,12).c_str()));
+        //std::cout << Bcc3_1d[tab_index] << "\n";
+        tab_index +=1;
+      }
+      datafile.close(); //close the file object.
+    } else {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in wind1d.cpp ProblemGenerator" << std::endl
+          << "1d data file solar_wind_1d.tab doesn't exist" << std::endl;
+          ATHENA_ERROR(msg);
+    }
+  }
+  
   for (int k=ks; k<=ke; k++) {
     for (int j=js; j<=je; j++) {
       for (int i=is; i<=ie; i++) {
@@ -365,25 +406,43 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           energy *= std::pow((inner_radius / rad), 2.0*gamma_param);
         }
         // ambient density and conserved variables
-        phydro->u(IDN,k,j,i) = den;
-        phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i) * v1_inner;
-        //phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * v2_inner;
-        //phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner;
+	if(import_1d_data) {
+          phydro->u(IDN,k,j,i) = rho_1d[i-2];
+          phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i) * vel1_1d[i-2];
 
-        // currently assumes that inner velocities are given in same coordinate system
-        // functions that generate values need to be functions if input
-        // values need to be converted to correct coordinate system
-        if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
-          phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * v2_inner;
-          phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner;
-        } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-          phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * v2_inner * rad;
-          phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner;
-        } else { //if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
-          // v2_inner is polar and v3_inner is azimuthal
-          phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * v2_inner * rad;
-          phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner * rad * std::sin(pcoord->x2v(j));
-        }
+          // currently assumes that inner velocities are given in same coordinate system
+          // functions that generate values need to be functions if input
+          // values need to be converted to correct coordinate system
+          if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
+            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * v2_inner;
+            phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner;
+          } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * v2_inner * rad;
+            phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner;
+          } else { //if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+            // v2_inner is polar and v3_inner is azimuthal
+            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * vel2_1d[i-2];
+            phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * vel3_1d[i-2] * std::sin(pcoord->x2v(j));
+          }
+	} else {
+          phydro->u(IDN,k,j,i) = rho_1d[i-2];
+          phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i) * vel1_1d[i-2];
+
+          // currently assumes that inner velocities are given in same coordinate system
+          // functions that generate values need to be functions if input
+          // values need to be converted to correct coordinate system
+          if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
+            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * v2_inner;
+            phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner;
+          } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * v2_inner * rad;
+            phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner;
+          } else { //if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+            // v2_inner is polar and v3_inner is azimuthal
+            phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * v2_inner * rad;
+            phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner * rad * std::sin(pcoord->x2v(j));
+          }
+	}
 
         if (NON_BAROTROPIC_EOS) {
           // 0.5 * den *(v_r^2 + v_phi^2 + v_theta^2)
@@ -395,7 +454,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
                           + SQR(phydro->u(IM3,k,j,i))
                           )
           );
-          phydro->u(IEN,k,j,i) = energy + v_contrib;
+	  if(import_1d_data) {
+            phydro->u(IEN,k,j,i) = press_1d[i-2]/(gamma_param-1.) + v_contrib;
+	  } else {
+	    phydro->u(IEN,k,j,i) = energy + v_contrib;
+	  }
 
           if (RELATIVISTIC_DYNAMICS) {
             std::stringstream msg;
@@ -435,11 +498,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             sign = sign_radial_mag_field(pcoord->x2v(j), pcoord->x3v(k));
           }
 
-          rad = std::sqrt(SQR(x - x_0) + SQR(y - y_0) + SQR(z - z_0));
-          pfield->b.x1f(k,j,i) = b1*sign;
-          if (rad >= inner_radius) {
-            pfield->b.x1f(k,j,i) *= pow(inner_radius/rad, 2.0);
-          }
+	  if(import_1d_data) {
+            pfield->b.x1f(k,j,i) = Bcc1_1d[i-2];
+	  } else {
+            pfield->b.x1f(k,j,i) = b1*sign;
+	    rad = std::sqrt(SQR(x - x_0) + SQR(y - y_0) + SQR(z - z_0));
+            if (rad >= inner_radius) {
+              pfield->b.x1f(k,j,i) *= pow(inner_radius/rad, 2.0);
+            }
+	  }
         }
       }
     }
@@ -461,11 +528,14 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             y = pcoord->x1v(i)*std::sin(pcoord->x2f(j))*std::sin(pcoord->x3v(k));
             z = pcoord->x1v(i)*std::cos(pcoord->x2f(j));
           }
-          rad = std::sqrt(SQR(x - x_0) + SQR(y - y_0) + SQR(z - z_0));
-          pfield->b.x2f(k,j,i) = b2;
-          if (rad >= inner_radius) {
-            pfield->b.x2f(k,j,i) *= (inner_radius/rad);
-          }
+	  if(import_1d_data) {
+            pfield->b.x2f(k,j,i) = Bcc2_1d[i-2];
+	  } else {
+	    rad = std::sqrt(SQR(x - x_0) + SQR(y - y_0) + SQR(z - z_0));
+	    if (rad >= inner_radius) {
+              pfield->b.x2f(k,j,i) *= (inner_radius/rad);
+            }
+	  }
         }
       }
     }
@@ -487,11 +557,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             z = pcoord->x1v(i)*std::cos(pcoord->x2v(j));
             polar_dependence = std::sin(pcoord->x2v(j));
           }
-          rad = std::sqrt(SQR(x - x_0) + SQR(y - y_0) + SQR(z - z_0));
-          pfield->b.x3f(k,j,i) = b3*polar_dependence; //*sign;
-          if (rad >= inner_radius) {
-            pfield->b.x3f(k,j,i) *= (inner_radius/rad);
-          }
+	  if(import_1d_data) {
+            pfield->b.x3f(k,j,i) = Bcc3_1d[i-2]*polar_dependence; //*sign;
+	  } else {
+	    rad = std::sqrt(SQR(x - x_0) + SQR(y - y_0) + SQR(z - z_0));
+	    pfield->b.x3f(k,j,i) = b3*polar_dependence; //*sign;
+            if (rad >= inner_radius) {
+              pfield->b.x3f(k,j,i) *= (inner_radius/rad);
+            }
+	  }
         }
       }
     }
@@ -778,14 +852,14 @@ void CMEInnerX1(MeshBlock *pmb, Coordinates *pcoord,
     // std::stringstream msg;
     // msg << "### poopy" << std::endl;
     // ATHENA_ERROR(msg);
-    // add magnetic field contribution to total pressure
+    // add magnetic field contribution to total energy
     // using face averaged values
     if (NON_BAROTROPIC_EOS) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int gi=1; gi<=ngh; ++gi) {
-            prim(IPR,k,j,il-gi) += 0.5 * (SQR(0.5*(b.x1f(k,j,il-gi) + b.x1f(k,j,il-gi+1))) +
+            prim(IEN,k,j,il-gi) += 0.5 * (SQR(0.5*(b.x1f(k,j,il-gi) + b.x1f(k,j,il-gi+1))) +
                                          SQR(0.5*(b.x2f(k,j,il-gi) + b.x2f(k,j+1,il-gi))) +
                                          SQR(0.5*(b.x3f(k,j,il-gi) + b.x3f(k+1,j,il-gi)))
                                         );
