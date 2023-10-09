@@ -382,7 +382,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         } else { //if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
           // v2_inner is polar and v3_inner is azimuthal
           phydro->u(IM2,k,j,i) = phydro->u(IDN,k,j,i) * v2_inner * rad;
-          phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner * rad * std::sin(pcoord->x2v(k));
+          phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * v3_inner * rad * std::sin(pcoord->x2v(j));
         }
 
         if (NON_BAROTROPIC_EOS) {
@@ -668,7 +668,7 @@ void CMEInnerX1(MeshBlock *pmb, Coordinates *pcoord,
           prim(IVZ,k,j,il-gi) = v3_inner;
         } else { //if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
           prim(IVY,k,j,il-gi) = v2_inner * rad;
-          prim(IVZ,k,j,il-gi) = v3_inner * rad * std::sin(pcoord->x2v(k));
+          prim(IVZ,k,j,il-gi) = v3_inner * rad * std::sin(pcoord->x2v(j));
         }
 
         if (NON_BAROTROPIC_EOS) {
