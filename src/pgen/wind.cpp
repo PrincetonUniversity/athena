@@ -343,20 +343,20 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   wave_mult = pin->GetOrAddReal("problem", "wave_mult", 1.0);
 #endif
 
-  import_1d_data = pin->GetOrAddBooleanl("problem", "import_1d_data", false);
+  import_1d_data = pin->GetOrAddBoolean("problem", "import_1d_data", false);
 
   // setup uniform ambient medium
   // Modifies density, and energy (non-barotropic eos and relativistic dynamics)
   Real rad, den, energy, x, y, z;
  
-  if(import_1d_data) {
-    int nx=pin->GetReal("mesh", "nx1");
-    Real rho_1d[nx],press_1d[nx],vel1_1d[nx],vel2_1d[nx],vel3_1d[nx],Bcc1_1d[nx],Bcc2_1d[nx],Bcc3_1d[nx];
-    int tab_index = 0;
-    std::fstream datafile;
-    std::stringstream stream;
+  int nx=pin->GetReal("mesh", "nx1");
+  Real rho_1d[nx],press_1d[nx],vel1_1d[nx],vel2_1d[nx],vel3_1d[nx],Bcc1_1d[nx],Bcc2_1d[nx],Bcc3_1d[nx];
+  int tab_index = 0;
+  std::fstream datafile;
+  std::stringstream stream;
 
-    datafile.open("solar_wind_1d.tab",std::ios::in); //open a file to perform read operation using file object
+  if(import_1d_data) {
+    datafile.open("solar_wind.block0.out2.00001.tab",std::ios::in); //open a file to perform read operation using file object
     if (datafile.is_open()){ //checking whether the file is open
       std::string line;
       while(std::getline(datafile, line)){ //read data from file object and put it into string.
@@ -376,7 +376,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     } else {
       std::stringstream msg;
       msg << "### FATAL ERROR in wind1d.cpp ProblemGenerator" << std::endl
-          << "1d data file solar_wind_1d.tab doesn't exist" << std::endl;
+          << "1d data file solar_wind.block0.out2.00001.tab doesn't exist" << std::endl;
           ATHENA_ERROR(msg);
     }
   }
@@ -425,8 +425,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             phydro->u(IM3,k,j,i) = phydro->u(IDN,k,j,i) * vel3_1d[i-2] * std::sin(pcoord->x2v(j));
           }
 	} else {
-          phydro->u(IDN,k,j,i) = rho_1d[i-2];
-          phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i) * vel1_1d[i-2];
+          phydro->u(IDN,k,j,i) = den;
+          phydro->u(IM1,k,j,i) = phydro->u(IDN,k,j,i) * v1_inner;
 
           // currently assumes that inner velocities are given in same coordinate system
           // functions that generate values need to be functions if input

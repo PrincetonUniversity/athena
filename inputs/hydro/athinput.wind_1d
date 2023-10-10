@@ -1,0 +1,119 @@
+<comment>
+problem   = test problem spherical coord slice
+reference = making it up myself
+#configure = --prob=cme --cxx=g++ --ccmd=g++-10 --eos=adiabatic --flux hlld --coord=spherical_polar -hdf5 -omp -b --nghost 2 --hdf5_path=/home/krs/tools/spack/var/spack/environments/athena/.spack-env/view 
+#configure = --prob=wind1d --eos=adiabatic --flux hlld --coord=spherical_polar -hdf5 -mpi -b --nghost 2 --hdf5_path=/home/robert.arslanbekov/tools/spack/var/spack/environments/athena/.spack-env/view
+
+<job>
+problem_id = solar_wind     # problem ID: basename of output filenames
+
+<output2>
+file_type   = hst       # History data dump
+dt          = 0.0015    # time increment between outputs
+
+<output3>
+file_type   = tab
+variable    = prim
+x2_slice    = 1.570796326794897
+dt          = 0.6
+
+#<output3>
+#file_type  = hdf5       # Binary data dump
+#variable   = prim       # variables to be output
+#dt         = 0.002       # time increment between outputs
+#ghost_zones = 1        # include ghost zones
+
+<time>
+cfl_number = 0.4        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1         # cycle limit
+tlim       = 0.6        # time limit
+start_time = 0.0        # time at the beginning of new simulation
+integrator  = vl2       # time integration algorithm
+# vl2 (default) : second-order accurate van Leer predictor-corrector scheme
+# rk2 : second-order accurate Runge-Kutta/Heun's method
+# rk3 : third-order accurate Strong Stability Preserving (SSP) variant
+# rk4 : fourth-order accurate, four-stage, 2 storage register method RK4()4[2S] from Table 2 of Ketcheson (2010)
+# ssprk5_4 : fourth-order accurate, five-stage, 3 storage register, Strong Stability Preserving SSPRK(5,4) method
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 4         # interval for stdout summary info
+
+<mesh>
+#nx1        = 256        # Number of zones in X1-direction
+nx1        = 1024        # Number of zones in X1-direction
+x1min      = 0.05       # minimum value of X1
+x1max      = 2.        # maximum value of X1
+ix1_bc     = user       # inner-X1 boundary flag
+ox1_bc     = outflow    # outer-X1 boundary flag
+x1rat      = 1.0        # non-uniform grid ratio
+
+nx2        = 3               # Number of zones in X2-direction
+x2min      = 1.53588974176   # pi/2 - 2 deg  # minimum value of X2
+x2max      = 1.60570291183   # pi/2 + 2 deg  # maximum value of X2
+#x2min      = 1.569050997542902   # pi/2 - 0.1 deg
+#x2max      = 1.572541656046891   # pi/2 + 0.1 deg
+ix2_bc     = reflecting          # inner-X2 boundary flag
+ox2_bc     = reflecting          # outer-X2 boundary flag
+
+nx3        = 1            # Number of zones in X3-direction
+x3min      = 0.0            # minimum value of X3
+x3max      = 6.283185307179586  # maximum value of X3
+ix3_bc     = periodic       # Inner-X3 boundary condition flag
+ox3_bc     = periodic       # Outer-X3 boundary condition flag
+
+#num_threads = 8
+#num_threads = 1
+
+<meshblock>
+nx1        = 1024
+nx2        = 3
+nx3        = 1
+
+<hydro>
+gamma           = 1.666666666667 # gamma = C_p/C_v
+iso_sound_speed = 1.0 # isothermal sound speed
+
+<orbital_advection>
+OAorder    = 0        # 0: w/o OA, 1: w/ OA(1st), 2: w/ OA(2nd)
+Omega0     = 8.202656021    # angular velocity of the rotating system, normalized 2.87e-6*2858068.3
+
+<problem>
+compute_error = false   # check whether blast is spherical at end
+AU = 1.5e11
+eo = 1.6e-19
+# pi = 3.141592653589793116
+bo = 2.404e-9
+t_o = 2858068.3
+vo = 52483.25
+co = 3.0e8
+n_0 = 1.0e6
+m_p = 1.67E-27
+radius        = 0.05     # Radius of the inner sphere
+x1_0          = 0.     # r-coord of center of blast
+x2_0          = 0.     # theta-coord of center of blast
+x3_0          = 0.     # z-coord of center of blast
+r_measure       = 1.  # radius at initial values in [AU]
+n_measure       = 3.024   # number density at r_measure [#/cm^3]
+T_measure       = 0.001  # temperature at r_measure [MK]
+b_measure       = 2.123   # magnetic field initial value at r_measure [nT]
+b_measure_extra = 1.   # extra magnetic multiplier
+v_measure       = 293.72 # velocity solar wind [km/s] at r_measure
+v_measure_extra = 1.   # extra velocity multiplier
+omega_sun       = 2.87e-6 # sun rotational speed [rad/s]
+GM_sun          = 1.32712440018e20 # suns gravitational constant
+GM              = 0.321206 # normalized sun gravitational constant
+enable_gravity = false    # enable or disable suns gravity potential
+enable_user_dt = true     # enable user defined time step
+user_dt        = 0.01     # specify the minimum timestep
+
+CME_timestart_hrs = 396.954   #start CME [hours]
+CME_timespan_hrs = 0.     #duration CME [hours]
+
+#CME_density = 250         #number density CME [#/cm^3]
+CME_density = 4838.4         #number density CME [#/cm^3]
+CME_velocity = 3700.       #velocity CME [km/s]
+
+CME_phi_0 = 100.           # phi CME [deg]
+CME_phi_extent = 140.      # phi extent CME [deg]
+
+#wave_rad       = 0.26179938779 # radians for sign change in magnetic field
+#wave_mult      = 1.5 # oscillation frequency
