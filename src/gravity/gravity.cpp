@@ -52,6 +52,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   if (SELF_GRAVITY_ENABLED == 2) {
+    pmg = new MGGravity(pmb->pmy_mesh->pmgrd, pmb);
     output_defect = pin->GetOrAddBoolean("gravity", "output_defect", false);
     if (output_defect)
       def.NewAthenaArray(pmb->ncells3, pmb->ncells2, pmb->ncells1);
@@ -82,6 +83,14 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   pmb->pbval->pgbvar = &gbvar;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn Gravity::~Gravity()
+//! \brief Gravity destructor
+Gravity::~Gravity() {
+  if (SELF_GRAVITY_ENABLED == 2)
+    delete pmg;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn Gravity::SaveFaceBoundaries()

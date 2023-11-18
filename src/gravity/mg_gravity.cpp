@@ -168,7 +168,7 @@ void MGGravityDriver::Solve(int stage) {
   // Construct the Multigrid array
   vmg_.clear();
   for (int i = 0; i < pmy_mesh_->nblocal; ++i)
-    vmg_.push_back(pmy_mesh_->my_blocks(i)->pmg);
+    vmg_.push_back(pmy_mesh_->my_blocks(i)->pgrav->pmg);
 
   // load the source
 #pragma omp parallel for num_threads(nthreads_)

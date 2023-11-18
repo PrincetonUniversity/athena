@@ -218,8 +218,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-    if (SELF_GRAVITY_ENABLED == 2)
-      pmg = new MGGravity(pmy_mesh->pmgrd, this);
   }
   if (NSCALARS > 0) {
     // if (this->scalars_block)
@@ -418,8 +416,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
     // if (this->grav_block)
     pgrav = new Gravity(this, pin);
     pbval->AdvanceCounterPhysID(CellCenteredBoundaryVariable::max_phys_id);
-    if (SELF_GRAVITY_ENABLED == 2)
-      pmg = new MGGravity(pmy_mesh->pmgrd, this);
   }
 
   if (NSCALARS > 0) {
@@ -552,7 +548,6 @@ MeshBlock::~MeshBlock() {
   delete peos;
   delete porb;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
-  if (SELF_GRAVITY_ENABLED == 2) delete pmg;
   if (NSCALARS > 0) delete pscalars;
 
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) delete pnrrad;
