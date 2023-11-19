@@ -43,9 +43,9 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     nvar_(invar), mode_(0), // 0: FMG V(1,1) + iterative, 1: V(1,1) iterative
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
-    pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), needinit_(true),
-    eps_(-1.0), niter_(-1), coffset_(0), mporder_(-1), nmpcoeff_(0), mpo_(3),
-    autompo_(false), nodipole_(false), nb_rank_(0) {
+    pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), 
+    redblack_(true), needinit_(true), eps_(-1.0), niter_(-1), coffset_(0), mporder_(-1),
+    nmpcoeff_(0), mpo_(3), autompo_(false), nodipole_(false), nb_rank_(0) {
   std::cout << std::scientific << std::setprecision(15);
 
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
@@ -604,9 +604,11 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
     current_level_++;
     for (int n = 0; n < nsmooth; ++n) {
       SetBoundariesOctets(false, false);
-      SmoothOctets(0);
-      SetBoundariesOctets(false, false);
-      SmoothOctets(1);
+      SmoothOctets(coffset_);
+      if (redblack_) {
+        SetBoundariesOctets(false, false);
+        SmoothOctets(1-coffset_);
+      }
     }
   } else { // root grid
     mgroot_->pmgbval->ApplyPhysicalBoundaries();
@@ -614,9 +616,11 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
     current_level_++;
     for (int n = 0; n < nsmooth; ++n) {
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
-      mgroot_->SmoothBlock(0);
-      mgroot_->pmgbval->ApplyPhysicalBoundaries();
-      mgroot_->SmoothBlock(1);
+      mgroot_->SmoothBlock(coffset_);
+      if (redblack_) {
+        mgroot_->pmgbval->ApplyPhysicalBoundaries();
+        mgroot_->SmoothBlock(1-coffset_);
+      }
     }
   }
 
@@ -648,10 +652,12 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
       CalculateFASRHSOctets();
     }
     for (int n=0; n<nsmooth; ++n) {
-      SmoothOctets(0);
+      SmoothOctets(coffset_);
       SetBoundariesOctets(false, false);
-      SmoothOctets(1);
-      SetBoundariesOctets(false, false);
+      if (redblack_) {
+        SmoothOctets(1-coffset_);
+        SetBoundariesOctets(false, false);
+      }
     }
     RestrictOctets();
     if (!ffas_ && current_level_ == fmglevel_) {
@@ -665,10 +671,12 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
       mgroot_->CalculateFASRHSBlock();
     }
     for (int n = 0; n < nsmooth; ++n) {
-      mgroot_->SmoothBlock(0);
+      mgroot_->SmoothBlock(coffset_);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
-      mgroot_->SmoothBlock(1);
-      mgroot_->pmgbval->ApplyPhysicalBoundaries();
+      if (redblack_) {
+        mgroot_->SmoothBlock(1-coffset_);
+        mgroot_->pmgbval->ApplyPhysicalBoundaries();
+      }
     }
     mgroot_->RestrictBlock();
   }
@@ -802,10 +810,12 @@ void MultigridDriver::SolveCoarsestGrid() {
       mgroot_->CalculateFASRHSBlock();
     }
     for (int i = 0; i < ni; ++i) { // iterate ni times
-      mgroot_->SmoothBlock(0);
+      mgroot_->SmoothBlock(coffset_);
       mgroot_->pmgbval->ApplyPhysicalBoundaries();
-      mgroot_->SmoothBlock(1);
-      mgroot_->pmgbval->ApplyPhysicalBoundaries();
+      if (redblack_) {
+        mgroot_->SmoothBlock(1-coffset_);
+        mgroot_->pmgbval->ApplyPhysicalBoundaries();
+      }
     }
     if (fsubtract_average_) {
       Real vol=(mgroot_->size_.x1max-mgroot_->size_.x1min)

@@ -35,7 +35,7 @@
 //! \brief Gravity constructor
 Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), phi(pmb->ncells3, pmb->ncells2, pmb->ncells1),
-    coarse_phi(NHYDRO, pmb->ncc3, pmb->ncc2, pmb->ncc1,
+    coarse_phi(pmb->ncc3, pmb->ncc2, pmb->ncc1,
               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                AthenaArray<Real>::DataStatus::empty)),
     empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},

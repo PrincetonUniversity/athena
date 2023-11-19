@@ -45,6 +45,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
   eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("gravity", "fas", ffas_);
+  redblack_ = true;
   std::string m = pin->GetOrAddString("gravity", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
   if (m == "fmg") {
