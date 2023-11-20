@@ -91,6 +91,7 @@
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../cr/cr.hpp"
+#include "../crdiffusion/crdiffusion.hpp"
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
@@ -350,6 +351,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   Field *pfld = pmb->pfield;
   NRRadiation *prad=pmb->pnrrad;
   CosmicRay *pcr=pmb->pcr;
+  CRDiffusion *pcrdiff=pmb->pcrdiff;
   PassiveScalars *psclr = pmb->pscalars;
   Gravity *pgrav = pmb->pgrav;
   OrbitalAdvection *porb = pmb->porb;
@@ -1046,6 +1048,28 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   }// end Cosmic Rays
 
+  if (CRDIFFUSION_ENABLED) {
+    if (ContainVariable(output_params.variable, "ecr") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "ecr";
+      pod->data.InitWithShallowSlice(pcrdiff->ecr,4,0,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+    if (ContainVariable(output_params.variable, "zeta") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "ecr";
+      pod->data.InitWithShallowSlice(pcrdiff->zeta,4,0,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+  }
 
 
 

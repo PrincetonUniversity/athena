@@ -145,8 +145,8 @@ MGGravityDriver::~MGGravityDriver() {
 //! \brief MGGravity constructor
 
 MGGravity::MGGravity(MultigridDriver *pmd, MeshBlock *pmb) : Multigrid(pmd, pmb, 1, 1) {
-  btype = BoundaryQuantity::mggrav;
-  btypef = BoundaryQuantity::mggrav_f;
+  btype = BoundaryQuantity::mg;
+  btypef = BoundaryQuantity::mg_faceonly;
   pmgbval = new MGGravityBoundaryValues(this, mg_block_bcs_);
 }
 

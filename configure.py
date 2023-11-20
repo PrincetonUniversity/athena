@@ -40,6 +40,7 @@
 #   -nr_radiation        turn on non-relativistic radiation transport
 #   -implicit_radiation  implicit radiation transport module
 #   -cr                  enable cosmic ray transport
+#   -crdiff              enable cosmic ray transport
 # ----------------------------------------------------------------------------------------
 
 # Modules
@@ -225,6 +226,12 @@ parser.add_argument('-cr',
                     action='store_true',
                     default=False,
                     help='enable cosmic ray transport')
+
+# -cosmic ray diffusion argument
+parser.add_argument('-crdiff',
+                    action='store_true',
+                    default=False,
+                    help='enable implicit cosmic ray diffusion')
 
 # The main choices for --cxx flag, using "ctype[-suffix]" formatting, where "ctype" is the
 # major family/suite/group of compilers and "suffix" may represent variants of the
@@ -496,6 +503,12 @@ if args['cr']:
     definitions['NCR_VARIABLES'] = '4'
 else:
     definitions['CR_ENABLED'] = '0'
+
+# -crdiff argument
+if args['crdiff']:
+    definitions['CRDIFFUSION_ENABLED'] = '1'
+else:
+    definitions['CRDIFFUSION_ENABLED'] = '0'
 
 
 # --cxx=[name] argument
@@ -893,6 +906,7 @@ output_config('General relativity', ('ON' if args['g'] else 'OFF'), flog)
 output_config('Radiative Transfer', ('ON' if args['nr_radiation'] else 'OFF'), flog)
 output_config('Implicit Radiation', ('ON' if args['implicit_radiation'] else 'OFF'), flog)
 output_config('Cosmic Ray Transport', ('ON' if args['cr'] else 'OFF'), flog)
+output_config('Cosmic Ray Diffusion', ('ON' if args['crdiff'] else 'OFF'), flog)
 output_config('Frame transformations', ('ON' if args['t'] else 'OFF'), flog)
 output_config('Self-Gravity', self_grav_string, flog)
 output_config('Super-Time-Stepping', ('ON' if args['sts'] else 'OFF'), flog)

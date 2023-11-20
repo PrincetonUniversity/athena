@@ -1863,6 +1863,20 @@ void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
+//                            AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse)
+//! \brief prolongate octet boundaries using the flux conservation formula
+//         for the base class (just call the normal version)
+
+void MultigridDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
+                      AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse) {
+  ProlongateOctetBoundaries(dst,dst,cbuf,cbuf,ncoarse,false);
+  return;
+}
+
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::AllocateMultipoleCoefficients()
 //  \brief Allocate arrays for multipole expansion coefficients
 

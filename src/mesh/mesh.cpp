@@ -31,6 +31,7 @@
 #include "../bvals/bvals.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../cr/cr.hpp"
+#include "../crdiffusion/crdiffusion.hpp"
 #include "../eos/eos.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../fft/turbulence.hpp"
@@ -1533,6 +1534,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (CR_ENABLED) {
           pmb->pcr->cr_bvar.SendBoundaryBuffers();
         }
+        if (CRDIFFUSION_ENABLED) {
+          pmb->pcrdiff->crbvar.SendBoundaryBuffers();
+        }
       }
       // wait to receive conserved variables
 #pragma omp for private(pmb,pbval)
@@ -1548,6 +1552,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->pnrrad->rad_bvar.ReceiveAndSetBoundariesWithWait();
         if (CR_ENABLED)
           pmb->pcr->cr_bvar.ReceiveAndSetBoundariesWithWait();
+        if (CRDIFFUSION_ENABLED)
+          pmb->pcrdiff->crbvar.ReceiveAndSetBoundariesWithWait();
 
         if (shear_periodic && orbital_advection==0) {
           pmb->phydro->hbvar.AddHydroShearForInit();
@@ -2068,7 +2074,7 @@ void Mesh::ReserveMeshBlockPhysIDs() {
     ReserveTagPhysIDs(FaceCenteredBoundaryVariable::max_phys_id);
   }
   if (SELF_GRAVITY_ENABLED) {
-    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+    ReserveTagPhysIDs(1);
   }
   if (NSCALARS > 0) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
@@ -2078,6 +2084,8 @@ void Mesh::ReserveMeshBlockPhysIDs() {
     ReserveTagPhysIDs(RadBoundaryVariable::max_phys_id);
   if (CR_ENABLED)
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+  if (CRDIFFUSION_ENABLED)
+    ReserveTagPhysIDs(1);
 
 #endif
   return;

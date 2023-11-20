@@ -49,7 +49,7 @@ class MGBoundaryValues : public BoundaryBase {
   bool SendMultigridBoundaryBuffers(BoundaryQuantity type, bool folddata);
   bool ReceiveMultigridBoundaryBuffers(BoundaryQuantity type, bool folddata);
   void ProlongateMultigridBoundaries(bool folddata);
-  void ProlongateMultigridBoundariesFluxCons();
+  virtual void ProlongateMultigridBoundariesFluxCons();
 
   virtual void DispatchBoundaryFunction(BoundaryFace face, AthenaArray<Real> &dst,
        Real time, int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -82,13 +82,13 @@ class MGBoundaryValues : public BoundaryBase {
   //!@{
   //! functions specific to physics
   virtual int LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,
-                                                           const NeighborBlock& nb) = 0;
+                                                           const NeighborBlock& nb);
   virtual int LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
-                                                         const NeighborBlock& nb) = 0;
+                                                         const NeighborBlock& nb);
   virtual void SetMultigridBoundaryFromCoarserFluxCons(const Real *buf,
-                                                       const NeighborBlock& nb) = 0;
+                                                       const NeighborBlock& nb);
   virtual void SetMultigridBoundaryFromFinerFluxCons(const Real *buf,
-                                                     const NeighborBlock& nb) = 0;
+                                                     const NeighborBlock& nb);
   //!@}
   friend class Multigrid;
   friend class MultigridDriver;
@@ -102,7 +102,9 @@ class MGBoundaryValues : public BoundaryBase {
 class MGGravityBoundaryValues : public MGBoundaryValues {
  public:
   MGGravityBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
-    : MGBoundaryValues(pmg, input_bcs) {}
+    : MGBoundaryValues(pmg, input_bcs) {};
+  void ProlongateMultigridBoundariesFluxCons();
+
  private:
   int LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,
                                                    const NeighborBlock& nb) final;

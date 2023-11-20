@@ -70,9 +70,9 @@ class Multigrid {
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
-  // KGF: Both btype=BoundaryQuantity::mggrav and btypef=BoundaryQuantity::mggrav_f (face
+  // KGF: Both btype=BoundaryQuantity::mg and btypef=BoundaryQuantity::mg_faceonly (face
   // neighbors only) are passed to comm function calls in mg_task_list.cpp Only
-  // BoundaryQuantity::mggrav is handled in a case in InitBoundaryData(). Passed directly
+  // BoundaryQuantity::mg is handled in a case in InitBoundaryData(). Passed directly
   // (not through btype) in MGBoundaryValues() ctor
   BoundaryQuantity btype, btypef;
 
@@ -131,6 +131,7 @@ class Multigrid {
   friend class MGBoundaryValues;
   friend class MGGravityBoundaryValues;
   friend class MGGravityDriver;
+  friend class MGCRDiffusionDriver;
 
  protected:
   MultigridDriver *pmy_driver_;
@@ -166,6 +167,7 @@ class MultigridDriver {
   friend class MGGravity;
   friend class MGBoundaryValues;
   friend class MGGravityBoundaryValues;
+  friend class MGCRDiffusion;
 
  protected:
   void CheckBoundaryFunctions();
@@ -223,7 +225,7 @@ class MultigridDriver {
 
   // pure virtual functions
   virtual void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
-               AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse) = 0;
+               AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse);
 
   int nranks_, nthreads_, nbtotal_, nvar_, mode_;
   int locrootlevel_, nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;

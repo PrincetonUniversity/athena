@@ -48,6 +48,7 @@ class Hydro;
 class NRRadiation;
 class IMRadiation;
 class CosmicRay;
+class CRDiffusion;
 class Field;
 class Particles;
 class PassiveScalars;
@@ -120,6 +121,7 @@ class MeshBlock {
   Hydro *phydro;
   NRRadiation *pnrrad;
   CosmicRay *pcr;
+  CRDiffusion *pcrdiff;
   Field *pfield;
   Gravity *pgrav;
   PassiveScalars *pscalars;
@@ -215,6 +217,7 @@ class Mesh {
   friend class TurbulenceDriver;
   friend class MultigridDriver;
   friend class MGGravityDriver;
+  friend class MGCRDiffusionDriver;
   friend class Gravity;
   friend class HydroDiffusion;
   friend class FieldDiffusion;
@@ -345,7 +348,9 @@ class Mesh {
   FieldDiffusionCoeffFunc FieldDiffusivity_;
   OrbitalVelocityFunc OrbitalVelocity_, OrbitalVelocityDerivative_[2];
   MGBoundaryFunc MGGravityBoundaryFunction_[6];
+  MGBoundaryFunc MGCRDiffusionBoundaryFunction_[6];
   MGSourceMaskFunc MGGravitySourceMaskFunction_;
+  MGSourceMaskFunc MGCRDiffusionSourceMaskFunction_;
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
