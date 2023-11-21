@@ -42,6 +42,7 @@ class MGCRDiffusion : public Multigrid {
 
   void LoadCoefficients(const AthenaArray<Real> &D,
                         const AthenaArray<Real> &nlambda, int ngh);
+  void RestrictCoefficients();
 
   friend class MGCRDiffusionDriver;
 

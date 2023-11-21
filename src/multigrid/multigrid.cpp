@@ -256,7 +256,8 @@ void Multigrid::RestrictFMGSource() {
   for (current_level_=nlevel_-1; current_level_>0; current_level_--) {
     int ll=nlevel_-current_level_;
     ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
-    Restrict(src_[current_level_-1], src_[current_level_], is, ie, js, je, ks, ke, false);
+    Restrict(src_[current_level_-1], src_[current_level_],
+             nvar_, is, ie, js, je, ks, ke, false);
   }
   return;
 }
@@ -341,11 +342,13 @@ void Multigrid::RestrictBlock() {
   is=js=ks=ngh_;
   ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
 
-  Restrict(src_[current_level_-1], def_[current_level_], is, ie, js, je, ks, ke, th);
+  Restrict(src_[current_level_-1], def_[current_level_],
+           nvar_, is, ie, js, je, ks, ke, th);
 
   // Full Approximation Scheme - restrict the variable itself
   if (pmy_driver_->ffas_)
-    Restrict(u_[current_level_-1], u_[current_level_], is, ie, js, je, ks, ke, th);
+    Restrict(u_[current_level_-1], u_[current_level_],
+             nvar_, is, ie, js, je, ks, ke, th);
 
   current_level_--;
 
@@ -678,13 +681,13 @@ void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-//                               int il, int iu, int jl, int ju, int kl, int ku, bool th)
+//                      int nvar, int il, int iu, int jl, int ju, int kl, int ku, bool th)
 //  \brief Actual implementation of prolongation and correction
 
 void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                         int il, int iu, int jl, int ju, int kl, int ku, bool th) {
+                int nvar, int il, int iu, int jl, int ju, int kl, int ku, bool th) {
   if (th == true && (ku-kl) >=  minth_) {
-    for (int v=0; v<nvar_; ++v) {
+    for (int v=0; v<nvar; ++v) {
 #pragma omp parallel for num_threads(pmy_driver_->nthreads_)
       for (int k=kl; k<=ku; ++k) {
         int fk = 2*k - kl;
@@ -702,7 +705,7 @@ void Multigrid::Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
       }
     }
   } else {
-    for (int v=0; v<nvar_; ++v) {
+    for (int v=0; v<nvar; ++v) {
       for (int k=kl; k<=ku; ++k) {
         int fk = 2*k - kl;
         for (int j=jl; j<=ju; ++j) {

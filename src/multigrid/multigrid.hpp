@@ -110,7 +110,7 @@ class Multigrid {
 
   // actual implementations of Multigrid operations
   void Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                int il, int iu, int jl, int ju, int kl, int ku, bool th);
+                int nvar, int il, int iu, int jl, int ju, int kl, int ku, bool th);
   void ProlongateAndCorrect(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
     int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl, bool th);
   void FMGProlongate(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
@@ -283,17 +283,26 @@ struct MGCoordinates {
 };
 
 
-//! \struct MGOctet
+//! \class MGOctet
 //  \brief structure containing eight (+ ghost) cells for Mesh Refinement
 
-struct MGOctet {
+class MGOctet {
  public:
   LogicalLocation loc;
   bool fleaf;
   AthenaArray<Real> u, def, src, uold;
   MGCoordinates coord, ccoord;
+
+  virtual void AllocateOctet(int nvar, int ncoct, int nccoct, bool ffas);
 };
 
+
+inline Real RestrictOne(const AthenaArray<Real> &src, int v, int fi, int fj, int fk) {
+  return 0.125*(src(v, fk,   fj,   fi)+src(v, fk,   fj,   fi+1)
+               +src(v, fk,   fj+1, fi)+src(v, fk,   fj+1, fi+1)
+               +src(v, fk+1, fj,   fi)+src(v, fk+1, fj,   fi+1)
+               +src(v, fk+1, fj+1, fi)+src(v, fk+1, fj+1, fi+1));
+}
 
 
 // Multigrid Boundary functions

@@ -132,6 +132,49 @@ MGCRDiffusion::~MGCRDiffusion() {
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void MGCRDiffusionDriver::RestrictCoefficientsOctets()
+//! \brief restrict coefficients in Octets for the CR diffusion equation
+
+void MGCRDiffusionDriver::RestrictCoefficients() {
+  if (nreflevel_ > 0) {
+    const int &ngh = mgroot_->ngh_;
+    for (int l = nreflevel_ - 1; l >= 1; --l) {  // fine octets to coarse octets
+#pragma omp parallel for num_threads(nthreads_)
+      for (int o = 0; o < noctets_[l]; ++o) {
+        const LogicalLocation &loc = octets_[l][o].loc;
+        LogicalLocation cloc;
+        cloc.lx1 = (loc.lx1 >> 1);
+        cloc.lx2 = (loc.lx2 >> 1);
+        cloc.lx3 = (loc.lx3 >> 1);
+        cloc.level = loc.level - 1;
+        int oid = octetmap_[l-1][cloc];
+        int oi = (static_cast<int>(loc.lx1) & 1) + ngh;
+        int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
+        int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
+        
+/*        for (int v = 0; v < NCOEFF; ++v)
+          octets_[l-1][oid].D_(v, ok, oj, oi) = RestrictOne(octets_[l][o].D_,
+                                                            v, ngh, ngh, ngh);
+        octets_[l-1][oid].nlambda_(ok, oj, oi) = RestrictOne(octets_[l][o].nlambda_,
+                                                             0, ngh, ngh, ngh);*/
+
+      }
+    }
+#pragma omp parallel for num_threads(nthreads_)
+    for (int o = 0; o < noctets_[0]; ++o) { // octets to the root grid
+      const LogicalLocation &loc = octets_[0][o].loc;
+      
+//      for (int v = 0; v < nvar_; ++v)
+//        Real r = RestrictOne(octets_[0][o].D_, v, ngh, ngh, ngh);//******
+    }
+  }
+
+  return;
+
+}
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void MGCRDiffusionDriver::Solve(int stage)
 //! \brief load the data and solve
 
@@ -177,6 +220,25 @@ void MGCRDiffusionDriver::Solve(int stage) {
 
   crtlist_->DoTaskListOneStage(pmy_mesh_, stage);
 
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGCRDiffusion::RestrictCoefficients()
+//! \brief restrict coefficients within a MGCRDiffusion object
+
+void MGCRDiffusion::RestrictCoefficients() {
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  for (current_level_=nlevel_-1; current_level_>0; current_level_--) {
+    int ll=nlevel_-current_level_;
+    ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
+    Restrict(D_[current_level_-1], D_[current_level_],
+             NCOEFF, is, ie, js, je, ks, ke, false);
+    Restrict(nlambda_[current_level_-1], nlambda_[current_level_],
+             1, is, ie, js, je, ks, ke, false);
+  }
   return;
 }
 
