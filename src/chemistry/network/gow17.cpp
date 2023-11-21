@@ -396,7 +396,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   // hydrogen atom number density
   nH_ =  rho;
   // average radiation field of all angles
-  // TODO(Munan Gong): put floor on radiation variables?
+  // TODO(Gong): put floor on radiation variables?
   for (int ifreq=0; ifreq < n_freq_; ++ifreq) {
     rad_sum = 0;
     // radiation
@@ -417,7 +417,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
     }
   }
   // CO cooling paramters
-  // TODO(Munan Gong): for six-ray, this should be in the right units
+  // for six-ray, this should be in the right units
   SetGrad_v(k, j, i);
   return;
 }

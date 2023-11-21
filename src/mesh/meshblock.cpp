@@ -242,9 +242,6 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   if (CHEMRADIATION_ENABLED) {
     pchemrad = new ChemRadiation(this, pin);
-    //TODO(Munan Gong): this is only for six-ray radiation, and would not be necessary
-    //for local (e.g. constant) radiation treatment. Also later probably this need to be
-    //generalized to other radiation treatment.
     pbval->AdvanceCounterPhysID(SixRayBoundaryVariable::max_phys_id);
   } else {
     pchemrad = NULL;

@@ -12,7 +12,7 @@ RSOLVER_DIR = @RSOLVER_DIR@
 MPIFFT_FILE = @MPIFFT_FILE@
 CHEMNET_FILE = @CHEMNET_FILE@
 CHEMISTRY_FILE = @CHEMISTRY_FILE@
-ODE_SOLVER_FILE = @ODE_SOLVER_FILE@
+CHEM_ODE_SOLVER_FILE = @CHEM_ODE_SOLVER_FILE@
 CHEMRADIATION_FILE = @CHEMRADIATION_FILE@
 
 # General compiler specifications
@@ -46,7 +46,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     src/eos/eos_scalars.cpp \
 	     $(wildcard $(CHEMISTRY_FILE)) \
 	     $(CHEMNET_FILE) \
-	     $(wildcard src/chemistry/$(ODE_SOLVER_FILE)) \
+	     $(wildcard src/chemistry/$(CHEM_ODE_SOLVER_FILE)) \
 	     $(wildcard src/chem_rad/*.cpp) \
 	     $(wildcard src/chem_rad/integrators/$(CHEMRADIATION_FILE)) \
 	     $(wildcard src/fft/*.cpp) \
