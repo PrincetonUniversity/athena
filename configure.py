@@ -32,7 +32,7 @@
 #   --grav=xxx        use xxx as the self-gravity solver
 #   --chemistry=xxx   enable chemistry, use xxx as chemical network
 #   --kida_rates=xxx  add special rates xxx to kida network
-#   --ode_solver=xxx  ode solver xxx for chemistry
+#   --chem_ode_solver=xxx  ode solver xxx for chemistry
 #   --cvode_path=path path to CVODE libraries (cvode solver requires the library)
 #   --chem_radiation=xxx  enable radiative transfer, use xxx for integrator
 #   --cxx=xxx         use xxx as the C++ compiler (works w/ or w/o -mpi)
@@ -220,8 +220,8 @@ parser.add_argument('--chem_radiation',
                     choices=["const", "six_ray"],
                     help='enable and select radiative transfer method for chemistry')
 
-# --ode_solver argument
-parser.add_argument('--ode_solver',
+# --chem_ode_solver argument
+parser.add_argument('--chem_ode_solver',
                     default=None,
                     choices=["cvode", "forward_euler"],
                     help='ode solver for chemistry')
@@ -412,10 +412,10 @@ if args['eos'][:8] == 'general/':
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
-if args['chemistry'] is None and args['ode_solver'] is not None:
+if args['chemistry'] is None and args['chem_ode_solver'] is not None:
     raise SystemExit('### CONFIGURE ERROR: must choose chemistry network for ode solver.')
 
-if args['chemistry'] is not None and args['ode_solver'] is None:
+if args['chemistry'] is not None and args['chem_ode_solver'] is None:
     raise SystemExit('### CONFIGURE ERROR: must choose ode solver for chemistry.')
 
 if args['chemistry'] == 'kida' and args['kida_rates'] is None:
@@ -426,7 +426,7 @@ if args['chem_radiation'] == 'six_ray' and (
     raise SystemExit('### CONFIGURE ERROR: six ray radiation'
                      + 'only compatible with gow17 or kida chemistry enabled.')
 
-if args['ode_solver'] == 'cvode' and args['cvode_path'] == '':
+if args['chem_ode_solver'] == 'cvode' and args['cvode_path'] == '':
     raise SystemExit('### CONFIGURE ERROR: must provide library path to cvode.')
 
 if args['g'] and (args['nr_radiation'] or args['implicit_radiation']):
@@ -735,16 +735,16 @@ if args['kida_rates'] is not None:
             + args['kida_rates']
             + '.cpp')
 
-# --ode_solver=[solver] argument
-if args['ode_solver'] == 'cvode':
+# --chem_ode_solver=[solver] argument
+if args['chem_ode_solver'] == 'cvode':
     definitions['CVODE_OPTION'] = 'CVODE'
     makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
 else:
     definitions['CVODE_OPTION'] = 'NO_CVODE'
-if args['ode_solver'] is not None:
-    makefile_options['ODE_SOLVER_FILE'] = args['ode_solver']+'.cpp'
+if args['chem_ode_solver'] is not None:
+    makefile_options['CHEM_ODE_SOLVER_FILE'] = args['chem_ode_solver']+'.cpp'
 else:
-    makefile_options['ODE_SOLVER_FILE'] = 'forward_euler.cpp'
+    makefile_options['CHEM_ODE_SOLVER_FILE'] = 'forward_euler.cpp'
 
 # --cvode_path=[path] argument
 if args['cvode_path'] != '':
@@ -1034,8 +1034,8 @@ output_config('KIDA rates', (args['kida_rates']
                              if args['kida_rates'] is not None else 'OFF'), flog)
 output_config('ChemRadiation', (args['chem_radiation']
                                 if args['chem_radiation'] is not None else 'OFF'), flog)
-output_config('ode_solver', (args['ode_solver']
-                             if args['ode_solver'] is not None else 'OFF'), flog)
+output_config('chem_ode_solver', (args['chem_ode_solver']
+                             if args['chem_ode_solver'] is not None else 'OFF'), flog)
 output_config('Debug flags', ('ON' if args['debug'] else 'OFF'), flog)
 output_config('Code coverage flags', ('ON' if args['coverage'] else 'OFF'), flog)
 output_config('Linker flags', makefile_options['LINKER_FLAGS'] + ' '

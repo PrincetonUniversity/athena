@@ -21,7 +21,7 @@ def prepare(**kwargs):
     athena.configure(
         prob='chem_G14Sod',
         chemistry='G14Sod',
-        ode_solver='cvode',
+        chem_ode_solver='cvode',
         cxx=cxx,
         # cflag='-std=c++14',
         cvode_path=os.environ['CVODE_PATH']

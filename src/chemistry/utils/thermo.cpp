@@ -577,11 +577,9 @@ Real Thermo::CoolingOI(const Real xOI, const Real nHI,
 //! Cooling rate for CO rotational lines in erg H^-1 s^-1
 Real Thermo::CoolingCOR(const Real xCO, const Real nHI, const Real nH2,
                           const Real ne, const Real temp, const Real NCOeff) {
-  // effective number density of colliders
-  // TODO(Munan Gong): potentially can use despotic to generate a more accurate
-  // value for interpolation, might be faster too
-  // TODO(Munan Gong): need to take care for T>2000K
-  //factor to make the cooling rate goes to zero at T=0.
+  //effective number density of colliders
+  //TODO(Gong): potentially can use despotic to generate a more accurate
+  //value for interpolation, might be faster too
   const Real Tmax_CO = 2000.; //maximum temperature above which use Tmax
   Real T = 0;
   if (temp < Tmax_CO) {
@@ -589,6 +587,7 @@ Real Thermo::CoolingCOR(const Real xCO, const Real nHI, const Real nH2,
   } else {
     T = Tmax_CO;
   }
+  //factor to make the cooling rate goes to zero at T=0.
   const Real facT = std::pow(1. - std::exp(-T), 1.0e3);
   //small number for a very small NCOeff
   const Real eps = 1.0e13;

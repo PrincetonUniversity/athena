@@ -22,7 +22,7 @@ def prepare(**kwargs):
     athena.configure(
         prob='chem_uniform',
         chemistry='H2',
-        ode_solver='forward_euler',
+        chem_ode_solver='forward_euler',
         cxx=cxx,
         eos='isothermal'
         )

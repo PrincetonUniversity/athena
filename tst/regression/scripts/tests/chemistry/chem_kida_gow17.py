@@ -23,7 +23,7 @@ def prepare(**kwargs):
     athena.configure(
         prob='chem_uniform',
         chemistry='kida',
-        ode_solver='cvode',
+        chem_ode_solver='cvode',
         nspecies='18',
         kida_rates='gow17',
         chem_radiation='const',

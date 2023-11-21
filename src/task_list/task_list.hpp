@@ -301,92 +301,91 @@ const TaskID CLEAR_ALLBND(1);
 const TaskID CALC_HYDFLX(2);
 const TaskID CALC_FLDFLX(3);
 const TaskID CALC_RADFLX(4);
-const TaskID CALC_CHMFLX(5);
 
-const TaskID SEND_HYDFLX(6);
-const TaskID SEND_FLDFLX(7);
-const TaskID SEND_RADFLX(8);
-const TaskID SEND_CRTCFLX(9);
+const TaskID SEND_HYDFLX(5);
+const TaskID SEND_FLDFLX(6);
+const TaskID SEND_RADFLX(7);
+const TaskID SEND_CRTCFLX(8);
 
-const TaskID RECV_HYDFLX(10);
-const TaskID RECV_FLDFLX(11);
-const TaskID RECV_RADFLX(12);
-const TaskID RECV_CRTCFLX(13);
+const TaskID RECV_HYDFLX(9);
+const TaskID RECV_FLDFLX(10);
+const TaskID RECV_RADFLX(11);
+const TaskID RECV_CRTCFLX(12);
 
-const TaskID SRC_TERM(14);
-const TaskID SRCTERM_CRTC(15);
-const TaskID SRCTERM_RAD(16);
+const TaskID SRC_TERM(13);
+const TaskID SRCTERM_CRTC(14);
+const TaskID SRCTERM_RAD(15);
 
-const TaskID INT_CRTC(17);
-const TaskID INT_HYD(18);
-const TaskID INT_FLD(19);
-const TaskID INT_RAD(20);
-const TaskID INT_CHM(21);
+const TaskID INT_CRTC(16);
+const TaskID INT_HYD(17);
+const TaskID INT_FLD(18);
+const TaskID INT_RAD(19);
+const TaskID INT_CHM(20);
 
-const TaskID SEND_CRTC(22);
-const TaskID SEND_HYD(23);
-const TaskID SEND_FLD(24);
-const TaskID SEND_RAD(25);
+const TaskID SEND_CRTC(21);
+const TaskID SEND_HYD(22);
+const TaskID SEND_FLD(23);
+const TaskID SEND_RAD(24);
 
-const TaskID RECV_CRTC(26);
-const TaskID RECV_HYD(27);
-const TaskID RECV_FLD(28);
-const TaskID RECV_RAD(29);
+const TaskID RECV_CRTC(25);
+const TaskID RECV_HYD(26);
+const TaskID RECV_FLD(27);
+const TaskID RECV_RAD(28);
 
-const TaskID SETB_CRTC(30);
-const TaskID SETB_HYD(31);
-const TaskID SETB_FLD(32);
-const TaskID SETB_RAD(33);
-const TaskID CALC_CRTCFLX(34);
+const TaskID SETB_CRTC(29);
+const TaskID SETB_HYD(30);
+const TaskID SETB_FLD(31);
+const TaskID SETB_RAD(32);
+const TaskID CALC_CRTCFLX(33);
 
-const TaskID PROLONG(35);
-const TaskID CONS2PRIM(36);
-const TaskID PHY_BVAL(37);
-const TaskID USERWORK(38);
-const TaskID NEW_DT(39);
-const TaskID FLAG_AMR(40);
+const TaskID PROLONG(34);
+const TaskID CONS2PRIM(35);
+const TaskID PHY_BVAL(36);
+const TaskID USERWORK(37);
+const TaskID NEW_DT(38);
+const TaskID FLAG_AMR(39);
 
-const TaskID SEND_HYDFLXSH(41);
-const TaskID SEND_HYDSH(42);
-const TaskID SEND_EMFSH(43);
-const TaskID SEND_FLDSH(44);
-const TaskID RECV_HYDFLXSH(45);
-const TaskID RECV_HYDSH(46);
-const TaskID RECV_EMFSH(47);
-const TaskID RECV_FLDSH(48);
+const TaskID SEND_HYDFLXSH(40);
+const TaskID SEND_HYDSH(41);
+const TaskID SEND_EMFSH(42);
+const TaskID SEND_FLDSH(43);
+const TaskID RECV_HYDFLXSH(44);
+const TaskID RECV_HYDSH(45);
+const TaskID RECV_EMFSH(46);
+const TaskID RECV_FLDSH(47);
 
-const TaskID DIFFUSE_HYD(49);
-const TaskID DIFFUSE_FLD(50);
+const TaskID DIFFUSE_HYD(48);
+const TaskID DIFFUSE_FLD(49);
 
-const TaskID CALC_SCLRFLX(51);
-const TaskID SEND_SCLRFLX(52);
-const TaskID RECV_SCLRFLX(53);
-const TaskID INT_SCLR(54);
-const TaskID SEND_SCLR(55);
-const TaskID RECV_SCLR(56);
-const TaskID SETB_SCLR(57);
-const TaskID DIFFUSE_SCLR(58);
-const TaskID SEND_SCLRFLXSH(59);
-const TaskID SEND_SCLRSH(60);
-const TaskID RECV_SCLRFLXSH(61);
-const TaskID RECV_SCLRSH(62);
+const TaskID CALC_SCLRFLX(50);
+const TaskID SEND_SCLRFLX(51);
+const TaskID RECV_SCLRFLX(52);
+const TaskID INT_SCLR(53);
+const TaskID SEND_SCLR(54);
+const TaskID RECV_SCLR(55);
+const TaskID SETB_SCLR(56);
+const TaskID DIFFUSE_SCLR(57);
+const TaskID SEND_SCLRFLXSH(58);
+const TaskID SEND_SCLRSH(59);
+const TaskID RECV_SCLRFLXSH(60);
+const TaskID RECV_SCLRSH(61);
 
-const TaskID SEND_HYDORB(63);
-const TaskID RECV_HYDORB(64);
-const TaskID CALC_HYDORB(65);
-const TaskID SEND_FLDORB(66);
-const TaskID RECV_FLDORB(67);
-const TaskID CALC_FLDORB(68);
+const TaskID SEND_HYDORB(62);
+const TaskID RECV_HYDORB(63);
+const TaskID CALC_HYDORB(64);
+const TaskID SEND_FLDORB(65);
+const TaskID RECV_FLDORB(66);
+const TaskID CALC_FLDORB(67);
 
-const TaskID CRTC_OPACITY(69);
-const TaskID RAD_MOMOPACITY(70);
+const TaskID CRTC_OPACITY(68);
+const TaskID RAD_MOMOPACITY(69);
 
-const TaskID SEND_RADFLXSH(71);
-const TaskID RECV_RADFLXSH(72);
-const TaskID SEND_RADSH(73);
-const TaskID RECV_RADSH(74);
+const TaskID SEND_RADFLXSH(70);
+const TaskID RECV_RADFLXSH(71);
+const TaskID SEND_RADSH(72);
+const TaskID RECV_RADSH(73);
 
-const TaskID SRCTERM_IMRAD(75);
+const TaskID SRCTERM_IMRAD(74);
 
 }  // namespace HydroIntegratorTaskNames
 #endif  // TASK_LIST_TASK_LIST_HPP_

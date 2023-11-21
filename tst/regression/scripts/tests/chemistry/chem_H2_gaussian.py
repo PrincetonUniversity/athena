@@ -20,7 +20,7 @@ def prepare(**kwargs):
     athena.configure(
         prob='chem_H2',
         chemistry='H2',
-        ode_solver='cvode',
+        chem_ode_solver='cvode',
         cxx=cxx,
         eos='isothermal',
         nghost='3',

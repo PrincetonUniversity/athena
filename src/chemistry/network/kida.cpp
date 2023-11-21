@@ -783,15 +783,12 @@ Real ChemNetwork::Edot(const Real t, const Real *y, const Real ED) {
 void ChemNetwork::Jacobian_isothermal(const Real t, const Real *y,
                                       const Real *ydot,
                                       AthenaArray<Real> &jac) {
-  // TODO(Munan Gong): check Jacobian by comparing the numerical to the analytic
-  // (does this mean Jacobian can be kind of approximate and not exact?)
-
   Real rate = 0;
   Real y_ices, Nl; // for desorption reactions
   const Real eps = 1e-50;
   const int i_H2 = ispec_map_["H2"];
   const Real xi = rad_(index_cr_);
-  // initialize TODO(Munan Gong):check if this is necessary
+  // initialize
   for (int i=0; i<NSPECIES; i++) {
     for (int j=0; j<NSPECIES; j++) {
       jac(i,j) = 0.;
@@ -1655,7 +1652,7 @@ void ChemNetwork::UpdateRates(const Real *y, const Real E) {
           }
         }
         // calculate rates
-        // TODO(munan): deduplicate code; modularize in a function?
+        // TODO(Gong): duplicate code; modularize in a function?
         if (frml_2bodytr_(i,irange1) == 3) {
           rate1 = a2bodytr_(i,irange1)*std::pow(T/300., b2bodytr_(i,irange1))
                   *std::exp(-c2bodytr_(i,irange1)/T);

@@ -267,7 +267,7 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
         pmy_spec_->chemnet.InitializeNextStep(k, j, i);
         // step 2: re-initialize CVODE with starting time t, and vector y
         // allocate r_copy(i, *) to y_.
-        // TODO(Munan Gong): make sure Real and realtype are the same.
+        // TODO(Gong): make sure Real and realtype are the same.
         flag = CVodeReInit(cvode_mem_, tinit, y_);
         CheckFlag(&flag, "CVodeReInit", 1);
         // set initial step
