@@ -1034,8 +1034,8 @@ output_config('KIDA rates', (args['kida_rates']
                              if args['kida_rates'] is not None else 'OFF'), flog)
 output_config('ChemRadiation', (args['chem_radiation']
                                 if args['chem_radiation'] is not None else 'OFF'), flog)
-output_config('chem_ode_solver', (args['chem_ode_solver']
-                             if args['chem_ode_solver'] is not None else 'OFF'), flog)
+output_config('chem_ode_solver', (args['chem_ode_solver'] if args['chem_ode_solver']
+                                  is not None else 'OFF'), flog)
 output_config('Debug flags', ('ON' if args['debug'] else 'OFF'), flog)
 output_config('Code coverage flags', ('ON' if args['coverage'] else 'OFF'), flog)
 output_config('Linker flags', makefile_options['LINKER_FLAGS'] + ' '
