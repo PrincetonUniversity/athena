@@ -24,6 +24,7 @@ class Coordinates;
 class Multigrid;
 class CRDiffusionBoundaryTaskList;
 
+
 //! \class MGCRDiffusion
 //! \brief Multigrid CR Diffusion solver for each block
 
@@ -64,7 +65,15 @@ class MGCRDiffusionDriver : public MultigridDriver {
   void RestrictCoefficients();
 
  private:
+  MGCRDiffusion *mgcrroot_;
   CRDiffusionBoundaryTaskList *crtlist_;
+};
+
+class MGCROctet : public MGOctet {
+ public:
+  MGCROctet(int nvar, int ncoct, int nccoct) : MGOctet(nvar, ncoct, nccoct),
+            D(NCOEFF,ncoct, ncoct, ncoct), nlambda(ncoct, ncoct, ncoct) {};
+  AthenaArray<Real> D, nlambda;
 };
 
 #endif // CRDIFFUSION_MG_CRDIFFUSION_HPP_

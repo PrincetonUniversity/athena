@@ -18,7 +18,6 @@
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
 #include "../bvals/cc/bvals_cc.hpp"
-#include "mg_crdiffusion.hpp"
 
 class MeshBlock;
 class ParameterInput;

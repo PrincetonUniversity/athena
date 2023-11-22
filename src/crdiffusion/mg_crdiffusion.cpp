@@ -83,7 +83,7 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   mgtlist_ = new MultigridTaskList(this);
 
   // Allocate the root multigrid
-  mgroot_ = new MGCRDiffusion(this, nullptr);
+  mgroot_ = mgcrroot_ = new MGCRDiffusion(this, nullptr);
 
   crtlist_ = new CRDiffusionBoundaryTaskList(pin, pm);
 }
@@ -107,10 +107,10 @@ MGCRDiffusionDriver::~MGCRDiffusionDriver() {
 MGCRDiffusion::MGCRDiffusion(MultigridDriver *pmd, MeshBlock *pmb)
   : Multigrid(pmd, pmb, 1, 1) {
   for (int l = 0; l < nlevel_; l++) {
-    int ll=nlevel_-1-l;
-    int ncx=(size_.nx1>>ll)+2*ngh_;
-    int ncy=(size_.nx2>>ll)+2*ngh_;
-    int ncz=(size_.nx3>>ll)+2*ngh_;
+    int ll = nlevel_-1-l;
+    int ncx = (size_.nx1>>ll) + 2*ngh_;
+    int ncy = (size_.nx2>>ll) + 2*ngh_;
+    int ncz = (size_.nx3>>ll) + 2*ngh_;
     D_[l].NewAthenaArray(NCOEFF,ncz,ncy,ncx);
     nlambda_[l].NewAthenaArray(ncz,ncy,ncx);
   }
@@ -136,12 +136,17 @@ MGCRDiffusion::~MGCRDiffusion() {
 //! \brief restrict coefficients in Octets for the CR diffusion equation
 
 void MGCRDiffusionDriver::RestrictCoefficients() {
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    MGCRDiffusion *pmg = static_cast<MGCRDiffusion*>(*itr);
+    pmg->RestrictCoefficients();
+  }
   if (nreflevel_ > 0) {
-    const int &ngh = mgroot_->ngh_;
+    const int &ngh = mgcrroot_->ngh_;
     for (int l = nreflevel_ - 1; l >= 1; --l) {  // fine octets to coarse octets
 #pragma omp parallel for num_threads(nthreads_)
       for (int o = 0; o < noctets_[l]; ++o) {
-        const LogicalLocation &loc = octets_[l][o].loc;
+        MGCROctet *foct = static_cast<MGCROctet*>(octets_[l][o]);
+        const LogicalLocation &loc = foct->loc;
         LogicalLocation cloc;
         cloc.lx1 = (loc.lx1 >> 1);
         cloc.lx2 = (loc.lx2 >> 1);
@@ -151,24 +156,28 @@ void MGCRDiffusionDriver::RestrictCoefficients() {
         int oi = (static_cast<int>(loc.lx1) & 1) + ngh;
         int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
         int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
-        
-/*        for (int v = 0; v < NCOEFF; ++v)
-          octets_[l-1][oid].D_(v, ok, oj, oi) = RestrictOne(octets_[l][o].D_,
-                                                            v, ngh, ngh, ngh);
-        octets_[l-1][oid].nlambda_(ok, oj, oi) = RestrictOne(octets_[l][o].nlambda_,
-                                                             0, ngh, ngh, ngh);*/
+        MGCROctet *coct = static_cast<MGCROctet*>(octets_[l-1][oid]);
+        for (int v = 0; v < NCOEFF; ++v)
+          coct->D(v, ok, oj, oi) = RestrictOne(foct->D, v, ngh, ngh, ngh);
+        coct->nlambda(ok, oj, oi) = RestrictOne(foct->nlambda, 0, ngh, ngh, ngh);
 
       }
     }
 #pragma omp parallel for num_threads(nthreads_)
     for (int o = 0; o < noctets_[0]; ++o) { // octets to the root grid
-      const LogicalLocation &loc = octets_[0][o].loc;
-      
-//      for (int v = 0; v < nvar_; ++v)
-//        Real r = RestrictOne(octets_[0][o].D_, v, ngh, ngh, ngh);//******
+      const LogicalLocation &loc = octets_[0][o]->loc;
+      MGCROctet *oct = static_cast<MGCROctet*>(octets_[0][o]);
+      int lx1 = static_cast<int>(loc.lx1) + mgcrroot_->ngh_;
+      int lx2 = static_cast<int>(loc.lx2) + mgcrroot_->ngh_;
+      int lx3 = static_cast<int>(loc.lx3) + mgcrroot_->ngh_;
+      for (int v = 0; v < NCOEFF; ++v)
+        mgcrroot_->D_[mgcrroot_->nlevel_-1](v, lx3, lx2, lx1)
+          = RestrictOne(oct->D, v, ngh, ngh, ngh);
+      mgcrroot_->nlambda_[mgcrroot_->nlevel_-1](lx3, lx2, lx1)
+        = RestrictOne(oct->nlambda, 0, ngh, ngh, ngh);
     }
   }
-
+  mgcrroot_->RestrictCoefficients();
   return;
 
 }

@@ -170,6 +170,7 @@ class MultigridDriver {
   friend class MGCRDiffusion;
 
  protected:
+  virtual MGOctet* AllocateOctet();
   void CheckBoundaryFunctions();
   void SubtractAverage(MGVariable type);
   void SetupMultigrid();
@@ -213,6 +214,8 @@ class MultigridDriver {
                                  const AthenaArray<bool> &ncoarse, bool folddata);
   void SetOctetBoundariesBeforeTransfer(bool folddata);
   void RestrictOctetsBeforeTransfer();
+  virtual void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
+               AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse);
 
   // for multipole expansion
   void AllocateMultipoleCoefficients();
@@ -222,10 +225,6 @@ class MultigridDriver {
 
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
-
-  // pure virtual functions
-  virtual void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
-               AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse);
 
   int nranks_, nthreads_, nbtotal_, nvar_, mode_;
   int locrootlevel_, nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;
@@ -246,7 +245,7 @@ class MultigridDriver {
   int coffset_;
 
   // for mesh refinement
-  std::vector<MGOctet> *octets_;
+  std::vector<MGOctet*> *octets_;
   std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octetmap_;
   std::vector<bool> *octetbflag_;
   int *noctets_, *pmaxnoct_;
@@ -271,10 +270,10 @@ class MultigridDriver {
 };
 
 
-//! \struct MGCoordinates
+//! \class MGCoordinates
 //  \brief Minimum set of coordinate arrays for Multigrid
 
-struct MGCoordinates {
+class MGCoordinates {
  public:
   void AllocateMGCoordinates(int nx, int ny, int nz);
   void CalculateMGCoordinates(const RegionSize &size, int ll, int ngh);
@@ -288,12 +287,11 @@ struct MGCoordinates {
 
 class MGOctet {
  public:
+  MGOctet(int nvar, int ncoct, int nccoct);
   LogicalLocation loc;
   bool fleaf;
   AthenaArray<Real> u, def, src, uold;
   MGCoordinates coord, ccoord;
-
-  virtual void AllocateOctet(int nvar, int ncoct, int nccoct, bool ffas);
 };
 
 
