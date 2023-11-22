@@ -38,7 +38,7 @@ hydro_probs = pgen_choices - gr_probs - mhd_probs - grav_mg_probs - chem_probs
 gr_args = ['g', 't', '-coord=minkowski']
 mhd_args = ['b']
 grav_mg_args = ['-grav=mg']
-chem_args = ['-chemistry=H2', '-ode_solver=forward_euler']
+chem_args = ['-chemistry=H2', '-chem_ode_solver=forward_euler']
 hydro_args = []
 
 
