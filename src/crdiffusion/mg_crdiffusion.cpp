@@ -106,13 +106,13 @@ MGCRDiffusionDriver::~MGCRDiffusionDriver() {
 
 MGCRDiffusion::MGCRDiffusion(MultigridDriver *pmd, MeshBlock *pmb)
   : Multigrid(pmd, pmb, 1, 1) {
+  coeff_ = new MGCRCoefficient*[nlevel_];
   for (int l = 0; l < nlevel_; l++) {
     int ll = nlevel_-1-l;
     int ncx = (size_.nx1>>ll) + 2*ngh_;
     int ncy = (size_.nx2>>ll) + 2*ngh_;
     int ncz = (size_.nx3>>ll) + 2*ngh_;
-    D_[l].NewAthenaArray(NCOEFF,ncz,ncy,ncx);
-    nlambda_[l].NewAthenaArray(ncz,ncy,ncx);
+    coeff_[l] = new MGCRCoefficient(ncx, ncy, ncz);
   }
 
   btype = btypef = BoundaryQuantity::mg;
@@ -125,8 +125,9 @@ MGCRDiffusion::MGCRDiffusion(MultigridDriver *pmd, MeshBlock *pmb)
 //! \brief MGCRDiffusion deconstructor
 
 MGCRDiffusion::~MGCRDiffusion() {
-  delete [] D_;
-  delete [] nlambda_;
+  for (int l = 0; l < nlevel_; l++)
+    delete coeff_[l];
+  delete [] coeff_;
   delete pmgbval;
 }
 
@@ -157,9 +158,11 @@ void MGCRDiffusionDriver::RestrictCoefficients() {
         int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
         int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
         MGCROctet *coct = static_cast<MGCROctet*>(octets_[l-1][oid]);
+        MGCRCoefficient *ccoeff = static_cast<MGCRCoefficient*>(coct->coeff);
+        MGCRCoefficient *fcoeff = static_cast<MGCRCoefficient*>(foct->coeff);
         for (int v = 0; v < NCOEFF; ++v)
-          coct->D(v, ok, oj, oi) = RestrictOne(foct->D, v, ngh, ngh, ngh);
-        coct->nlambda(ok, oj, oi) = RestrictOne(foct->nlambda, 0, ngh, ngh, ngh);
+          ccoeff->D(v, ok, oj, oi) = RestrictOne(fcoeff->D, v, ngh, ngh, ngh);
+        ccoeff->nlambda(ok, oj, oi) = RestrictOne(fcoeff->nlambda, 0, ngh, ngh, ngh);
 
       }
     }
@@ -170,11 +173,12 @@ void MGCRDiffusionDriver::RestrictCoefficients() {
       int lx1 = static_cast<int>(loc.lx1) + mgcrroot_->ngh_;
       int lx2 = static_cast<int>(loc.lx2) + mgcrroot_->ngh_;
       int lx3 = static_cast<int>(loc.lx3) + mgcrroot_->ngh_;
+      MGCRCoefficient *coeff = static_cast<MGCRCoefficient*>(oct->coeff);
       for (int v = 0; v < NCOEFF; ++v)
-        mgcrroot_->D_[mgcrroot_->nlevel_-1](v, lx3, lx2, lx1)
-          = RestrictOne(oct->D, v, ngh, ngh, ngh);
-      mgcrroot_->nlambda_[mgcrroot_->nlevel_-1](lx3, lx2, lx1)
-        = RestrictOne(oct->nlambda, 0, ngh, ngh, ngh);
+        mgcrroot_->coeff_[mgcrroot_->nlevel_-1]->D(v, lx3, lx2, lx1)
+          = RestrictOne(coeff->D, v, ngh, ngh, ngh);
+      mgcrroot_->coeff_[mgcrroot_->nlevel_-1]->nlambda(lx3, lx2, lx1)
+        = RestrictOne(coeff->nlambda, 0, ngh, ngh, ngh);
     }
   }
   mgcrroot_->RestrictCoefficients();
@@ -182,6 +186,13 @@ void MGCRDiffusionDriver::RestrictCoefficients() {
 
 }
 
+//----------------------------------------------------------------------------------------
+//! \fn MGOctet* MGCRDiffusionDriver::AllocateOctet()
+//  \brief Allocate a MGCROctet object
+MGOctet* MGCRDiffusionDriver::AllocateOctet() {
+  int ncoct = mgroot_->ngh_*2 + 2, nccoct = mgroot_->ngh_*2 + 1;
+  return new MGCROctet(nvar_, ncoct, nccoct);
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGCRDiffusionDriver::Solve(int stage)
@@ -234,6 +245,15 @@ void MGCRDiffusionDriver::Solve(int stage) {
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void MGCRDiffusion::AllocateCoefficient(int ncx, int ncy, int ncz)
+//! \brief allocate coefficients for cosmic-ray transport
+
+MGCoefficient* MGCRDiffusion::AllocateCoefficient(int ncx, int ncy, int ncz) {
+  return new MGCRCoefficient(ncx, ncy, ncz);
+}
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void MGCRDiffusion::RestrictCoefficients()
 //! \brief restrict coefficients within a MGCRDiffusion object
 
@@ -243,9 +263,9 @@ void MGCRDiffusion::RestrictCoefficients() {
   for (current_level_=nlevel_-1; current_level_>0; current_level_--) {
     int ll=nlevel_-current_level_;
     ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
-    Restrict(D_[current_level_-1], D_[current_level_],
+    Restrict(coeff_[current_level_-1]->D, coeff_[current_level_]->D,
              NCOEFF, is, ie, js, je, ks, ke, false);
-    Restrict(nlambda_[current_level_-1], nlambda_[current_level_],
+    Restrict(coeff_[current_level_-1]->nlambda, coeff_[current_level_]->nlambda,
              1, is, ie, js, je, ks, ke, false);
   }
   return;
@@ -254,12 +274,14 @@ void MGCRDiffusion::RestrictCoefficients() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//!          int rlev, int il, int iu, int jl, int ju, int kl, int ku, int color, bool th)
+//!                         MGCoefficient *coeff, int rlev, int il, int iu,
+//!                         int jl, int ju, int kl, int ku, int color, bool th)
 //! \brief Implementation of the Red-Black Gauss-Seidel Smoother
 //!        rlev = relative level from the finest level of this Multigrid block
 
-void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
-                int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) {
+void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
+                           MGCoefficient *coeff, int rlev, int il, int iu,
+                           int jl, int ju, int kl, int ku, int color, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
@@ -290,14 +312,15 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, i
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGCRDiffusion::CalculateDefect(AthenaArray<Real> &def,
-//!          const AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
-//!          int il, int iu, int jl, int ju, int kl, int ku, bool th)
+//!                         const AthenaArray<Real> &u, const AthenaArray<Real> &src,
+//!                         MGCoefficient *coeff, int rlev, int il, int iu,
+//!                         int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the Defect calculation
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGCRDiffusion::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-                                const AthenaArray<Real> &src, int rlev,
-                                int il, int iu, int jl, int ju, int kl, int ku, bool th) {
+                    const AthenaArray<Real> &src, MGCoefficient *coeff, int rlev,
+                    int il, int iu, int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
@@ -325,13 +348,14 @@ void MGCRDiffusion::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Re
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGCRDiffusion::CalculateFASRHS(AthenaArray<Real> &src,
-//!                         const AthenaArray<Real> &u, int rlev,
+//!                         const AthenaArray<Real> &u, MGCoefficient *coeff, int rlev,
 //!                         int il, int iu, int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the RHS calculation for FAS
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGCRDiffusion::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> &u,
-                int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) {
+                                    MGCoefficient *coeff, int rlev, int il, int iu,
+                                    int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
@@ -362,8 +386,8 @@ void MGCRDiffusion::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Re
 
 void MGCRDiffusion::LoadCoefficients(const AthenaArray<Real> &D,
                                      const AthenaArray<Real> &nlambda, int ngh) {
-  AthenaArray<Real> &Dm=D_[nlevel_-1];
-  AthenaArray<Real> &nl=nlambda_[nlevel_-1];
+  AthenaArray<Real> &Dm=coeff_[nlevel_-1]->D;
+  AthenaArray<Real> &nl=coeff_[nlevel_-1]->nlambda;
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
   ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;

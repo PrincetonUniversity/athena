@@ -61,6 +61,37 @@ struct LogicalLocationHash {
 };
 
 
+//! \class MGCoefficient
+//  \brief default (empty) coefficient set
+class MGCoefficient {};
+
+
+//! \class MGCoordinates
+//  \brief Minimum set of coordinate arrays for Multigrid
+
+class MGCoordinates {
+ public:
+  void AllocateMGCoordinates(int nx, int ny, int nz);
+  void CalculateMGCoordinates(const RegionSize &size, int ll, int ngh);
+
+  AthenaArray<Real> x1f, x2f, x3f, x1v, x2v, x3v;
+};
+
+
+//! \class MGOctet
+//  \brief structure containing eight (+ ghost) cells for Mesh Refinement
+
+class MGOctet {
+ public:
+  MGOctet(int nvar, int ncoct, int nccoct);
+  LogicalLocation loc;
+  bool fleaf;
+  AthenaArray<Real> u, def, src, uold;
+  MGCoordinates coord, ccoord;
+  MGCoefficient* coeff;
+};
+
+
 //! \class Multigrid
 //  \brief Multigrid object containing each MeshBlock and/or the root block
 
@@ -117,14 +148,16 @@ class Multigrid {
     int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl, bool th);
 
   // physics-dependent virtual functions
+  virtual MGCoefficient* AllocateCoefficient(int ncx, int ncy, int ncz) { return nullptr;};
   virtual void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                      int rlev, int il, int iu, int jl, int ju, int kl, int ku,
-                      int color, bool th) = 0;
+                      MGCoefficient *coeff, int rlev, int il, int iu, int jl, int ju,
+                      int kl, int ku, int color, bool th) = 0;
   virtual void CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-                        const AthenaArray<Real> &src, int rlev,
+                        const AthenaArray<Real> &src, MGCoefficient *coeff, int rlev,
                         int il, int iu, int jl, int ju, int kl, int ku, bool th) = 0;
   virtual void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
-                 int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) = 0;
+                               MGCoefficient *coeff, int rlev, int il, int iu,
+                               int jl, int ju, int kl, int ku, bool th) = 0;
 
   friend class MultigridDriver;
   friend class MultigridTaskList;
@@ -144,6 +177,7 @@ class Multigrid {
   Real defscale_;
   AthenaArray<Real> *u_, *def_, *src_, *uold_;
   MGCoordinates *coord_, *ccoord_;
+  MGCoefficient **coeff_;
 
  private:
   TaskStates ts_;
@@ -267,31 +301,6 @@ class MultigridDriver {
   MPI_Comm MPI_COMM_MULTIGRID;
   int mg_phys_id_;
 #endif
-};
-
-
-//! \class MGCoordinates
-//  \brief Minimum set of coordinate arrays for Multigrid
-
-class MGCoordinates {
- public:
-  void AllocateMGCoordinates(int nx, int ny, int nz);
-  void CalculateMGCoordinates(const RegionSize &size, int ll, int ngh);
-
-  AthenaArray<Real> x1f, x2f, x3f, x1v, x2v, x3v;
-};
-
-
-//! \class MGOctet
-//  \brief structure containing eight (+ ghost) cells for Mesh Refinement
-
-class MGOctet {
- public:
-  MGOctet(int nvar, int ncoct, int nccoct);
-  LogicalLocation loc;
-  bool fleaf;
-  AthenaArray<Real> u, def, src, uold;
-  MGCoordinates coord, ccoord;
 };
 
 

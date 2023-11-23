@@ -25,6 +25,25 @@ class Multigrid;
 class CRDiffusionBoundaryTaskList;
 
 
+//! \class MGCRCoefficient
+class MGCRCoefficient : public MGCoefficient {
+ public:
+  MGCRCoefficient(int nx, int ny, int nz) : D(NCOEFF, nz, ny, nx),
+                                            nlambda(nz, ny, nx) {};
+  AthenaArray<Real> D, nlambda;
+};
+
+
+//! \class MGCROctet
+//! \brief MGOctet for cosmic ray transport
+
+class MGCROctet : public MGOctet {
+ public:
+  MGCROctet(int nvar, int ncoct, int nccoct) : MGOctet(nvar, ncoct, nccoct) 
+  { coeff = new MGCRCoefficient(ncoct, ncoct, ncoct);};
+  ~MGCROctet() { delete coeff; };
+};
+
 //! \class MGCRDiffusion
 //! \brief Multigrid CR Diffusion solver for each block
 
@@ -33,14 +52,17 @@ class MGCRDiffusion : public Multigrid {
   MGCRDiffusion(MultigridDriver *pmd, MeshBlock *pmb);
   ~MGCRDiffusion();
 
-  void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src, int rlev,
-              int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) final;
+  void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
+              MGCoefficient *coeff, int rlev, int il, int iu, int jl, int ju,
+              int kl, int ku, int color, bool th) final;
   void CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-                       const AthenaArray<Real> &src, int rlev,
+                       const AthenaArray<Real> &src, MGCoefficient *coeff, int rlev,
                        int il, int iu, int jl, int ju, int kl, int ku, bool th) final;
   void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
-                int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) final;
+                       MGCoefficient *coeff, int rlev, int il, int iu,
+                       int jl, int ju, int kl, int ku, bool th) final;
 
+  MGCoefficient* AllocateCoefficient(int ncx, int ncy, int ncz) final;
   void LoadCoefficients(const AthenaArray<Real> &D,
                         const AthenaArray<Real> &nlambda, int ngh);
   void RestrictCoefficients();
@@ -48,7 +70,7 @@ class MGCRDiffusion : public Multigrid {
   friend class MGCRDiffusionDriver;
 
  private:
-  AthenaArray<Real> *D_, *nlambda_;
+  MGCRCoefficient **coeff_;
 
   static constexpr Real omega_ = 1.15;
 };
@@ -65,15 +87,10 @@ class MGCRDiffusionDriver : public MultigridDriver {
   void RestrictCoefficients();
 
  private:
+  MGOctet* AllocateOctet() final;
+
   MGCRDiffusion *mgcrroot_;
   CRDiffusionBoundaryTaskList *crtlist_;
-};
-
-class MGCROctet : public MGOctet {
- public:
-  MGCROctet(int nvar, int ncoct, int nccoct) : MGOctet(nvar, ncoct, nccoct),
-            D(NCOEFF,ncoct, ncoct, ncoct), nlambda(ncoct, ncoct, ncoct) {};
-  AthenaArray<Real> D, nlambda;
 };
 
 #endif // CRDIFFUSION_MG_CRDIFFUSION_HPP_

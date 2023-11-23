@@ -211,12 +211,14 @@ void MGGravityDriver::Solve(int stage) {
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//!        int rlev, int il, int iu, int jl, int ju, int kl, int ku, int color, bool th)
+//!           MGCoefficient *coeff, int rlev, int il, int iu, int jl, int ju,
+//!           int kl, int ku, int color, bool th)
 //! \brief Implementation of the Red-Black Gauss-Seidel Smoother
 //!        rlev = relative level from the finest level of this Multigrid block
 
-void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
-                int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) {
+void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, 
+                       MGCoefficient *coeff, int rlev, int il, int iu, int jl, int ju,
+                       int kl, int ku, int color, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
@@ -273,14 +275,15 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateDefect(AthenaArray<Real> &def,
-//!           const AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
-//!           int il, int iu, int jl, int ju, int kl, int ku, bool th)
+//!                      const AthenaArray<Real> &u, const AthenaArray<Real> &src,
+//!                      MGCoefficient *coeff, int rlev, int il, int iu,
+//!                      int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the Defect calculation
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-                                const AthenaArray<Real> &src, int rlev,
-                                int il, int iu, int jl, int ju, int kl, int ku, bool th) {
+                const AthenaArray<Real> &src, MGCoefficient *coeff, int rlev,
+                int il, int iu, int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
@@ -314,13 +317,14 @@ void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> 
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateFASRHS(AthenaArray<Real> &src,
-//!                      const AthenaArray<Real> &u, int rlev,
+//!                      const AthenaArray<Real> &u, MGCoefficient *coeff, int rlev,
 //!                      int il, int iu, int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the RHS calculation for FAS
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> &u,
-                int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) {
+                                MGCoefficient *coeff, int rlev, int il, int iu, 
+                                int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);

@@ -120,6 +120,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
   def_ = new AthenaArray<Real>[nlevel_];
   coord_ = new MGCoordinates[nlevel_];
   ccoord_ = new MGCoordinates[nlevel_];
+  coeff_ = new MGCoefficient*[nlevel_];
   if (pmy_block_ == nullptr)
     uold_ = new AthenaArray<Real>[nlevel_];
   else
@@ -136,6 +137,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
       uold_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     coord_[l].AllocateMGCoordinates(ncx,ncy,ncz);
     coord_[l].CalculateMGCoordinates(size_, ll, ngh_);
+    coeff_[l] = AllocateCoefficient(ncx,ncy,ncz);
     ncx=(size_.nx1>>(ll+1))+2*ngh_;
     ncy=(size_.nx2>>(ll+1))+2*ngh_;
     ncz=(size_.nx3>>(ll+1))+2*ngh_;
@@ -425,7 +427,7 @@ void Multigrid::SmoothBlock(int color) {
   is = js = ks = ngh_;
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
-  Smooth(u_[current_level_], src_[current_level_],
+  Smooth(u_[current_level_], src_[current_level_],  coeff_[current_level_],
          -ll, is, ie, js, je, ks, ke, color, th);
 
   return;
@@ -448,7 +450,7 @@ void Multigrid::CalculateDefectBlock() {
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
   CalculateDefect(def_[current_level_], u_[current_level_], src_[current_level_],
-                  -ll, is, ie, js, je, ks, ke, th);
+                  coeff_[current_level_], -ll, is, ie, js, je, ks, ke, th);
 
   return;
 }
@@ -469,7 +471,7 @@ void Multigrid::CalculateFASRHSBlock() {
   is = js = ks = ngh_;
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
-  CalculateFASRHS(src_[current_level_], u_[current_level_],
+  CalculateFASRHS(src_[current_level_], u_[current_level_], coeff_[current_level_],
                   -ll, is, ie, js, je, ks, ke, th);
 
   return;
@@ -565,7 +567,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
        dz=rdz_*static_cast<Real>(1<<ll);
 
   CalculateDefect(def_[current_level_], u_[current_level_], src_[current_level_],
-                  -ll, is, ie, js, je, ks, ke, false);
+                  nullptr, -ll, is, ie, js, je, ks, ke, false);
 
   Real norm=0.0;
   if (nrm == MGNormType::max) {
