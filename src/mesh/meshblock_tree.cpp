@@ -505,7 +505,7 @@ void MeshBlockTree::CountMGOctets(int *noct) {
 //!     std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct)
 //! \brief construct lists of octets Multigrid with mesh refinement
 
-void MeshBlockTree::GetMGOctetList(std::vector<MGOctet*> *oct,
+void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct,
      std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct) {
   if (pleaf_ == nullptr) return;
 
@@ -513,15 +513,15 @@ void MeshBlockTree::GetMGOctetList(std::vector<MGOctet*> *oct,
   int oid = 0;
   if (lev >= 0) {
     oid = noct[lev];
-    oct[lev][oid]->loc = loc_;
-    oct[lev][oid]->fleaf = true;
+    oct[lev][oid].loc = loc_;
+    oct[lev][oid].fleaf = true;
     octmap[lev][loc_] = oid;
     noct[lev]++;
   }
   for (int n=0; n<nleaf_; n++) {
     if (pleaf_[n] != nullptr) {
       if (pleaf_[n]->pleaf_ != nullptr) {
-        if (lev >= 0) oct[lev][oid]->fleaf = false;
+        if (lev >= 0) oct[lev][oid].fleaf = false;
         pleaf_[n]->GetMGOctetList(oct, octmap, noct);
       }
     }

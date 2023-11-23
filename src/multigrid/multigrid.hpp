@@ -61,11 +61,6 @@ struct LogicalLocationHash {
 };
 
 
-//! \class MGCoefficient
-//  \brief default (empty) coefficient set
-class MGCoefficient {};
-
-
 //! \class MGCoordinates
 //  \brief Minimum set of coordinate arrays for Multigrid
 
@@ -83,12 +78,11 @@ class MGCoordinates {
 
 class MGOctet {
  public:
-  MGOctet(int nvar, int ncoct, int nccoct);
+  void Allocate(int nvar, int ncoct, int nccoct, int ncoeff);
   LogicalLocation loc;
   bool fleaf;
-  AthenaArray<Real> u, def, src, uold;
+  AthenaArray<Real> u, def, src, uold, coeff;
   MGCoordinates coord, ccoord;
-  MGCoefficient* coeff;
 };
 
 
@@ -97,7 +91,7 @@ class MGOctet {
 
 class Multigrid {
  public:
-  Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost);
+  Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int nghost);
   virtual ~Multigrid();
 
   MGBoundaryValues *pmgbval;
@@ -109,12 +103,14 @@ class Multigrid {
 
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
+  void LoadCoefficients(const AthenaArray<Real> &coeff, int ngh);
   void ApplySourceMask();
   void RestrictFMGSource();
   void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh);
   void RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh);
   void ZeroClearData();
   void RestrictBlock();
+  void RestrictCoefficients();
   void ProlongateAndCorrectBlock();
   void FMGProlongateBlock();
   void SmoothBlock(int color);
@@ -148,15 +144,14 @@ class Multigrid {
     int il, int iu, int jl, int ju, int kl, int ku, int fil, int fjl, int fkl, bool th);
 
   // physics-dependent virtual functions
-  virtual MGCoefficient* AllocateCoefficient(int ncx, int ncy, int ncz) { return nullptr;};
   virtual void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                      MGCoefficient *coeff, int rlev, int il, int iu, int jl, int ju,
-                      int kl, int ku, int color, bool th) = 0;
+                      const AthenaArray<Real> &coeff, int rlev, int il, int iu,
+                      int jl, int ju, int kl, int ku, int color, bool th) = 0;
   virtual void CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-                        const AthenaArray<Real> &src, MGCoefficient *coeff, int rlev,
-                        int il, int iu, int jl, int ju, int kl, int ku, bool th) = 0;
+               const AthenaArray<Real> &src, const AthenaArray<Real> &coeff, int rlev,
+               int il, int iu, int jl, int ju, int kl, int ku, bool th) = 0;
   virtual void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
-                               MGCoefficient *coeff, int rlev, int il, int iu,
+                               const AthenaArray<Real> &coeff, int rlev, int il, int iu,
                                int jl, int ju, int kl, int ku, bool th) = 0;
 
   friend class MultigridDriver;
@@ -172,12 +167,11 @@ class Multigrid {
   LogicalLocation loc_;
   RegionSize size_;
   BoundaryFlag mg_block_bcs_[6];
-  int nlevel_, ngh_, nvar_, current_level_;
+  int nlevel_, ngh_, nvar_, ncoeff_, current_level_;
   Real rdx_, rdy_, rdz_;
   Real defscale_;
-  AthenaArray<Real> *u_, *def_, *src_, *uold_;
+  AthenaArray<Real> *u_, *def_, *src_, *uold_, *coeff_;
   MGCoordinates *coord_, *ccoord_;
-  MGCoefficient **coeff_;
 
  private:
   TaskStates ts_;
@@ -190,7 +184,7 @@ class Multigrid {
 class MultigridDriver {
  public:
   MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
-                  MGSourceMaskFunc MGSourceMask, int invar);
+                  MGSourceMaskFunc MGSourceMask, int invar, int ncoeff);
   virtual ~MultigridDriver();
 
   // pure virtual function
@@ -204,7 +198,6 @@ class MultigridDriver {
   friend class MGCRDiffusion;
 
  protected:
-  virtual MGOctet* AllocateOctet();
   void CheckBoundaryFunctions();
   void SubtractAverage(MGVariable type);
   void SetupMultigrid();
@@ -226,6 +219,7 @@ class MultigridDriver {
   void CalculateOctetCoordinates();
   void RestrictFMGSourceOctets();
   void RestrictOctets();
+  void RestrictCoefficients();
   void ZeroClearOctets();
   void StoreOldDataOctets();
   void CalculateFASRHSOctets();
@@ -260,7 +254,7 @@ class MultigridDriver {
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
 
-  int nranks_, nthreads_, nbtotal_, nvar_, mode_;
+  int nranks_, nthreads_, nbtotal_, nvar_, ncoeff_, mode_;
   int locrootlevel_, nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;
   int current_level_, fmglevel_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *nvlisti_, *nvslisti_, *ranklist_;
@@ -279,7 +273,7 @@ class MultigridDriver {
   int coffset_;
 
   // for mesh refinement
-  std::vector<MGOctet*> *octets_;
+  std::vector<MGOctet> *octets_;
   std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octetmap_;
   std::vector<bool> *octetbflag_;
   int *noctets_, *pmaxnoct_;

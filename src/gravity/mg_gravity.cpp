@@ -40,7 +40,7 @@ class MeshBlock;
 
 MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
     : MultigridDriver(pm, pm->MGGravityBoundaryFunction_,
-                      pm->MGGravitySourceMaskFunction_, 1) {
+                      pm->MGGravitySourceMaskFunction_, 1, 0) {
   four_pi_G_ = pmy_mesh_->four_pi_G_;
   eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);
@@ -144,7 +144,7 @@ MGGravityDriver::~MGGravityDriver() {
 //! \fn MGGravity::MGGravity(MultigridDriver *pmd, MeshBlock *pmb)
 //! \brief MGGravity constructor
 
-MGGravity::MGGravity(MultigridDriver *pmd, MeshBlock *pmb) : Multigrid(pmd, pmb, 1, 1) {
+MGGravity::MGGravity(MultigridDriver *pmd, MeshBlock *pmb) : Multigrid(pmd, pmb, 1) {
   btype = BoundaryQuantity::mg;
   btypef = BoundaryQuantity::mg_faceonly;
   pmgbval = new MGGravityBoundaryValues(this, mg_block_bcs_);
@@ -211,14 +211,14 @@ void MGGravityDriver::Solve(int stage) {
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//!           MGCoefficient *coeff, int rlev, int il, int iu, int jl, int ju,
+//!           const AthenaArray<Real> &coeff, int rlev, int il, int iu, int jl, int ju,
 //!           int kl, int ku, int color, bool th)
 //! \brief Implementation of the Red-Black Gauss-Seidel Smoother
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, 
-                       MGCoefficient *coeff, int rlev, int il, int iu, int jl, int ju,
-                       int kl, int ku, int color, bool th) {
+                       const AthenaArray<Real> &coeff, int rlev, int il, int iu,
+                       int jl, int ju, int kl, int ku, int color, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
@@ -276,13 +276,13 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateDefect(AthenaArray<Real> &def,
 //!                      const AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//!                      MGCoefficient *coeff, int rlev, int il, int iu,
+//!                      const AthenaArray<Real> &coeff, int rlev, int il, int iu,
 //!                      int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the Defect calculation
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-                const AthenaArray<Real> &src, MGCoefficient *coeff, int rlev,
+                const AthenaArray<Real> &src, const AthenaArray<Real> &coeff, int rlev,
                 int il, int iu, int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
@@ -317,13 +317,13 @@ void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> 
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateFASRHS(AthenaArray<Real> &src,
-//!                      const AthenaArray<Real> &u, MGCoefficient *coeff, int rlev,
-//!                      int il, int iu, int jl, int ju, int kl, int ku, bool th)
+//!             const AthenaArray<Real> &u, const AthenaArray<Real> &coeff,
+//!             int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the RHS calculation for FAS
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> &u,
-                                MGCoefficient *coeff, int rlev, int il, int iu, 
+                                const AthenaArray<Real> &coeff, int rlev, int il, int iu, 
                                 int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));

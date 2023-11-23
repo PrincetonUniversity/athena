@@ -26,11 +26,12 @@
 #include "multigrid.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \fn Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost)
+//! \fn Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int nghost)
 //  \brief Multigrid constructor
 
-Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost) :
-  pmy_driver_(pmd), pmy_block_(pmb), ngh_(nghost), nvar_(invar), defscale_(1.0) {
+Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int nghost) :
+  pmy_driver_(pmd), pmy_block_(pmb), ngh_(nghost), nvar_(pmd->nvar_),
+  ncoeff_(pmd->ncoeff_), defscale_(1.0) {
   if (pmy_block_ != nullptr) {
     loc_ = pmy_block_->loc;
     size_ = pmy_block_->block_size;
@@ -120,7 +121,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
   def_ = new AthenaArray<Real>[nlevel_];
   coord_ = new MGCoordinates[nlevel_];
   ccoord_ = new MGCoordinates[nlevel_];
-  coeff_ = new MGCoefficient*[nlevel_];
+  coeff_ = new AthenaArray<Real>[nlevel_];
   if (pmy_block_ == nullptr)
     uold_ = new AthenaArray<Real>[nlevel_];
   else
@@ -137,7 +138,8 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int invar, int nghost
       uold_[l].NewAthenaArray(nvar_,ncz,ncy,ncx);
     coord_[l].AllocateMGCoordinates(ncx,ncy,ncz);
     coord_[l].CalculateMGCoordinates(size_, ll, ngh_);
-    coeff_[l] = AllocateCoefficient(ncx,ncy,ncz);
+    if (ncoeff_ > 0)
+      coeff_[l].NewAthenaArray(ncoeff_,ncz,ncy,ncx);
     ncx=(size_.nx1>>(ll+1))+2*ngh_;
     ncy=(size_.nx2>>(ll+1))+2*ngh_;
     ncz=(size_.nx3>>(ll+1))+2*ngh_;
@@ -156,6 +158,7 @@ Multigrid::~Multigrid() {
   delete [] src_;
   delete [] def_;
   delete [] uold_;
+  delete [] coeff_;
   delete [] coord_;
   delete [] ccoord_;
 }
@@ -235,6 +238,33 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void Multigrid::LoadCoefficients(const AthenaArray<Real> &coeff, int ngh)
+//! \brief Load coefficients of the diffusion and source terms
+
+void Multigrid::LoadCoefficients(const AthenaArray<Real> &coeff, int ngh) {
+  AthenaArray<Real> &cm=coeff_[nlevel_-1];
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
+  for (int v = 0; v < ncoeff_; ++v) {
+    for (int mk=ks; mk<=ke; ++mk) {
+      int k = mk - ks + ngh;
+      for (int mj=js; mj<=je; ++mj) {
+        int j = mj - js + ngh;
+#pragma omp simd
+        for (int mi=is; mi<=ie; ++mi) {
+          int i = mi - is + ngh;
+          cm(v,mk,mj,mi) = coeff(v,k,j,i);
+        }
+      }
+    }
+  }
+  return;
+}
+
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void Multigrid::ApplySourceMask()
 //  \brief Apply the user-defined source mask function on the finest level
 
@@ -260,6 +290,23 @@ void Multigrid::RestrictFMGSource() {
     ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
     Restrict(src_[current_level_-1], src_[current_level_],
              nvar_, is, ie, js, je, ks, ke, false);
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::RestrictCoefficients()
+//! \brief restrict coefficients within a Multigrid object
+
+void Multigrid::RestrictCoefficients() {
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  for (current_level_=nlevel_-1; current_level_>0; current_level_--) {
+    int ll=nlevel_-current_level_;
+    ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
+    Restrict(coeff_[current_level_-1], coeff_[current_level_],
+             ncoeff_, is, ie, js, je, ks, ke, false);
   }
   return;
 }
@@ -524,7 +571,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
     int ci = (static_cast<int>(loc_.lx1)&1);
     int cj = (static_cast<int>(loc_.lx2)&1);
     int ck = (static_cast<int>(loc_.lx3)&1);
-    const AthenaArray<Real> &src = pmy_driver_->octets_[olev][oid]->u;
+    const AthenaArray<Real> &src = pmy_driver_->octets_[olev][oid].u;
     for (int v=0; v<nvar_; ++v) {
       for (int k=0; k<=2; ++k) {
         for (int j=0; j<=2; ++j) {
@@ -536,7 +583,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
     }
     if (folddata) {
       AthenaArray<Real> &odst = uold_[current_level_];
-      const AthenaArray<Real> &osrc = pmy_driver_->octets_[olev][oid]->uold;
+      const AthenaArray<Real> &osrc = pmy_driver_->octets_[olev][oid].uold;
       for (int v=0; v<nvar_; ++v) {
         for (int k=0; k<=2; ++k) {
           for (int j=0; j<=2; ++j) {
@@ -567,7 +614,7 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
        dz=rdz_*static_cast<Real>(1<<ll);
 
   CalculateDefect(def_[current_level_], u_[current_level_], src_[current_level_],
-                  nullptr, -ll, is, ie, js, je, ks, ke, false);
+                  coeff_[current_level_], -ll, is, ie, js, je, ks, ke, false);
 
   Real norm=0.0;
   if (nrm == MGNormType::max) {

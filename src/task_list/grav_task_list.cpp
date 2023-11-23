@@ -124,7 +124,7 @@ TaskStatus GravityBoundaryTaskList::ProlongateGravityBoundary(MeshBlock *pmb,
 TaskStatus GravityBoundaryTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   if (pmb->pgrav->fill_ghost) {
     pmb->pgrav->RestoreFaceBoundaries();
-    pmb->pgrav->ExpandPhysicalBoundaries();
+    pmb->pgrav->gbvar.ExpandPhysicalBoundaries(pmb->pgrav->phi, 1);
   }
   return TaskStatus::next;
 }

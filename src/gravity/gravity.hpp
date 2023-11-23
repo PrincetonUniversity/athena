@@ -48,7 +48,6 @@ class Gravity {
 
   void SaveFaceBoundaries();
   void RestoreFaceBoundaries();
-  void ExpandPhysicalBoundaries();
 
   friend class MGGravityDriver;
 

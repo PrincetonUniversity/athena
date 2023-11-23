@@ -26,8 +26,8 @@ class CRDiffusionBoundaryValues;
 class MGCRDiffusion;
 class MGCRDiffusionDriver;
 
-constexpr int NCOEFF = 6;
-enum DCoeffIndex {XX = 0, XY = 1, YX = 1, XZ = 2, ZX = 2, YY = 3, YZ=4, ZZ=5};
+constexpr int NCOEFF = 7;
+enum CoeffIndex {DXX=0, DXY=1, DYX=1, DXZ=2, DZX=2, DYY=3, DYZ=4, DZZ=5, NLAMBDA=6};
 
 //! \class CRDiffusion
 //! \brief gravitational potential data and functions
@@ -39,9 +39,8 @@ class CRDiffusion {
   
   MeshBlock* pmy_block;
   MGCRDiffusion *pmg;
-  AthenaArray<Real> ecr, zeta;
+  AthenaArray<Real> ecr, zeta, coeff;
   AthenaArray<Real> coarse_ecr, empty_flux[3];
-  AthenaArray<Real> D, nlambda;
   AthenaArray<Real> def;   // defect from the Multigrid solver
   bool output_defect;
 
@@ -50,7 +49,6 @@ class CRDiffusion {
   void CalculateCoefficients(const AthenaArray<Real> &w,
                              const AthenaArray<Real> &bcc);
   void Solve();
-  void ExpandPhysicalBoundaries();
 
   friend class MGCRDiffusuionDriver;
 

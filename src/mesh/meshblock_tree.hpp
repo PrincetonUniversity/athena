@@ -56,7 +56,7 @@ class MeshBlockTree {
   MeshBlockTree* FindNeighbor(LogicalLocation myloc, int ox1, int ox2, int ox3,
                               BoundaryFlag *bcs, bool amrflag=false);
   void CountMGOctets(int *noct);
-  void GetMGOctetList(std::vector<MGOctet*> *oct,
+  void GetMGOctetList(std::vector<MGOctet> *oct,
        std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octmap, int *noct);
 
  private:

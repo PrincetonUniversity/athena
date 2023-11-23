@@ -859,3 +859,266 @@ void CellCenteredBoundaryVariable::ClearBoundary(BoundaryCommSubset phase) {
   }
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenteredBoundaryVariable::ExpandPhysicalBoundaries(AthenaArray<Real> &u,
+//!                                                                 int nvar)
+//! \brief Expand physical boundary values to NGHOST = 2 and to edges/corners.
+void CellCenteredBoundaryVariable::ExpandPhysicalBoundaries(AthenaArray<Real> &u,
+                                                            int nvar) {
+  int is = pmy_block_->is, ie = pmy_block_->ie,
+      js = pmy_block_->js, je = pmy_block_->je,
+      ks = pmy_block_->ks, ke = pmy_block_->ke;
+
+  // push face boundary values
+  for (int n = 0; n < nvar; ++n) {
+    if (pmy_block_->pbval->nblevel[1][1][0] < 0) {
+      for (int k = ks; k <= ke; k++) {
+        for (int j = js; j <= je; j++)
+          u(nvar, k, j, is-2) = u(nvar, k, j, is-1);
+      }
+    }
+    if (pmy_block_->pbval->nblevel[1][1][2] < 0) {
+      for (int k = ks; k <= ke; k++) {
+        for (int j = js; j <= je; j++)
+          u(nvar, k, j, ie+2) = u(nvar, k, j, ie+1);
+      }
+    }
+    if (pmy_block_->pbval->nblevel[1][0][1] < 0) {
+      for (int k = ks; k <= ke; k++) {
+        for (int i = is; i <= ie; i++)
+          u(nvar, k, js-2, i) = u(nvar, k, js-1, i);
+      }
+    }
+    if (pmy_block_->pbval->nblevel[1][2][1] < 0) {
+      for (int k = ks; k <= ke; k++) {
+        for (int i = is; i <= ie; i++)
+          u(nvar, k, je+2, i) = u(nvar, k, je+1, i);
+      }
+    }
+    if (pmy_block_->pbval->nblevel[0][1][1] < 0) {
+      for (int j = js; j <= je; j++) {
+        for (int i = is; i <= ie; i++)
+          u(nvar, ks-2, j, i) = u(nvar, ks-1, j, i);
+      }
+    }
+    if (pmy_block_->pbval->nblevel[2][1][1] < 0) {
+      for (int j = js; j <= je; j++) {
+        for (int i = is; i <= ie; i++)
+          u(nvar, ke+2, j, i) = u(nvar, ke+1, j, i);
+      }
+    }
+
+    // fill edges
+    if (pmy_block_->pbval->nblevel[1][0][0] < 0) {
+      for (int k = ks; k <= ke; k++) {
+        Real p = 0.5*(u(nvar, k, js-1, is) + u(nvar, k, js, is-1));
+        u(nvar, k, js-1, is-1) = p;
+        u(nvar, k, js-1, is-2) = p;
+        u(nvar, k, js-2, is-1) = p;
+        u(nvar, k, js-2, is-2) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[1][0][2] < 0) {
+      for (int k = ks; k <= ke; k++) {
+        Real p = 0.5*(u(nvar, k, js-1, ie) + u(nvar, k, js, ie+1));
+        u(nvar, k, js-1, ie+1) = p;
+        u(nvar, k, js-1, ie+2) = p;
+        u(nvar, k, js-2, ie+1) = p;
+        u(nvar, k, js-2, ie+2) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[1][2][0] < 0) {
+      for (int k = ks; k <= ke; k++) {
+        Real p = 0.5*(u(nvar, k, je+1, is) + u(nvar, k, je, is-1));
+        u(nvar, k, je+1, is-1) = p;
+        u(nvar, k, je+1, is-2) = p;
+        u(nvar, k, je+2, is-1) = p;
+        u(nvar, k, je+2, is-2) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[1][2][2] < 0) {
+      for (int k = ks; k <= ke; k++) {
+        Real p = 0.5*(u(nvar, k, je+1, ie) + u(nvar, k, je, ie+1));
+        u(nvar, k, je+1, ie+1) = p;
+        u(nvar, k, je+1, ie+2) = p;
+        u(nvar, k, je+2, ie+1) = p;
+        u(nvar, k, je+2, ie+2) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[0][1][0] < 0) {
+      for (int j = js; j <= je; j++) {
+        Real p = 0.5*(u(nvar, ks-1, j, is) + u(nvar, ks, j, is-1));
+        u(nvar, ks-1, j, is-1) = p;
+        u(nvar, ks-1, j, is-2) = p;
+        u(nvar, ks-2, j, is-1) = p;
+        u(nvar, ks-2, j, is-2) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[0][1][2] < 0) {
+      for (int j = js; j <= je; j++) {
+        Real p = 0.5*(u(nvar, ks-1, j, ie) + u(nvar, ks, j, ie+1));
+        u(nvar, ks-1, j, ie+1) = p;
+        u(nvar, ks-1, j, ie+2) = p;
+        u(nvar, ks-2, j, ie+1) = p;
+        u(nvar, ks-2, j, ie+2) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[2][1][0] < 0) {
+      for (int j = js; j <= je; j++) {
+        Real p = 0.5*(u(nvar, ke+1, j, is) + u(nvar, ke, j, is-1));
+        u(nvar, ke+1, j, is-1) = p;
+        u(nvar, ke+1, j, is-2) = p;
+        u(nvar, ke+2, j, is-1) = p;
+        u(nvar, ke+2, j, is-2) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[2][1][2] < 0) {
+      for (int j = js; j <= je; j++) {
+        Real p = 0.5*(u(nvar, ke+1, j, ie) + u(nvar, ke, j, ie+1));
+        u(nvar, ke+1, j, ie+1) = p;
+        u(nvar, ke+1, j, ie+2) = p;
+        u(nvar, ke+2, j, ie+1) = p;
+        u(nvar, ke+2, j, ie+2) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[0][0][1] < 0) {
+      for (int i = is; i <= ie; i++) {
+        Real p = 0.5*(u(nvar, ks-1, js, i) + u(nvar, ks, js-1, i));
+        u(nvar, ks-1, js-1, i) = p;
+        u(nvar, ks-1, js-2, i) = p;
+        u(nvar, ks-2, js-1, i) = p;
+        u(nvar, ks-2, js-2, i) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[0][2][1] < 0) {
+      for (int i = is; i <= ie; i++) {
+        Real p = 0.5*(u(nvar, ks-1, je, i) + u(nvar, ks, je+1, i));
+        u(nvar, ks-1, je+1, i) = p;
+        u(nvar, ks-1, je+2, i) = p;
+        u(nvar, ks-2, je+1, i) = p;
+        u(nvar, ks-2, je+2, i) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[2][0][1] < 0) {
+      for (int i = is; i <= ie; i++) {
+        Real p = 0.5*(u(nvar, ke+1, js, i) + u(nvar, ke, js-1, i));
+        u(nvar, ke+1, js-1, i) = p;
+        u(nvar, ke+1, js-2, i) = p;
+        u(nvar, ke+2, js-1, i) = p;
+        u(nvar, ke+2, js-2, i) = p;
+      }
+    }
+    if (pmy_block_->pbval->nblevel[2][2][1] < 0) {
+      for (int i = is; i <= ie; i++) {
+        Real p = 0.5*(u(nvar, ke+1, je, i) + u(nvar, ke, je+1, i));
+        u(nvar, ke+1, je+1, i) = p;
+        u(nvar, ke+1, je+2, i) = p;
+        u(nvar, ke+2, je+1, i) = p;
+        u(nvar, ke+2, je+2, i) = p;
+      }
+    }
+
+    // fill corners
+    if (pmy_block_->pbval->nblevel[0][0][0] < 0) {
+      Real p = (u(nvar, ks, js-1, is-1) + u(nvar, ks-1, js, is-1)
+              + u(nvar, ks-1, js-1, is))/3.0;
+      u(nvar, ks-1, js-1, is-1) = p;
+      u(nvar, ks-1, js-1, is-2) = p;
+      u(nvar, ks-1, js-2, is-1) = p;
+      u(nvar, ks-1, js-2, is-2) = p;
+      u(nvar, ks-2, js-1, is-1) = p;
+      u(nvar, ks-2, js-1, is-2) = p;
+      u(nvar, ks-2, js-2, is-1) = p;
+      u(nvar, ks-2, js-2, is-2) = p;
+    }
+    if (pmy_block_->pbval->nblevel[0][0][2] < 0) {
+      Real p = (u(nvar, ks, js-1, ie+1) + u(nvar, ks-1, js, ie+1)
+              + u(nvar, ks-1, js-1, ie))/3.0;
+      u(nvar, ks-1, js-1, ie+1) = p;
+      u(nvar, ks-1, js-1, ie+2) = p;
+      u(nvar, ks-1, js-2, ie+1) = p;
+      u(nvar, ks-1, js-2, ie+2) = p;
+      u(nvar, ks-2, js-1, ie+1) = p;
+      u(nvar, ks-2, js-1, ie+2) = p;
+      u(nvar, ks-2, js-2, ie+1) = p;
+      u(nvar, ks-2, js-2, ie+2) = p;
+    }
+    if (pmy_block_->pbval->nblevel[0][2][0] < 0) {
+      Real p = (u(nvar, ks, je+1, is-1) + u(nvar, ks-1, je, is-1)
+              + u(nvar, ks-1, je+1, is))/3.0;
+      u(nvar, ks-1, je+1, is-1) = p;
+      u(nvar, ks-1, je+1, is-2) = p;
+      u(nvar, ks-1, je+2, is-1) = p;
+      u(nvar, ks-1, je+2, is-2) = p;
+      u(nvar, ks-2, je+1, is-1) = p;
+      u(nvar, ks-2, je+1, is-2) = p;
+      u(nvar, ks-2, je+2, is-1) = p;
+      u(nvar, ks-2, je+2, is-2) = p;
+    }
+    if (pmy_block_->pbval->nblevel[2][0][0] < 0) {
+      Real p = (u(nvar, ke, js-1, is-1) + u(nvar, ke+1, js, is-1)
+              + u(nvar, ke+1, js-1, is))/3.0;
+      u(nvar, ke+1, js-1, is-1) = p;
+      u(nvar, ke+1, js-1, is-2) = p;
+      u(nvar, ke+1, js-2, is-1) = p;
+      u(nvar, ke+1, js-2, is-2) = p;
+      u(nvar, ke+2, js-1, is-1) = p;
+      u(nvar, ke+2, js-1, is-2) = p;
+      u(nvar, ke+2, js-2, is-1) = p;
+      u(nvar, ke+2, js-2, is-2) = p;
+    }
+    if (pmy_block_->pbval->nblevel[0][2][2] < 0) {
+      Real p = (u(nvar, ks, je+1, ie+1) + u(nvar, ks-1, je, ie+1)
+              + u(nvar, ks-1, je+1, ie))/3.0;
+      u(nvar, ks-1, je+1, ie+1) = p;
+      u(nvar, ks-1, je+1, ie+2) = p;
+      u(nvar, ks-1, je+2, ie+1) = p;
+      u(nvar, ks-1, je+2, ie+2) = p;
+      u(nvar, ks-2, je+1, ie+1) = p;
+      u(nvar, ks-2, je+1, ie+2) = p;
+      u(nvar, ks-2, je+2, ie+1) = p;
+      u(nvar, ks-2, je+2, ie+2) = p;
+    }
+    if (pmy_block_->pbval->nblevel[2][0][2] < 0) {
+      Real p = (u(nvar, ke, js-1, ie+1) + u(nvar, ke+1, js, ie+1)
+              + u(nvar, ke+1, js-1, ie))/3.0;
+      u(nvar, ke+1, js-1, ie+1) = p;
+      u(nvar, ke+1, js-1, ie+2) = p;
+      u(nvar, ke+1, js-2, ie+1) = p;
+      u(nvar, ke+1, js-2, ie+2) = p;
+      u(nvar, ke+2, js-1, ie+1) = p;
+      u(nvar, ke+2, js-1, ie+2) = p;
+      u(nvar, ke+2, js-2, ie+1) = p;
+      u(nvar, ke+2, js-2, ie+2) = p;
+    }
+    if (pmy_block_->pbval->nblevel[2][2][0] < 0) {
+      Real p = (u(nvar, ke, je+1, is-1) + u(nvar, ke+1, je, is-1)
+              + u(nvar, ke+1, je+1, is))/3.0;
+      u(nvar, ke+1, je+1, is-1) = p;
+      u(nvar, ke+1, je+1, is-2) = p;
+      u(nvar, ke+1, je+2, is-1) = p;
+      u(nvar, ke+1, je+2, is-2) = p;
+      u(nvar, ke+2, je+1, is-1) = p;
+      u(nvar, ke+2, je+1, is-2) = p;
+      u(nvar, ke+2, je+2, is-1) = p;
+      u(nvar, ke+2, je+2, is-2) = p;
+    }
+    if (pmy_block_->pbval->nblevel[2][2][2] < 0) {
+      Real p = (u(nvar, ke, je+1, ie+1) + u(nvar, ke+1, je, ie+1)
+              + u(nvar, ke+1, je+1, ie))/3.0;
+      u(nvar, ke+1, je+1, ie+1) = p;
+      u(nvar, ke+1, je+1, ie+2) = p;
+      u(nvar, ke+1, je+2, ie+1) = p;
+      u(nvar, ke+1, je+2, ie+2) = p;
+      u(nvar, ke+2, je+1, ie+1) = p;
+      u(nvar, ke+2, je+1, ie+2) = p;
+      u(nvar, ke+2, je+2, ie+1) = p;
+      u(nvar, ke+2, je+2, ie+2) = p;
+    }
+  }
+
+  return;
+}
+
