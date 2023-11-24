@@ -117,5 +117,29 @@ void CRDiffusion::CalculateCoefficients(const AthenaArray<Real> &w,
       }
     }
   }
+
+  return;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void CRDiffusion::CalculateIonizationRate(const AthenaArray<Real> &w)
+//! \brief Calculate Ionization Rate from the Cosmic-ray density
+void CRDiffusion::CalculateIonizationRate(const AthenaArray<Real> &w) {
+  Real zeta_factor = 1.0;
+  int il = pmy_block->is - NGHOST, iu = pmy_block->ie + NGHOST;
+  int jl = pmy_block->js, ju = pmy_block->je;
+  int kl = pmy_block->ks, ku = pmy_block->ke;
+  if (pmy_block->pmy_mesh->f2)
+    jl -= NGHOST, ju += NGHOST;
+  if (pmy_block->pmy_mesh->f3)
+    kl -= NGHOST, ku += NGHOST;
+  for (int k = kl; k <= ku; ++k) {
+    for (int j = jl; j <= ju; ++j) {
+      for (int i = il; i <= iu; ++i)
+        zeta(k, j, i) = zeta_factor * w(IDN, k, j, i) * ecr(k, j, i);
+    }
+  }
+
+  return;
+}

@@ -165,7 +165,6 @@ MGGravity::~MGGravity() {
 //! \brief load the data and solve
 
 void MGGravityDriver::Solve(int stage) {
-  four_pi_G_ = pmy_mesh_->four_pi_G_;
   // Construct the Multigrid array
   vmg_.clear();
   for (int i = 0; i < pmy_mesh_->nblocal; ++i)

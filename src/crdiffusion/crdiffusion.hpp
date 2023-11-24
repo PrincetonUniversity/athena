@@ -48,7 +48,7 @@ class CRDiffusion {
 
   void CalculateCoefficients(const AthenaArray<Real> &w,
                              const AthenaArray<Real> &bcc);
-  void Solve();
+  void CalculateIonizationRate(const AthenaArray<Real> &w);
 
   friend class MGCRDiffusuionDriver;
 

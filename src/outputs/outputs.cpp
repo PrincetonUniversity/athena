@@ -1058,13 +1058,21 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       pod->data.InitWithShallowSlice(pcrdiff->ecr,4,0,1);
       AppendOutputDataNode(pod);
       num_vars_++;
+      if (pcrdiff->output_defect) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = "defect-phi";
+        pod->data.InitWithShallowSlice(pcrdiff->def, 4, 0, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
     }
     if (ContainVariable(output_params.variable, "zeta") ||
         ContainVariable(output_params.variable, "prim") ||
         ContainVariable(output_params.variable, "cons")) {
       pod = new OutputData;
       pod->type = "SCALARS";
-      pod->name = "ecr";
+      pod->name = "zeta";
       pod->data.InitWithShallowSlice(pcrdiff->zeta,4,0,1);
       AppendOutputDataNode(pod);
       num_vars_++;

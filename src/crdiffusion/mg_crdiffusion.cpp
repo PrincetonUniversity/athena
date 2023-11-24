@@ -34,6 +34,10 @@
 
 class MeshBlock;
 
+namespace {
+  AthenaArray<Real> *temp; // temporary data for the Jacobi iteration
+}
+
 //----------------------------------------------------------------------------------------
 //! \fn MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
 //! \brief MGCRDiffusionDriver constructor
@@ -44,6 +48,7 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   eps_ = pin->GetOrAddReal("crdiffusion", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("crdiffusion", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("crdiffusion", "fas", ffas_);
+  redblack_ = false;
   std::string m = pin->GetOrAddString("crdiffusion", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
   if (m == "fmg") {
@@ -87,6 +92,17 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   mgroot_ = new MGCRDiffusion(this, nullptr);
 
   crtlist_ = new CRDiffusionBoundaryTaskList(pin, pm);
+
+  int nth = 1;
+#ifdef OPENMP_PARALLEL
+  nth = omp_get_max_threads();
+#endif
+  temp = new AthenaArray<Real>[nth];
+  int nx = std::max(pmy_mesh_->block_size.nx1, pmy_mesh_->nrbx1) + 2*mgroot_->ngh_;
+  int ny = std::max(pmy_mesh_->block_size.nx2, pmy_mesh_->nrbx2) + 2*mgroot_->ngh_;
+  int nz = std::max(pmy_mesh_->block_size.nx3, pmy_mesh_->nrbx3) + 2*mgroot_->ngh_;
+  for (int n = 0; n < nth; ++n)
+    temp[n].NewAthenaArray(nz, ny, nx);
 }
 
 
@@ -98,6 +114,7 @@ MGCRDiffusionDriver::~MGCRDiffusionDriver() {
   delete crtlist_;
   delete mgroot_;
   delete mgtlist_;
+  delete [] temp;
 }
 
 
@@ -165,6 +182,13 @@ void MGCRDiffusionDriver::Solve(int stage) {
 
   crtlist_->DoTaskListOneStage(pmy_mesh_, stage);
 
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
+    CRDiffusion *pcrdiff = pmg->pmy_block_->pcrdiff;
+    Hydro *phydro = pmg->pmy_block_->phydro;
+    pcrdiff->CalculateIonizationRate(phydro->w);
+  }
+
   return;
 }
 
@@ -185,21 +209,34 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
   Real dx2 = SQR(dx);
   Real isix = omega_/6.0;
   color ^= pmy_driver_->coffset_;
+  int t = 0;
+
   if (th == true && (ku-kl) >=  minth_) {
+    AthenaArray<Real> &work = temp[t];
 #pragma omp parallel for num_threads(pmy_driver_->nthreads_)
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
-        int c = (color + k + j) & 1;
 #pragma ivdep
-        for (int i=il+c; i<=iu; i+=2);
+        for (int i=il; i<=iu; i++) {
+          Real Md = 0.0;
+          Real Mt = 0.0;
+          work(k,j,i) = (u(k,j,i) - Mt)/Md;
+        }
       }
     }
   } else {
+#ifdef OPENMP_PARALLEL
+    t = omp_get_thread_num();
+#endif
+    AthenaArray<Real> &work = temp[t];
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
-        int c = (color + k + j) & 1;
 #pragma ivdep
-        for (int i=il+c; i<=iu; i+=2);
+        for (int i=il; i<=iu; i++) {
+          Real Md = 0.0;
+          Real Mt = 0.0;
+          work(k,j,i) = (u(k,j,i) - Mt)/Md;
+        }
       }
     }
   }
