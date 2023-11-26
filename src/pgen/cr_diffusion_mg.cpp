@@ -50,6 +50,7 @@ namespace {
 void CRFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
                     int is, int ie, int js, int je, int ks, int ke, int ngh,
                     const MGCoordinates &coord) {
+  std::cout << "Boundary " << is << " " << ie << std::endl;
   for (int n=0; n<nvar; n++) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {

@@ -93,7 +93,7 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   //!@}
 
   // for Multigrid
-  void ExpandPhysicalBoundaries(AthenaArray<Real> &u, int nvar);
+  void ExpandPhysicalBoundaries();
 
   //!@{
   //! BoundaryPhysics:

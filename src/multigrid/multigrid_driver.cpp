@@ -322,6 +322,20 @@ void MultigridDriver::CheckBoundaryFunctions() {
       break;
   }
 
+  // check periodic boundary conditions
+  for (int i = 0; i < 6; ++i) {
+    if (pmy_mesh_->mesh_bcs[i] == BoundaryFlag::periodic
+     || mg_mesh_bcs_[i] == BoundaryFlag::periodic) {
+      if (pmy_mesh_->mesh_bcs[i] != mg_mesh_bcs_[i]) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in MGGravityDriver::CheckBoundaryFunctions" << std::endl
+            << "When periodic boundary condition is set either for" << std::endl
+            << "Multigrid or for the main part, both must be periodic." << std::endl;
+        ATHENA_ERROR(msg);
+      }
+    }
+  }
+
   if (mporder_ >= 0) {
     ffas_ = true;
     fsubtract_average_ = false;

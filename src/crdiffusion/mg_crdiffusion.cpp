@@ -222,7 +222,7 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
           for (int i=il; i<=iu; i++) {
             Real Md = 0.0;
             Real Mt = 0.0;
-            work(k,j,i) = (u(k,j,i) - Mt)/Md;
+            work(k,j,i) = u(k,j,i); // (u(k,j,i) - Mt)/Md;
           }
         }
       }
@@ -247,7 +247,7 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
         for (int i=il; i<=iu; i++) {
           Real Md = 0.0;
           Real Mt = 0.0;
-          work(k,j,i) = (u(k,j,i) - Mt)/Md;
+          work(k,j,i) = u(k,j,i); // (u(k,j,i) - Mt)/Md;
         }
       }
     }

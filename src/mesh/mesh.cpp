@@ -1571,9 +1571,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         if (CR_ENABLED) {
           pmb->pcr->cr_bvar.SendBoundaryBuffers();
         }
-        if (CRDIFFUSION_ENABLED) {
-          pmb->pcrdiff->crbvar.SendBoundaryBuffers();
-        }
       }
       // wait to receive conserved variables
 #pragma omp for private(pmb,pbval)
@@ -1589,8 +1586,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pmb->pnrrad->rad_bvar.ReceiveAndSetBoundariesWithWait();
         if (CR_ENABLED)
           pmb->pcr->cr_bvar.ReceiveAndSetBoundariesWithWait();
-        if (CRDIFFUSION_ENABLED)
-          pmb->pcrdiff->crbvar.ReceiveAndSetBoundariesWithWait();
 
         if (shear_periodic && orbital_advection==0) {
           pmb->phydro->hbvar.AddHydroShearForInit();

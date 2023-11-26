@@ -120,6 +120,6 @@ TaskStatus CRDiffusionBoundaryTaskList::ProlongateCRDiffusionBoundary(MeshBlock 
 }
 
 TaskStatus CRDiffusionBoundaryTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
-  pmb->pcrdiff->crbvar.ExpandPhysicalBoundaries(pmb->pcrdiff->ecr, 1);
+  pmb->pcrdiff->crbvar.ExpandPhysicalBoundaries();
   return TaskStatus::next;
 }
