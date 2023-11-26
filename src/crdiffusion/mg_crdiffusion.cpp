@@ -220,9 +220,17 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
         for (int j=jl; j<=ju; j++) {
 #pragma ivdep
           for (int i=il; i<=iu; i++) {
-            Real Md = 0.0;
-            Real Mt = 0.0;
-            work(k,j,i) = u(k,j,i); // (u(k,j,i) - Mt)/Md;
+            Real M = matrix(CCC,k,j,i)*u(k,j,i)
+                   + matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
+                   + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
+                   + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
+                   + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
+                   + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
+                   + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
+                   + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
+                   + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
+                   + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
+            work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
           }
         }
       }
@@ -245,9 +253,17 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
       for (int j=jl; j<=ju; j++) {
 #pragma ivdep
         for (int i=il; i<=iu; i++) {
-          Real Md = 0.0;
-          Real Mt = 0.0;
-          work(k,j,i) = u(k,j,i); // (u(k,j,i) - Mt)/Md;
+          Real M = matrix(CCC,k,j,i)*u(k,j,i)
+                 + matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
+                 + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
+                 + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
+                 + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
+                 + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
+                 + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
+                 + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
+                 + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
+                 + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
+          work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
         }
       }
     }
@@ -285,14 +301,38 @@ void MGCRDiffusion::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Re
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-        for (int i=il; i<=iu; i++);
+        for (int i=il; i<=iu; i++) {
+          Real M = matrix(CCC,k,j,i)*u(k,j,i)
+                 + matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
+                 + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
+                 + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
+                 + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
+                 + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
+                 + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
+                 + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
+                 + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
+                 + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
+          def(k,j,i) = src(k,j,i) - M;
+        }
       }
     }
   } else {
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-        for (int i=il; i<=iu; i++);
+        for (int i=il; i<=iu; i++) {
+          Real M = matrix(CCC,k,j,i)*u(k,j,i)
+                 + matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
+                 + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
+                 + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
+                 + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
+                 + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
+                 + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
+                 + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
+                 + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
+                 + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
+          def(k,j,i) = src(k,j,i) - M;
+        }
       }
     }
   }
@@ -321,14 +361,38 @@ void MGCRDiffusion::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Re
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-        for (int i=il; i<=iu; i++);
+        for (int i=il; i<=iu; i++) {
+          Real M = matrix(CCC,k,j,i)*u(k,j,i)
+                 + matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
+                 + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
+                 + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
+                 + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
+                 + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
+                 + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
+                 + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
+                 + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
+                 + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
+          src(k,j,i) -= M;
+        }
       }
     }
   } else {
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-        for (int i=il; i<=iu; i++);
+        for (int i=il; i<=iu; i++) {
+          Real M = matrix(CCC,k,j,i)*u(k,j,i)
+                 + matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
+                 + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
+                 + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
+                 + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
+                 + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
+                 + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
+                 + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
+                 + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
+                 + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
+          src(k,j,i) -= M;
+        }
       }
     }
   }
@@ -351,6 +415,8 @@ void MGCRDiffusion::CalculateMatrix(AthenaArray<Real> &matrix,
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real fac = dt/SQR(dx), efac = 0.125*fac;
 
+  std::cout << "CalculateMatrix " << rlev << std::endl;
+
   if (th == true && (ku-kl) >=  minth_) {
 #pragma omp parallel for num_threads(pmy_driver_->nthreads_)
     for (int k=kl; k<=ku; k++) {
@@ -361,7 +427,8 @@ void MGCRDiffusion::CalculateMatrix(AthenaArray<Real> &matrix,
           matrix(CCC,k,j,i) = 1.0 + 0.5*fac*(
                               2.0*coeff(DXX,k,j,i)+coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i-1)
                             + 2.0*coeff(DYY,k,j,i)+coeff(DYY,k,j+1,i)+coeff(DYY,k,j-1,i)
-                            + 2.0*coeff(DZZ,k,j,i)+coeff(DZZ,k+1,j,i)+coeff(DZZ,k-1,j,i));
+                            + 2.0*coeff(DZZ,k,j,i)+coeff(DZZ,k+1,j,i)+coeff(DZZ,k-1,j,i))
+                            + dt*coeff(NLAMBDA,k,j,i);
           // face
           matrix(CCM,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i) + coeff(DXX,k,j,i-1))
                                 +0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))

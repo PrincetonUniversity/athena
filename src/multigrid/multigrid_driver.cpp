@@ -786,8 +786,8 @@ void MultigridDriver::SolveIterative() {
     def = 0.0;
     for (int v = 0; v < nvar_; ++v)
       def += CalculateDefectNorm(MGNormType::l2, v);
-    //if (Globals::my_rank == 0)
-    //  std::cout << "niter " << n << " def " << def << std::endl;
+    if (Globals::my_rank == 0)
+      std::cout << "niter " << n << " def " << def << std::endl;
     if (def/olddef > 0.8) {
       if (eps_ == 0.0) break;
       if (Globals::my_rank == 0)

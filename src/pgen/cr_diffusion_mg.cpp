@@ -55,7 +55,7 @@ void CRFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=0; i<ngh; i++)
-          dst(n,k,j,is-i-1) = e0;
+          dst(n,k,j,is-i-1) = 2.0*e0 - dst(n,k,j,is);
       }
     }
   }
@@ -69,7 +69,7 @@ void CRFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=0; i<ngh; i++)
-          dst(n,k,j,ie+i+1) = e0;
+          dst(n,k,j,ie+i+1) = 2.0*e0 - dst(n,k,j,ie);
       }
     }
   }
@@ -83,7 +83,7 @@ void CRFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k=ks; k<=ke; k++) {
       for (int j=0; j<ngh; j++) {
         for (int i=is; i<=ie; i++)
-          dst(n,k,js-j-1,i) = e0;
+          dst(n,k,js-j-1,i) = 2.0*e0 - dst(n,k,js,i);
       }
     }
   }
@@ -97,7 +97,7 @@ void CRFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k=ks; k<=ke; k++) {
       for (int j=0; j<ngh; j++) {
         for (int i=is; i<=ie; i++)
-          dst(n,k,je+j+1,i) = e0;
+          dst(n,k,je+j+1,i) = 2.0*e0 - dst(n,k,je,i);
       }
     }
   }
@@ -111,7 +111,7 @@ void CRFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k=0; k<ngh; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++)
-          dst(n,ks-k-1,j,i) = e0;
+          dst(n,ks-k-1,j,i) = 2.0*e0 - dst(n,ks,j,i);
       }
     }
   }
@@ -125,7 +125,7 @@ void CRFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
     for (int k=0; k<ngh; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++)
-          dst(n,ke+k+1,j,i) = e0;
+          dst(n,ke+k+1,j,i) = 2.0*e0 - dst(n,ke,j,i);
       }
     }
   }
@@ -219,7 +219,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   for(int k=ks; k<=ke; ++k) {
     for(int j=js; j<=je; ++j) {
       for(int i=is; i<=ie; ++i)
-        pcrdiff->ecr(k,j,i) = 0.0;
+        pcrdiff->ecr(k,j,i) = 1.0;
     }
   }
 

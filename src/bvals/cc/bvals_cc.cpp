@@ -873,7 +873,6 @@ void CellCenteredBoundaryVariable::ExpandPhysicalBoundaries() {
   // push face boundary values
   for (int n = nl_; n <= nu_; ++n) {
     if (pmy_block_->pbval->nblevel[1][1][0] < 0) {
-      std::cout << "expand 110" << std::endl;
       for (int k = ks; k <= ke; k++) {
         for (int j = js; j <= je; j++)
           u(n, k, j, is-2) = u(n, k, j, is-1);
