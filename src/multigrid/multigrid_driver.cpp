@@ -38,9 +38,9 @@
 // constructor, initializes data structures and parameters
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
-                                 MGSourceMaskFunc MGSourceMask, int invar, int ncoeff) :
+                 MGSourceMaskFunc MGSourceMask, int invar, int ncoeff, int nmatrix) :
     nranks_(Globals::nranks), nthreads_(pm->num_mesh_threads_), nbtotal_(pm->nbtotal),
-    nvar_(invar), ncoeff_(ncoeff), mode_(0), // 0: FMG+V-cycle, 1: V-cycle
+    nvar_(invar), ncoeff_(ncoeff), nmatrix_(nmatrix), mode_(0), // 0: FMG+V, 1: V-cycle
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
     pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), 
@@ -137,16 +137,18 @@ MultigridDriver::~MultigridDriver() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGOctet::Allocate(int nvar, int ncoct, int nccoct, int ncoeff)
+//! \fn void MGOctet::Allocate(int nvar, int ncoct, int nccoct, int ncoeff, int nmatrix)
 //  \brief allocate arrays and coordinates in MGOctet
 
-void MGOctet::Allocate(int nvar, int ncoct, int nccoct, int ncoeff) {
+void MGOctet::Allocate(int nvar, int ncoct, int nccoct, int ncoeff, int nmatrix) {
   u.NewAthenaArray(nvar, ncoct, ncoct, ncoct);
   uold.NewAthenaArray(nvar, ncoct, ncoct, ncoct);
   def.NewAthenaArray(nvar, ncoct, ncoct, ncoct);
   src.NewAthenaArray(nvar, ncoct, ncoct, ncoct);
   if (ncoeff > 0)
     coeff.NewAthenaArray(ncoeff, ncoct, ncoct, ncoct);
+  if (nmatrix > 0)
+    matrix.NewAthenaArray(nmatrix, ncoct, ncoct, ncoct);
   coord.AllocateMGCoordinates(ncoct, ncoct, ncoct);
   ccoord.AllocateMGCoordinates(nccoct, nccoct, nccoct);
   return;
@@ -384,10 +386,10 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SetupMultigrid()
+//! \fn void MultigridDriver::SetupMultigrid(Real dt)
 //  \brief initialize the source assuming that the source terms are already loaded
 
-void MultigridDriver::SetupMultigrid() {
+void MultigridDriver::SetupMultigrid(Real dt) {
   locrootlevel_ = pmy_mesh_->root_level;
   nrootlevel_ = mgroot_->GetNumberOfLevels();
   nmblevel_ = vmg_[0]->GetNumberOfLevels();
@@ -416,7 +418,7 @@ void MultigridDriver::SetupMultigrid() {
         octetbflag_[l].resize(noctets_[l]);
       }
       for (int o = pmaxnoct_[l]; o < noctets_[l]; ++o)
-        octets_[l][o].Allocate(nvar_, ncoct, nccoct, ncoeff_);
+        octets_[l][o].Allocate(nvar_, ncoct, nccoct, ncoeff_, nmatrix_);
       noctets_[l] = 0;
     }
     pmy_mesh_->tree.GetMGOctetList(octets_, octetmap_, noctets_);
@@ -484,6 +486,9 @@ void MultigridDriver::SetupMultigrid() {
 
   if (ncoeff_ > 0)
     RestrictCoefficients();
+
+  if (nmatrix_ > 0)
+    CalculateMatrix(dt);
 
   if (mode_ == 0) { // FMG
 #pragma omp parallel for num_threads(nthreads_)
@@ -1042,7 +1047,7 @@ void MultigridDriver::RestrictOctets() {
       int oj = (static_cast<int>(loc.lx2) & 1) + ngh;
       int ok = (static_cast<int>(loc.lx3) & 1) + ngh;
       MGOctet &coct = octets_[lev-1][oid];
-      mgroot_->CalculateDefect(foct.def, foct.u, foct.src, foct.coeff,
+      mgroot_->CalculateDefect(foct.def, foct.u, foct.src, foct.coeff, foct.matrix,
                                lev+1, os_, oe_, os_, oe_, os_, oe_, false);
       for (int v = 0; v < nvar_; ++v)
         coct.src(v, ok, oj, oi) = RestrictOne(foct.def, v, ngh, ngh, ngh);
@@ -1059,7 +1064,7 @@ void MultigridDriver::RestrictOctets() {
       int ri = static_cast<int>(loc.lx1);
       int rj = static_cast<int>(loc.lx2);
       int rk = static_cast<int>(loc.lx3);
-      mgroot_->CalculateDefect(oct.def, oct.u, oct.src, oct.coeff,
+      mgroot_->CalculateDefect(oct.def, oct.u, oct.src, oct.coeff, oct.matrix,
                                1, os_, oe_, os_, oe_, os_, oe_, false);
       for (int v = 0; v < nvar_; ++v)
         mgroot_->SetData(MGVariable::src, v, rk, rj, ri,
@@ -1078,7 +1083,7 @@ void MultigridDriver::RestrictOctets() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDiffusionDriver::RestrictCoefficients()
-//! \brief restrict coefficients in Octets
+//! \brief restrict coefficients
 
 void MultigridDriver::RestrictCoefficients() {
 #pragma omp parallel for num_threads(nthreads_)
@@ -1120,6 +1125,32 @@ void MultigridDriver::RestrictCoefficients() {
     }
   }
   mgroot_->RestrictCoefficients();
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::CalculateMatrix(Real dt)
+//! \brief Calculate Matrix elements
+
+void MultigridDriver::CalculateMatrix(Real dt) {
+#pragma omp parallel for num_threads(nthreads_)
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
+    pmg->CalculateMatrixBlock(dt);
+  }
+  if (nreflevel_ > 0) {
+    const int &ngh = mgroot_->ngh_;
+    for (int l = nreflevel_ - 1; l >= 0; --l) {  // fine octets to coarse octets
+#pragma omp parallel for num_threads(nthreads_)
+      for (int o = 0; o < noctets_[l]; ++o) {
+        MGOctet &oct = octets_[l][o];
+        mgroot_->CalculateMatrix(oct.matrix, oct.coeff, dt, l+1,
+                          os_, oe_, os_, oe_, os_, oe_, false);
+      }
+    }
+  }
+  mgroot_->CalculateMatrixBlock(dt);
 
   return;
 }
@@ -1167,7 +1198,7 @@ void MultigridDriver::CalculateFASRHSOctets() {
 #pragma omp parallel for num_threads(nthreads_)
   for (int o = 0; o < noctets_[lev]; ++o) {
     MGOctet &oct = octets_[lev][o];
-    mgroot_->CalculateFASRHS(oct.src, oct.u, oct.coeff,
+    mgroot_->CalculateFASRHS(oct.src, oct.u, oct.coeff, oct.matrix,
                              lev+1, os_, oe_, os_, oe_, os_, oe_, false);
   }
   return;
@@ -1183,7 +1214,7 @@ void MultigridDriver::SmoothOctets(int color) {
 #pragma omp parallel for num_threads(nthreads_)
   for (int o = 0; o < noctets_[lev]; ++o) {
     MGOctet &oct = octets_[lev][o];
-    mgroot_->Smooth(oct.u, oct.src, oct.coeff,
+    mgroot_->Smooth(oct.u, oct.src, oct.coeff, oct.matrix,
                     lev+1, os_, oe_, os_, oe_, os_, oe_, color, false);
   }
   return;

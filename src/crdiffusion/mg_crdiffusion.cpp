@@ -44,7 +44,7 @@ namespace {
 
 MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
     : MultigridDriver(pm, pm->MGCRDiffusionBoundaryFunction_,
-                      pm->MGCRDiffusionSourceMaskFunction_, 1, NCOEFF) {
+                      pm->MGCRDiffusionSourceMaskFunction_, 1, NCOEFF, NMATRIX) {
   eps_ = pin->GetOrAddReal("crdiffusion", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("crdiffusion", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("crdiffusion", "fas", ffas_);
@@ -139,10 +139,10 @@ MGCRDiffusion::~MGCRDiffusion() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGCRDiffusionDriver::Solve(int stage)
+//! \fn void MGCRDiffusionDriver::Solve(int stage, Real dt)
 //! \brief load the data and solve
 
-void MGCRDiffusionDriver::Solve(int stage) {
+void MGCRDiffusionDriver::Solve(int stage, Real dt) {
   // Construct the Multigrid array
   vmg_.clear();
   for (int i = 0; i < pmy_mesh_->nblocal; ++i)
@@ -159,7 +159,7 @@ void MGCRDiffusionDriver::Solve(int stage) {
     pmg->LoadCoefficients(pmg->pmy_block_->pcrdiff->coeff, NGHOST);
   }
 
-  SetupMultigrid();
+  SetupMultigrid(dt);
 
   if (mode_ == 0) {
     SolveFMGCycle();
@@ -195,14 +195,14 @@ void MGCRDiffusionDriver::Solve(int stage) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//!                         const AthenaArray<Real> &coeff, int rlev, int il, int iu,
-//!                         int jl, int ju, int kl, int ku, int color, bool th)
+//!            const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix, int rlev,
+//!            int il, int iu, int jl, int ju, int kl, int ku, int color, bool th)
 //! \brief Implementation of the Red-Black Gauss-Seidel Smoother
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
-                           const AthenaArray<Real> &coeff, int rlev, int il, int iu,
-                           int jl, int ju, int kl, int ku, int color, bool th) {
+         const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix, int rlev,
+         int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
@@ -266,15 +266,16 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGCRDiffusion::CalculateDefect(AthenaArray<Real> &def,
-//!                         const AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//!                         const AthenaArray<Real> &coeff, int rlev, int il, int iu,
-//!                         int jl, int ju, int kl, int ku, bool th)
+//!            const AthenaArray<Real> &u, const AthenaArray<Real> &src,
+//!            const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix,
+//!            int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the Defect calculation
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGCRDiffusion::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
                     const AthenaArray<Real> &src, const AthenaArray<Real> &coeff,
-                    int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) {
+                    const AthenaArray<Real> &matrix, int rlev, int il, int iu,
+                    int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
@@ -302,14 +303,15 @@ void MGCRDiffusion::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Re
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGCRDiffusion::CalculateFASRHS(AthenaArray<Real> &src,
-//!              const AthenaArray<Real> &u, const AthenaArray<Real> &coeff,
-//!              int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th)
+//!            const AthenaArray<Real> &u, const AthenaArray<Real> &coeff,
+//!            const AthenaArray<Real> &matrix, int rlev, int il, int iu, int jl, int ju,
+//!            int kl, int ku, bool th)
 //! \brief Implementation of the RHS calculation for FAS
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGCRDiffusion::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> &u,
-                             const AthenaArray<Real> &coeff, int rlev, int il, int iu,
-                             int jl, int ju, int kl, int ku, bool th) {
+                    const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix,
+                    int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
@@ -330,6 +332,142 @@ void MGCRDiffusion::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Re
       }
     }
   }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGCRDiffusion::CalculateMatrix(AthenaArray<Real> &matrix,
+//!                         const AthenaArray<Real> &coeff, int rlev, Real dt,
+//!                         int il, int iu, int jl, int ju, int kl, int ku, bool th)
+//! \brief calculate Matrix element for cosmic ray transport
+//!        rlev = relative level from the finest level of this Multigrid block
+
+void MGCRDiffusion::CalculateMatrix(AthenaArray<Real> &matrix,
+                             const AthenaArray<Real> &coeff, Real dt, int rlev,
+                             int il, int iu, int jl, int ju, int kl, int ku, bool th) {
+  Real dx;
+  if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
+  else           dx = rdx_/static_cast<Real>(1<<rlev);
+  Real fac = dt/SQR(dx), efac = 0.125*fac;
+
+  if (th == true && (ku-kl) >=  minth_) {
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+#pragma omp simd
+        for (int i=il; i<=iu; i++) {
+          // center
+          matrix(CCC,k,j,i) = 1.0 + 0.5*fac*(
+                              2.0*coeff(DXX,k,j,i)+coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i-1)
+                            + 2.0*coeff(DYY,k,j,i)+coeff(DYY,k,j+1,i)+coeff(DYY,k,j-1,i)
+                            + 2.0*coeff(DZZ,k,j,i)+coeff(DZZ,k+1,j,i)+coeff(DZZ,k-1,j,i));
+          // face
+          matrix(CCM,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i) + coeff(DXX,k,j,i-1))
+                                +0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
+                                       +(coeff(DZX,k+1,j,i)-coeff(DZX,k-1,j,i))));
+          matrix(CCP,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i))
+                                -0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
+                                       +(coeff(DZX,k+1,j,i)-coeff(DZX,k-1,j,i))));
+          matrix(CMC,k,j,i) = fac*(-0.5*(coeff(DYY,k,j,i) + coeff(DYY,k,j-1,i))
+                                +0.125*((coeff(DXY,k,j,i+1)-coeff(DXY,k,j,i-1))
+                                       +(coeff(DZY,k+1,j,i)-coeff(DZY,k-1,j,i))));
+          matrix(CPC,k,j,i) = fac*(-0.5*(coeff(DYY,k,j+1,i)+coeff(DYY,k,j,i))
+                                -0.125*((coeff(DXY,k,j,i+1)-coeff(DXY,k,j,i-1))
+                                       +(coeff(DZY,k+1,j,i)-coeff(DZY,k-1,j,i))));
+          matrix(MCC,k,j,i) = fac*(-0.5*(coeff(DZZ,k,j,i) + coeff(DZZ,k-1,j,i))
+                                +0.125*((coeff(DYZ,k,j+1,i)-coeff(DYZ,k,j-1,i))
+                                       +(coeff(DXZ,k,j,i+1)-coeff(DXZ,k,j,i-1))));
+          matrix(PCC,k,j,i) = fac*(-0.5*(coeff(DZZ,k+1,j,i)+coeff(DZZ,k,j,i))
+                                -0.125*((coeff(DYZ,k,j+1,i)-coeff(DYZ,k,j-1,i))
+                                       +(coeff(DXZ,k,j,i+1)-coeff(DXZ,k,j,i-1))));
+          // edge
+          matrix(CMM,k,j,i) = -efac*(coeff(DXY,k,j,i) + coeff(DXY,k,j,i-1)
+                                    +coeff(DYX,k,j,i) + coeff(DYX,k,j-1,i));
+          matrix(CMP,k,j,i) =  efac*(coeff(DXY,k,j,i+1)+coeff(DXY,k,j,i)
+                                    +coeff(DYX,k,j,i) + coeff(DYX,k,j-1,i));
+          matrix(CPM,k,j,i) =  efac*(coeff(DXY,k,j,i) + coeff(DXY,k,j,i-1)
+                                    +coeff(DYX,k,j+1,i)+coeff(DYX,k,j,i));
+          matrix(CPP,k,j,i) = -efac*(coeff(DXY,k,j,i+1)+coeff(DXY,k,j,i)
+                                    +coeff(DYX,k,j+1,i)+coeff(DYX,k,j,i));
+          matrix(MCM,k,j,i) = -efac*(coeff(DZX,k,j,i) + coeff(DZX,k-1,j,i)
+                                    +coeff(DXZ,k,j,i) + coeff(DXZ,k,j,i-1));
+          matrix(MCP,k,j,i) =  efac*(coeff(DZX,k,j,i) + coeff(DZX,k-1,j,i)
+                                    +coeff(DXZ,k,j,i+1)+coeff(DXZ,k,j,i));
+          matrix(PCM,k,j,i) =  efac*(coeff(DZX,k+1,j,i)+coeff(DZX,k,j,i)
+                                    +coeff(DXZ,k,j,i) + coeff(DXZ,k,j,i-1));
+          matrix(PCP,k,j,i) = -efac*(coeff(DZX,k+1,j,i)+coeff(DZX,k,j,i)
+                                    +coeff(DXZ,k,j,i+1)+coeff(DXZ,k,j,i));
+          matrix(MMC,k,j,i) = -efac*(coeff(DYZ,k,j,i) + coeff(DYZ,k,j-1,i)
+                                    +coeff(DZY,k,j,i) + coeff(DZY,k-1,j,i));
+          matrix(MPC,k,j,i) =  efac*(coeff(DYZ,k,j+1,i)+coeff(DYZ,k,j,i)
+                                    +coeff(DZY,k,j,i) + coeff(DZY,k-1,j,i));
+          matrix(PMC,k,j,i) =  efac*(coeff(DYZ,k,j,i) + coeff(DYZ,k,j-1,i)
+                                    +coeff(DZY,k+1,j,i)+coeff(DZY,k,j,i));
+          matrix(PPC,k,j,i) = -efac*(coeff(DYZ,k,j+1,i)+coeff(DYZ,k,j,i)
+                                    +coeff(DZY,k+1,j,i)+coeff(DZY,k,j,i));
+        }
+      }
+    }
+  } else {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+#pragma omp simd
+        for (int i=il; i<=iu; i++) {
+          // center
+          matrix(CCC,k,j,i) = 1.0 + 0.5*fac*(
+                              2.0*coeff(DXX,k,j,i)+coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i-1)
+                            + 2.0*coeff(DYY,k,j,i)+coeff(DYY,k,j+1,i)+coeff(DYY,k,j-1,i)
+                            + 2.0*coeff(DZZ,k,j,i)+coeff(DZZ,k+1,j,i)+coeff(DZZ,k-1,j,i));
+          // face
+          matrix(CCM,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i) + coeff(DXX,k,j,i-1))
+                                +0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
+                                       +(coeff(DZX,k+1,j,i)-coeff(DZX,k-1,j,i))));
+          matrix(CCP,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i))
+                                -0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
+                                       +(coeff(DZX,k+1,j,i)-coeff(DZX,k-1,j,i))));
+          matrix(CMC,k,j,i) = fac*(-0.5*(coeff(DYY,k,j,i) + coeff(DYY,k,j-1,i))
+                                +0.125*((coeff(DXY,k,j,i+1)-coeff(DXY,k,j,i-1))
+                                       +(coeff(DZY,k+1,j,i)-coeff(DZY,k-1,j,i))));
+          matrix(CPC,k,j,i) = fac*(-0.5*(coeff(DYY,k,j+1,i)+coeff(DYY,k,j,i))
+                                -0.125*((coeff(DXY,k,j,i+1)-coeff(DXY,k,j,i-1))
+                                       +(coeff(DZY,k+1,j,i)-coeff(DZY,k-1,j,i))));
+          matrix(MCC,k,j,i) = fac*(-0.5*(coeff(DZZ,k,j,i) + coeff(DZZ,k-1,j,i))
+                                +0.125*((coeff(DYZ,k,j+1,i)-coeff(DYZ,k,j-1,i))
+                                       +(coeff(DXZ,k,j,i+1)-coeff(DXZ,k,j,i-1))));
+          matrix(PCC,k,j,i) = fac*(-0.5*(coeff(DZZ,k+1,j,i)+coeff(DZZ,k,j,i))
+                                -0.125*((coeff(DYZ,k,j+1,i)-coeff(DYZ,k,j-1,i))
+                                       +(coeff(DXZ,k,j,i+1)-coeff(DXZ,k,j,i-1))));
+          // edge
+          matrix(CMM,k,j,i) = -efac*(coeff(DXY,k,j,i) + coeff(DXY,k,j,i-1)
+                                    +coeff(DYX,k,j,i) + coeff(DYX,k,j-1,i));
+          matrix(CMP,k,j,i) =  efac*(coeff(DXY,k,j,i+1)+coeff(DXY,k,j,i)
+                                    +coeff(DYX,k,j,i) + coeff(DYX,k,j-1,i));
+          matrix(CPM,k,j,i) =  efac*(coeff(DXY,k,j,i) + coeff(DXY,k,j,i-1)
+                                    +coeff(DYX,k,j+1,i)+coeff(DYX,k,j,i));
+          matrix(CPP,k,j,i) = -efac*(coeff(DXY,k,j,i+1)+coeff(DXY,k,j,i)
+                                    +coeff(DYX,k,j+1,i)+coeff(DYX,k,j,i));
+          matrix(MCM,k,j,i) = -efac*(coeff(DZX,k,j,i) + coeff(DZX,k-1,j,i)
+                                    +coeff(DXZ,k,j,i) + coeff(DXZ,k,j,i-1));
+          matrix(MCP,k,j,i) =  efac*(coeff(DZX,k,j,i) + coeff(DZX,k-1,j,i)
+                                    +coeff(DXZ,k,j,i+1)+coeff(DXZ,k,j,i));
+          matrix(PCM,k,j,i) =  efac*(coeff(DZX,k+1,j,i)+coeff(DZX,k,j,i)
+                                    +coeff(DXZ,k,j,i) + coeff(DXZ,k,j,i-1));
+          matrix(PCP,k,j,i) = -efac*(coeff(DZX,k+1,j,i)+coeff(DZX,k,j,i)
+                                    +coeff(DXZ,k,j,i+1)+coeff(DXZ,k,j,i));
+          matrix(MMC,k,j,i) = -efac*(coeff(DYZ,k,j,i) + coeff(DYZ,k,j-1,i)
+                                    +coeff(DZY,k,j,i) + coeff(DZY,k-1,j,i));
+          matrix(MPC,k,j,i) =  efac*(coeff(DYZ,k,j+1,i)+coeff(DYZ,k,j,i)
+                                    +coeff(DZY,k,j,i) + coeff(DZY,k-1,j,i));
+          matrix(PMC,k,j,i) =  efac*(coeff(DYZ,k,j,i) + coeff(DYZ,k,j-1,i)
+                                    +coeff(DZY,k+1,j,i)+coeff(DZY,k,j,i));
+          matrix(PPC,k,j,i) = -efac*(coeff(DYZ,k,j+1,i)+coeff(DYZ,k,j,i)
+                                    +coeff(DZY,k+1,j,i)+coeff(DZY,k,j,i));
+        }
+      }
+    }
+  }
+
   return;
 }
 

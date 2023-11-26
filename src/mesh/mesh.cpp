@@ -1525,7 +1525,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       pmgrd->Solve(1);
 
     if (CRDIFFUSION_ENABLED)
-      pmcrd->Solve(1);
+      pmcrd->Solve(1, 0.0);
 
 
 #pragma omp parallel num_threads(nthreads)

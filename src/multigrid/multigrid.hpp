@@ -78,10 +78,10 @@ class MGCoordinates {
 
 class MGOctet {
  public:
-  void Allocate(int nvar, int ncoct, int nccoct, int ncoeff);
+  void Allocate(int nvar, int ncoct, int nccoct, int ncoeff, int nmatrix);
   LogicalLocation loc;
   bool fleaf;
-  AthenaArray<Real> u, def, src, uold, coeff;
+  AthenaArray<Real> u, def, src, uold, coeff, matrix;
   MGCoordinates coord, ccoord;
 };
 
@@ -116,6 +116,7 @@ class Multigrid {
   void SmoothBlock(int color);
   void CalculateDefectBlock();
   void CalculateFASRHSBlock();
+  void CalculateMatrixBlock(Real dt);
   void SetFromRootGrid(bool folddata);
   Real CalculateDefectNorm(MGNormType nrm, int n);
   Real CalculateTotal(MGVariable type, int n);
@@ -145,14 +146,18 @@ class Multigrid {
 
   // physics-dependent virtual functions
   virtual void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-                      const AthenaArray<Real> &coeff, int rlev, int il, int iu,
-                      int jl, int ju, int kl, int ku, int color, bool th) = 0;
+                      const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrx,
+                      int rlev, int il, int iu, int jl, int ju, int kl, int ku,
+                      int color, bool th) = 0;
   virtual void CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-               const AthenaArray<Real> &src, const AthenaArray<Real> &coeff, int rlev,
-               int il, int iu, int jl, int ju, int kl, int ku, bool th) = 0;
+               const AthenaArray<Real> &src, const AthenaArray<Real> &coeff,
+               const AthenaArray<Real> &matrix, int rlev, int il, int iu, int jl, int ju,
+               int kl, int ku, bool th) = 0;
   virtual void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
-                               const AthenaArray<Real> &coeff, int rlev, int il, int iu,
-                               int jl, int ju, int kl, int ku, bool th) = 0;
+                 const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix,
+                 int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) = 0;
+  virtual void CalculateMatrix(AthenaArray<Real> &matrix, const AthenaArray<Real> &coeff,
+          Real dt, int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) {};
 
   friend class MultigridDriver;
   friend class MultigridTaskList;
@@ -167,10 +172,10 @@ class Multigrid {
   LogicalLocation loc_;
   RegionSize size_;
   BoundaryFlag mg_block_bcs_[6];
-  int nlevel_, ngh_, nvar_, ncoeff_, current_level_;
+  int nlevel_, ngh_, nvar_, ncoeff_, nmatrix_, current_level_;
   Real rdx_, rdy_, rdz_;
   Real defscale_;
-  AthenaArray<Real> *u_, *def_, *src_, *uold_, *coeff_;
+  AthenaArray<Real> *u_, *def_, *src_, *uold_, *coeff_, *matrix_;
   MGCoordinates *coord_, *ccoord_;
 
  private:
@@ -184,11 +189,11 @@ class Multigrid {
 class MultigridDriver {
  public:
   MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
-                  MGSourceMaskFunc MGSourceMask, int invar, int ncoeff);
+                  MGSourceMaskFunc MGSourceMask, int invar, int ncoeff, int nmatrix);
   virtual ~MultigridDriver();
 
   // pure virtual function
-  virtual void Solve(int step) = 0;
+  virtual void Solve(int step, Real dt = 0.0) = 0;
 
   friend class Multigrid;
   friend class MultigridTaskList;
@@ -200,7 +205,7 @@ class MultigridDriver {
  protected:
   void CheckBoundaryFunctions();
   void SubtractAverage(MGVariable type);
-  void SetupMultigrid();
+  void SetupMultigrid(Real dt);
   void TransferFromBlocksToRoot(bool initflag = false);
   void FMGProlongate();
   void TransferFromRootToBlocks(bool folddata);
@@ -213,6 +218,7 @@ class MultigridDriver {
 
   virtual void SolveCoarsestGrid();
   Real CalculateDefectNorm(MGNormType nrm, int n);
+  void CalculateMatrix(Real dt);
   Multigrid* FindMultigrid(int tgid);
 
   // octet manipulation functions
@@ -254,7 +260,7 @@ class MultigridDriver {
   // small functions
   int GetNumMultigrids() { return nblist_[Globals::my_rank]; }
 
-  int nranks_, nthreads_, nbtotal_, nvar_, ncoeff_, mode_;
+  int nranks_, nthreads_, nbtotal_, nvar_, ncoeff_, nmatrix_, mode_;
   int locrootlevel_, nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;
   int current_level_, fmglevel_;
   int *nslist_, *nblist_, *nvlist_, *nvslist_, *nvlisti_, *nvslisti_, *ranklist_;

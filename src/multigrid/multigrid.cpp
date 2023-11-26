@@ -31,7 +31,7 @@
 
 Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int nghost) :
   pmy_driver_(pmd), pmy_block_(pmb), ngh_(nghost), nvar_(pmd->nvar_),
-  ncoeff_(pmd->ncoeff_), defscale_(1.0) {
+  ncoeff_(pmd->ncoeff_), nmatrix_(pmd->nmatrix_), defscale_(1.0) {
   if (pmy_block_ != nullptr) {
     loc_ = pmy_block_->loc;
     size_ = pmy_block_->block_size;
@@ -122,6 +122,7 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int nghost) :
   coord_ = new MGCoordinates[nlevel_];
   ccoord_ = new MGCoordinates[nlevel_];
   coeff_ = new AthenaArray<Real>[nlevel_];
+  matrix_ = new AthenaArray<Real>[nlevel_];
   if (pmy_block_ == nullptr)
     uold_ = new AthenaArray<Real>[nlevel_];
   else
@@ -140,6 +141,8 @@ Multigrid::Multigrid(MultigridDriver *pmd, MeshBlock *pmb, int nghost) :
     coord_[l].CalculateMGCoordinates(size_, ll, ngh_);
     if (ncoeff_ > 0)
       coeff_[l].NewAthenaArray(ncoeff_,ncz,ncy,ncx);
+    if (nmatrix_ > 0)
+      matrix_[l].NewAthenaArray(nmatrix_,ncz,ncy,ncx);
     ncx=(size_.nx1>>(ll+1))+2*ngh_;
     ncy=(size_.nx2>>(ll+1))+2*ngh_;
     ncz=(size_.nx3>>(ll+1))+2*ngh_;
@@ -159,6 +162,7 @@ Multigrid::~Multigrid() {
   delete [] def_;
   delete [] uold_;
   delete [] coeff_;
+  delete [] matrix_;
   delete [] coord_;
   delete [] ccoord_;
 }
@@ -474,7 +478,7 @@ void Multigrid::SmoothBlock(int color) {
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
   Smooth(u_[current_level_], src_[current_level_],  coeff_[current_level_],
-         -ll, is, ie, js, je, ks, ke, color, th);
+         matrix_[current_level_], -ll, is, ie, js, je, ks, ke, color, th);
 
   return;
 }
@@ -496,7 +500,8 @@ void Multigrid::CalculateDefectBlock() {
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
   CalculateDefect(def_[current_level_], u_[current_level_], src_[current_level_],
-                  coeff_[current_level_], -ll, is, ie, js, je, ks, ke, th);
+                  coeff_[current_level_], matrix_[current_level_],
+                  -ll, is, ie, js, je, ks, ke, th);
 
   return;
 }
@@ -518,11 +523,27 @@ void Multigrid::CalculateFASRHSBlock() {
   ie = is+(size_.nx1>>ll)-1, je = js+(size_.nx2>>ll)-1, ke = ks+(size_.nx3>>ll)-1;
 
   CalculateFASRHS(src_[current_level_], u_[current_level_], coeff_[current_level_],
-                  -ll, is, ie, js, je, ks, ke, th);
+                  matrix_[current_level_], -ll, is, ie, js, je, ks, ke, th);
 
   return;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void Multigrid::CalculateMatrixBlock(Real dt)
+//  \brief calculate matrix elements for all the levels
+
+void Multigrid::CalculateMatrixBlock(Real dt) {
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  for (int lev = nlevel_ - 1; lev >= 0; lev--) {
+    int ll = nlevel_ - lev - 1;
+    ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
+    CalculateMatrix(matrix_[lev-1], coeff_[lev], dt, -ll, is, ie, js, je, ks, ke, false);
+  }
+
+  return;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void Multigrid::SetFromRootGrid(bool folddata)
@@ -613,7 +634,8 @@ Real Multigrid::CalculateDefectNorm(MGNormType nrm, int n) {
        dz=rdz_*static_cast<Real>(1<<ll);
 
   CalculateDefect(def_[current_level_], u_[current_level_], src_[current_level_],
-                  coeff_[current_level_], -ll, is, ie, js, je, ks, ke, false);
+                  coeff_[current_level_], matrix_[current_level_],
+                  -ll, is, ie, js, je, ks, ke, false);
 
   Real norm=0.0;
   if (nrm == MGNormType::max) {

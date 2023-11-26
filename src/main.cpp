@@ -462,7 +462,7 @@ int main(int argc, char *argv[]) {
     if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
 
     if (CRDIFFUSION_ENABLED)
-      pmesh->pmcrd->Solve(0);
+      pmesh->pmcrd->Solve(0, pmesh->dt);
 
     for (int stage=1; stage<=ptlist->nstages; ++stage) {
       ptlist->DoTaskListOneStage(pmesh, stage);

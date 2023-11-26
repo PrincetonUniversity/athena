@@ -26,8 +26,11 @@ class CRDiffusionBoundaryValues;
 class MGCRDiffusion;
 class MGCRDiffusionDriver;
 
-constexpr int NCOEFF = 7;
-enum CoeffIndex {DXX=0, DXY=1, DYX=1, DXZ=2, DZX=2, DYY=3, DYZ=4, DZZ=5, NLAMBDA=6};
+constexpr int NCOEFF = 7, NMATRIX = 19;
+enum CoeffIndex {DXX=0, DXY=1, DYX=1, DXZ=2, DZX=2, DYY=3, DYZ=4, DZY=4, DZZ=5,
+                 NLAMBDA=6};
+enum MatrixIndex {CCC=0, CCM=1, CCP=2, CMC=3, CPC=4, MCC=5, PCC=6, CMM=7, CMP=8, CPM=9,
+                  CPP=10, MCM=11, MCP=12, PCM=13, PCP=14, MMC=15, MPC=16, PMC=17, PPC=18};
 
 //! \class CRDiffusion
 //! \brief gravitational potential data and functions

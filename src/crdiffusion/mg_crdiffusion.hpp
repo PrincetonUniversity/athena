@@ -34,14 +34,17 @@ class MGCRDiffusion : public Multigrid {
   ~MGCRDiffusion();
 
   void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
-              const AthenaArray<Real> &coeff, int rlev, int il, int iu,
-              int jl, int ju, int kl, int ku, int color, bool th) final;
+              const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix, int rlev,
+              int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) final;
   void CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
                 const AthenaArray<Real> &src, const AthenaArray<Real> &coeff,
-                int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) final;
+                const AthenaArray<Real> &matrix, int rlev, int il, int iu, int jl, int ju,
+                int kl, int ku, bool th) final;
   void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
-                       const AthenaArray<Real> &coeff, int rlev, int il, int iu,
-                       int jl, int ju, int kl, int ku, bool th) final;
+                const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix,
+                int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) final;
+  void CalculateMatrix(AthenaArray<Real> &matrix, const AthenaArray<Real> &coeff,
+       Real dt, int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) final;
 
   friend class MGCRDiffusionDriver;
 
@@ -57,7 +60,7 @@ class MGCRDiffusionDriver : public MultigridDriver {
  public:
   MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin);
   ~MGCRDiffusionDriver();
-  void Solve(int stage) final;
+  void Solve(int stage, Real dt) final;
 
  private:
   CRDiffusionBoundaryTaskList *crtlist_;
