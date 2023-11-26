@@ -55,7 +55,7 @@ CRDiffusion::CRDiffusion(MeshBlock *pmb, ParameterInput *pin) :
   if (pmb->pmy_mesh->multilevel)
     refinement_idx_ = pmy_block->pmr->AddToRefinement(&ecr, &coarse_ecr);
 
-//  pmg = new MGCRDiffusion(pmb->pmy_mesh->pmgcrd, pmb);
+  pmg = new MGCRDiffusion(pmb->pmy_mesh->pmcrd, pmb);
 
   // Enroll CellCenteredBoundaryVariable object
   crbvar.bvar_index = pmb->pbval->bvars.size();

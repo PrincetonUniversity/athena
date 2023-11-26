@@ -302,11 +302,10 @@ void Multigrid::RestrictFMGSource() {
 void Multigrid::RestrictCoefficients() {
   int is, ie, js, je, ks, ke;
   is=js=ks=ngh_;
-  for (current_level_=nlevel_-1; current_level_>0; current_level_--) {
-    int ll=nlevel_-current_level_;
+  for (int lev = nlevel_ - 1; lev > 0; lev--) {
+    int ll = nlevel_ - lev;
     ie=is+(size_.nx1>>ll)-1, je=js+(size_.nx2>>ll)-1, ke=ks+(size_.nx3>>ll)-1;
-    Restrict(coeff_[current_level_-1], coeff_[current_level_],
-             ncoeff_, is, ie, js, je, ks, ke, false);
+    Restrict(coeff_[lev-1], coeff_[lev], ncoeff_, is, ie, js, je, ks, ke, false);
   }
   return;
 }

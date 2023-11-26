@@ -1061,7 +1061,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       if (pcrdiff->output_defect) {
         pod = new OutputData;
         pod->type = "SCALARS";
-        pod->name = "defect-phi";
+        pod->name = "defect-ecr";
         pod->data.InitWithShallowSlice(pcrdiff->def, 4, 0, 1);
         AppendOutputDataNode(pod);
         num_vars_++;

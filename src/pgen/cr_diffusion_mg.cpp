@@ -43,6 +43,111 @@
 #error "The implicit CR diffusion solver must be enabled (-crdiff)."
 #endif
 
+namespace {
+  Real e0;
+}
+
+void CRFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
+                    int is, int ie, int js, int je, int ks, int ke, int ngh,
+                    const MGCoordinates &coord) {
+  for (int n=0; n<nvar; n++) {
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=0; i<ngh; i++)
+          dst(n,k,j,is-i-1) = e0;
+      }
+    }
+  }
+  return;
+}
+
+void CRFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
+                    int is, int ie, int js, int je, int ks, int ke, int ngh,
+                    const MGCoordinates &coord) {
+  for (int n=0; n<nvar; n++) {
+    for (int k=ks; k<=ke; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=0; i<ngh; i++)
+          dst(n,k,j,ie+i+1) = e0;
+      }
+    }
+  }
+  return;
+}
+
+void CRFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
+                    int is, int ie, int js, int je, int ks, int ke, int ngh,
+                    const MGCoordinates &coord) {
+  for (int n=0; n<nvar; n++) {
+    for (int k=ks; k<=ke; k++) {
+      for (int j=0; j<ngh; j++) {
+        for (int i=is; i<=ie; i++)
+          dst(n,k,js-j-1,i) = e0;
+      }
+    }
+  }
+  return;
+}
+
+void CRFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
+                    int is, int ie, int js, int je, int ks, int ke, int ngh,
+                    const MGCoordinates &coord) {
+  for (int n=0; n<nvar; n++) {
+    for (int k=ks; k<=ke; k++) {
+      for (int j=0; j<ngh; j++) {
+        for (int i=is; i<=ie; i++)
+          dst(n,k,je+j+1,i) = e0;
+      }
+    }
+  }
+  return;
+}
+
+void CRFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
+                    int is, int ie, int js, int je, int ks, int ke, int ngh,
+                    const MGCoordinates &coord) {
+  for (int n=0; n<nvar; n++) {
+    for (int k=0; k<ngh; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++)
+          dst(n,ks-k-1,j,i) = e0;
+      }
+    }
+  }
+  return;
+}
+
+void CRFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
+                    int is, int ie, int js, int je, int ks, int ke, int ngh,
+                    const MGCoordinates &coord) {
+  for (int n=0; n<nvar; n++) {
+    for (int k=0; k<ngh; k++) {
+      for (int j=js; j<=je; j++) {
+        for (int i=is; i<=ie; i++)
+          dst(n,ke+k+1,j,i) = e0;
+      }
+    }
+  }
+  return;
+}
+
+
+//========================================================================================
+//! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
+//  \brief
+//========================================================================================
+
+void Mesh::InitUserMeshData(ParameterInput *pin) {
+  e0 = 1.0;
+  EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace::inner_x1, CRFixedInnerX1);
+  EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace::outer_x1, CRFixedOuterX1);
+  EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace::inner_x2, CRFixedInnerX2);
+  EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace::outer_x2, CRFixedOuterX2);
+  EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace::inner_x3, CRFixedInnerX3);
+  EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace::outer_x3, CRFixedOuterX3);
+}
+
+
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief cosmic ray diffusion test
@@ -96,23 +201,24 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
     pfield->CalculateCellCenteredField(pfield->b,pfield->bcc,pcoord,is,ie,js,je,ks,ke);
 
-    for(int k=ks; k<=ke; ++k) {
-      for(int j=js; j<=je; ++j) {
-        for(int i=is; i<=ie; ++i) {
-          phydro->u(IEN,k,j,i) +=
-            0.5*(SQR((pfield->bcc(IB1,k,j,i)))
-               + SQR((pfield->bcc(IB2,k,j,i)))
-               + SQR((pfield->bcc(IB3,k,j,i))));
+    if (NON_BAROTROPIC_EOS) {
+      for(int k=ks; k<=ke; ++k) {
+        for(int j=js; j<=je; ++j) {
+          for(int i=is; i<=ie; ++i) {
+            phydro->u(IEN,k,j,i) +=
+              0.5*(SQR((pfield->bcc(IB1,k,j,i)))
+                 + SQR((pfield->bcc(IB2,k,j,i)))
+                 + SQR((pfield->bcc(IB3,k,j,i))));
+          }
         }
       }
     }
   }
 
-
   for(int k=ks; k<=ke; ++k) {
     for(int j=js; j<=je; ++j) {
       for(int i=is; i<=ie; ++i)
-        pcrdiff->ecr(k,j,i) = 1.0;
+        pcrdiff->ecr(k,j,i) = 0.0;
     }
   }
 

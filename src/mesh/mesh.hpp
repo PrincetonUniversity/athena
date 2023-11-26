@@ -45,20 +45,22 @@ struct TaskStates;
 class Coordinates;
 class Reconstruction;
 class Hydro;
-class NRRadiation;
-class IMRadiation;
+
 class CosmicRay;
 class CRDiffusion;
+class MGCRDiffusionDriver;
+class EquationOfState;
 class Field;
-class Particles;
-class PassiveScalars;
 class Gravity;
 class MGGravityDriver;
-class EquationOfState;
 class FFTDriver;
 class FFTGravityDriver;
-class TurbulenceDriver;
 class OrbitalAdvection;
+class Particles;
+class PassiveScalars;
+class NRRadiation;
+class IMRadiation;
+class TurbulenceDriver;
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
 
@@ -265,6 +267,7 @@ class Mesh {
   TurbulenceDriver *ptrbd;
   FFTGravityDriver *pfgrd;
   MGGravityDriver *pmgrd;
+  MGCRDiffusionDriver *pmcrd;
 
   // implicit radiation iteration
   IMRadiation *pimrad;
@@ -389,9 +392,12 @@ class Mesh {
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
   void EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
   void EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask);
+  void EnrollUserMGCRDiffusionSourceMaskFunction(MGSourceMaskFunc srcmask);
 
   void EnrollUserRadBoundaryFunction(BoundaryFace face, RadBoundaryFunc my_func);
   void EnrollUserCRBoundaryFunction(BoundaryFace face, CRBoundaryFunc my_func);
+
+  void EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
 
   //! \deprecated (felker):
   //! * provide trivial overload for old-style BoundaryFace enum argument

@@ -213,14 +213,26 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
 
   if (th == true && (ku-kl) >=  minth_) {
     AthenaArray<Real> &work = temp[t];
-#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
+#pragma omp parallel num_threads(pmy_driver_->nthreads_)
+    {
+#pragma omp for
+      for (int k=kl; k<=ku; k++) {
+        for (int j=jl; j<=ju; j++) {
 #pragma ivdep
-        for (int i=il; i<=iu; i++) {
-          Real Md = 0.0;
-          Real Mt = 0.0;
-          work(k,j,i) = (u(k,j,i) - Mt)/Md;
+          for (int i=il; i<=iu; i++) {
+            Real Md = 0.0;
+            Real Mt = 0.0;
+            work(k,j,i) = (u(k,j,i) - Mt)/Md;
+          }
+        }
+      }
+#pragma omp for
+      for (int k=kl; k<=ku; k++) {
+        for (int j=jl; j<=ju; j++) {
+#pragma ivdep
+          for (int i=il; i<=iu; i++) {
+            u(k,j,i) = work(k,j,i);
+          }
         }
       }
     }
@@ -236,6 +248,14 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
           Real Md = 0.0;
           Real Mt = 0.0;
           work(k,j,i) = (u(k,j,i) - Mt)/Md;
+        }
+      }
+    }
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+#pragma ivdep
+        for (int i=il; i<=iu; i++) {
+          u(k,j,i) = work(k,j,i);
         }
       }
     }

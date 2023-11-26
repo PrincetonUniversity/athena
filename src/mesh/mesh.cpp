@@ -32,6 +32,7 @@
 #include "../coordinates/coordinates.hpp"
 #include "../cr/cr.hpp"
 #include "../crdiffusion/crdiffusion.hpp"
+#include "../crdiffusion/mg_crdiffusion.hpp"
 #include "../eos/eos.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../fft/turbulence.hpp"
@@ -119,7 +120,7 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     ConductionCoeff_{}, FieldDiffusivity_{},
     OrbitalVelocity_{}, OrbitalVelocityDerivative_{nullptr, nullptr},
     MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
-    MGGravitySourceMaskFunction_{} {
+    MGGravitySourceMaskFunction_{}, MGCRDiffusionSourceMaskFunction_{} {
   std::stringstream msg;
   BoundaryFlag block_bcs[6];
   std::int64_t nbmax;
@@ -529,6 +530,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     pmgrd = new MGGravityDriver(this, pin);
   }
 
+  if (CRDIFFUSION_ENABLED)
+    pmcrd = new MGCRDiffusionDriver(this, pin);
+
   if (IM_RADIATION_ENABLED) {
     pimrad = new IMRadiation(this, pin);
   }
@@ -852,6 +856,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     // MGDriver must be initialzied before MeshBlocks
     pmgrd = new MGGravityDriver(this, pin);
   }
+
+  if (CRDIFFUSION_ENABLED)
+    pmcrd = new MGCRDiffusionDriver(this, pin);
 
   if (IM_RADIATION_ENABLED) {
     pimrad = new IMRadiation(this, pin);
@@ -1184,7 +1191,7 @@ void Mesh::EnrollUserBoundaryFunction(int dir, BValFunc my_bc) {
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir,
 //!                                                    MGBoundaryFunc my_bc)
-//! \brief Enroll a user-defined Multigrid boundary function
+//! \brief Enroll a user-defined Multigrid gravity boundary function
 
 void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
   std::stringstream msg;
@@ -1206,6 +1213,32 @@ void Mesh::EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask) {
   return;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir,
+//!                                                        MGBoundaryFunc my_bc)
+//! \brief Enroll a user-defined Multigrid CR Diffusion boundary function
+
+void Mesh::EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
+  std::stringstream msg;
+  if (dir < 0 || dir > 5) {
+    msg << "### FATAL ERROR in EnrollUserMGCRDiffusionBoundaryFunction" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  MGCRDiffusionBoundaryFunction_[static_cast<int>(dir)] = my_bc;
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGCRDiffusionSourceMaskFunction(MGSourceMaskFunc srcmask)
+//  \brief Enroll a user-defined Multigrid CR diffusion source mask function
+
+void Mesh::EnrollUserMGCRDiffusionSourceMaskFunction(MGSourceMaskFunc srcmask) {
+  MGCRDiffusionSourceMaskFunction_ = srcmask;
+  return;
+}
 
 //----------------------------------------------------------------------------------------
 // radiation related boundaries
@@ -1490,6 +1523,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       pfgrd->Solve(1, 0);
     else if (SELF_GRAVITY_ENABLED == 2)
       pmgrd->Solve(1);
+
+    if (CRDIFFUSION_ENABLED)
+      pmcrd->Solve(1);
+
 
 #pragma omp parallel num_threads(nthreads)
     {
