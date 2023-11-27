@@ -155,6 +155,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real gamma = peos->GetGamma();
+  Real r0 = 0.2, rho0 = 1.0;
 
   for(int k=ks; k<=ke; ++k) {
     Real x3 = pcoord->x3v(k);
@@ -162,8 +163,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       Real x2 = pcoord->x2v(j);
       for (int i=is; i<=ie; ++i) {
         Real x1 = pcoord->x1v(i);
-
-        phydro->u(IDN,k,j,i) = 1.0;
+        Real r2 = SQR(x1)+SQR(x2)+SQR(x3);
+        phydro->u(IDN,k,j,i) = rho0/std::min(r2,r0*r0);
         phydro->u(IM1,k,j,i) = 0.0;
         phydro->u(IM2,k,j,i) = 0.0;
         phydro->u(IM3,k,j,i) = 0.0;

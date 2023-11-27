@@ -30,7 +30,7 @@ class CRDiffusionBoundaryTaskList;
 
 class MGCRDiffusion : public Multigrid {
  public:
-  MGCRDiffusion(MultigridDriver *pmd, MeshBlock *pmb);
+  MGCRDiffusion(MGCRDiffusionDriver *pmd, MeshBlock *pmb);
   ~MGCRDiffusion();
 
   void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
@@ -49,7 +49,7 @@ class MGCRDiffusion : public Multigrid {
   friend class MGCRDiffusionDriver;
 
  private:
-  static constexpr Real omega_ = 1.15;
+  Real omega_;
 };
 
 
@@ -62,8 +62,11 @@ class MGCRDiffusionDriver : public MultigridDriver {
   ~MGCRDiffusionDriver();
   void Solve(int stage, Real dt) final;
 
+  friend class MGCRDiffusion;
+
  private:
   CRDiffusionBoundaryTaskList *crtlist_;
+  Real omega_;
 };
 
 #endif // CRDIFFUSION_MG_CRDIFFUSION_HPP_

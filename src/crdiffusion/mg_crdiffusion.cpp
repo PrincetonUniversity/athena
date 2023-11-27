@@ -19,6 +19,7 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../coordinates/coordinates.hpp"
+#include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
@@ -48,6 +49,7 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   eps_ = pin->GetOrAddReal("crdiffusion", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("crdiffusion", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("crdiffusion", "fas", ffas_);
+  omega_ = pin->GetOrAddReal("crdiffusion", "omega", omega_);
   redblack_ = false;
   std::string m = pin->GetOrAddString("crdiffusion", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
@@ -119,11 +121,11 @@ MGCRDiffusionDriver::~MGCRDiffusionDriver() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn MGCRDiffusion::MGCRDiffusion(MultigridDriver *pmd, MeshBlock *pmb)
+//! \fn MGCRDiffusion::MGCRDiffusion(MGCRDiffusionDriver *pmd, MeshBlock *pmb)
 //! \brief MGCRDiffusion constructor
 
-MGCRDiffusion::MGCRDiffusion(MultigridDriver *pmd, MeshBlock *pmb)
-  : Multigrid(pmd, pmb, 1) {
+MGCRDiffusion::MGCRDiffusion(MGCRDiffusionDriver *pmd, MeshBlock *pmb)
+  : Multigrid(pmd, pmb, 1), omega_(pmd->omega_) {
   btype = btypef = BoundaryQuantity::mg;
   pmgbval = new MGBoundaryValues(this, mg_block_bcs_);
 }
@@ -153,10 +155,14 @@ void MGCRDiffusionDriver::Solve(int stage, Real dt) {
   for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
     MGCRDiffusion *pmg = static_cast<MGCRDiffusion*>(*itr);
     // assume all the data are located on the same node
-    pmg->LoadSource(pmg->pmy_block_->pcrdiff->ecr, 0, NGHOST, 1.0);
+    CRDiffusion *pcrdiff = pmg->pmy_block_->pcrdiff;
+    Hydro *phydro = pmg->pmy_block_->phydro;
+    Field *pfield = pmg->pmy_block_->pfield;
+    pcrdiff->CalculateCoefficients(phydro->w, pfield->bcc);
+    pmg->LoadSource(pcrdiff->ecr, 0, NGHOST, 1.0);
     if (mode_ == 1) // use the previous timestep data as the initial guess
-      pmg->LoadFinestData(pmg->pmy_block_->pcrdiff->ecr, 0, NGHOST);
-    pmg->LoadCoefficients(pmg->pmy_block_->pcrdiff->coeff, NGHOST);
+      pmg->LoadFinestData(pcrdiff->ecr, 0, NGHOST);
+    pmg->LoadCoefficients(pcrdiff->coeff, NGHOST);
   }
 
   SetupMultigrid(dt);
@@ -237,9 +243,8 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
       for (int k=kl; k<=ku; k++) {
         for (int j=jl; j<=ju; j++) {
 #pragma ivdep
-          for (int i=il; i<=iu; i++) {
-            u(k,j,i) = work(k,j,i);
-          }
+          for (int i=il; i<=iu; i++)
+            u(k,j,i) += omega_ * (work(k,j,i) - u(k,j,i));
         }
       }
     }
@@ -262,17 +267,14 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
                  + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
                  + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
           work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
-          if (i==1 && j==1 && k==1)
-          std::cout << "smooth " << rlev << " "<< 1 << " " << 1 << " " << 1 << " u: " << u(1,1,1) << " src: " <<  src(1,1,1) << " work: " << work(1,1,1) << " M " << M << " " << std::endl;
         }
       }
     }
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
 #pragma ivdep
-        for (int i=il; i<=iu; i++) {
-          u(k,j,i) = work(k,j,i);
-        }
+        for (int i=il; i<=iu; i++)
+          u(k,j,i) += omega_ * (work(k,j,i) - u(k,j,i));
       }
     }
   }
@@ -332,8 +334,6 @@ void MGCRDiffusion::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Re
                  + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
                  + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
           def(k,j,i) = src(k,j,i) - M;
-          if (i==1 && j==1 && k==1)
-          std::cout << "defect " << rlev << " "<< 1 << " " << 1 << " " << 1 << " u: " << u(1,1,1) << " src: " <<  src(1,1,1) << " def: " << def(1,1,1) << " M " << M << " " << std::endl;
         }
       }
     }
@@ -393,8 +393,6 @@ void MGCRDiffusion::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Re
                  + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
                  + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
                  + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
-          if (i==1 && j==1 && k==1)
-          std::cout << "FASRHS " << rlev << " "<< 1 << " " << 1 << " " << 1 << " u: " << u(1,1,1) << " src: " <<  src(1,1,1) << " M " << M << " " << " src-M " << src(k,j,i) -M << std::endl;
           src(k,j,i) += M;
         }
       }
@@ -418,7 +416,6 @@ void MGCRDiffusion::CalculateMatrix(AthenaArray<Real> &matrix,
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real fac = dt/SQR(dx), efac = 0.125*fac;
-
   if (th == true && (ku-kl) >=  minth_) {
 #pragma omp parallel for num_threads(pmy_driver_->nthreads_)
     for (int k=kl; k<=ku; k++) {
@@ -487,7 +484,8 @@ void MGCRDiffusion::CalculateMatrix(AthenaArray<Real> &matrix,
           matrix(CCC,k,j,i) = 1.0 + 0.5*fac*(
                               2.0*coeff(DXX,k,j,i)+coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i-1)
                             + 2.0*coeff(DYY,k,j,i)+coeff(DYY,k,j+1,i)+coeff(DYY,k,j-1,i)
-                            + 2.0*coeff(DZZ,k,j,i)+coeff(DZZ,k+1,j,i)+coeff(DZZ,k-1,j,i));
+                            + 2.0*coeff(DZZ,k,j,i)+coeff(DZZ,k+1,j,i)+coeff(DZZ,k-1,j,i))
+                            + dt*coeff(NLAMBDA,k,j,i);
           // face
           matrix(CCM,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i) + coeff(DXX,k,j,i-1))
                                 +0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
@@ -536,7 +534,6 @@ void MGCRDiffusion::CalculateMatrix(AthenaArray<Real> &matrix,
       }
     }
   }
-
   return;
 }
 
