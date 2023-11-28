@@ -224,26 +224,15 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
   Real dx2 = SQR(dx);
   Real isix = omega_/6.0;
   color ^= pmy_driver_->coffset_;
-  if (th == true && (ku-kl) >=  minth_) {
-#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-        int c = (color + k + j) & 1;
+
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_) if (th && (ku-kl) >= minth_)
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+      int c = (color + k + j) & 1;
 #pragma ivdep
-        for (int i=il+c; i<=iu; i+=2)
-          u(k,j,i) -= ((6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
-                        - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1)) + src(k,j,i)*dx2)*isix;
-      }
-    }
-  } else {
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-        int c = (color + k + j) & 1;
-#pragma ivdep
-        for (int i=il+c; i<=iu; i+=2)
-          u(k,j,i) -= ((6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
-                        - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1)) + src(k,j,i)*dx2)*isix;
-      }
+      for (int i=il+c; i<=iu; i+=2)
+        u(k,j,i) -= ((6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
+                      - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1)) + src(k,j,i)*dx2)*isix;
     }
   }
 
@@ -286,24 +275,14 @@ void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> 
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real idx2 = 1.0/SQR(dx);
-  if (th == true && (ku-kl) >=  minth_) {
-#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
+
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_) if (th && (ku-kl) >= minth_)
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-        for (int i=il; i<=iu; i++)
-          def(k,j,i) = (6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
-                         - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1))*idx2 + src(k,j,i);
-      }
-    }
-  } else {
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-#pragma omp simd
-        for (int i=il; i<=iu; i++)
-          def(k,j,i) = (6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
-                         - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1))*idx2 + src(k,j,i);
-      }
+      for (int i=il; i<=iu; i++)
+        def(k,j,i) = (6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
+                       - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1))*idx2 + src(k,j,i);
     }
   }
 
@@ -326,26 +305,17 @@ void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> 
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real idx2 = 1.0/SQR(dx);
-  if (th == true && (ku-kl) >=  minth_) {
-#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
+
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_) if (th && (ku-kl) >= minth_)
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-        for (int i=il; i<=iu; i++)
-          src(k,j,i) -= (6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
-                          - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1))*idx2;
-      }
-    }
-  } else {
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-#pragma omp simd
-        for (int i=il; i<=iu; i++)
-          src(k,j,i) -= (6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
-                          - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1))*idx2;
-      }
+      for (int i=il; i<=iu; i++)
+        src(k,j,i) -= (6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
+                        - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1))*idx2;
     }
   }
+
   return;
 }
 
