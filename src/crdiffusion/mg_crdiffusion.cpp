@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mg_crdiffusion.cpp
-//! \brief create multigrid solver for gravity
+//! \brief create multigrid solver for comic-ray diffusion
 
 // C headers
 
@@ -50,7 +50,7 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   niter_ = pin->GetOrAddInteger("crdiffusion", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("crdiffusion", "fas", ffas_);
   omega_ = pin->GetOrAddReal("crdiffusion", "omega", omega_);
-  redblack_ = false;
+  redblack_ = true;
   std::string m = pin->GetOrAddString("crdiffusion", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
   if (m == "fmg") {
@@ -145,6 +145,7 @@ MGCRDiffusion::~MGCRDiffusion() {
 //! \brief load the data and solve
 
 void MGCRDiffusionDriver::Solve(int stage, Real dt) {
+  std::cout << "Solve" << std::endl;
   // Construct the Multigrid array
   vmg_.clear();
   for (int i = 0; i < pmy_mesh_->nblocal; ++i)
@@ -223,26 +224,28 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
 #pragma omp for
       for (int k=kl; k<=ku; k++) {
         for (int j=jl; j<=ju; j++) {
+          int c = (color + k + j) & 1;
 #pragma ivdep
-          for (int i=il; i<=iu; i++) {
-          Real M = matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
-                 + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
-                 + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
-                 + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
-                 + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
-                 + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
-                 + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
-                 + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
-                 + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
-            work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
+          for (int i=il+c; i<=iu; i+=2) {
+            Real M = matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
+                   + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
+                   + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
+                   + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
+                   + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
+                   + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
+                   + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
+                   + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
+                   + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
+              work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
           }
         }
       }
 #pragma omp for
       for (int k=kl; k<=ku; k++) {
         for (int j=jl; j<=ju; j++) {
+          int c = (color + k + j) & 1;
 #pragma ivdep
-          for (int i=il; i<=iu; i++)
+          for (int i=il+c; i<=iu; i+=2)
             u(k,j,i) += omega_ * (work(k,j,i) - u(k,j,i));
         }
       }
@@ -255,8 +258,9 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
     AthenaArray<Real> &work = temp[t];
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
+        int c = (color + k + j) & 1;
 #pragma ivdep
-        for (int i=il; i<=iu; i++) {
+        for (int i=il+c; i<=iu; i+=2) {
           Real M = matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
                  + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
                  + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
@@ -272,8 +276,9 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
     }
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
+        int c = (color + k + j) & 1;
 #pragma ivdep
-        for (int i=il; i<=iu; i++)
+        for (int i=il+c; i<=iu; i+=2)
           u(k,j,i) += omega_ * (work(k,j,i) - u(k,j,i));
       }
     }
