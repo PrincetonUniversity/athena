@@ -44,8 +44,9 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
     pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), 
-    redblack_(true), needinit_(true), eps_(-1.0), niter_(-1), coffset_(0), mporder_(-1),
-    nmpcoeff_(0), mpo_(3), autompo_(false), nodipole_(false), nb_rank_(0) {
+    redblack_(true), needinit_(true), eps_(-1.0), niter_(-1), npresmooth_(1),
+    npostsmooth_(1), coffset_(0), fprolongation_(0), mporder_(-1), nmpcoeff_(0), mpo_(3),
+    autompo_(false), nodipole_(false), nb_rank_(0) {
   std::cout << std::scientific << std::setprecision(15);
 
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
@@ -756,7 +757,7 @@ void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
 
 void MultigridDriver::SolveFMGCycle() {
   for (fmglevel_ = 0; fmglevel_ < ntotallevel_; fmglevel_++) {
-    SolveVCycle(1, 1);
+    SolveVCycle(npresmooth_, npostsmooth_);
     if (fmglevel_ != ntotallevel_-1)
       FMGProlongate();
   }
@@ -780,15 +781,17 @@ void MultigridDriver::SolveIterative() {
   Real def = 0.0;
   for (int v = 0; v < nvar_; ++v)
     def += CalculateDefectNorm(MGNormType::l2, v);
+  // std::cout << "initial defect " << def << std::endl;
   while (def > eps_) {
-    SolveVCycle(1, 1);
+    SolveVCycle(npresmooth_, npostsmooth_);
     Real olddef = def;
     def = 0.0;
     for (int v = 0; v < nvar_; ++v)
       def += CalculateDefectNorm(MGNormType::l2, v);
     if (Globals::my_rank == 0)
-      std::cout << "niter " << n << " def " << def << std::endl;
-    if (def/olddef > 0.8) {
+      std::cout << "[debug] niter " << n << " def " << def << " convergence factor "
+                << def/olddef<< std::endl;
+    if (def/olddef > 0.9) {
       if (eps_ == 0.0) break;
       if (Globals::my_rank == 0)
         std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
@@ -818,7 +821,7 @@ void MultigridDriver::SolveIterative() {
 
 void MultigridDriver::SolveIterativeFixedTimes() {
   for (int n = 0; n < niter_; ++n)
-    SolveVCycle(1, 1);
+    SolveVCycle(npresmooth_, npostsmooth_);
   if (fsubtract_average_)
     SubtractAverage(MGVariable::u);
   for (int v = 0; v < nvar_; ++v)

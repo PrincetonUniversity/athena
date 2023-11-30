@@ -274,9 +274,10 @@ class MultigridDriver {
   bool fsubtract_average_, ffas_, redblack_, needinit_;
   Real last_ave_;
   Real eps_;
-  int niter_;
+  int niter_, npresmooth_, npostsmooth_;
   int os_, oe_;
   int coffset_;
+  int fprolongation_;
 
   // for mesh refinement
   std::vector<MGOctet> *octets_;

@@ -57,7 +57,7 @@ class CRDiffusion {
 
  private:
   int refinement_idx_;
-  Real Dpara_, Dperp_, Lambda_;
+  Real Dpara_, Dperp_, Lambda_, zeta_factor_;
 };
 
 #endif // CRDIFFUSION_CRDIFFUSION_HPP_

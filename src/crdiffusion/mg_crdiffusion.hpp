@@ -50,6 +50,7 @@ class MGCRDiffusion : public Multigrid {
 
  private:
   Real omega_;
+  int fsmoother_;
 };
 
 
@@ -67,6 +68,7 @@ class MGCRDiffusionDriver : public MultigridDriver {
  private:
   CRDiffusionBoundaryTaskList *crtlist_;
   Real omega_;
+  int fsmoother_;
 };
 
 #endif // CRDIFFUSION_MG_CRDIFFUSION_HPP_

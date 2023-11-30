@@ -45,6 +45,7 @@ CRDiffusion::CRDiffusion(MeshBlock *pmb, ParameterInput *pin) :
   Dpara_ = pin->GetReal("crdiffusion", "Dpara");
   Dperp_ = pin->GetReal("crdiffusion", "Dperp");
   Lambda_ = pin->GetReal("crdiffusion", "Lambda");
+  zeta_factor_ = pin->GetReal("crdiffusion", "zeta_factor");
 
   output_defect = pin->GetOrAddBoolean("crdiffusion", "output_defect", false);
   if (output_defect)
@@ -84,8 +85,7 @@ void CRDiffusion::CalculateCoefficients(const AthenaArray<Real> &w,
     jl -= NGHOST, ju += NGHOST;
   if (pmy_block->pmy_mesh->f3)
     kl -= NGHOST, ku += NGHOST;
-  constexpr Real Dunit = 1.0, nlunit = 1.0;
-  Real Dpara = Dpara_ * Dunit, Dperp = Dperp_ * Dunit, Lambda = Lambda_ * nlunit;
+  Real Dpara = Dpara_, Dperp = Dperp_, Lambda = Lambda_;
 
   if (MAGNETIC_FIELDS_ENABLED) {
     for (int k = kl; k <= ku; ++k) {
@@ -126,7 +126,6 @@ void CRDiffusion::CalculateCoefficients(const AthenaArray<Real> &w,
 //! \fn void CRDiffusion::CalculateIonizationRate(const AthenaArray<Real> &w)
 //! \brief Calculate Ionization Rate from the Cosmic-ray density
 void CRDiffusion::CalculateIonizationRate(const AthenaArray<Real> &w) {
-  Real zeta_factor = 1.0;
   int il = pmy_block->is - NGHOST, iu = pmy_block->ie + NGHOST;
   int jl = pmy_block->js, ju = pmy_block->je;
   int kl = pmy_block->ks, ku = pmy_block->ke;
@@ -137,7 +136,7 @@ void CRDiffusion::CalculateIonizationRate(const AthenaArray<Real> &w) {
   for (int k = kl; k <= ku; ++k) {
     for (int j = jl; j <= ju; ++j) {
       for (int i = il; i <= iu; ++i)
-        zeta(k, j, i) = zeta_factor * w(IDN, k, j, i) * ecr(k, j, i);
+        zeta(k, j, i) = zeta_factor_ * w(IDN, k, j, i) * ecr(k, j, i);
     }
   }
 

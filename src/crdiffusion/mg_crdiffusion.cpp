@@ -50,7 +50,23 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   niter_ = pin->GetOrAddInteger("crdiffusion", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("crdiffusion", "fas", ffas_);
   omega_ = pin->GetOrAddReal("crdiffusion", "omega", omega_);
-  redblack_ = true;
+  npresmooth_ = pin->GetOrAddReal("crdiffusion", "npresmooth", npresmooth_);
+  npostsmooth_ = pin->GetOrAddReal("crdiffusion", "npostsmooth", npostsmooth_);
+  std::string smoother = pin->GetOrAddString("crdiffusion", "smoother", "jacobi-rb");
+  if (smoother == "jacobi-rb") {
+    fsmoother_ = 1;
+    redblack_ = true;
+  } else if (smoother == "jacobi-double") {
+    fsmoother_ = 0;
+    redblack_ = true;
+  }else { // jacobi
+    fsmoother_ = 0;
+    redblack_ = false;
+  }
+  std::string prol = pin->GetOrAddString("crdiffusion", "prolongation", "trilinear");
+  if (prol == "tricubic")
+    fprolongation_ = 1;
+
   std::string m = pin->GetOrAddString("crdiffusion", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
   if (m == "fmg") {
@@ -125,7 +141,7 @@ MGCRDiffusionDriver::~MGCRDiffusionDriver() {
 //! \brief MGCRDiffusion constructor
 
 MGCRDiffusion::MGCRDiffusion(MGCRDiffusionDriver *pmd, MeshBlock *pmb)
-  : Multigrid(pmd, pmb, 1), omega_(pmd->omega_) {
+  : Multigrid(pmd, pmb, 1), omega_(pmd->omega_), fsmoother_(pmd->fsmoother_) {
   btype = btypef = BoundaryQuantity::mg;
   pmgbval = new MGBoundaryValues(this, mg_block_bcs_);
 }
@@ -145,7 +161,6 @@ MGCRDiffusion::~MGCRDiffusion() {
 //! \brief load the data and solve
 
 void MGCRDiffusionDriver::Solve(int stage, Real dt) {
-  std::cout << "Solve" << std::endl;
   // Construct the Multigrid array
   vmg_.clear();
   for (int i = 0; i < pmy_mesh_->nblocal; ++i)
@@ -216,12 +231,46 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
   Real dx2 = SQR(dx);
   Real isix = omega_/6.0;
   color ^= pmy_driver_->coffset_;
-
-  if (th == true && (ku-kl) >=  minth_) {
-    AthenaArray<Real> &work = temp[0];
+  if (fsmoother_ == 1) { // jacobi-rb
+    if (th == true && (ku-kl) >=  minth_) {
+      AthenaArray<Real> &work = temp[0];
 #pragma omp parallel num_threads(pmy_driver_->nthreads_)
-    {
+      {
 #pragma omp for
+        for (int k=kl; k<=ku; k++) {
+          for (int j=jl; j<=ju; j++) {
+            int c = (color + k + j) & 1;
+#pragma ivdep
+            for (int i=il+c; i<=iu; i+=2) {
+              Real M = matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
+                     + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
+                     + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
+                     + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
+                     + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
+                     + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
+                     + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
+                     + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
+                     + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
+                work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
+            }
+          }
+        }
+#pragma omp for
+        for (int k=kl; k<=ku; k++) {
+          for (int j=jl; j<=ju; j++) {
+            int c = (color + k + j) & 1;
+#pragma ivdep
+            for (int i=il+c; i<=iu; i+=2)
+              u(k,j,i) += omega_ * (work(k,j,i) - u(k,j,i));
+          }
+        }
+      }
+    } else {
+      int t = 0;
+#ifdef OPENMP_PARALLEL
+      t = omp_get_thread_num();
+#endif
+      AthenaArray<Real> &work = temp[t];
       for (int k=kl; k<=ku; k++) {
         for (int j=jl; j<=ju; j++) {
           int c = (color + k + j) & 1;
@@ -236,11 +285,10 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
                    + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
                    + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
                    + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
-              work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
+            work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
           }
         }
       }
-#pragma omp for
       for (int k=kl; k<=ku; k++) {
         for (int j=jl; j<=ju; j++) {
           int c = (color + k + j) & 1;
@@ -250,36 +298,67 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
         }
       }
     }
-  } else {
-    int t = 0;
-#ifdef OPENMP_PARALLEL
-    t = omp_get_thread_num();
-#endif
-    AthenaArray<Real> &work = temp[t];
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-        int c = (color + k + j) & 1;
+  } else { // jacobi
+    if (th == true && (ku-kl) >=  minth_) {
+      AthenaArray<Real> &work = temp[0];
+#pragma omp parallel num_threads(pmy_driver_->nthreads_)
+      {
+#pragma omp for
+        for (int k=kl; k<=ku; k++) {
+          for (int j=jl; j<=ju; j++) {
 #pragma ivdep
-        for (int i=il+c; i<=iu; i+=2) {
-          Real M = matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
-                 + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
-                 + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
-                 + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
-                 + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
-                 + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
-                 + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
-                 + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
-                 + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
-          work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
+            for (int i=il; i<=iu; i++) {
+              Real M = matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
+                     + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
+                     + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
+                     + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
+                     + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
+                     + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
+                     + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
+                     + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
+                     + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
+                work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
+            }
+          }
+        }
+#pragma omp for
+        for (int k=kl; k<=ku; k++) {
+          for (int j=jl; j<=ju; j++) {
+#pragma ivdep
+            for (int i=il; i<=iu; i++)
+              u(k,j,i) += omega_ * (work(k,j,i) - u(k,j,i));
+          }
         }
       }
-    }
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-        int c = (color + k + j) & 1;
+    } else {
+      int t = 0;
+#ifdef OPENMP_PARALLEL
+      t = omp_get_thread_num();
+#endif
+      AthenaArray<Real> &work = temp[t];
+      for (int k=kl; k<=ku; k++) {
+        for (int j=jl; j<=ju; j++) {
 #pragma ivdep
-        for (int i=il+c; i<=iu; i+=2)
-          u(k,j,i) += omega_ * (work(k,j,i) - u(k,j,i));
+          for (int i=il; i<=iu; i++) {
+            Real M = matrix(CCM,k,j,i)*u(k,j,i-1)   + matrix(CCP,k,j,i)*u(k,j,i+1)
+                   + matrix(CMC,k,j,i)*u(k,j-1,i)   + matrix(CPC,k,j,i)*u(k,j+1,i)
+                   + matrix(MCC,k,j,i)*u(k-1,j,i)   + matrix(PCC,k,j,i)*u(k+1,j,i)
+                   + matrix(CMM,k,j,i)*u(k,j-1,i-1) + matrix(CMP,k,j,i)*u(k,j-1,i+1)
+                   + matrix(CPM,k,j,i)*u(k,j+1,i-1) + matrix(CPP,k,j,i)*u(k,j+1,i+1)
+                   + matrix(MCM,k,j,i)*u(k-1,j,i-1) + matrix(MCP,k,j,i)*u(k-1,j,i+1)
+                   + matrix(PCM,k,j,i)*u(k+1,j,i-1) + matrix(PCP,k,j,i)*u(k+1,j,i+1)
+                   + matrix(MMC,k,j,i)*u(k-1,j-1,i) + matrix(MPC,k,j,i)*u(k-1,j+1,i)
+                   + matrix(PMC,k,j,i)*u(k+1,j-1,i) + matrix(PPC,k,j,i)*u(k+1,j+1,i);
+            work(k,j,i) = (src(k,j,i) - M) / matrix(CCC,k,j,i);
+          }
+        }
+      }
+      for (int k=kl; k<=ku; k++) {
+        for (int j=jl; j<=ju; j++) {
+#pragma ivdep
+          for (int i=il; i<=iu; i++)
+            u(k,j,i) += omega_ * (work(k,j,i) - u(k,j,i));
+        }
       }
     }
   }
