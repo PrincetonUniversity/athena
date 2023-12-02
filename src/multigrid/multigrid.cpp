@@ -269,16 +269,21 @@ void Multigrid::LoadCoefficients(const AthenaArray<Real> &coeff, int ngh) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Multigrid::ApplySourceMask()
+//! \fn void Multigrid::ApplyMask()
 //  \brief Apply the user-defined source mask function on the finest level
 
-void Multigrid::ApplySourceMask() {
+void Multigrid::ApplyMask() {
   int is, ie, js, je, ks, ke;
   is = js = ks = ngh_;
   ie = is + size_.nx1;
   je = js + size_.nx2;
   ke = ks + size_.nx3;
-  pmy_driver_->srcmask_(src_[nlevel_-1], is, ie, js, je, ks, ke, coord_[nlevel_-1]);
+  if (pmy_driver_->srcmask_ != nullptr)
+    pmy_driver_->srcmask_(src_[nlevel_-1], nvar_, is, ie, js, je, ks, ke,
+                          coord_[nlevel_-1]);
+  if (ncoeff_ > 0 && pmy_driver_->coeffmask_ != nullptr)
+    pmy_driver_->coeffmask_(coeff_[nlevel_-1], ncoeff_, is, ie, js, je, ks, ke,
+                            coord_[nlevel_-1]);
   return;
 }
 

@@ -39,8 +39,9 @@ class MeshBlock;
 //! \brief MGGravityDriver constructor
 
 MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
-    : MultigridDriver(pm, pm->MGGravityBoundaryFunction_,
-                      pm->MGGravitySourceMaskFunction_, 1, 0, 0) {
+    : MultigridDriver(pm, pm->MGGravityBoundaryFunction_, pm->MGGravityBoundaryFunction_,
+                      pm->MGGravitySourceMaskFunction_, pm->MGGravitySourceMaskFunction_,
+                      1, 0, 0) {
   four_pi_G_ = pmy_mesh_->four_pi_G_;
   eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);

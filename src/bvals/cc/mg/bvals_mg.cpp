@@ -50,6 +50,8 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
 #endif
   for (int i = 0; i < 6; ++i)
     MGBoundaryFunction_[i] = pmg->pmy_driver_->MGBoundaryFunction_[i];
+  for (int i = 0; i < 6; ++i)
+    MGCoeffBoundaryFunction_[i] = pmg->pmy_driver_->MGCoeffBoundaryFunction_[i];
   if (pmy_mg_->pmy_block_ != nullptr) {
     InitBoundaryData(BoundaryQuantity::mg);
     int nc = block_size_.nx1 + 2*pmy_mg_->ngh_;
@@ -80,7 +82,6 @@ MGBoundaryValues::~MGBoundaryValues() {
 //! \brief Initialize BoundaryData<> structure
 
 void MGBoundaryValues::InitBoundaryData(BoundaryQuantity type) {
-  int size = 0;
   int nbuf = triplebuf_?3:1;
   for (int c = 0; c < nbuf; ++c) {
     bdata_[c].nbmax = maxneighbor_;
@@ -97,35 +98,38 @@ void MGBoundaryValues::InitBoundaryData(BoundaryQuantity type) {
 
       // Allocate buffers
       // calculate the buffer size
-      switch (type) {
-        case BoundaryQuantity::mg: {
-          int ngh = pmy_mg_->ngh_;
-          int nc = block_size_.nx1;
-          if (BoundaryValues::ni[n].type == NeighborConnect::face)
-            size = SQR(nc)*ngh;
-          else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
-            size = nc*ngh*ngh;
-          else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
-            size = ngh*ngh*ngh;
-          if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
-            if (BoundaryValues::ni[n].type == NeighborConnect::face)
-              size += SQR(nc/2)*ngh;
-            else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
-              size += nc/2*ngh*ngh;
-            else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
-              size += ngh*ngh*ngh;
-          }
-        }
-          break;
-        default: {
-          std::stringstream msg;
-          msg << "### FATAL ERROR in InitBoundaryData" << std::endl
-              << "Invalid boundary type is specified." << std::endl;
-          ATHENA_ERROR(msg);
-        }
-          break;
+      int ngh = pmy_mg_->ngh_;
+      int nc = block_size_.nx1;
+      int bsize = 0;
+      if (BoundaryValues::ni[n].type == NeighborConnect::face)
+        bsize = SQR(nc)*ngh;
+      else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
+        bsize = nc*ngh*ngh;
+      else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
+        bsize = ngh*ngh*ngh;
+      if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
+        if (BoundaryValues::ni[n].type == NeighborConnect::face)
+          bsize += SQR(nc/2)*ngh;
+        else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
+          bsize += nc/2*ngh*ngh;
+        else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
+          bsize += ngh*ngh*ngh;
       }
-      size *= pmy_mg_->nvar_*2; // for FAS
+
+      int size = bsize*pmy_mg_->nvar_*(1+pmy_mg_->pmy_driver_->ffas_);
+
+      if (pmy_mg_->ncoeff_ > 0) {
+        int csize = 0;
+        if (BoundaryValues::ni[n].type == NeighborConnect::face)
+          csize = SQR(nc)*ngh*4/3;
+        else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
+          csize = nc*ngh*ngh*2;
+        else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
+          csize = ngh*ngh*ngh*pmy_mg_->nlevel_;
+        csize *= pmy_mg_->ncoeff_;
+        size = std::max(bsize, csize);
+      }
+
       bdata_[c].send[n] = new Real[size];
       bdata_[c].recv[n] = new Real[size];
     }
@@ -364,6 +368,100 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(int flag) {
   if (apply_bndry_fn_[BoundaryFace::outer_x3])
     DispatchBoundaryFunction(BoundaryFace::outer_x3, dst, time, nvar,
                              bis, bie, bjs, bje, ks, ke, ngh, coord);
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGBoundaryValues::ApplyCoefficientBoundaries()
+//! \brief Apply physical boundary conditions to the coefficients
+
+void MGBoundaryValues::ApplyCoefficientBoundaries() {
+  int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_, ncoeff = pmy_mg_->ncoeff_;
+  int lf = 0;
+  if (pmy_mg_->pmy_block_ == nullptr) // root level
+    lf = pmy_mg_->nlevel_ - 1;
+  else // block - skip the finest level
+    lf = pmy_mg_->nlevel_ - 2;
+  for (int lev = lf; lev >= 0; lev--) {
+    AthenaArray<Real> &coeff = pmy_mg_->coeff_[lev];
+    MGCoordinates &coord = pmy_mg_->coord_[lev];
+    int ll = pmy_mg_->nlevel_ - 1 - lev;
+    int ncx = block_size_.nx1 >> ll, ncy = block_size_.nx2 >> ll,
+        ncz = block_size_.nx3 >> ll;
+    int is = ngh, ie = ncx + ngh - 1;
+    int js = ngh, je = ncy + ngh - 1;
+    int ks = ngh, ke = ncz + ngh - 1;
+    int bis = is - ngh, bie = ie + ngh;
+    int bjs = js,       bje = je;
+    int bks = ks,       bke = ke;
+    Real time = pmy_mesh_->time;
+    if (!apply_bndry_fn_[BoundaryFace::inner_x2]) bjs = js - ngh;
+    if (!apply_bndry_fn_[BoundaryFace::outer_x2]) bje = je + ngh;
+    if (!apply_bndry_fn_[BoundaryFace::inner_x3]) bks = ks - ngh;
+    if (!apply_bndry_fn_[BoundaryFace::outer_x3]) bke = ke + ngh;
+
+    if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
+      if (block_bcs[BoundaryFace::inner_x1] == BoundaryFlag::periodic)
+        MGPeriodicInnerX1(coeff, time, ncoeff, is, ie, bjs, bje, bks, bke, ngh, coord);
+      else if (MGCoeffBoundaryFunction_[BoundaryFace::inner_x1] != nullptr)
+        MGCoeffBoundaryFunction_[BoundaryFace::inner_x1](coeff, time, ncoeff,
+                                               is, ie, bjs, bje, bks, bke, ngh, coord);
+      else // default: zero gradient
+        MGZeroGradientInnerX1(coeff, time, ncoeff, is, ie, bjs, bje, bks, bke,
+                              ngh, coord);
+    }
+    if (apply_bndry_fn_[BoundaryFace::outer_x1]) {
+      if (block_bcs[BoundaryFace::outer_x1] == BoundaryFlag::periodic)
+        MGPeriodicOuterX1(coeff, time, ncoeff, is, ie, bjs, bje, bks, bke, ngh, coord);
+      else if (MGCoeffBoundaryFunction_[BoundaryFace::outer_x1] != nullptr)
+        MGCoeffBoundaryFunction_[BoundaryFace::outer_x1](coeff, time, ncoeff,
+                                               is, ie, bjs, bje, bks, bke, ngh, coord);
+      else // default: zero gradient
+        MGZeroGradientOuterX1(coeff, time, ncoeff, is, ie, bjs, bje, bks, bke,
+                              ngh, coord);
+    }
+    if (apply_bndry_fn_[BoundaryFace::inner_x2]) {
+      if (block_bcs[BoundaryFace::inner_x2] == BoundaryFlag::periodic)
+        MGPeriodicInnerX2(coeff, time, ncoeff, bis, bie, js, je, bks, bke, ngh, coord);
+      else if (MGCoeffBoundaryFunction_[BoundaryFace::inner_x2] != nullptr)
+        MGCoeffBoundaryFunction_[BoundaryFace::inner_x2](coeff, time, ncoeff,
+                                               bis, bie, js, je, bks, bke, ngh, coord);
+      else // default: zero gradbient
+        MGZeroGradientInnerX2(coeff, time, ncoeff, bis, bie, js, je, bks, bke,
+                              ngh, coord);
+    }
+    if (apply_bndry_fn_[BoundaryFace::outer_x2]) {
+      if (block_bcs[BoundaryFace::outer_x2] == BoundaryFlag::periodic)
+        MGPeriodicOuterX2(coeff, time, ncoeff, bis, bie, js, je, bks, bke, ngh, coord);
+      else if (MGCoeffBoundaryFunction_[BoundaryFace::outer_x2] != nullptr)
+        MGCoeffBoundaryFunction_[BoundaryFace::outer_x2](coeff, time, ncoeff,
+                                               bis, bie, js, je, bks, bke, ngh, coord);
+      else // default: zero gradbient
+        MGZeroGradientOuterX2(coeff, time, ncoeff, bis, bie, js, je, bks, bke,
+                              ngh, coord);
+    }
+    bjs = js - ngh, bje = je + ngh;
+    if (apply_bndry_fn_[BoundaryFace::inner_x3]) {
+      if (block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic)
+        MGPeriodicInnerX3(coeff, time, ncoeff, bis, bie, bjs, bje, ks, ke, ngh, coord);
+      else if (MGCoeffBoundaryFunction_[BoundaryFace::inner_x3] != nullptr)
+        MGCoeffBoundaryFunction_[BoundaryFace::inner_x3](coeff, time, ncoeff,
+                                               bis, bie, bjs, bje, ks, ke, ngh, coord);
+      else // default: zero gradient
+        MGZeroGradientInnerX3(coeff, time, ncoeff, bis, bie, bjs, bje, ks, ke, ngh, coord);
+    }
+    if (apply_bndry_fn_[BoundaryFace::outer_x3]) {
+      if (block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic)
+        MGPeriodicOuterX3(coeff, time, ncoeff, bis, bie, bjs, bje, ks, ke, ngh, coord);
+      else if (MGCoeffBoundaryFunction_[BoundaryFace::outer_x3] != nullptr)
+        MGCoeffBoundaryFunction_[BoundaryFace::outer_x3](coeff, time, ncoeff,
+                                               bis, bie, bjs, bje, ks, ke, ngh, coord);
+      else // default: zero gradient
+        MGZeroGradientOuterX3(coeff, time, ncoeff, bis, bie, bjs, bje, ks, ke, ngh, coord);
+    }
+  }
+
   return;
 }
 

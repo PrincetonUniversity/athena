@@ -120,7 +120,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     ConductionCoeff_{}, FieldDiffusivity_{},
     OrbitalVelocity_{}, OrbitalVelocityDerivative_{nullptr, nullptr},
     MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
-    MGGravitySourceMaskFunction_{}, MGCRDiffusionSourceMaskFunction_{} {
+    MGCRDiffusionBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+    MGGravitySourceMaskFunction_{}, MGCRDiffusionSourceMaskFunction_{},
+    MGCRDiffusionCoeffMaskFunction_{} {
   std::stringstream msg;
   BoundaryFlag block_bcs[6];
   std::int64_t nbmax;
@@ -615,7 +617,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     ConductionCoeff_{}, FieldDiffusivity_{},
     OrbitalVelocity_{}, OrbitalVelocityDerivative_{nullptr, nullptr},
     MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
-    MGGravitySourceMaskFunction_{} {
+    MGCRDiffusionBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+    MGGravitySourceMaskFunction_{}, MGCRDiffusionSourceMaskFunction_{},
+    MGCRDiffusionCoeffMaskFunction_{} {
   std::stringstream msg;
   BoundaryFlag block_bcs[6];
   IOWrapperSizeT *offset{};
@@ -1204,15 +1208,6 @@ void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc 
   return;
 }
 
-//----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask)
-//  \brief Enroll a user-defined Multigrid gravity source mask function
-
-void Mesh::EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask) {
-  MGGravitySourceMaskFunction_ = srcmask;
-  return;
-}
-
 
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir,
@@ -1232,13 +1227,34 @@ void Mesh::EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir, MGBoundaryF
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMGCRDiffusionSourceMaskFunction(MGSourceMaskFunc srcmask)
+//! \fn void Mesh::EnrollUserMGGravitySourceMaskFunction(MGMaskFunc srcmask)
+//  \brief Enroll a user-defined Multigrid gravity source mask function
+
+void Mesh::EnrollUserMGGravitySourceMaskFunction(MGMaskFunc srcmask) {
+  MGGravitySourceMaskFunction_ = srcmask;
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGCRDiffusionSourceMaskFunction(MGMaskFunc srcmask)
 //  \brief Enroll a user-defined Multigrid CR diffusion source mask function
 
-void Mesh::EnrollUserMGCRDiffusionSourceMaskFunction(MGSourceMaskFunc srcmask) {
+void Mesh::EnrollUserMGCRDiffusionSourceMaskFunction(MGMaskFunc srcmask) {
   MGCRDiffusionSourceMaskFunction_ = srcmask;
   return;
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGCRDiffusionCoefficientMaskFunction(MGMaskFunc coeffmask)
+//  \brief Enroll a user-defined Multigrid CR diffusion coefficient mask function
+
+void Mesh::EnrollUserMGCRDiffusionCoefficientMaskFunction(MGMaskFunc coeffmask) {
+  MGCRDiffusionCoeffMaskFunction_ = coeffmask;
+  return;
+}
+
 
 //----------------------------------------------------------------------------------------
 // radiation related boundaries

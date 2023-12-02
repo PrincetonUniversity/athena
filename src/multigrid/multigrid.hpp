@@ -104,7 +104,7 @@ class Multigrid {
   void LoadFinestData(const AthenaArray<Real> &src, int ns, int ngh);
   void LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real fac);
   void LoadCoefficients(const AthenaArray<Real> &coeff, int ngh);
-  void ApplySourceMask();
+  void ApplyMask();
   void RestrictFMGSource();
   void RetrieveResult(AthenaArray<Real> &dst, int ns, int ngh);
   void RetrieveDefect(AthenaArray<Real> &dst, int ns, int ngh);
@@ -188,8 +188,9 @@ class Multigrid {
 
 class MultigridDriver {
  public:
-  MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
-                  MGSourceMaskFunc MGSourceMask, int invar, int ncoeff, int nmatrix);
+  MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary, MGBoundaryFunc *MGCoeffBoundary,
+                  MGMaskFunc MGSourceMask, MGMaskFunc MGCoeffMask, int invar, int ncoeff,
+                  int nmatrix);
   virtual ~MultigridDriver();
 
   // pure virtual function
@@ -267,7 +268,8 @@ class MultigridDriver {
   int nrbx1_, nrbx2_, nrbx3_;
   BoundaryFlag mg_mesh_bcs_[6];
   MGBoundaryFunc MGBoundaryFunction_[6];
-  MGSourceMaskFunc srcmask_;
+  MGBoundaryFunc MGCoeffBoundaryFunction_[6];
+  MGMaskFunc srcmask_, coeffmask_;
   Mesh *pmy_mesh_;
   std::vector<Multigrid*> vmg_;
   Multigrid *mgroot_;

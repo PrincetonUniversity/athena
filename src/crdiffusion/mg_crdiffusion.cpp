@@ -45,7 +45,10 @@ namespace {
 
 MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
     : MultigridDriver(pm, pm->MGCRDiffusionBoundaryFunction_,
-                      pm->MGCRDiffusionSourceMaskFunction_, 1, NCOEFF, NMATRIX) {
+                          pm->MGCRDiffusionCoeffBoundaryFunction_,
+                          pm->MGCRDiffusionSourceMaskFunction_,
+                          pm->MGCRDiffusionCoeffMaskFunction_,
+                          1, NCOEFF, NMATRIX) {
   eps_ = pin->GetOrAddReal("crdiffusion", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("crdiffusion", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("crdiffusion", "fas", ffas_);

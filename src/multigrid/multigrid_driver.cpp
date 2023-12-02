@@ -38,15 +38,16 @@
 // constructor, initializes data structures and parameters
 
 MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
-                 MGSourceMaskFunc MGSourceMask, int invar, int ncoeff, int nmatrix) :
+                 MGBoundaryFunc *MGCoeffBoundary, MGMaskFunc MGSourceMask,
+                 MGMaskFunc MGCoeffMask, int invar, int ncoeff, int nmatrix) :
     nranks_(Globals::nranks), nthreads_(pm->num_mesh_threads_), nbtotal_(pm->nbtotal),
     nvar_(invar), ncoeff_(ncoeff), nmatrix_(nmatrix), mode_(0), // 0: FMG+V, 1: V-cycle
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
-    pmy_mesh_(pm), fsubtract_average_(false), ffas_(pm->multilevel), 
-    redblack_(true), needinit_(true), eps_(-1.0), niter_(-1), npresmooth_(1),
-    npostsmooth_(1), coffset_(0), fprolongation_(0), mporder_(-1), nmpcoeff_(0), mpo_(3),
-    autompo_(false), nodipole_(false), nb_rank_(0) {
+    coeffmask_(MGCoeffMask), pmy_mesh_(pm), fsubtract_average_(false),
+    ffas_(pm->multilevel), redblack_(true), needinit_(true), eps_(-1.0), niter_(-1),
+    npresmooth_(1), npostsmooth_(1), coffset_(0), fprolongation_(0), mporder_(-1),
+    nmpcoeff_(0), mpo_(3), autompo_(false), nodipole_(false), nb_rank_(0) {
   std::cout << std::scientific << std::setprecision(15);
 
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
@@ -66,8 +67,10 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     return;
   }
 
-  for (int i=0; i<6; i++)
+  for (int i=0; i<6; i++) {
     MGBoundaryFunction_[i]=MGBoundary[i];
+    MGCoeffBoundaryFunction_[i]=MGCoeffBoundary[i];
+  }
 
   ranklist_  = new int[nbtotal_];
   rootbuf_=new Real[nbtotal_*nvar_*2];
@@ -468,12 +471,10 @@ void MultigridDriver::SetupMultigrid(Real dt) {
     needinit_ = false;
   }
 
-  if (srcmask_ != nullptr) {
 #pragma omp parallel for num_threads(nthreads_)
-    for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
-      Multigrid *pmg = *itr;
-      pmg->ApplySourceMask();
-    }
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
+    pmg->ApplyMask();
   }
 
   if (fsubtract_average_)

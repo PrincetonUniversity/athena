@@ -68,7 +68,7 @@ Real totalm;
 } // namespace
 
 // Mask the density outside the initial sphere
-void SourceMask(AthenaArray<Real> &src, int is, int ie, int js, int je,
+void SourceMask(AthenaArray<Real> &src, int nvar, int is, int ie, int js, int je,
                 int ks, int ke, const MGCoordinates &coord) {
   const Real rc2 = rc*rc;
   for (int k=ks; k<=ke; ++k) {

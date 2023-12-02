@@ -44,6 +44,7 @@ class MGBoundaryValues : public BoundaryBase {
   void DestroyBoundaryData();
 
   void ApplyPhysicalBoundaries(int flag = 0);
+  void ApplyCoefficientBoundaries();
   void StartReceivingMultigrid(BoundaryQuantity type, bool folddata);
   void ClearBoundaryMultigrid(BoundaryQuantity type);
   bool SendMultigridBoundaryBuffers(BoundaryQuantity type, bool folddata);
@@ -57,7 +58,7 @@ class MGBoundaryValues : public BoundaryBase {
 
  protected:
   Multigrid *pmy_mg_;
-  MGBoundaryFunc MGBoundaryFunction_[6];
+  MGBoundaryFunc MGBoundaryFunction_[6], MGCoeffBoundaryFunction_[6];
   BoundaryData<> bdata_[3];
   AthenaArray<Real> cbuf_, cbufold_;
   int bcolor_;
@@ -103,7 +104,7 @@ class MGGravityBoundaryValues : public MGBoundaryValues {
  public:
   MGGravityBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
     : MGBoundaryValues(pmg, input_bcs) {};
-  void ProlongateMultigridBoundariesFluxCons();
+  void ProlongateMultigridBoundariesFluxCons() final;
 
  private:
   int LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,

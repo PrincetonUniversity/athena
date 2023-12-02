@@ -352,8 +352,10 @@ class Mesh {
   OrbitalVelocityFunc OrbitalVelocity_, OrbitalVelocityDerivative_[2];
   MGBoundaryFunc MGGravityBoundaryFunction_[6];
   MGBoundaryFunc MGCRDiffusionBoundaryFunction_[6];
-  MGSourceMaskFunc MGGravitySourceMaskFunction_;
-  MGSourceMaskFunc MGCRDiffusionSourceMaskFunction_;
+  MGBoundaryFunc MGCRDiffusionCoeffBoundaryFunction_[6];
+  MGMaskFunc MGGravitySourceMaskFunction_;
+  MGMaskFunc MGCRDiffusionSourceMaskFunction_;
+  MGMaskFunc MGCRDiffusionCoeffMaskFunction_;
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -391,8 +393,9 @@ class Mesh {
   // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
   void EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
-  void EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask);
-  void EnrollUserMGCRDiffusionSourceMaskFunction(MGSourceMaskFunc srcmask);
+  void EnrollUserMGGravitySourceMaskFunction(MGMaskFunc srcmask);
+  void EnrollUserMGCRDiffusionSourceMaskFunction(MGMaskFunc srcmask);
+  void EnrollUserMGCRDiffusionCoefficientMaskFunction(MGMaskFunc coeffmask);
 
   void EnrollUserRadBoundaryFunction(BoundaryFace face, RadBoundaryFunc my_func);
   void EnrollUserCRBoundaryFunction(BoundaryFace face, CRBoundaryFunc my_func);
