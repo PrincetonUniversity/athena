@@ -121,6 +121,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     OrbitalVelocity_{}, OrbitalVelocityDerivative_{nullptr, nullptr},
     MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     MGCRDiffusionBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+    MGCRDiffusionCoeffBoundaryFunction_{nullptr, nullptr, nullptr,
+                                        nullptr, nullptr, nullptr},
     MGGravitySourceMaskFunction_{}, MGCRDiffusionSourceMaskFunction_{},
     MGCRDiffusionCoeffMaskFunction_{} {
   std::stringstream msg;
@@ -618,6 +620,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     OrbitalVelocity_{}, OrbitalVelocityDerivative_{nullptr, nullptr},
     MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
     MGCRDiffusionBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+    MGCRDiffusionCoeffBoundaryFunction_{nullptr, nullptr, nullptr,
+                                        nullptr, nullptr, nullptr},
     MGGravitySourceMaskFunction_{}, MGCRDiffusionSourceMaskFunction_{},
     MGCRDiffusionCoeffMaskFunction_{} {
   std::stringstream msg;

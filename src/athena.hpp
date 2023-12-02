@@ -166,7 +166,7 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 // KGF: Except for the 2x MG* enums, these may be unnessary w/ the new class inheritance
 // Now, only passed to BoundaryVariable::InitBoundaryData(); could replace w/ bool switch
 // TODO(tomo-ono): consider necessity of orbita_cc and orbital_fc
-enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mg, mg_faceonly,
+enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mg, mg_faceonly, mg_coeff,
                              orbital_cc, orbital_fc};
 enum class HydroBoundaryQuantity {cons, prim};
 enum class BoundaryCommSubset {mesh_init, gr_amr, all, orbital, radiation, radhydro};

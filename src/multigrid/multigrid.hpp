@@ -135,6 +135,7 @@ class Multigrid {
   AthenaArray<Real>& GetCurrentData() { return u_[current_level_]; }
   AthenaArray<Real>& GetCurrentSource() { return src_[current_level_]; }
   AthenaArray<Real>& GetCurrentOldData() { return uold_[current_level_]; }
+  AthenaArray<Real>& GetCurrentCoefficient() { return coeff_[current_level_]; }
 
   // actual implementations of Multigrid operations
   void Restrict(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
@@ -207,6 +208,7 @@ class MultigridDriver {
   void CheckBoundaryFunctions();
   void SubtractAverage(MGVariable type);
   void SetupMultigrid(Real dt);
+  void SetupCoefficients();
   void TransferFromBlocksToRoot(bool initflag = false);
   void FMGProlongate();
   void TransferFromRootToBlocks(bool folddata);
@@ -226,27 +228,26 @@ class MultigridDriver {
   void CalculateOctetCoordinates();
   void RestrictFMGSourceOctets();
   void RestrictOctets();
-  void RestrictCoefficients();
   void ZeroClearOctets();
   void StoreOldDataOctets();
   void CalculateFASRHSOctets();
   void SmoothOctets(int color);
   void ProlongateAndCorrectOctets();
   void FMGProlongateOctets();
-  void SetBoundariesOctets(bool fprolong, bool folddata);
+  void SetBoundariesOctets(bool fprolong, bool folddata, bool fcoeff);
   void SetOctetBoundarySameLevel(AthenaArray<Real> &dst, const AthenaArray<Real> &un,
                        AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
                        AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
-                       int ox1, int ox2, int ox3, bool folddata);
+                       int nvar, int ox1, int ox2, int ox3, bool folddata);
   void SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
                        const AthenaArray<Real> &unold, AthenaArray<Real> &cbuf,
-                       AthenaArray<Real> &cbufold, const LogicalLocation &loc,
+                       AthenaArray<Real> &cbufold, int nvar, const LogicalLocation &loc,
                        int ox1, int ox2, int ox3, bool folddata);
   void ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u, const LogicalLocation &loc,
-                                    const MGCoordinates &coord, bool fcbuf);
+                                    const MGCoordinates &coord, bool fcbuf, bool fcoeff);
   void ProlongateOctetBoundaries(AthenaArray<Real> &u, AthenaArray<Real> &uold,
-                                 AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
-                                 const AthenaArray<bool> &ncoarse, bool folddata);
+                      AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
+                      int nvar, const AthenaArray<bool> &ncoarse, bool folddata);
   void SetOctetBoundariesBeforeTransfer(bool folddata);
   void RestrictOctetsBeforeTransfer();
   virtual void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,

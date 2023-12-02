@@ -289,16 +289,16 @@ void MGGravityBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       else         i = cs - 1, fi = fs, fig = fs - 1;
       if (apply_bndry_fn_[BoundaryFace::inner_x2])
         DispatchBoundaryFunction(BoundaryFace::inner_x2, cbuf_, time, nvar,
-                                 i, i, cs, ce, cs, ce, ngh, coord);
+                                 i, i, cs, ce, cs, ce, ngh, coord, false);
       if (apply_bndry_fn_[BoundaryFace::outer_x2])
         DispatchBoundaryFunction(BoundaryFace::outer_x2, cbuf_, time, nvar,
-                                 i, i, cs, ce, cs, ce, ngh, coord);
+                                 i, i, cs, ce, cs, ce, ngh, coord, false);
       if (apply_bndry_fn_[BoundaryFace::inner_x3])
         DispatchBoundaryFunction(BoundaryFace::inner_x3, cbuf_, time, nvar,
-                                 i, i, cs, ce, cs, ce, ngh, coord);
+                                 i, i, cs, ce, cs, ce, ngh, coord, false);
       if (apply_bndry_fn_[BoundaryFace::outer_x3])
         DispatchBoundaryFunction(BoundaryFace::outer_x3, cbuf_, time, nvar,
-                                 i, i, cs, ce, cs, ce, ngh, coord);
+                                 i, i, cs, ce, cs, ce, ngh, coord, false);
       for (int v=0; v<nvar; ++v) {
         for(int k=cs; k<=ce; ++k) {
           int fk = (k - cs) * 2 + fs;
@@ -325,16 +325,16 @@ void MGGravityBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       else         j = cs - 1, fj = fs, fjg = fs - 1;
       if (apply_bndry_fn_[BoundaryFace::inner_x1])
         DispatchBoundaryFunction(BoundaryFace::inner_x1, cbuf_, time, nvar,
-                                 cs, ce, j, j, cs, ce, ngh, coord);
+                                 cs, ce, j, j, cs, ce, ngh, coord, false);
       if (apply_bndry_fn_[BoundaryFace::outer_x1])
         DispatchBoundaryFunction(BoundaryFace::outer_x1, cbuf_, time, nvar,
-                                 cs, ce, j, j, cs, ce, ngh, coord);
+                                 cs, ce, j, j, cs, ce, ngh, coord, false);
       if (apply_bndry_fn_[BoundaryFace::inner_x3])
         DispatchBoundaryFunction(BoundaryFace::inner_x3, cbuf_, time, nvar,
-                                 cs, ce, j, j, cs, ce, ngh, coord);
+                                 cs, ce, j, j, cs, ce, ngh, coord, false);
       if (apply_bndry_fn_[BoundaryFace::outer_x3])
         DispatchBoundaryFunction(BoundaryFace::outer_x3, cbuf_, time, nvar,
-                                 cs, ce, j, j, cs, ce, ngh, coord);
+                                 cs, ce, j, j, cs, ce, ngh, coord, false);
       for (int v=0; v<nvar; ++v) {
         for(int k=cs; k<=ce; ++k) {
           int fk = (k - cs) * 2 + fs;
@@ -361,16 +361,16 @@ void MGGravityBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
       else         k = cs - 1, fk = fs, fkg = fs - 1;
       if (apply_bndry_fn_[BoundaryFace::inner_x1])
         DispatchBoundaryFunction(BoundaryFace::inner_x1, cbuf_, time, nvar,
-                                 cs, ce, cs, ce, k, k, ngh, coord);
+                                 cs, ce, cs, ce, k, k, ngh, coord, false);
       if (apply_bndry_fn_[BoundaryFace::outer_x1])
         DispatchBoundaryFunction(BoundaryFace::outer_x1, cbuf_, time, nvar,
-                                 cs, ce, cs, ce, k, k, ngh, coord);
+                                 cs, ce, cs, ce, k, k, ngh, coord, false);
       if (apply_bndry_fn_[BoundaryFace::inner_x2])
         DispatchBoundaryFunction(BoundaryFace::inner_x2, cbuf_, time, nvar,
-                                 cs, ce, cs, ce, k, k, ngh, coord);
+                                 cs, ce, cs, ce, k, k, ngh, coord, false);
       if (apply_bndry_fn_[BoundaryFace::outer_x2])
         DispatchBoundaryFunction(BoundaryFace::outer_x2, cbuf_, time, nvar,
-                                 cs, ce, cs, ce, k, k, ngh, coord);
+                                 cs, ce, cs, ce, k, k, ngh, coord, false);
       for (int v=0; v<nvar; ++v) {
         for(int j=cs; j<=ce; ++j) {
           int fj = (j - cs) * 2 + fs;

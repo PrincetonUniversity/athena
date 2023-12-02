@@ -264,7 +264,7 @@ TaskStatus MultigridTaskList::CalculateFASRHS(Multigrid *pmg) {
 }
 
 TaskStatus MultigridTaskList::PhysicalBoundary(Multigrid *pmg) {
-  pmg->pmgbval->ApplyPhysicalBoundaries();
+  pmg->pmgbval->ApplyPhysicalBoundaries(0, false);
   return TaskStatus::next;
 }
 
@@ -275,7 +275,7 @@ TaskStatus MultigridTaskList::ProlongateBoundary(Multigrid *pmg) {
 
 
 TaskStatus MultigridTaskList::ProlongateBoundaryForProlongation(Multigrid *pmg) {
-  pmg->pmgbval->ProlongateMultigridBoundaries(pmg->pmy_driver_->ffas_);
+  pmg->pmgbval->ProlongateMultigridBoundaries(pmg->pmy_driver_->ffas_, false);
   return TaskStatus::success;
 }
 
