@@ -248,16 +248,16 @@ void Multigrid::LoadSource(const AthenaArray<Real> &src, int ns, int ngh, Real f
 void Multigrid::LoadCoefficients(const AthenaArray<Real> &coeff, int ngh) {
   AthenaArray<Real> &cm=coeff_[nlevel_-1];
   int is, ie, js, je, ks, ke;
-  is=js=ks=ngh_;
-  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
+  is=js=ks=0;
+  ie=size_.nx1+2*ngh_-1, je=size_.nx2+2*ngh_-1, ke=size_.nx3+2*ngh_-1;
   for (int v = 0; v < ncoeff_; ++v) {
-    for (int mk=ks; mk<=ke; ++mk) {
-      int k = mk - ks + ngh;
-      for (int mj=js; mj<=je; ++mj) {
-        int j = mj - js + ngh;
+    for (int mk=0; mk<=ke; ++mk) {
+      int k = mk + ngh - ngh_;
+      for (int mj=0; mj<=je; ++mj) {
+        int j = mj + ngh - ngh_;
 #pragma omp simd
-        for (int mi=is; mi<=ie; ++mi) {
-          int i = mi - is + ngh;
+        for (int mi=0; mi<=ie; ++mi) {
+          int i = mi + ngh - ngh_;
           cm(v,mk,mj,mi) = coeff(v,k,j,i);
         }
       }
@@ -733,11 +733,15 @@ void Multigrid::StoreOldData() {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real Multigrid::GetCoarsestData(MGVariable type, int n)
-//  \brief get the value on the coarsest level in the MG block (type: 0=src, 1=u)
+//  \brief get the value on the coarsest level in the MG block
 
 Real Multigrid::GetCoarsestData(MGVariable type, int n) {
-  AthenaArray<Real> &src = (type == MGVariable::src) ? src_[0] : u_[0];
-  return src(n, ngh_, ngh_, ngh_);
+  if (type == MGVariable::src)
+    return src_[0](n, ngh_, ngh_, ngh_);
+  else if (type == MGVariable::u)
+    return u_[0](n, ngh_, ngh_, ngh_);
+  else
+    return coeff_[0](n, ngh_, ngh_, ngh_);
 }
 
 
@@ -746,10 +750,12 @@ Real Multigrid::GetCoarsestData(MGVariable type, int n) {
 //  \brief set a value to a cell on the current level
 
 void Multigrid::SetData(MGVariable type, int n, int k, int j, int i, Real v) {
-  AthenaArray<Real> &dst =
-                    (type == MGVariable::src) ? src_[current_level_] : u_[current_level_];
-  dst(n, ngh_+k, ngh_+j, ngh_+i) = v;
-
+  if (type == MGVariable::src)
+    src_[current_level_](n, ngh_+k, ngh_+j, ngh_+i) = v;
+  else if (type == MGVariable::u)
+    u_[current_level_](n, ngh_+k, ngh_+j, ngh_+i) = v;
+  else
+    coeff_[current_level_](n, ngh_+k, ngh_+j, ngh_+i) = v;
   return;
 }
 

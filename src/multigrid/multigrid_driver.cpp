@@ -73,7 +73,8 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   }
 
   ranklist_  = new int[nbtotal_];
-  rootbuf_=new Real[nbtotal_*nvar_*2];
+  int nv = std::max(nvar_*2, ncoeff_);
+  rootbuf_=new Real[nbtotal_*nv];
   for (int n = 0; n < nbtotal_; ++n)
     ranklist_[n]=pmy_mesh_->ranklist[n];
   nslist_  = new int[nranks_];
@@ -82,6 +83,11 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   nvslist_ = new int[nranks_];
   nvlisti_  = new int[nranks_];
   nvslisti_ = new int[nranks_];
+  if (ncoeff_ > 0) {
+    nclist_  = new int[nranks_];
+    ncslist_ = new int[nranks_];
+  }
+
 
 #ifdef MPI_PARALLEL
   MPI_Comm_dup(MPI_COMM_WORLD, &MPI_COMM_MULTIGRID);
@@ -122,6 +128,10 @@ MultigridDriver::~MultigridDriver() {
   delete [] nvlisti_;
   delete [] nvslisti_;
   delete [] rootbuf_;
+  if (ncoeff_ > 0) {
+    delete [] nclist_;
+    delete [] ncslist_;
+  }
   if (maxreflevel_ > 0) {
     delete [] octets_;
     delete [] octetmap_;
@@ -462,6 +472,12 @@ void MultigridDriver::SetupMultigrid(Real dt) {
       nvslisti_[n] = nslist_[n]*nvar_;
       nvlisti_[n]  = nblist_[n]*nvar_;
     }
+    if (ncoeff_ > 0) {
+      for (int n = 0; n < nranks_; ++n) {
+        nclist_[n]  = nblist_[n]*ncoeff_;
+        ncslist_[n] = nslist_[n]*ncoeff_;
+      }
+    }
     for (Multigrid* pmg : vmg_) {
       pmg->pmgbval->SearchAndSetNeighbors(pmy_mesh_->tree, ranklist_, nslist_);
       pmg->pmgbval->bcolor_ = 0;
@@ -485,7 +501,6 @@ void MultigridDriver::SetupMultigrid(Real dt) {
       CalculateCenterOfMass();
     CalculateMultipoleCoefficients();
   }
-
   if (ncoeff_ > 0)
     SetupCoefficients();
 
@@ -519,6 +534,7 @@ void MultigridDriver::SetupCoefficients() {
     Multigrid *pmg = *itr;
     pmg->RestrictCoefficients();
   }
+  TransferCoefficientFromBlocksToRoot();
   if (nreflevel_ > 0) {
     const int &ngh = mgroot_->ngh_;
     for (int l = nreflevel_ - 1; l >= 1; --l) {  // fine octets to coarse octets
@@ -557,7 +573,7 @@ void MultigridDriver::SetupCoefficients() {
   // Block boundaries
 #pragma omp parallel num_threads(nthreads_)
   {
-    for (int lev = nmblevel_ - 2; lev >= 0; lev--) {
+    for (int lev = nmblevel_ - 2; lev >= 1; lev--) {
 #pragma omp for nowait
       for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
         Multigrid *pmg = *itr;
@@ -702,6 +718,59 @@ void MultigridDriver::TransferFromRootToBlocks(bool folddata) {
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void MultigridDriver::TransferCoefficientFromBlocksToRoot()
+//  \brief collect coefficient on the coarsest level on MB and transfer to the root grid
+
+void MultigridDriver::TransferCoefficientFromBlocksToRoot() {
+  int ngh = mgroot_->ngh_;
+#pragma omp parallel for num_threads(nthreads_)
+  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+    Multigrid *pmg = *itr;
+    for (int v = 0; v < ncoeff_; ++v)
+      rootbuf_[pmg->pmy_block_->gid*ncoeff_+v]=pmg->GetCoarsestData(MGVariable::coeff, v);
+  }
+
+#ifdef MPI_PARALLEL
+  if (nb_rank_ > 0) // every rank has the same number of MeshBlocks
+    MPI_Allgather(MPI_IN_PLACE, nb_rank_*ncoeff_, MPI_ATHENA_REAL,
+                  rootbuf_, nb_rank_*ncoeff_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+  else
+    MPI_Allgatherv(MPI_IN_PLACE, nblist_[Globals::my_rank]*ncoeff_, MPI_ATHENA_REAL,
+                   rootbuf_, nclist_, ncslist_, MPI_ATHENA_REAL, MPI_COMM_MULTIGRID);
+#endif
+
+#pragma omp parallel for num_threads(nthreads_)
+  for (int n = 0; n < nbtotal_; ++n) {
+    const LogicalLocation &loc=pmy_mesh_->loclist[n];
+    int i = static_cast<int>(loc.lx1);
+    int j = static_cast<int>(loc.lx2);
+    int k = static_cast<int>(loc.lx3);
+    if (loc.level == locrootlevel_) {
+      for (int v = 0; v < ncoeff_; ++v)
+        mgroot_->SetData(MGVariable::coeff, v, k, j, i, rootbuf_[n*ncoeff_+v]);
+    } else {
+      LogicalLocation oloc;
+      oloc.lx1 = (loc.lx1 >> 1);
+      oloc.lx2 = (loc.lx2 >> 1);
+      oloc.lx3 = (loc.lx3 >> 1);
+      oloc.level = loc.level - 1;
+      int olev = oloc.level - locrootlevel_;
+      int oid = octetmap_[olev][oloc];
+      int oi = (i&1) + ngh;
+      int oj = (j&1) + ngh;
+      int ok = (k&1) + ngh;
+      MGOctet &oct = octets_[olev][oid];
+      for (int v = 0; v < ncoeff_; ++v)
+        oct.coeff(v,ok,oj,oi) = rootbuf_[n*ncoeff_+v];
+    }
+  }
+
+  return;
+}
+
+
+
+//----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::FMGProlongate()
 //  \brief Prolongation for FMG Cycle
 
@@ -791,7 +860,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
     mgtlist_->SetMGTaskListToCoarser(nsmooth, ngh);
     mgtlist_->DoTaskListOneStage(this);
     if (current_level_ == nrootlevel_ + nreflevel_) {
-      TransferFromBlocksToRoot();
+      TransferFromBlocksToRoot(false);
       if (!ffas_) {
         mgroot_->ZeroClearData();
         if (nreflevel_ > 0)

@@ -37,7 +37,7 @@ class Coordinates;
 struct MGCoordinates;
 struct MGOctet;
 
-enum class MGVariable {src, u};
+enum class MGVariable {src, u, coeff};
 enum class MGNormType {max, l1, l2};
 
 constexpr int minth_ = 8;
@@ -209,11 +209,12 @@ class MultigridDriver {
   void SubtractAverage(MGVariable type);
   void SetupMultigrid(Real dt);
   void SetupCoefficients();
-  void TransferFromBlocksToRoot(bool initflag = false);
-  void FMGProlongate();
+  void TransferFromBlocksToRoot(bool initflag);
   void TransferFromRootToBlocks(bool folddata);
+  void TransferCoefficientFromBlocksToRoot();
   void OneStepToFiner(int nsmooth);
   void OneStepToCoarser(int nsmooth);
+  void FMGProlongate();
   void SolveVCycle(int npresmooth, int npostsmooth);
   void SolveFMGCycle();
   void SolveIterative();
@@ -265,7 +266,8 @@ class MultigridDriver {
   int nranks_, nthreads_, nbtotal_, nvar_, ncoeff_, nmatrix_, mode_;
   int locrootlevel_, nrootlevel_, nmblevel_, ntotallevel_, nreflevel_, maxreflevel_;
   int current_level_, fmglevel_;
-  int *nslist_, *nblist_, *nvlist_, *nvslist_, *nvlisti_, *nvslisti_, *ranklist_;
+  int *nslist_, *nblist_, *nvlist_, *nvslist_, *nvlisti_, *nvslisti_,
+                          *nclist_, *ncslist_, *ranklist_;
   int nrbx1_, nrbx2_, nrbx3_;
   BoundaryFlag mg_mesh_bcs_[6];
   MGBoundaryFunc MGBoundaryFunction_[6];
