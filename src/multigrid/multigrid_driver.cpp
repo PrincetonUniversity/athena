@@ -502,6 +502,7 @@ void MultigridDriver::SetupMultigrid(Real dt) {
       CalculateCenterOfMass();
     CalculateMultipoleCoefficients();
   }
+
   if (ncoeff_ > 0)
     SetupCoefficients();
 

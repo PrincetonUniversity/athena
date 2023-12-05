@@ -279,11 +279,9 @@ void Multigrid::ApplyMask() {
   je = js + size_.nx2;
   ke = ks + size_.nx3;
   if (pmy_driver_->srcmask_ != nullptr)
-    pmy_driver_->srcmask_(src_[nlevel_-1], nvar_, is, ie, js, je, ks, ke,
-                          coord_[nlevel_-1]);
+    pmy_driver_->srcmask_(src_[nlevel_-1], is, ie, js, je, ks, ke, coord_[nlevel_-1]);
   if (ncoeff_ > 0 && pmy_driver_->coeffmask_ != nullptr)
-    pmy_driver_->coeffmask_(coeff_[nlevel_-1], ncoeff_, is, ie, js, je, ks, ke,
-                            coord_[nlevel_-1]);
+    pmy_driver_->coeffmask_(coeff_[nlevel_-1], is, ie, js, je, ks, ke, coord_[nlevel_-1]);
   return;
 }
 
