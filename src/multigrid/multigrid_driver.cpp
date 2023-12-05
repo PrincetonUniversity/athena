@@ -109,9 +109,10 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     cbuf_ = new AthenaArray<Real>[nth];
     cbufold_ = new AthenaArray<Real>[nth];
     ncoarse_ = new AthenaArray<bool>[nth];
+    nv = std::max(nvar_, ncoeff_);
     for (int n = 0; n < nth; ++n) {
-      cbuf_[n].NewAthenaArray(nvar_,3,3,3);
-      cbufold_[n].NewAthenaArray(nvar_,3,3,3);
+      cbuf_[n].NewAthenaArray(nv,3,3,3);
+      cbufold_[n].NewAthenaArray(nv,3,3,3);
       ncoarse_[n].NewAthenaArray(3,3,3);
     }
   }
