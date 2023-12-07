@@ -51,7 +51,7 @@ CRDiffusion::CRDiffusion(MeshBlock *pmb, ParameterInput *pin) :
   if (output_defect)
     def.NewAthenaArray(pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
-//  pmb->RegisterMeshBlockData(ecr);
+  pmb->RegisterMeshBlockData(ecr);
   // "Enroll" in S/AMR by adding to vector of tuples of pointers in MeshRefinement class
   if (pmb->pmy_mesh->multilevel)
     refinement_idx_ = pmy_block->pmr->AddToRefinement(&ecr, &coarse_ecr);

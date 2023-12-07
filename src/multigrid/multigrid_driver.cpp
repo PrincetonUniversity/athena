@@ -68,15 +68,15 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   }
 
   for (int i=0; i<6; i++) {
-    MGBoundaryFunction_[i]=MGBoundary[i];
-    MGCoeffBoundaryFunction_[i]=MGCoeffBoundary[i];
+    MGBoundaryFunction_[i] = MGBoundary[i];
+    MGCoeffBoundaryFunction_[i] = MGCoeffBoundary[i];
   }
 
   ranklist_  = new int[nbtotal_];
   int nv = std::max(nvar_*2, ncoeff_);
-  rootbuf_=new Real[nbtotal_*nv];
+  rootbuf_ = new Real[nbtotal_*nv];
   for (int n = 0; n < nbtotal_; ++n)
-    ranklist_[n]=pmy_mesh_->ranklist[n];
+    ranklist_[n] = pmy_mesh_->ranklist[n];
   nslist_  = new int[nranks_];
   nblist_  = new int[nranks_];
   nvlist_  = new int[nranks_];
@@ -446,7 +446,8 @@ void MultigridDriver::SetupMultigrid(Real dt) {
         delete [] ranklist_;
         delete [] rootbuf_;
         ranklist_ = new int[pmy_mesh_->nbtotal];
-        rootbuf_ = new Real[pmy_mesh_->nbtotal*nvar_*2];
+        int nv = std::max(nvar_*2, ncoeff_);
+        rootbuf_ = new Real[pmy_mesh_->nbtotal*nv];
       }
       nbtotal_ = pmy_mesh_->nbtotal;
     }
@@ -964,9 +965,9 @@ void MultigridDriver::SolveIterative() {
     def = 0.0;
     for (int v = 0; v < nvar_; ++v)
       def += CalculateDefectNorm(MGNormType::l2, v);
-    if (Globals::my_rank == 0)
-      std::cout << "[debug] niter " << n << " def " << def << " convergence factor "
-                << def/olddef<< std::endl;
+    // if (Globals::my_rank == 0)
+    //   std::cout << "[debug] niter " << n << " def " << def << " convergence factor "
+    //             << def/olddef<< std::endl;
     if (def/olddef > 0.9) {
       if (eps_ == 0.0) break;
       if (Globals::my_rank == 0)

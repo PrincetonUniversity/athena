@@ -132,6 +132,17 @@ void CRFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 }
 
 
+int AMRCondition(MeshBlock *pmb) {
+  if (pmb->block_size.x1min >= 0.0 && pmb->block_size.x1min <=0.001
+   && pmb->block_size.x2min >= 0.0 && pmb->block_size.x2min <=0.001
+   && pmb->block_size.x3min >= 0.0 && pmb->block_size.x3min <=0.001) {
+    if (pmb->pmy_mesh->ncycle >= pmb->loc.level - 1)
+      return 1;
+  }
+  return 0;
+}
+
+
 //========================================================================================
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //  \brief
@@ -139,6 +150,7 @@ void CRFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   e0 = 1.0;
+  EnrollUserRefinementCondition(AMRCondition);
   EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace::inner_x1, CRFixedInnerX1);
   EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace::outer_x1, CRFixedOuterX1);
   EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace::inner_x2, CRFixedInnerX2);
