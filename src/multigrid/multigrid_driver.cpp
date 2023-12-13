@@ -45,9 +45,9 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
     maxreflevel_(pm->multilevel?pm->max_level-pm->root_level:0),
     nrbx1_(pm->nrbx1), nrbx2_(pm->nrbx2), nrbx3_(pm->nrbx3), srcmask_(MGSourceMask),
     coeffmask_(MGCoeffMask), pmy_mesh_(pm), fsubtract_average_(false),
-    ffas_(pm->multilevel), redblack_(true), needinit_(true), eps_(-1.0), niter_(-1),
-    npresmooth_(1), npostsmooth_(1), coffset_(0), fprolongation_(0), mporder_(-1),
-    nmpcoeff_(0), mpo_(3), autompo_(false), nodipole_(false), nb_rank_(0) {
+    ffas_(pm->multilevel), redblack_(true), needinit_(true), fshowdef_(false), eps_(-1.0),
+    niter_(-1), npresmooth_(1), npostsmooth_(1), coffset_(0), fprolongation_(0),
+    mporder_(-1), nmpcoeff_(0), mpo_(3), autompo_(false), nodipole_(false), nb_rank_(0) {
   std::cout << std::scientific << std::setprecision(15);
 
   if (pmy_mesh_->mesh_size.nx2==1 || pmy_mesh_->mesh_size.nx3==1) {
@@ -401,10 +401,10 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MultigridDriver::SetupMultigrid(Real dt)
+//! \fn void MultigridDriver::SetupMultigrid(Real dt, bool ftrivial)
 //  \brief initialize the source assuming that the source terms are already loaded
 
-void MultigridDriver::SetupMultigrid(Real dt) {
+void MultigridDriver::SetupMultigrid(Real dt, bool ftrivial) {
   locrootlevel_ = pmy_mesh_->root_level;
   nrootlevel_ = mgroot_->GetNumberOfLevels();
   nmblevel_ = vmg_[0]->GetNumberOfLevels();
@@ -504,22 +504,23 @@ void MultigridDriver::SetupMultigrid(Real dt) {
     CalculateMultipoleCoefficients();
   }
 
-  if (ncoeff_ > 0)
-    SetupCoefficients();
+  if (!ftrivial) {
+    if (ncoeff_ > 0)
+      SetupCoefficients();
+    if (nmatrix_ > 0)
+      CalculateMatrix(dt);
 
-  if (nmatrix_ > 0)
-    CalculateMatrix(dt);
-
-  if (mode_ == 0) { // FMG
+    if (mode_ == 0) { // FMG
 #pragma omp parallel for num_threads(nthreads_)
-    for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
-      Multigrid *pmg = *itr;
-      pmg->RestrictFMGSource();
+      for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+        Multigrid *pmg = *itr;
+        pmg->RestrictFMGSource();
+      }
+      TransferFromBlocksToRoot(true);
+      RestrictFMGSourceOctets();
+      mgroot_->RestrictFMGSource();
+      current_level_ = 0;
     }
-    TransferFromBlocksToRoot(true);
-    RestrictFMGSourceOctets();
-    mgroot_->RestrictFMGSource();
-    current_level_ = 0;
   }
 
   return;
@@ -955,25 +956,38 @@ void MultigridDriver::SolveFMGCycle() {
 
 void MultigridDriver::SolveIterative() {
   int n = 0;
-  Real def = 0.0;
-  for (int v = 0; v < nvar_; ++v)
+  Real def = 0.0, defmax = 0.0;
+  for (int v = 0; v < nvar_; ++v) {
     def += CalculateDefectNorm(MGNormType::l2, v);
-  // std::cout << "initial defect " << def << std::endl;
+//    defmax = std::max(defmax, CalculateDefectNorm(MGNormType::max, v));
+  }
+//  if (Globals::my_rank == 0)
+//    std::cout << "initial defect " << def << " max " << defmax << std::endl;
   while (def > eps_) {
     SolveVCycle(npresmooth_, npostsmooth_);
-    Real olddef = def;
-    def = 0.0;
-    for (int v = 0; v < nvar_; ++v)
+    Real olddef = def, oldmax = defmax;
+    def = 0.0, defmax = 0.0;
+    for (int v = 0; v < nvar_; ++v) {
       def += CalculateDefectNorm(MGNormType::l2, v);
-    // if (Globals::my_rank == 0)
-    //   std::cout << "[debug] niter " << n << " def " << def << " convergence factor "
-    //             << def/olddef<< std::endl;
+//      defmax = std::max(defmax, CalculateDefectNorm(MGNormType::max, v));
+    }
+//    if (Globals::my_rank == 0)
+//      std::cout << "[debug] niter " << n << " def " << def << " convergence factor "
+//                << def/olddef<< " defmax  "<< defmax << " cf "
+//                <<  defmax/oldmax << std::endl;
     if (def/olddef > 0.9) {
       if (eps_ == 0.0) break;
       if (Globals::my_rank == 0)
         std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
                   << "Slow multigrid convergence : defect norm = " << def
                   << ", convergence factor = " << def/olddef << "." << std::endl;
+      if (def/olddef > 1.0) {
+        if (Globals::my_rank == 0)
+          std::cout << "### Warning in MultigridDriver::SolveIterative" << std::endl
+                    << "Multigrid is diverging: defect norm = " << def
+                    << ", convergence factor = " << def/olddef << "." << std::endl;
+        break;
+      }
     }
     if (n > 100) {
       if (Globals::my_rank == 0) {
@@ -1001,8 +1015,11 @@ void MultigridDriver::SolveIterativeFixedTimes() {
     SolveVCycle(npresmooth_, npostsmooth_);
   if (fsubtract_average_)
     SubtractAverage(MGVariable::u);
+  Real def = 0.0;
   for (int v = 0; v < nvar_; ++v)
-    CalculateDefectNorm(MGNormType::l2, v);
+    def += CalculateDefectNorm(MGNormType::l2, v);
+  if (fshowdef_ && Globals::my_rank == 0)
+    std::cout << "Multigrid defect L2-norm : " << def << std::endl;
 
   return;
 }

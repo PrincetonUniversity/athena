@@ -69,6 +69,7 @@ class MGCRDiffusionDriver : public MultigridDriver {
   CRDiffusionBoundaryTaskList *crtlist_;
   Real omega_;
   int fsmoother_;
+  bool fsteady_;
 };
 
 #endif // CRDIFFUSION_MG_CRDIFFUSION_HPP_

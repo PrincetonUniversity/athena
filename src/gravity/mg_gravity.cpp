@@ -49,6 +49,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
   npresmooth_ = pin->GetOrAddReal("gravity", "npresmooth", npresmooth_);
   npostsmooth_ = pin->GetOrAddReal("gravity", "npostsmooth", npostsmooth_);
   redblack_ = true;
+  fshowdef_ = pin->GetOrAddBoolean("gravity", "showdefect", fshowdef_);
   std::string m = pin->GetOrAddString("gravity", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
   if (m == "fmg") {
@@ -183,7 +184,7 @@ void MGGravityDriver::Solve(int stage, Real dt) {
       pmg->LoadFinestData(pmg->pmy_block_->pgrav->phi, 0, NGHOST);
   }
 
-  SetupMultigrid(dt);
+  SetupMultigrid(dt, false);
 
   if (mode_ == 0) {
     SolveFMGCycle();

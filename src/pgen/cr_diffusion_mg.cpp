@@ -133,9 +133,9 @@ void CRFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 
 int AMRCondition(MeshBlock *pmb) {
-  if (pmb->block_size.x1min >= 0.0 && pmb->block_size.x1min <=0.001
-   && pmb->block_size.x2min >= 0.0 && pmb->block_size.x2min <=0.001
-   && pmb->block_size.x3min >= 0.0 && pmb->block_size.x3min <=0.001) {
+  if (pmb->block_size.x1min >= 0.25 && pmb->block_size.x1min <=0.251
+   && pmb->block_size.x2min >= 0.25 && pmb->block_size.x2min <=0.251
+   && pmb->block_size.x3min >= 0.25 && pmb->block_size.x3min <=0.251) {
     if (pmb->pmy_mesh->ncycle >= pmb->loc.level - 1)
       return 1;
   }

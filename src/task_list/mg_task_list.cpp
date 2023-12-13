@@ -548,3 +548,22 @@ void MultigridTaskList::SetMGTaskListFMGProlongate(int flag) {
     AddMultigridTask(MG_CLEARBNDP,  MG_FMGPROLONG);
   }
 }
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MultigridTaskList::SetMGTaskListBoundaryCommunication()
+//! \brief Set the task list for boundary communication
+
+void MultigridTaskList::SetMGTaskListBoundaryCommunication() {
+  ClearTaskList();
+  AddMultigridTask(MG_STARTRECVL, NONE);
+  AddMultigridTask(MG_SENDBNDL,   MG_STARTRECVL);
+  AddMultigridTask(MG_RECVBNDL,   MG_STARTRECVL);
+  if (pmy_mgdriver_->nreflevel_ > 0) {
+    AddMultigridTask(MG_PRLNGFCL, MG_SENDBNDL|MG_RECVBNDL);
+    AddMultigridTask(MG_PHYSBNDL, MG_PRLNGFCL);
+  } else {
+    AddMultigridTask(MG_PHYSBNDL, MG_RECVBNDL|MG_SENDBNDL);
+  }
+  AddMultigridTask(MG_CLEARBNDL,  MG_PHYSBNDL);
+}

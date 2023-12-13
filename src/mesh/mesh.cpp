@@ -1546,10 +1546,6 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     else if (SELF_GRAVITY_ENABLED == 2)
       pmgrd->Solve(1);
 
-    if (CRDIFFUSION_ENABLED)
-      pmcrd->Solve(1, 0.0);
-
-
 #pragma omp parallel num_threads(nthreads)
     {
       MeshBlock *pmb;
@@ -1804,6 +1800,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
       }
     }
+
+    if (CRDIFFUSION_ENABLED) // CR has to be processed after MHD boundaries
+      pmcrd->Solve(1, 0.0);
 
     if (!res_flag && adaptive) {
       iflag = false;

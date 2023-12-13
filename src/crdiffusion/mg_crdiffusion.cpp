@@ -52,9 +52,12 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   eps_ = pin->GetOrAddReal("crdiffusion", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("crdiffusion", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("crdiffusion", "fas", ffas_);
+  fsubtract_average_ = false;
   omega_ = pin->GetOrAddReal("crdiffusion", "omega", omega_);
+  fsteady_ = pin->GetOrAddBoolean("crdiffusion", "steady", false);
   npresmooth_ = pin->GetOrAddReal("crdiffusion", "npresmooth", npresmooth_);
   npostsmooth_ = pin->GetOrAddReal("crdiffusion", "npostsmooth", npostsmooth_);
+  fshowdef_ = pin->GetOrAddBoolean("crdiffusion", "showdefect", fshowdef_);
   std::string smoother = pin->GetOrAddString("crdiffusion", "smoother", "jacobi-rb");
   if (smoother == "jacobi-rb") {
     fsmoother_ = 1;
@@ -178,21 +181,40 @@ void MGCRDiffusionDriver::Solve(int stage, Real dt) {
     Hydro *phydro = pmg->pmy_block_->phydro;
     Field *pfield = pmg->pmy_block_->pfield;
     pcrdiff->CalculateCoefficients(phydro->w, pfield->bcc);
-    pmg->LoadSource(pcrdiff->ecr, 0, NGHOST, 1.0);
-    if (mode_ == 1) // use the previous timestep data as the initial guess
+    if (!fsteady_)
+      pmg->LoadSource(pcrdiff->ecr, 0, NGHOST, 1.0);
+    else {
+      AthenaArray<Real> &src = pmg->GetCurrentSource();
+      src.ZeroClear();
+    }
+    if (mode_ == 1) // load the current data as the initial guess
       pmg->LoadFinestData(pcrdiff->ecr, 0, NGHOST);
     pmg->LoadCoefficients(pcrdiff->coeff, NGHOST);
   }
 
-  SetupMultigrid(dt);
-
-  if (mode_ == 0) {
-    SolveFMGCycle();
-  } else {
-    if (eps_ >= 0.0)
-      SolveIterative();
-    else
-      SolveIterativeFixedTimes();
+  if (dt > 0.0 || fsteady_) {
+    SetupMultigrid(dt, false);
+    if (mode_ == 0) {
+      SolveFMGCycle();
+    } else {
+      if (eps_ >= 0.0)
+        SolveIterative();
+      else
+        SolveIterativeFixedTimes();
+    }
+  } else { // just copy trivial solution and set boundaries
+    SetupMultigrid(dt, true);
+    if (mode_ != 1) {
+#pragma omp parallel for num_threads(nthreads_)
+      for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
+        MGCRDiffusion *pmg = static_cast<MGCRDiffusion*>(*itr);
+        AthenaArray<Real> &ecr = pmg->GetCurrentData();
+        AthenaArray<Real> &ecr0 = pmg->GetCurrentSource();
+        ecr = ecr0;
+      }
+    }
+    mgtlist_->SetMGTaskListBoundaryCommunication();
+    mgtlist_->DoTaskListOneStage(this);
   }
 
   // Return the result
@@ -463,67 +485,124 @@ void MGCRDiffusion::CalculateMatrix(AthenaArray<Real> &matrix,
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
-  Real fac = dt/SQR(dx), efac = 0.125*fac;
+  if (!(static_cast<MGCRDiffusionDriver*>(pmy_driver_)->fsteady_)) { // time-dependent
+    Real fac = dt/SQR(dx), efac = 0.125*fac;
 #pragma omp parallel for num_threads(pmy_driver_->nthreads_) if (th && (ku-kl) >= minth_)
-  for (int k=kl; k<=ku; k++) {
-    for (int j=jl; j<=ju; j++) {
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-      for (int i=il; i<=iu; i++) {
-        // center
-        matrix(CCC,k,j,i) = 1.0 + 0.5*fac*(
-                            2.0*coeff(DXX,k,j,i)+coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i-1)
-                          + 2.0*coeff(DYY,k,j,i)+coeff(DYY,k,j+1,i)+coeff(DYY,k,j-1,i)
-                          + 2.0*coeff(DZZ,k,j,i)+coeff(DZZ,k+1,j,i)+coeff(DZZ,k-1,j,i))
-                          + dt*coeff(NLAMBDA,k,j,i);
-        // face
-        matrix(CCM,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i) + coeff(DXX,k,j,i-1))
-                              +0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
-                                     +(coeff(DZX,k+1,j,i)-coeff(DZX,k-1,j,i))));
-        matrix(CCP,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i))
-                              -0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
-                                     +(coeff(DZX,k+1,j,i)-coeff(DZX,k-1,j,i))));
-        matrix(CMC,k,j,i) = fac*(-0.5*(coeff(DYY,k,j,i) + coeff(DYY,k,j-1,i))
-                              +0.125*((coeff(DXY,k,j,i+1)-coeff(DXY,k,j,i-1))
-                                     +(coeff(DZY,k+1,j,i)-coeff(DZY,k-1,j,i))));
-        matrix(CPC,k,j,i) = fac*(-0.5*(coeff(DYY,k,j+1,i)+coeff(DYY,k,j,i))
-                              -0.125*((coeff(DXY,k,j,i+1)-coeff(DXY,k,j,i-1))
-                                     +(coeff(DZY,k+1,j,i)-coeff(DZY,k-1,j,i))));
-        matrix(MCC,k,j,i) = fac*(-0.5*(coeff(DZZ,k,j,i) + coeff(DZZ,k-1,j,i))
-                              +0.125*((coeff(DYZ,k,j+1,i)-coeff(DYZ,k,j-1,i))
-                                     +(coeff(DXZ,k,j,i+1)-coeff(DXZ,k,j,i-1))));
-        matrix(PCC,k,j,i) = fac*(-0.5*(coeff(DZZ,k+1,j,i)+coeff(DZZ,k,j,i))
-                              -0.125*((coeff(DYZ,k,j+1,i)-coeff(DYZ,k,j-1,i))
-                                     +(coeff(DXZ,k,j,i+1)-coeff(DXZ,k,j,i-1))));
-        // edge
-        matrix(CMM,k,j,i) = -efac*(coeff(DXY,k,j,i) + coeff(DXY,k,j,i-1)
-                                  +coeff(DYX,k,j,i) + coeff(DYX,k,j-1,i));
-        matrix(CMP,k,j,i) =  efac*(coeff(DXY,k,j,i+1)+coeff(DXY,k,j,i)
-                                  +coeff(DYX,k,j,i) + coeff(DYX,k,j-1,i));
-        matrix(CPM,k,j,i) =  efac*(coeff(DXY,k,j,i) + coeff(DXY,k,j,i-1)
-                                  +coeff(DYX,k,j+1,i)+coeff(DYX,k,j,i));
-        matrix(CPP,k,j,i) = -efac*(coeff(DXY,k,j,i+1)+coeff(DXY,k,j,i)
-                                  +coeff(DYX,k,j+1,i)+coeff(DYX,k,j,i));
-        matrix(MCM,k,j,i) = -efac*(coeff(DZX,k,j,i) + coeff(DZX,k-1,j,i)
-                                  +coeff(DXZ,k,j,i) + coeff(DXZ,k,j,i-1));
-        matrix(MCP,k,j,i) =  efac*(coeff(DZX,k,j,i) + coeff(DZX,k-1,j,i)
-                                  +coeff(DXZ,k,j,i+1)+coeff(DXZ,k,j,i));
-        matrix(PCM,k,j,i) =  efac*(coeff(DZX,k+1,j,i)+coeff(DZX,k,j,i)
-                                  +coeff(DXZ,k,j,i) + coeff(DXZ,k,j,i-1));
-        matrix(PCP,k,j,i) = -efac*(coeff(DZX,k+1,j,i)+coeff(DZX,k,j,i)
-                                  +coeff(DXZ,k,j,i+1)+coeff(DXZ,k,j,i));
-        matrix(MMC,k,j,i) = -efac*(coeff(DYZ,k,j,i) + coeff(DYZ,k,j-1,i)
-                                  +coeff(DZY,k,j,i) + coeff(DZY,k-1,j,i));
-        matrix(MPC,k,j,i) =  efac*(coeff(DYZ,k,j+1,i)+coeff(DYZ,k,j,i)
-                                  +coeff(DZY,k,j,i) + coeff(DZY,k-1,j,i));
-        matrix(PMC,k,j,i) =  efac*(coeff(DYZ,k,j,i) + coeff(DYZ,k,j-1,i)
-                                  +coeff(DZY,k+1,j,i)+coeff(DZY,k,j,i));
-        matrix(PPC,k,j,i) = -efac*(coeff(DYZ,k,j+1,i)+coeff(DYZ,k,j,i)
-                                  +coeff(DZY,k+1,j,i)+coeff(DZY,k,j,i));
+        for (int i=il; i<=iu; i++) {
+          // center
+          matrix(CCC,k,j,i) = 1.0 + dt*coeff(NLAMBDA,k,j,i) + 0.5*fac*(
+                              2.0*coeff(DXX,k,j,i)+coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i-1)
+                            + 2.0*coeff(DYY,k,j,i)+coeff(DYY,k,j+1,i)+coeff(DYY,k,j-1,i)
+                            + 2.0*coeff(DZZ,k,j,i)+coeff(DZZ,k+1,j,i)+coeff(DZZ,k-1,j,i));
+          // face
+          matrix(CCM,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i) + coeff(DXX,k,j,i-1))
+                                +0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
+                                       +(coeff(DZX,k+1,j,i)-coeff(DZX,k-1,j,i))));
+          matrix(CCP,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i))
+                                -0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
+                                       +(coeff(DZX,k+1,j,i)-coeff(DZX,k-1,j,i))));
+          matrix(CMC,k,j,i) = fac*(-0.5*(coeff(DYY,k,j,i) + coeff(DYY,k,j-1,i))
+                                +0.125*((coeff(DXY,k,j,i+1)-coeff(DXY,k,j,i-1))
+                                       +(coeff(DZY,k+1,j,i)-coeff(DZY,k-1,j,i))));
+          matrix(CPC,k,j,i) = fac*(-0.5*(coeff(DYY,k,j+1,i)+coeff(DYY,k,j,i))
+                                -0.125*((coeff(DXY,k,j,i+1)-coeff(DXY,k,j,i-1))
+                                       +(coeff(DZY,k+1,j,i)-coeff(DZY,k-1,j,i))));
+          matrix(MCC,k,j,i) = fac*(-0.5*(coeff(DZZ,k,j,i) + coeff(DZZ,k-1,j,i))
+                                +0.125*((coeff(DYZ,k,j+1,i)-coeff(DYZ,k,j-1,i))
+                                       +(coeff(DXZ,k,j,i+1)-coeff(DXZ,k,j,i-1))));
+          matrix(PCC,k,j,i) = fac*(-0.5*(coeff(DZZ,k+1,j,i)+coeff(DZZ,k,j,i))
+                                -0.125*((coeff(DYZ,k,j+1,i)-coeff(DYZ,k,j-1,i))
+                                       +(coeff(DXZ,k,j,i+1)-coeff(DXZ,k,j,i-1))));
+          // edge
+          matrix(CMM,k,j,i) = -efac*(coeff(DXY,k,j,i) + coeff(DXY,k,j,i-1)
+                                    +coeff(DYX,k,j,i) + coeff(DYX,k,j-1,i));
+          matrix(CMP,k,j,i) =  efac*(coeff(DXY,k,j,i+1)+coeff(DXY,k,j,i)
+                                    +coeff(DYX,k,j,i) + coeff(DYX,k,j-1,i));
+          matrix(CPM,k,j,i) =  efac*(coeff(DXY,k,j,i) + coeff(DXY,k,j,i-1)
+                                    +coeff(DYX,k,j+1,i)+coeff(DYX,k,j,i));
+          matrix(CPP,k,j,i) = -efac*(coeff(DXY,k,j,i+1)+coeff(DXY,k,j,i)
+                                    +coeff(DYX,k,j+1,i)+coeff(DYX,k,j,i));
+          matrix(MCM,k,j,i) = -efac*(coeff(DZX,k,j,i) + coeff(DZX,k-1,j,i)
+                                    +coeff(DXZ,k,j,i) + coeff(DXZ,k,j,i-1));
+          matrix(MCP,k,j,i) =  efac*(coeff(DZX,k,j,i) + coeff(DZX,k-1,j,i)
+                                    +coeff(DXZ,k,j,i+1)+coeff(DXZ,k,j,i));
+          matrix(PCM,k,j,i) =  efac*(coeff(DZX,k+1,j,i)+coeff(DZX,k,j,i)
+                                    +coeff(DXZ,k,j,i) + coeff(DXZ,k,j,i-1));
+          matrix(PCP,k,j,i) = -efac*(coeff(DZX,k+1,j,i)+coeff(DZX,k,j,i)
+                                    +coeff(DXZ,k,j,i+1)+coeff(DXZ,k,j,i));
+          matrix(MMC,k,j,i) = -efac*(coeff(DYZ,k,j,i) + coeff(DYZ,k,j-1,i)
+                                    +coeff(DZY,k,j,i) + coeff(DZY,k-1,j,i));
+          matrix(MPC,k,j,i) =  efac*(coeff(DYZ,k,j+1,i)+coeff(DYZ,k,j,i)
+                                    +coeff(DZY,k,j,i) + coeff(DZY,k-1,j,i));
+          matrix(PMC,k,j,i) =  efac*(coeff(DYZ,k,j,i) + coeff(DYZ,k,j-1,i)
+                                    +coeff(DZY,k+1,j,i)+coeff(DZY,k,j,i));
+          matrix(PPC,k,j,i) = -efac*(coeff(DYZ,k,j+1,i)+coeff(DYZ,k,j,i)
+                                    +coeff(DZY,k+1,j,i)+coeff(DZY,k,j,i));
+        }
+      }
+    }
+  } else { // steady state
+    Real fac = 1.0/SQR(dx), efac = 0.125*fac;
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_) if (th && (ku-kl) >= minth_)
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+#pragma omp simd
+        for (int i=il; i<=iu; i++) {
+          // center
+          matrix(CCC,k,j,i) = coeff(NLAMBDA,k,j,i) + 0.5*fac*(
+                              2.0*coeff(DXX,k,j,i)+coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i-1)
+                            + 2.0*coeff(DYY,k,j,i)+coeff(DYY,k,j+1,i)+coeff(DYY,k,j-1,i)
+                            + 2.0*coeff(DZZ,k,j,i)+coeff(DZZ,k+1,j,i)+coeff(DZZ,k-1,j,i));
+          // face
+          matrix(CCM,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i) + coeff(DXX,k,j,i-1))
+                                +0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
+                                       +(coeff(DZX,k+1,j,i)-coeff(DZX,k-1,j,i))));
+          matrix(CCP,k,j,i) = fac*(-0.5*(coeff(DXX,k,j,i+1)+coeff(DXX,k,j,i))
+                                -0.125*((coeff(DYX,k,j+1,i)-coeff(DYX,k,j-1,i))
+                                       +(coeff(DZX,k+1,j,i)-coeff(DZX,k-1,j,i))));
+          matrix(CMC,k,j,i) = fac*(-0.5*(coeff(DYY,k,j,i) + coeff(DYY,k,j-1,i))
+                                +0.125*((coeff(DXY,k,j,i+1)-coeff(DXY,k,j,i-1))
+                                       +(coeff(DZY,k+1,j,i)-coeff(DZY,k-1,j,i))));
+          matrix(CPC,k,j,i) = fac*(-0.5*(coeff(DYY,k,j+1,i)+coeff(DYY,k,j,i))
+                                -0.125*((coeff(DXY,k,j,i+1)-coeff(DXY,k,j,i-1))
+                                       +(coeff(DZY,k+1,j,i)-coeff(DZY,k-1,j,i))));
+          matrix(MCC,k,j,i) = fac*(-0.5*(coeff(DZZ,k,j,i) + coeff(DZZ,k-1,j,i))
+                                +0.125*((coeff(DYZ,k,j+1,i)-coeff(DYZ,k,j-1,i))
+                                       +(coeff(DXZ,k,j,i+1)-coeff(DXZ,k,j,i-1))));
+          matrix(PCC,k,j,i) = fac*(-0.5*(coeff(DZZ,k+1,j,i)+coeff(DZZ,k,j,i))
+                                -0.125*((coeff(DYZ,k,j+1,i)-coeff(DYZ,k,j-1,i))
+                                       +(coeff(DXZ,k,j,i+1)-coeff(DXZ,k,j,i-1))));
+          // edge
+          matrix(CMM,k,j,i) = -efac*(coeff(DXY,k,j,i) + coeff(DXY,k,j,i-1)
+                                    +coeff(DYX,k,j,i) + coeff(DYX,k,j-1,i));
+          matrix(CMP,k,j,i) =  efac*(coeff(DXY,k,j,i+1)+coeff(DXY,k,j,i)
+                                    +coeff(DYX,k,j,i) + coeff(DYX,k,j-1,i));
+          matrix(CPM,k,j,i) =  efac*(coeff(DXY,k,j,i) + coeff(DXY,k,j,i-1)
+                                    +coeff(DYX,k,j+1,i)+coeff(DYX,k,j,i));
+          matrix(CPP,k,j,i) = -efac*(coeff(DXY,k,j,i+1)+coeff(DXY,k,j,i)
+                                    +coeff(DYX,k,j+1,i)+coeff(DYX,k,j,i));
+          matrix(MCM,k,j,i) = -efac*(coeff(DZX,k,j,i) + coeff(DZX,k-1,j,i)
+                                    +coeff(DXZ,k,j,i) + coeff(DXZ,k,j,i-1));
+          matrix(MCP,k,j,i) =  efac*(coeff(DZX,k,j,i) + coeff(DZX,k-1,j,i)
+                                    +coeff(DXZ,k,j,i+1)+coeff(DXZ,k,j,i));
+          matrix(PCM,k,j,i) =  efac*(coeff(DZX,k+1,j,i)+coeff(DZX,k,j,i)
+                                    +coeff(DXZ,k,j,i) + coeff(DXZ,k,j,i-1));
+          matrix(PCP,k,j,i) = -efac*(coeff(DZX,k+1,j,i)+coeff(DZX,k,j,i)
+                                    +coeff(DXZ,k,j,i+1)+coeff(DXZ,k,j,i));
+          matrix(MMC,k,j,i) = -efac*(coeff(DYZ,k,j,i) + coeff(DYZ,k,j-1,i)
+                                    +coeff(DZY,k,j,i) + coeff(DZY,k-1,j,i));
+          matrix(MPC,k,j,i) =  efac*(coeff(DYZ,k,j+1,i)+coeff(DYZ,k,j,i)
+                                    +coeff(DZY,k,j,i) + coeff(DZY,k-1,j,i));
+          matrix(PMC,k,j,i) =  efac*(coeff(DYZ,k,j,i) + coeff(DYZ,k,j-1,i)
+                                    +coeff(DZY,k+1,j,i)+coeff(DZY,k,j,i));
+          matrix(PPC,k,j,i) = -efac*(coeff(DYZ,k,j+1,i)+coeff(DYZ,k,j,i)
+                                    +coeff(DZY,k+1,j,i)+coeff(DZY,k,j,i));
+        }
       }
     }
   }
-
   return;
 }
-
-

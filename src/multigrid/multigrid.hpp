@@ -207,7 +207,7 @@ class MultigridDriver {
  protected:
   void CheckBoundaryFunctions();
   void SubtractAverage(MGVariable type);
-  void SetupMultigrid(Real dt);
+  void SetupMultigrid(Real dt, bool ftrivial);
   void SetupCoefficients();
   void TransferFromBlocksToRoot(bool initflag);
   void TransferFromRootToBlocks(bool folddata);
@@ -276,7 +276,7 @@ class MultigridDriver {
   Mesh *pmy_mesh_;
   std::vector<Multigrid*> vmg_;
   Multigrid *mgroot_;
-  bool fsubtract_average_, ffas_, redblack_, needinit_;
+  bool fsubtract_average_, ffas_, redblack_, needinit_, fshowdef_;
   Real last_ave_;
   Real eps_;
   int niter_, npresmooth_, npostsmooth_;
