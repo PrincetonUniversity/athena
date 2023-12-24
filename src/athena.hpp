@@ -50,7 +50,7 @@ class Coordinates;
 class ParameterInput;
 class HydroDiffusion;
 class FieldDiffusion;
-struct MGCoordinates;
+class MGCoordinates;
 class OrbitalAdvection;
 class NRRadiation;
 class IMRadiation;

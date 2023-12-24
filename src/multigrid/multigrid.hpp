@@ -34,8 +34,6 @@ class Mesh;
 class MeshBlock;
 class ParameterInput;
 class Coordinates;
-struct MGCoordinates;
-struct MGOctet;
 
 enum class MGVariable {src, u, coeff};
 enum class MGNormType {max, l1, l2};

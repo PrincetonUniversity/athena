@@ -23,7 +23,7 @@
 #include "../multigrid/multigrid.hpp"
 
 class Mesh;
-struct MGOctet;
+class MGOctet;
 struct LogicalLocationHash;
 
 //--------------------------------------------------------------------------------------
