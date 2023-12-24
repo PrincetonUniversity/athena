@@ -7,7 +7,7 @@
 //========================================================================================
 //! \file crdiffusion.hpp
 //! \brief defines CRDiffusion class which implements data and functions for the implicit
-//!        Cosmic-Ray diffusion solver 
+//!        Cosmic-Ray diffusion solver
 
 // C headers
 
@@ -39,10 +39,10 @@ class CRDiffusion {
  public:
   CRDiffusion(MeshBlock *pmb, ParameterInput *pin);
   ~CRDiffusion();
-  
+
   MeshBlock* pmy_block;
   MGCRDiffusion *pmg;
-  AthenaArray<Real> ecr, zeta, coeff;
+  AthenaArray<Real> ecr, source, zeta, coeff;
   AthenaArray<Real> coarse_ecr, empty_flux[3];
   AthenaArray<Real> def;   // defect from the Multigrid solver
   bool output_defect;

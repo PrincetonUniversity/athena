@@ -158,7 +158,7 @@ class Multigrid {
                  const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix,
                  int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) = 0;
   virtual void CalculateMatrix(AthenaArray<Real> &matrix, const AthenaArray<Real> &coeff,
-          Real dt, int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) {};
+          Real dt, int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) {}
 
   friend class MultigridDriver;
   friend class MultigridTaskList;

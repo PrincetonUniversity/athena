@@ -55,9 +55,9 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   fsubtract_average_ = false;
   omega_ = pin->GetOrAddReal("crdiffusion", "omega", omega_);
   fsteady_ = pin->GetOrAddBoolean("crdiffusion", "steady", false);
-  npresmooth_ = pin->GetOrAddReal("crdiffusion", "npresmooth", npresmooth_);
-  npostsmooth_ = pin->GetOrAddReal("crdiffusion", "npostsmooth", npostsmooth_);
-  fshowdef_ = pin->GetOrAddBoolean("crdiffusion", "showdefect", fshowdef_);
+  npresmooth_ = pin->GetOrAddReal("crdiffusion", "npresmooth", 2);
+  npostsmooth_ = pin->GetOrAddReal("crdiffusion", "npostsmooth", 2);
+  fshowdef_ = pin->GetOrAddBoolean("crdiffusion", "show_defect", fshowdef_);
   std::string smoother = pin->GetOrAddString("crdiffusion", "smoother", "jacobi-rb");
   if (smoother == "jacobi-rb") {
     fsmoother_ = 1;
@@ -65,7 +65,7 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   } else if (smoother == "jacobi-double") {
     fsmoother_ = 0;
     redblack_ = true;
-  }else { // jacobi
+  } else { // jacobi
     fsmoother_ = 0;
     redblack_ = false;
   }
@@ -163,6 +163,45 @@ MGCRDiffusion::~MGCRDiffusion() {
 
 
 //----------------------------------------------------------------------------------------
+//! \fn void MGCRDiffusionDriver::AddCRSource(const AthenaArray<Real> &src,
+//!                                           int ngh, Real dt)
+//! \brief Add the cosmic-ray source term
+
+void MGCRDiffusion::AddCRSource(const AthenaArray<Real> &src, int ngh, Real dt) {
+  AthenaArray<Real> &dst=src_[nlevel_-1];
+  int is, ie, js, je, ks, ke;
+  is=js=ks=ngh_;
+  ie=is+size_.nx1-1, je=js+size_.nx2-1, ke=ks+size_.nx3-1;
+  if (!(static_cast<MGCRDiffusionDriver*>(pmy_driver_)->fsteady_)) {
+    for (int mk=ks; mk<=ke; ++mk) {
+      int k = mk - ks + ngh;
+      for (int mj=js; mj<=je; ++mj) {
+        int j = mj - js + ngh;
+#pragma omp simd
+        for (int mi=is; mi<=ie; ++mi) {
+          int i = mi - is + ngh;
+          dst(mk,mj,mi) += dt * src(k,j,i);
+        }
+      }
+    }
+  } else {
+    for (int mk=ks; mk<=ke; ++mk) {
+      int k = mk - ks + ngh;
+      for (int mj=js; mj<=je; ++mj) {
+        int j = mj - js + ngh;
+#pragma omp simd
+        for (int mi=is; mi<=ie; ++mi) {
+          int i = mi - is + ngh;
+          dst(mk,mj,mi) = src(k,j,i);
+        }
+      }
+    }
+  }
+
+  return;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void MGCRDiffusionDriver::Solve(int stage, Real dt)
 //! \brief load the data and solve
 
@@ -183,13 +222,10 @@ void MGCRDiffusionDriver::Solve(int stage, Real dt) {
     pcrdiff->CalculateCoefficients(phydro->w, pfield->bcc);
     if (!fsteady_)
       pmg->LoadSource(pcrdiff->ecr, 0, NGHOST, 1.0);
-    else {
-      AthenaArray<Real> &src = pmg->GetCurrentSource();
-      src.ZeroClear();
-    }
     if (mode_ == 1) // load the current data as the initial guess
       pmg->LoadFinestData(pcrdiff->ecr, 0, NGHOST);
     pmg->LoadCoefficients(pcrdiff->coeff, NGHOST);
+    pmg->AddCRSource(pcrdiff->source, NGHOST, dt);
   }
 
   if (dt > 0.0 || fsteady_) {

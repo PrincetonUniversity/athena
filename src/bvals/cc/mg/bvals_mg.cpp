@@ -521,8 +521,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
   AthenaArray<Real> *t;
   if (!fcoeff) {
     t = &(pmy_mg_->GetCurrentData());
-  }
-  else {
+  } else {
     nvar = pmy_mg_->ncoeff_;
     t = &(pmy_mg_->GetCurrentCoefficient());
   }
@@ -604,8 +603,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
   AthenaArray<Real> *t;
   if (!fcoeff) {
     t = &(pmy_mg_->GetCurrentData());
-  }
-  else {
+  } else {
     nvar = pmy_mg_->ncoeff_;
     t = &(pmy_mg_->GetCurrentCoefficient());
   }
@@ -672,8 +670,7 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
   AthenaArray<Real> *t;
   if (!fcoeff) {
     t = &(pmy_mg_->GetCurrentData());
-  }
-  else {
+  } else {
     nvar = pmy_mg_->ncoeff_;
     t = &(pmy_mg_->GetCurrentCoefficient());
   }
@@ -790,8 +787,7 @@ void MGBoundaryValues::SetMultigridBoundarySameLevel(const Real *buf,
   AthenaArray<Real> *t;
   if (!fcoeff) {
     t = &(pmy_mg_->GetCurrentData());
-  }
-  else {
+  } else {
     nvar = pmy_mg_->ncoeff_;
     t = &(pmy_mg_->GetCurrentCoefficient());
   }
@@ -910,8 +906,7 @@ void MGBoundaryValues::SetMultigridBoundaryFromFiner(const Real *buf,
   AthenaArray<Real> *t;
   if (!fcoeff) {
     t = &(pmy_mg_->GetCurrentData());
-  }
-  else {
+  } else {
     nvar = pmy_mg_->ncoeff_;
     t = &(pmy_mg_->GetCurrentCoefficient());
   }
@@ -1057,8 +1052,7 @@ void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata, bool fcoeff)
   AthenaArray<Real> *t;
   if (!fcoeff) {
     t = &(pmy_mg_->GetCurrentData());
-  }
-  else {
+  } else {
     nvar = pmy_mg_->ncoeff_;
     t = &(pmy_mg_->GetCurrentCoefficient());
   }
@@ -1266,10 +1260,9 @@ void MGBoundaryValues::SetMultigridBoundaryFromFinerFluxCons(const Real *buf,
 }
 
 
-
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons()
-//! \brief prolongate Multigrid boundaries with the flux-conservation formula 
+//! \brief prolongate Multigrid boundaries with the flux-conservation formula
 //!        for the base class (just call the normal version)
 
 void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {

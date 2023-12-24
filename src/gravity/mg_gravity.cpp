@@ -49,7 +49,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
   npresmooth_ = pin->GetOrAddReal("gravity", "npresmooth", npresmooth_);
   npostsmooth_ = pin->GetOrAddReal("gravity", "npostsmooth", npostsmooth_);
   redblack_ = true;
-  fshowdef_ = pin->GetOrAddBoolean("gravity", "showdefect", fshowdef_);
+  fshowdef_ = pin->GetOrAddBoolean("gravity", "show_defect", fshowdef_);
   std::string m = pin->GetOrAddString("gravity", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
   if (m == "fmg") {
@@ -219,7 +219,7 @@ void MGGravityDriver::Solve(int stage, Real dt) {
 //! \brief Implementation of the Red-Black Gauss-Seidel Smoother
 //!        rlev = relative level from the finest level of this Multigrid block
 
-void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, 
+void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
                 const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix, int rlev,
                 int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) {
   Real dx;

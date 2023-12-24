@@ -1218,7 +1218,8 @@ void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc 
 //!                                                        MGBoundaryFunc my_bc)
 //! \brief Enroll a user-defined Multigrid CR Diffusion boundary function
 
-void Mesh::EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
+void Mesh::EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir,
+                                                   MGBoundaryFunc my_bc) {
   std::stringstream msg;
   if (dir < 0 || dir > 5) {
     msg << "### FATAL ERROR in EnrollUserMGCRDiffusionBoundaryFunction" << std::endl

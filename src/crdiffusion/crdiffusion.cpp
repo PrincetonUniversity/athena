@@ -34,6 +34,7 @@
 //! \brief CRDiffusion constructor
 CRDiffusion::CRDiffusion(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), ecr(pmb->ncells3, pmb->ncells2, pmb->ncells1),
+    source(pmb->ncells3, pmb->ncells2, pmb->ncells1),
     zeta(pmb->ncells3, pmb->ncells2, pmb->ncells1),
     coeff(NCOEFF, pmb->ncells3, pmb->ncells2, pmb->ncells1),
     coarse_ecr(pmb->ncc3, pmb->ncc2, pmb->ncc1,

@@ -90,31 +90,34 @@ void CRDiffusionBoundaryTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
   return;
 }
 
-TaskStatus CRDiffusionBoundaryTaskList::ClearCRDiffusionBoundary(MeshBlock *pmb, int stage) {
+TaskStatus CRDiffusionBoundaryTaskList::ClearCRDiffusionBoundary(MeshBlock *pmb,
+                                                                 int stage) {
   pmb->pcrdiff->crbvar.ClearBoundary(BoundaryCommSubset::all);
   return TaskStatus::success;
 }
 
-TaskStatus CRDiffusionBoundaryTaskList::SendCRDiffusionBoundary(MeshBlock *pmb, int stage) {
+TaskStatus CRDiffusionBoundaryTaskList::SendCRDiffusionBoundary(MeshBlock *pmb,
+                                                                int stage) {
   pmb->pcrdiff->crbvar.SendBoundaryBuffers();
   return TaskStatus::success;
 }
 
 TaskStatus CRDiffusionBoundaryTaskList::ReceiveCRDiffusionBoundary(MeshBlock *pmb,
-                                                               int stage) {
+                                                                   int stage) {
   bool ret = pmb->pcrdiff->crbvar.ReceiveBoundaryBuffers();
   if (!ret)
     return TaskStatus::fail;
   return TaskStatus::success;
 }
 
-TaskStatus CRDiffusionBoundaryTaskList::SetCRDiffusionBoundary(MeshBlock *pmb, int stage) {
+TaskStatus CRDiffusionBoundaryTaskList::SetCRDiffusionBoundary(MeshBlock *pmb,
+                                                               int stage) {
   pmb->pcrdiff->crbvar.SetBoundaries();
   return TaskStatus::success;
 }
 
 TaskStatus CRDiffusionBoundaryTaskList::ProlongateCRDiffusionBoundary(MeshBlock *pmb,
-                                                              int stage) {
+                                                                      int stage) {
   pmb->pbval->ProlongateBoundariesPostMG(&(pmb->pcrdiff->crbvar));
   return TaskStatus::success;
 }

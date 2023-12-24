@@ -33,6 +33,8 @@ class MGCRDiffusion : public Multigrid {
   MGCRDiffusion(MGCRDiffusionDriver *pmd, MeshBlock *pmb);
   ~MGCRDiffusion();
 
+  void AddCRSource(const AthenaArray<Real> &src, int ngh, Real dt);
+
   void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
               const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix, int rlev,
               int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) final;

@@ -103,7 +103,7 @@ class MGBoundaryValues : public BoundaryBase {
 class MGGravityBoundaryValues : public MGBoundaryValues {
  public:
   MGGravityBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
-    : MGBoundaryValues(pmg, input_bcs) {};
+    : MGBoundaryValues(pmg, input_bcs) {}
   void ProlongateMultigridBoundariesFluxCons() final;
 
  private:
