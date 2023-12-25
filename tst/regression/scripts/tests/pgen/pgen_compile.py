@@ -55,12 +55,15 @@ def prepare(**kwargs):
                 args_lcl.extend(['float'])
             # "make clean" and link into executable only for the first problem
             # in the set that shares ./configure.py flags (except --pgen)
-            pgen = pgen_set.pop()
-            athena.configure(*args_lcl, prob=pgen, **kwargs)
-            athena.make(clean_first=True, obj_only=False)
+            first = True
             for pgen in pgen_set:
-                athena.configure(*args_lcl, prob=pgen, **kwargs)
-                athena.make(clean_first=False, obj_only=True)
+                if first:
+                    athena.configure(*args_lcl, prob=pgen, **kwargs)
+                    athena.make(clean_first=True, obj_only=False)
+                    first = False
+                else:
+                    athena.configure(*args_lcl, prob=pgen, **kwargs)
+                    athena.make(clean_first=False, obj_only=True)
 
 
 # Run Athena++
