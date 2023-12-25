@@ -2,7 +2,7 @@
 problem   = Generate pressure-density grid for chemical equilibrium curve
 reference = Kim et al. 2023, ApJS, 264, 10
 configure = --prob=chem_Pn_grid --chemistry=gow17 --radiation=const
-            --ode_solver=cvode --cvode_path=$CVODE_PATH
+            --chem_ode_solver=cvode --cvode_path=$CVODE_PATH
 
 <job>
 problem_id = chem_gow17   # problem ID: basename of output filenames

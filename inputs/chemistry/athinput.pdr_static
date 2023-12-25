@@ -2,7 +2,7 @@
 problem   = Static PDR test with chemistry
 reference = Section 4.2.1 in Gong et al. 2023, arXiv:2305.04965
 configure = --prob=chem_uniform_sixray --chemistry=gow17 --chem_radiation=six_ray
-            --ode_solver=cvode --cvode_path=$CVODE_PATH
+            --chem_ode_solver=cvode --cvode_path=$CVODE_PATH
 
 <job>
 problem_id = pdr_static   # problem ID: basename of output filenames

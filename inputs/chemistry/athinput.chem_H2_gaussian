@@ -1,7 +1,7 @@
 <comment>
 problem   = H-H2 chemistry with advection
 reference = Section 4.1 in Gong et al. 2023, arXiv:2305.04965
-configure = --prob=chem_uniform --chemistry=H2 --ode_solver=cvode --cvode_path=$CVODE_PATH
+configure = --prob=chem_uniform --chemistry=H2 --chem_ode_solver=cvode --cvode_path=$CVODE_PATH
             --eos=isothermal --nghost=3
 
 <job>

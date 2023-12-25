@@ -2,7 +2,7 @@
 problem   = Post-processing chemistry by reading VTK file from Athena 4.2 output
 reference =
 configure = --prob=read_vtk --chemistry=gow17 --chem_radiation=six_ray
-            --ode_solver=cvode --cvode_path=$CVODE_PATH
+            --chem_ode_solver=cvode --cvode_path=$CVODE_PATH
 
 <job>
 problem_id = six_ray   # problem ID: basename of output filenames

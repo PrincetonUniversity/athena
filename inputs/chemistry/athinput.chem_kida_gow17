@@ -2,7 +2,7 @@
 problem   = Chemical network in Gong, Ostriker and Wolfire (2017) in KIDA format
 reference = Gong, Ostriker and Wolfire (2017), ApJ, 843, 38
 configure = --prob=chem_uniform --chemistry=kida --kida_rates=gow17 --nspecies=18
-            --chem_radiation=const --ode_solver=cvode --cvode_path=$CVODE_PATH
+            --chem_radiation=const --chem_ode_solver=cvode --cvode_path=$CVODE_PATH
 
 <job>
 problem_id = kida_gow17   # problem ID: basename of output filenames
