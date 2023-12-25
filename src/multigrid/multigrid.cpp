@@ -251,12 +251,12 @@ void Multigrid::LoadCoefficients(const AthenaArray<Real> &coeff, int ngh) {
   is=js=ks=0;
   ie=size_.nx1+2*ngh_-1, je=size_.nx2+2*ngh_-1, ke=size_.nx3+2*ngh_-1;
   for (int v = 0; v < ncoeff_; ++v) {
-    for (int mk=0; mk<=ke; ++mk) {
+    for (int mk=ks; mk<=ke; ++mk) {
       int k = mk + ngh - ngh_;
-      for (int mj=0; mj<=je; ++mj) {
+      for (int mj=js; mj<=je; ++mj) {
         int j = mj + ngh - ngh_;
 #pragma omp simd
-        for (int mi=0; mi<=ie; ++mi) {
+        for (int mi=is; mi<=ie; ++mi) {
           int i = mi + ngh - ngh_;
           cm(v,mk,mj,mi) = coeff(v,k,j,i);
         }
