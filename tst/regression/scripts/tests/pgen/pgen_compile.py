@@ -40,6 +40,7 @@ grav_mg_args = ['-grav=mg']
 hydro_args = []
 crdiff_args = ['b', 'crdiff']
 
+
 # Prepare Athena++
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
