@@ -111,7 +111,13 @@ HydroSourceTerms::HydroSourceTerms(Hydro *phyd, ParameterInput *pin) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void HydroSourceTerms::AddHydroSourceTerms
+//! \fn void HydroSourceTerms::AddSourceTerms(const Real time, const Real dt,
+//!                                           const AthenaArray<Real> *flux,
+//!                                           const AthenaArray<Real> &prim,
+//!                                           const AthenaArray<Real> &prim_scalar,
+//!                                           const AthenaArray<Real> &bcc,
+//!                                           AthenaArray<Real> &cons,
+//!                                           AthenaArray<Real> &cons_scalar)
 //! \brief Adds source terms to conserved variables
 //! This function is not only for hydro variables but also for passive scalars.
 

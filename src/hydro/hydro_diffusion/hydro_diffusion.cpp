@@ -204,7 +204,7 @@ void HydroDiffusion::ClearFlux(AthenaArray<Real> *flux) {
 
 //---------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::SetDiffusivity(const Athena<Real> &w,
-//                                          const AthenaArray<Real> &bc)
+//!                                          const AthenaArray<Real> &bc)
 //! \brief  Set local hydro diffusion coefficients based on the fluid and
 //! magnetic field variables across the mesh.
 //! Called within HydroDiffusion::CalcDiffusionFlux wrapper function.

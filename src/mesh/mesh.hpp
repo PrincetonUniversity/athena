@@ -27,6 +27,7 @@
 #include "../parameter_input.hpp"
 #include "../task_list/im_rad_task_list.hpp"
 #include "../task_list/task_list.hpp"
+#include "../units/units.hpp"
 #include "../utils/interp_table.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
@@ -55,6 +56,8 @@ class Gravity;
 class MGGravityDriver;
 class FFTDriver;
 class FFTGravityDriver;
+class TurbulenceDriver;
+class ChemRadiation;
 class OrbitalAdvection;
 class Particles;
 class PassiveScalars;
@@ -76,6 +79,8 @@ class MeshBlock {
   friend class Mesh;
   friend class Hydro;
   friend class TaskList;
+  friend class ChemRadiation;
+  friend class ChemRadIntegrator;
   friend class IMRadTaskList;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
@@ -128,6 +133,7 @@ class MeshBlock {
   Gravity *pgrav;
   PassiveScalars *pscalars;
   EquationOfState *peos;
+  ChemRadiation *pchemrad;
   OrbitalAdvection *porb;
 
 
@@ -268,7 +274,8 @@ class Mesh {
   FFTGravityDriver *pfgrd;
   MGGravityDriver *pmgrd;
   MGCRDiffusionDriver *pmcrd;
-
+  Units *punit;
+  
   // implicit radiation iteration
   IMRadiation *pimrad;
 

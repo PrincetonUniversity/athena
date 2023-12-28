@@ -18,12 +18,12 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../bvals/bvals.hpp"
+#include "../chemistry/network/network.hpp"
 #include "../cr/cr.hpp"
 #include "../cr/integrators/cr_integrators.hpp"
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../field/field_diffusion/field_diffusion.hpp"
-#include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
 #include "../hydro/hydro_diffusion/hydro_diffusion.hpp"
 #include "../hydro/srcterms/hydro_srcterms.hpp"
@@ -974,7 +974,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
     }
 
     if (NSCALARS > 0) {
-      AddTask(SRC_TERM,(INT_HYD|INT_SCLR));
+      AddTask(SRC_TERM,(INT_HYD|INT_SCLR|INT_CHM));
     } else {
       AddTask(SRC_TERM,INT_HYD);
     }
@@ -1026,6 +1026,7 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
       } else {
         AddTask(INT_SCLR,CALC_SCLRFLX);
       }
+      AddTask(INT_CHM,INT_SCLR);
       if (ORBITAL_ADVECTION) {
         AddTask(SEND_SCLR,CALC_HYDORB);
         AddTask(RECV_SCLR,NONE);
@@ -1097,9 +1098,9 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
             setb=(setb|RECV_RADSH);
         }
 
-        if (CR_ENABLED)
+        if (CR_ENABLED) {
           setb=(setb|SEND_CRTC|SETB_CRTC);
-
+        }
 
         AddTask(PROLONG,setb);
         AddTask(CONS2PRIM,PROLONG);
@@ -1444,6 +1445,10 @@ void TimeIntegratorTaskList::AddTask(const TaskID& id, const TaskID& dep) {
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
         (&TimeIntegratorTaskList::DiffuseScalars);
     task_list_[ntasks].lb_time = true;
+  } else if (id == INT_CHM) {
+    task_list_[ntasks].TaskFunc=
+        static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
+        (&TimeIntegratorTaskList::IntegrateChemistry);
   } else if (id == SEND_HYDORB) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
@@ -2369,6 +2374,8 @@ TaskStatus TimeIntegratorTaskList::ReceiveScalarFlux(MeshBlock *pmb, int stage) 
 
 
 TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
+  if (pmb->pmy_mesh->fluid_setup == FluidFormulation::fixed) return TaskStatus::next;
+
   PassiveScalars *ps = pmb->pscalars;
 
   if (stage <= nstages) {
@@ -2414,6 +2421,15 @@ TaskStatus TimeIntegratorTaskList::IntegrateScalars(MeshBlock *pmb, int stage) {
   return TaskStatus::fail;
 }
 
+TaskStatus TimeIntegratorTaskList::IntegrateChemistry(MeshBlock *pmb, int stage) {
+  // integrate chemistry reactions
+  if (CHEMISTRY_ENABLED) {
+    if (stage != nstages) return TaskStatus::success; // only do on last stage
+
+    pmb->pscalars->odew.Integrate(pmb->pmy_mesh->time, pmb->pmy_mesh->dt);
+  }
+  return TaskStatus::next;
+}
 
 TaskStatus TimeIntegratorTaskList::SendScalars(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
@@ -2462,6 +2478,8 @@ TaskStatus TimeIntegratorTaskList::SetBoundariesScalars(MeshBlock *pmb, int stag
 
 
 TaskStatus TimeIntegratorTaskList::DiffuseScalars(MeshBlock *pmb, int stage) {
+  if (pmb->pmy_mesh->fluid_setup == FluidFormulation::fixed) return TaskStatus::next;
+
   PassiveScalars *ps = pmb->pscalars;
   Hydro *ph = pmb->phydro;
   // return if there are no diffusion to be added
@@ -2636,7 +2654,6 @@ TaskStatus TimeIntegratorTaskList::CalculateFieldOrbital(MeshBlock *pmb, int sta
   }
   return TaskStatus::fail;
 }
-
 
 
 //----------------------------------------------------------------------------------------

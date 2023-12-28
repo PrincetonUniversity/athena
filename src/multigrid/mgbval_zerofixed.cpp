@@ -4,9 +4,9 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mgbval_zerofixed.cpp
-//  \brief 6x zero fixed boundary functions for Multigrid
-//         The boundary values are fixed to zero on the cell surfaces
-//         Note that these are test implementation and should work only with ngh=1
+//! \brief 6x zero fixed boundary functions for Multigrid
+//!        The boundary values are fixed to zero on the cell surfaces
+//!        Note that these are test implementation and should work only with ngh=1
 
 
 // C headers
@@ -22,9 +22,9 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time,
-//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                      const MGCoordinates &coord)
-//  \brief Zero fixed boundary condition in the inner-X1 direction
+//!                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                     const MGCoordinates &coord)
+//! \brief Zero fixed boundary condition in the inner-X1 direction
 
 void MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -43,9 +43,9 @@ void MGZeroFixedInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time,
-//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                      const MGCoordinates &coord)
-//  \brief Zero fixed boundary condition in the outer-X1 direction
+//!                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                     const MGCoordinates &coord)
+//! \brief Zero fixed boundary condition in the outer-X1 direction
 
 void MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -64,9 +64,9 @@ void MGZeroFixedOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time,
-//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                      const MGCoordinates &coord)
-//  \brief Zero fixed boundary condition in the inner-X2 direction
+//!                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                     const MGCoordinates &coord)
+//! \brief Zero fixed boundary condition in the inner-X2 direction
 
 void MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -85,9 +85,9 @@ void MGZeroFixedInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time,
-//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                      const MGCoordinates &coord)
-//  \brief Zero fixed boundary condition in the outer-X2 direction
+//!                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                     const MGCoordinates &coord)
+//! \brief Zero fixed boundary condition in the outer-X2 direction
 
 void MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -106,9 +106,9 @@ void MGZeroFixedOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time,
-//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                      const MGCoordinates &coord)
-//  \brief Zero fixed boundary condition in the inner-X3 direction
+//!                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                     const MGCoordinates &coord)
+//! \brief Zero fixed boundary condition in the inner-X3 direction
 
 void MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -127,9 +127,9 @@ void MGZeroFixedInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time,
-//                      int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                      const MGCoordinates &coord)
-//  \brief Zero fixed boundary condition in the outer-X3 direction
+//!                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                     const MGCoordinates &coord)
+//! \brief Zero fixed boundary condition in the outer-X3 direction
 
 void MGZeroFixedOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
                         int is, int ie, int js, int je, int ks, int ke, int ngh,

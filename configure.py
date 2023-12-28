@@ -7,36 +7,42 @@
 # Makefile.in and src/defs.hpp.in respectively.
 #
 # The following options are implememted:
-#   -h  --help           help message
-#   --prob=name          use src/pgen/name.cpp as the problem generator
-#   --coord=xxx          use xxx as the coordinate system
-#   --eos=xxx            use xxx as the equation of state
-#   --flux=xxx           use xxx as the Riemann solver
-#   --nghost=xxx         set NGHOST=xxx
-#   --nscalars=xxx       set NSCALARS=xxx
-#   -eos_table           enable EOS table
-#   -b                   enable magnetic fields
-#   -s                   enable special relativity
-#   -g                   enable general relativity
-#   -t                   enable interface frame transformations for GR
-#   -debug               enable debug flags (-g -O0); override other compiler options
-#   -coverage            enable compiler-dependent code coverage flags
-#   -float               enable single precision (default is double)
-#   -mpi                 enable parallelization with MPI
-#   -omp                 enable parallelization with OpenMP
-#   -hdf5                enable HDF5 output (requires the HDF5 library)
-#   --hdf5_path=path     path to HDF5 libraries (requires the HDF5 library)
-#   -fft                 enable FFT (requires the FFTW library)
-#   --fftw_path=path     path to FFTW libraries (requires the FFTW library)
-#   --grav=xxx           use xxx as the self-gravity solver
-#   --cxx=xxx            use xxx as the C++ compiler (works w/ or w/o -mpi)
-#   --ccmd=name          use name as the command to call the (non-MPI) C++ compiler
-#   --mpiccmd=name       use name as the command to call the MPI C++ compiler
-#   --gcovcmd=name       use name as the command to call the gcov utility
-#   --cflag=string       append string whenever invoking compiler/linker
-#   --include=path       use -Ipath when compiling
-#   --lib_path=path      use -Lpath when linking
-#   --lib=xxx            use -lxxx when linking
+#   -h  --help        help message
+#   --prob=name       use src/pgen/name.cpp as the problem generator
+#   --coord=xxx       use xxx as the coordinate system
+#   --eos=xxx         use xxx as the equation of state
+#   --flux=xxx        use xxx as the Riemann solver
+#   --nghost=xxx      set NGHOST=xxx
+#   --nscalars=xxx    set NSCALARS=xxx
+#   --nspecies=xxx    set NSPECIES=xxx
+#   -eos_table        enable EOS table
+#   -b                enable magnetic fields
+#   -s                enable special relativity
+#   -g                enable general relativity
+#   -t                enable interface frame transformations for GR
+#   -debug            enable debug flags (-g -O0); override other compiler options
+#   -coverage         enable compiler-dependent code coverage flags
+#   -float            enable single precision (default is double)
+#   -mpi              enable parallelization with MPI
+#   -omp              enable parallelization with OpenMP
+#   -hdf5             enable HDF5 output (requires the HDF5 library)
+#   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
+#   -fft              enable FFT (requires the FFTW library)
+#   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
+#   --grav=xxx        use xxx as the self-gravity solver
+#   --chemistry=xxx   enable chemistry, use xxx as chemical network
+#   --kida_rates=xxx  add special rates xxx to kida network
+#   --chem_ode_solver=xxx  ode solver xxx for chemistry
+#   --cvode_path=path path to CVODE libraries (cvode solver requires the library)
+#   --chem_radiation=xxx  enable radiative transfer, use xxx for integrator
+#   --cxx=xxx         use xxx as the C++ compiler (works w/ or w/o -mpi)
+#   --ccmd=name       use name as the command to call the (non-MPI) C++ compiler
+#   --mpiccmd=name    use name as the command to call the MPI C++ compiler
+#   --gcovcmd=name    use name as the command to call the gcov utility
+#   --cflag=string    append string whenever invoking compiler/linker
+#   --include=path    use -Ipath when compiling
+#   --lib_path=path   use -Lpath when linking
+#   --lib=xxx         use -lxxx when linking
 #   -nr_radiation        turn on non-relativistic radiation transport
 #   -implicit_radiation  implicit radiation transport module
 #   -cr                  enable cosmic ray transport
@@ -115,6 +121,11 @@ parser.add_argument('--nscalars',
                     default='0',
                     help='set number of passive scalars')
 
+# --nspecies=[value] argument
+parser.add_argument('--nspecies',
+                    default='0',
+                    help='set number of chemical species')
+
 # -b argument
 parser.add_argument('-b',
                     action='store_true',
@@ -191,6 +202,36 @@ parser.add_argument('-fft',
 parser.add_argument('--fftw_path',
                     default='',
                     help='path to FFTW libraries')
+
+# --chemistry argument
+parser.add_argument('--chemistry',
+                    default=None,
+                    choices=["gow17", "H2", "kida", "G14Sod"],
+                    help='select chemical network')
+
+# --kida_rates argument
+parser.add_argument('--kida_rates',
+                    default=None,
+                    choices=["H2", "gow17", "nitrogen", "nitrogen_gas_Sipila"],
+                    help='select special rates for kida network')
+
+# --chem_radiation argument
+parser.add_argument('--chem_radiation',
+                    default=None,
+                    choices=["const", "six_ray"],
+                    help='enable and select radiative transfer method for chemistry')
+
+# --chem_ode_solver argument
+parser.add_argument('--chem_ode_solver',
+                    default=None,
+                    choices=["cvode", "forward_euler"],
+                    help='ode solver for chemistry')
+
+# --cvode_path argument
+parser.add_argument('--cvode_path',
+                    type=str,
+                    default='',
+                    help='path to CVODE libraries')
 
 # -hdf5 argument
 parser.add_argument('-hdf5',
@@ -378,6 +419,23 @@ if args['eos'][:8] == 'general/':
         raise SystemExit('### CONFIGURE ERROR: '
                          + 'General EOS is incompatible with flux ' + args['flux'])
 
+if args['chemistry'] is None and args['chem_ode_solver'] is not None:
+    raise SystemExit('### CONFIGURE ERROR: must choose chemistry network for ode solver.')
+
+if args['chemistry'] is not None and args['chem_ode_solver'] is None:
+    raise SystemExit('### CONFIGURE ERROR: must choose ode solver for chemistry.')
+
+if args['chemistry'] == 'kida' and args['kida_rates'] is None:
+    raise SystemExit('### CONFIGURE ERROR: must provide rates for kida chemistry.')
+
+if args['chem_radiation'] == 'six_ray' and (
+        args['chemistry'] != 'gow17' and args['chemistry'] != 'kida'):
+    raise SystemExit('### CONFIGURE ERROR: six ray radiation'
+                     + 'only compatible with gow17 or kida chemistry enabled.')
+
+if args['chem_ode_solver'] == 'cvode' and args['cvode_path'] == '':
+    raise SystemExit('### CONFIGURE ERROR: must provide library path to cvode.')
+
 if args['g'] and (args['nr_radiation'] or args['implicit_radiation']):
     raise SystemExit('### CONFIGURE ERROR: '
                      + ' GR is incompatible with nr_radiation or implicit_radiation')
@@ -426,6 +484,9 @@ definitions['NUMBER_GHOST_CELLS'] = args['nghost']
 
 # --nscalars=[value] argument
 definitions['NUMBER_PASSIVE_SCALARS'] = args['nscalars']
+
+# --nspecies=[value] argument
+definitions['NUMBER_CHEMICAL_SPECIES'] = args['nspecies']
 
 # -b argument
 # set variety of macros based on whether MHD/hydro or adi/iso are defined
@@ -643,6 +704,76 @@ if args['cxx'] == 'clang++-apple':
     makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
+
+# --chemistry=[network] argument
+makefile_options['CHEMISTRY_FILE'] = \
+    'src/chemistry/network_wrapper.cpp src/chemistry/utils/*.cpp'
+if args['chemistry'] is not None:
+    definitions['CHEMISTRY_ENABLED'] = '1'
+    definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/' \
+                                        + args['chemistry'] + '.hpp'
+    makefile_options['CHEMNET_FILE'] = 'src/chemistry/network/' \
+        + args['chemistry'] + '.cpp'
+    # specify the number of species for each network
+    if args['chemistry'] == "gow17":
+        definitions['NUMBER_CHEMICAL_SPECIES'] = '12'
+    elif args['chemistry'] == "H2":
+        definitions['NUMBER_CHEMICAL_SPECIES'] = '2'
+    elif args['chemistry'] == "G14Sod":
+        definitions['NUMBER_CHEMICAL_SPECIES'] = '8'
+else:
+    definitions['CHEMISTRY_ENABLED'] = '0'
+    definitions['NUMBER_CHEMICAL_SPECIES'] = '0'
+    makefile_options['CHEMNET_FILE'] = ''
+    definitions['CHEMNETWORK_HEADER'] = '../chemistry/network/chem_network.hpp'
+
+# check number of species and scalars
+if definitions['NUMBER_PASSIVE_SCALARS'] == '0':
+    definitions['NUMBER_PASSIVE_SCALARS'] = definitions['NUMBER_CHEMICAL_SPECIES']
+elif int(definitions['NUMBER_PASSIVE_SCALARS']) < int(
+                                     definitions['NUMBER_CHEMICAL_SPECIES']):
+    raise SystemExit(
+      '### CONFIGURE ERROR: number of passive scalars ({:s})'.format(
+        definitions['NUMBER_PASSIVE_SCALARS'])
+      + ' less than the number of chemical species ({:s})!'.format(
+        definitions['NUMBER_CHEMICAL_SPECIES']))
+
+# --kida_rates=[rates] argument
+if args['kida_rates'] is not None:
+    if args['chemistry'] == "kida":
+        makefile_options['CHEMNET_FILE'] += (
+            ' src/chemistry/network/kida_network_files/'
+            + args['kida_rates']
+            + '/kida_'
+            + args['kida_rates']
+            + '.cpp')
+
+# --chem_ode_solver=[solver] argument
+if args['chem_ode_solver'] == 'cvode':
+    definitions['CVODE_OPTION'] = 'CVODE'
+    makefile_options['LIBRARY_FLAGS'] += ' -lsundials_cvode -lsundials_nvecserial'
+else:
+    definitions['CVODE_OPTION'] = 'NO_CVODE'
+if args['chem_ode_solver'] is not None:
+    makefile_options['CHEM_ODE_SOLVER_FILE'] = args['chem_ode_solver']+'.cpp'
+else:
+    makefile_options['CHEM_ODE_SOLVER_FILE'] = 'forward_euler.cpp'
+
+# --cvode_path=[path] argument
+if args['cvode_path'] != '':
+    makefile_options['PREPROCESSOR_FLAGS'] += '-I%s/include' % args['cvode_path']
+    makefile_options['LINKER_FLAGS'] += '-L%s/lib' % args['cvode_path']
+    makefile_options['LINKER_FLAGS'] += " -Wl,-rpath," + '%s/lib' % args['cvode_path']
+
+# --chem_radiation=[chem_radiation] argument
+if args['chem_radiation'] is not None:
+    definitions['CHEMRADIATION_ENABLED'] = '1'
+    makefile_options['CHEMRADIATION_FILE'] = args['chem_radiation']+'.cpp'
+    definitions['CHEMRADIATION_INTEGRATOR'] = args['chem_radiation']
+else:
+    definitions['CHEMRADIATION_ENABLED'] = '0'
+    makefile_options['CHEMRADIATION_FILE'] = 'const.cpp'
+    definitions['CHEMRADIATION_INTEGRATOR'] = 'none'
 
 # -float argument
 if args['float']:
@@ -900,7 +1031,8 @@ output_config('Coordinate system', args['coord'], flog)
 output_config('Equation of state', args['eos'], flog)
 output_config('Riemann solver', args['flux'], flog)
 output_config('Magnetic fields', ('ON' if args['b'] else 'OFF'), flog)
-output_config('Number of scalars', args['nscalars'], flog)
+output_config('Number of scalars', definitions['NUMBER_PASSIVE_SCALARS'], flog)
+output_config('Number of chemical species', definitions['NUMBER_CHEMICAL_SPECIES'], flog)
 output_config('Special relativity', ('ON' if args['s'] else 'OFF'), flog)
 output_config('General relativity', ('ON' if args['g'] else 'OFF'), flog)
 output_config('Radiative Transfer', ('ON' if args['nr_radiation'] else 'OFF'), flog)
@@ -910,6 +1042,14 @@ output_config('Cosmic Ray Diffusion', ('ON' if args['crdiff'] else 'OFF'), flog)
 output_config('Frame transformations', ('ON' if args['t'] else 'OFF'), flog)
 output_config('Self-Gravity', self_grav_string, flog)
 output_config('Super-Time-Stepping', ('ON' if args['sts'] else 'OFF'), flog)
+output_config('Chemistry', (args['chemistry']
+                            if args['chemistry'] is not None else 'OFF'), flog)
+output_config('KIDA rates', (args['kida_rates']
+                             if args['kida_rates'] is not None else 'OFF'), flog)
+output_config('ChemRadiation', (args['chem_radiation']
+                                if args['chem_radiation'] is not None else 'OFF'), flog)
+output_config('chem_ode_solver', (args['chem_ode_solver'] if args['chem_ode_solver']
+                                  is not None else 'OFF'), flog)
 output_config('Debug flags', ('ON' if args['debug'] else 'OFF'), flog)
 output_config('Code coverage flags', ('ON' if args['coverage'] else 'OFF'), flog)
 output_config('Linker flags', makefile_options['LINKER_FLAGS'] + ' '

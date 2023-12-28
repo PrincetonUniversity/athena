@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mgbval_periodic.cpp
-//  \brief 6x periodic boundary functions for Multigrid
+//! \brief 6x periodic boundary functions for Multigrid
 
 // C headers
 
@@ -19,9 +19,9 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
-//  \brief Periodic (default) boundary condition in the inner-X1 direction
+//!                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                    const MGCoordinates &coord)
+//! \brief Periodic (default) boundary condition in the inner-X1 direction
 
 void MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -40,9 +40,9 @@ void MGPeriodicInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
-//  \brief Periodic (default) boundary condition in the outer-X1 direction
+//!                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                    const MGCoordinates &coord)
+//! \brief Periodic (default) boundary condition in the outer-X1 direction
 
 void MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -61,9 +61,9 @@ void MGPeriodicOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
-//  \brief Periodic (default) boundary condition in the inner-X2 direction
+//!                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                    const MGCoordinates &coord)
+//! \brief Periodic (default) boundary condition in the inner-X2 direction
 
 void MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -82,9 +82,9 @@ void MGPeriodicInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
-//  \brief Periodic (default) boundary condition in the outer-X2 direction
+//!                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                    const MGCoordinates &coord)
+//! \brief Periodic (default) boundary condition in the outer-X2 direction
 
 void MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -103,9 +103,9 @@ void MGPeriodicOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
-//  \brief Periodic (default) boundary condition in the inner-X3 direction
+//!                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                    const MGCoordinates &coord)
+//! \brief Periodic (default) boundary condition in the inner-X3 direction
 
 void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -124,9 +124,9 @@ void MGPeriodicInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time,
-//                     int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                     const MGCoordinates &coord)
-//  \brief Periodic (default) boundary condition in the outer-X3 direction
+//!                    int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                    const MGCoordinates &coord)
+//! \brief Periodic (default) boundary condition in the outer-X3 direction
 
 void MGPeriodicOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
                        int is, int ie, int js, int je, int ks, int ke, int ngh,

@@ -26,7 +26,6 @@
 //! GravityBoundaryTaskList constructor
 
 GravityBoundaryTaskList::GravityBoundaryTaskList(ParameterInput *pin, Mesh *pm) {
-  // Now assemble list of tasks for each stage of time integrator
   {using namespace GravityBoundaryTaskNames; // NOLINT (build/namespace)
     AddTask(SEND_GRAV_BND,NONE);
     AddTask(RECV_GRAV_BND,NONE);

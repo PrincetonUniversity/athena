@@ -23,6 +23,8 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
+#include "../bvals/sixray/bvals_sixray.hpp" //SixRayBoundaryVariable
+#include "../chem_rad/chem_rad.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../cr/cr.hpp"
 #include "../crdiffusion/crdiffusion.hpp"
@@ -237,6 +239,12 @@ MeshBlock::MeshBlock(int igid, int ilid, LogicalLocation iloc, RegionSize input_
 
   peos = new EquationOfState(this, pin);
 
+  if (CHEMRADIATION_ENABLED) {
+    pchemrad = new ChemRadiation(this, pin);
+    pbval->AdvanceCounterPhysID(SixRayBoundaryVariable::max_phys_id);
+  } else {
+    pchemrad = NULL;
+  }
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
        //radiation constructor needs the parameter nfre_ang
     pnrrad = new NRRadiation(this, pin);
@@ -431,6 +439,9 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   }
 
   peos = new EquationOfState(this, pin);
+  if (CHEMRADIATION_ENABLED) {
+    pchemrad = new ChemRadiation(this, pin);
+  }
 
 
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
@@ -536,6 +547,15 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
   if (NSCALARS > 0) {
     std::memcpy(pscalars->s.data(), &(mbdata[os]), pscalars->s.GetSizeInBytes());
     os += pscalars->s.GetSizeInBytes();
+    if (CHEMISTRY_ENABLED) {
+      std::memcpy(pscalars->h.data(), &(mbdata[os]), pscalars->h.GetSizeInBytes());
+      os += pscalars->h.GetSizeInBytes();
+    }
+  }
+
+  if (CHEMRADIATION_ENABLED) {
+    std::memcpy(pchemrad->ir.data(), &(mbdata[os]), pchemrad->ir.GetSizeInBytes());
+    os += pchemrad->ir.GetSizeInBytes();
   }
   // load user MeshBlock data
   for (int n=0; n<nint_user_meshblock_data_; n++) {
@@ -565,6 +585,9 @@ MeshBlock::~MeshBlock() {
   delete porb;
   if (SELF_GRAVITY_ENABLED) delete pgrav;
   if (NSCALARS > 0) delete pscalars;
+  if (CHEMRADIATION_ENABLED) {
+    delete pchemrad;
+  }
 
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) delete pnrrad;
   if (CR_ENABLED) delete pcr;
@@ -665,8 +688,15 @@ std::size_t MeshBlock::GetBlockSizeInBytes() {
   if (MAGNETIC_FIELDS_ENABLED)
     size += (pfield->b.x1f.GetSizeInBytes() + pfield->b.x2f.GetSizeInBytes()
              + pfield->b.x3f.GetSizeInBytes());
-  if (NSCALARS > 0)
+  if (NSCALARS > 0) {
     size += pscalars->s.GetSizeInBytes();
+    if (CHEMISTRY_ENABLED) {
+      size += pscalars->h.GetSizeInBytes();
+    }
+  }
+  if (CHEMRADIATION_ENABLED) {
+    size += pchemrad->ir.GetSizeInBytes();
+  }
 
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
     size += pnrrad->ir.GetSizeInBytes();

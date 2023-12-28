@@ -17,13 +17,21 @@
 #include "../athena_arrays.hpp"
 
 namespace BufferUtility {
-// 2x templated and overloaded functions
+// 3x templated and overloaded functions
+// 5D
+template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
+         int sn, int en, int sm, int em,
+         int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 // 4D
 template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
          int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 // 3D
 template <typename T> void PackData(const AthenaArray<T> &src, T *buf,
                            int si, int ei, int sj, int ej, int sk, int ek, int &offset);
+// 5D
+template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
+         int sn, int en, int sm, int em,
+         int si, int ei, int sj, int ej, int sk, int ek, int &offset);
 // 4D
 template <typename T> void UnpackData(const T *buf, AthenaArray<T> &dst,
          int sn, int en, int si, int ei, int sj, int ej, int sk, int ek, int &offset);

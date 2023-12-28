@@ -16,6 +16,10 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/cc/bvals_cc.hpp"
+//chemistry headers
+#include "../chemistry/network/network.hpp"
+#include "../chemistry/ode_wrapper.hpp"
+#include  CHEMNETWORK_HEADER //ChemNetwork class
 
 class MeshBlock;
 class ParameterInput;
@@ -29,6 +33,7 @@ class PassiveScalars {
   // TODO(felker): pin is currently only used for checking ssprk5_4, otherwise unused.
   // Leaving as ctor parameter in case of run-time "nscalars" option
   PassiveScalars(MeshBlock *pmb, ParameterInput *pin);
+  ~PassiveScalars();
 
   // public data:
   // "conserved vars" = passive scalar mass
@@ -50,6 +55,15 @@ class PassiveScalars {
   int refinement_idx{-1};
 
   CellCenteredBoundaryVariable sbvar;
+
+  //chemistry variables
+  //chemistry source term
+  //s(ispec, k, j, i). read in s1(i, ispec), and loop over i,
+  //maybe parallelize i with openmpi later.
+  AthenaArray<Real> r_copy; //abundance of species copy at intermediate step
+  AthenaArray<Real> h; //next stepsize in chemistry solver
+  ChemNetwork chemnet; //pointer to chemical network
+  ODEWrapper odew; //pointer to ode solver
 
   // public functions:
   // KGF: use inheritance for these functions / overall class?

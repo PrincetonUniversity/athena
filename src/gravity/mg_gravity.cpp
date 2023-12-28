@@ -326,7 +326,7 @@ void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> 
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
-//                            AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse)
+//!                           AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse)
 //! \brief prolongate octet boundaries using the flux conservation formula
 
 void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,

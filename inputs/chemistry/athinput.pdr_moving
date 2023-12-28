@@ -1,0 +1,87 @@
+<comment>
+problem   = Moving PDR test with chemistry
+reference = Section 4.2.2 in Gong et al. 2023, arXiv:2305.04965
+configure = --prob=chem_pdr_moving --chemistry=gow17 --chem_radiation=six_ray
+            --chem_ode_solver=cvode --cvode_path=$CVODE_PATH
+
+<job>
+problem_id = chem_gow17   # problem ID: basename of output filenames
+
+<output1>
+file_type  = vtk       # vtk data dump
+variable   = prim      # variables to be output
+dt         = 0.1       # time increment between outputs
+
+<time>
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1        # cycle limit
+tlim       = 1         # time limit, 1 Myr
+ncycle_out = 1         # interval for stdout summary info
+
+<mesh>
+nx1        = 13750     # Number of zones in X1-direction
+x1min      = 0         # minimum value of X1
+x1max      = 55        # maximum value of X1
+ix1_bc     = outflow   # inner-X1 boundary flag
+ox1_bc     = outflow   # outer-X1 boundary flag
+
+nx2        = 1         # Number of zones in X2-direction
+x2min      = -1        # minimum value of X2
+x2max      = 1         # maximum value of X2
+ix2_bc     = outflow   # inner-X2 boundary flag
+ox2_bc     = outflow   # outer-X2 boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -1        # minimum value of X3
+x3max      = 1         # maximum value of X3
+ix3_bc     = outflow   # inner-X3 boundary flag
+ox3_bc     = outflow   # outer-X3 boundary flag
+
+<meshblock>
+nx1        =    13750
+nx2        =    1
+nx3        =    1
+
+<hydro>
+gamma = 1.666666666666667         # gamma = C_p/C_v
+iso_sound_speed = 0.376068874     # isothermal sound speed in km/s, =40 K
+sfloor   =   0                    # passive scalar floor
+
+<problem>
+vx_kms     = 5.
+r_init     = 1.0e-6    # initial abundances
+r_init_H2  = 0.4       # initial abundances
+nw         = 1e-1      # nw*Tw = 4e3
+Tw         = 4e4
+
+<chemistry>
+# chemistry network parameters
+Zdg        = 1.        # metallicity, dust and gas metallicity are the same. default = 1.
+Leff_CO_max = 1.0e18   # max length scale in cm for CO LVG cooling
+# fixed mean molecular weight for isothermal eos, used to caldulate temperature
+mu_iso = 2.33333333333 # H2 + He
+# chemistry solver parameters
+reltol     = 1.0e-2    # relative tolerance, default 1.0e-2
+abstol     = 1.0e-15   # absolute tolerance, default 1.0e-12
+abstol_H2   = 1.0e-10 
+abstol_E   = 1e-4      # for internal energy. Set to 0.01 K
+user_jac   = false     # flag for whether use user provided Jacobian. default false
+maxsteps   = 100000    # maximum number of steps in one integration. default 10000
+output_zone_sec = true # output diagnostic
+
+# default parameters
+xHe        = 0.1       # He per H, default = 0.1
+xC         = 1.6e-4    # C atom per H, this is Z=1 value, default 1.6e-4
+xO         = 3.2e-4    # O atom per H, this is Z=1 value, default 3.2e-4
+xS         = 3.5e-6    # S atom per H, this is Z=1 value, default 3.5e-6
+xSi        = 1.7e-6    # Si atom per H, this is Z=1 value, default 1.7e-6
+maxorder   = 2         # maximum order. Default 2.
+stldet     = 0         # stability limit detection. Default 0/false.
+
+<chem_radiation>
+G0           = 0.
+G0_inner_x1  = 6.      # radiation field strength, in Draine 1987 units
+G0_outer_x1  = 6.      # radiation field strength, in Draine 1987 units
+CR           = 2e-16   # Cosmic-ray ionization rate per H
+n_frequency  = 8
+shielding_fraction_cell = 0.5

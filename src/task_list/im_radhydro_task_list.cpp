@@ -35,9 +35,8 @@ IMRadHydroTaskList::IMRadHydroTaskList(Mesh *pm) {
   // Now assemble list of tasks for each stage of time integrator
 
   {using namespace IMRadHydroTaskNames; // NOLINT (build/namespace)
-    // compute hydro fluxes, integrate hydro variables
-    AddTask(ADD_RAD_SCR,NONE);
-    AddTask(SEND_HYD_BND,ADD_RAD_SCR);
+    AddTask(ADD_RAD_SRC,NONE);
+    AddTask(SEND_HYD_BND,ADD_RAD_SRC);
     AddTask(RECV_HYD_BND,NONE);
     AddTask(SETB_HYD_BND,(RECV_HYD_BND|SEND_HYD_BND));
     if (pm->shear_periodic) {
@@ -105,7 +104,7 @@ void IMRadHydroTaskList::AddTask(const TaskID& id, const TaskID& dep) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadHydroTaskList::UpdateOpacity);
-  } else if (id == ADD_RAD_SCR) {
+  } else if (id == ADD_RAD_SRC) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (IMRadTaskList::*)(MeshBlock*)>
         (&IMRadHydroTaskList::AddRadSource);
