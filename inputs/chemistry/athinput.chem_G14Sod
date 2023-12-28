@@ -1,0 +1,86 @@
+<comment>
+problem   = Shock Tube Problem with H-He chem network
+reference = Grassi et al. (2014), MNRAS, Volume 439, issue 3, pp 2386-2419
+configure =  --prob=chem_G14Sod --chemistry=G14Sod
+             --chem_ode_solver=cvode --cvode_path=$CVODE_PATH
+
+<job>
+problem_id = chem_G14Sod # problem ID: basename of output filenames
+
+<output1>
+file_type  = vtk        # vtk data dump
+variable   = prim       # variables to be output
+dt         = 2.5e-3     # time increment between outputs
+
+<output2>
+file_type   = hst       # History data dump
+dt          = 2.5e-4    # time increment between outputs
+data_format = %12.5e    # Optional data format string
+
+<time>
+cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1         # cycle limit
+tlim       = 0.025      # 2.45e4 yr
+ncycle_out = 1          # interval for stdout summary info
+integrator  = rk2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+
+<mesh>
+nx1        = 1024      # Number of zones in X1-direction
+x1min      = 0.0       # minimum value of X1, [unit: pc]
+x1max      = 1.0       # maximum value of X1, [unit: pc]
+ix1_bc     = outflow   # inner-X1 boundary flag
+ox1_bc     = outflow   # outer-X1 boundary flag
+
+nx2        = 1         # Number of zones in X2-direction
+x2min      = -0.5      # minimum value of X2
+x2max      = 0.5       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -0.5      # minimum value of X3
+x3max      = 0.5       # maximum value of X3
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # outer-X3 boundary flag
+
+<meshblock>
+nx1        =  1024
+nx2        =  1
+nx3        =  1
+
+<hydro>
+gamma    = 1.66666667        # gamma = C_p/C_v
+#pfloor   = 1e-1
+
+<problem>
+shock_dir  = 1               # Shock Direction -- (1,2,3) = (x1,x2,x3)
+xshock     = 0.5             # position of initial interface
+LHS_rho_cgs = 1.0e-20        # LHS density in g/cm^3
+RHS_rho_cgs = 1.25e-21       # RHS density in g/cm^3
+LHS_T_cgs   = 1400           # LHS Temperature in K
+RHS_T_cgs   = 1120           # RHS Temperature in K
+mu       = 1.25              # mean molecular weight, assumed to be constant
+muH      = 1.322343          # density unit = muH * mH
+
+r_init       = 0.0           # default initial abundances
+r_init_H     = 0.9998895527  # H number density ratio 
+r_init_H+    = 0.0001084475  # H+ number density ratio    
+r_init_He    = 0.0806051334  # He number density ratio    
+r_init_He+   = 0.0           # He+ number density ratio   
+r_init_He2+  = 0.0           # He2+ number density ratio 
+r_init_H-    = 0.0           # H- number density ratio   
+r_init_H2    = 9.9988955e-07 # H2 number density ratio    
+r_init_H2+   = 0.0           # H2+ number density ratio  
+
+<chemistry>
+reltol      = 1.0e-6         # relative tolerance, default 1.0e-2
+abstol      = 1.0e-20        # absolute tolerance, default 1.0e-12
+user_jac    = 0              # flag for whether use user provided Jacobian. default false/0
+maxsteps    = 300000         # maximum number of steps in one integration. default 10000
+
+<units>
+unit_system  = custom        # unit definition
+mass_cgs     = 6.501892e31   # unit mass in g (muH*mH*pc^3)
+length_cgs   = 3.085678e18   # unit length in cm (pc) 
+time_cgs     = 3.085678e13   # unit time in s (pc/(km/s))

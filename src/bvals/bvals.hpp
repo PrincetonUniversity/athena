@@ -237,6 +237,7 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   //! \todo (felker):
   //! - consider removing these friendship designations:
   friend class CellCenteredBoundaryVariable;
+  friend class SixRayBoundaryVariable;
   friend class HydroBoundaryVariable;  // needed for shearing box quantities
   friend class RadBoundaryVariable; // needed for radiation boundary condition
 };

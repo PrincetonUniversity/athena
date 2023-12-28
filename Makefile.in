@@ -10,6 +10,10 @@ GENERAL_EOS_FILE = @GENERAL_EOS_FILE@
 RSOLVER_FILE = @RSOLVER_FILE@
 RSOLVER_DIR = @RSOLVER_DIR@
 MPIFFT_FILE = @MPIFFT_FILE@
+CHEMNET_FILE = @CHEMNET_FILE@
+CHEMISTRY_FILE = @CHEMISTRY_FILE@
+CHEM_ODE_SOLVER_FILE = @CHEM_ODE_SOLVER_FILE@
+CHEMRADIATION_FILE = @CHEMRADIATION_FILE@
 
 # General compiler specifications
 
@@ -33,12 +37,18 @@ SRC_FILES := $(wildcard src/*.cpp) \
              $(wildcard src/bvals/cc/nr_radiation/*.cpp) \
 	     $(wildcard src/bvals/fc/*.cpp) \
 	     $(wildcard src/bvals/orbital/*.cpp) \
+	     $(wildcard src/bvals/sixray/*.cpp) \
 	     $(wildcard src/bvals/utils/*.cpp) \
 	     $(wildcard src/coordinates/*.cpp) \
 	     src/eos/general/$(GENERAL_EOS_FILE) \
 	     src/eos/$(EOS_FILE) \
 	     src/eos/eos_high_order.cpp \
 	     src/eos/eos_scalars.cpp \
+	     $(wildcard $(CHEMISTRY_FILE)) \
+	     $(CHEMNET_FILE) \
+	     $(wildcard src/chemistry/$(CHEM_ODE_SOLVER_FILE)) \
+	     $(wildcard src/chem_rad/*.cpp) \
+	     $(wildcard src/chem_rad/integrators/$(CHEMRADIATION_FILE)) \
 	     $(wildcard src/fft/*.cpp) \
 	     $(wildcard src/field/*.cpp) \
 	     $(wildcard src/field/field_diffusion/*.cpp) \
@@ -64,6 +74,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/scalars/*.cpp) \
 	     $(wildcard src/task_list/*.cpp) \
 	     $(wildcard src/utils/*.cpp) \
+	     $(wildcard src/units/*.cpp) \
 	     $(MPIFFT_FILE)
 OBJ_DIR := obj/
 OBJ_FILES := $(addprefix $(OBJ_DIR),$(notdir $(SRC_FILES:.cpp=.o)))

@@ -165,12 +165,10 @@ void EquationOfState::ApplyPassiveScalarFloors(AthenaArray<Real> &r, int n, int 
 
   // currently, assumes same floor is applied to all NSCALARS species
   // TODO(felker): generalize this to allow separate floors per species
-  for (int n=0; n<NSCALARS; ++n) {
-    Real& r_n  = r(n,i);
-    // apply (prim) dimensionless concentration floor WITHOUT adjusting passive scalar
-    // mass (conserved), unlike in floor in standard EOS
-    r_n = (r_n > scalar_floor_) ?  r_n : scalar_floor_;
-  }
+  Real& r_n  = r(n,i);
+  // apply (prim) dimensionless concentration floor WITHOUT adjusting passive scalar
+  // mass (conserved), unlike in floor in standard EOS
+  r_n = (r_n > scalar_floor_) ?  r_n : scalar_floor_;
   return;
 }
 

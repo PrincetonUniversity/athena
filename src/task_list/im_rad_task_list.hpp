@@ -134,7 +134,7 @@ const TaskID PRLN_RAD_BND(6); // prolongation
 const TaskID SEND_RAD_SH(7); // send shearing box boundary
 const TaskID RECV_RAD_SH(8); // receive shearing box boundary
 const TaskID CHK_RAD_RES(9); // check residual
-const TaskID FLX_AND_SCR(10);  // calculate the source term and all others together
+const TaskID FLX_AND_SRC(10);  // calculate the source term and all others together
 
 } // namespace IMRadITTaskNames
 
@@ -149,7 +149,7 @@ const TaskID PRLN_HYD_BND(6); // prolongation
 const TaskID SEND_HYD_SH(7);  // send shearing box boundary
 const TaskID RECV_HYD_SH(8);  // receive shearing box boundary
 const TaskID UPD_OPA(9);      // check residual
-const TaskID ADD_RAD_SCR(10); // add radiation source term
+const TaskID ADD_RAD_SRC(10); // add radiation source term
 const TaskID CONS_TO_PRIM(11);// convert conservative to primitive variables
 } // namespace IMRadHydroTaskNames
 

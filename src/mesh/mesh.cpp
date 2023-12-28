@@ -29,6 +29,9 @@
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
 #include "../bvals/bvals.hpp"
+#include "../bvals/sixray/bvals_sixray.hpp"
+#include "../chem_rad/chem_rad.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../cr/cr.hpp"
 #include "../eos/eos.hpp"
@@ -50,6 +53,7 @@
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
+#include "../units/units.hpp"
 #include "../utils/buffer_utils.hpp"
 #include "mesh.hpp"
 #include "mesh_refinement.hpp"
@@ -318,6 +322,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
   } else {
     max_level = 63;
   }
+
+  // initialize units
+  punit = new Units(pin);
 
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
@@ -724,6 +731,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     max_level = 63;
   }
 
+  // initialize units
+  punit = new Units(pin);
+
   if (EOS_TABLE_ENABLED) peos_table = new EosTable(pin);
   InitUserMeshData(pin);
 
@@ -924,6 +934,7 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 //! destructor
 
 Mesh::~Mesh() {
+  delete punit;
   for (int b=0; b<nblocal; ++b)
     delete my_blocks(b);
   delete [] nslist;
@@ -1110,6 +1121,11 @@ void Mesh::OutputMeshStructure(int ndim) {
 //!        this assumes that phydro->NewBlockTimeStep is already called
 
 void Mesh::NewTimeStep() {
+  //this is called at the end of Mesh::Initialize()
+  if (fluid_setup == FluidFormulation::fixed) {
+    dt = tlim/nlim;
+    return;
+  }
   MeshBlock *pmb = my_blocks(0);
 
   // prevent timestep from growing too fast in between 2x cycles (even if every MeshBlock
@@ -1470,6 +1486,14 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     if (((turb_flag == 1) || (turb_flag == 2)) && (res_flag == 0))
       ptrbd->Driving();
 
+    //initialize ODE solver for chemistry
+    if (CHEMISTRY_ENABLED) {
+      for (int i=0; i<nblocal; ++i) {
+        MeshBlock *pmb = my_blocks(i);
+        pmb->pscalars->odew.Initialize(pin);
+      }
+    }
+
     // Create send/recv MPI_Requests for all BoundaryData objects
 #pragma omp parallel for num_threads(nthreads)
     for (int i=0; i<nblocal; ++i) {
@@ -1480,6 +1504,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       if (SELF_GRAVITY_ENABLED == 1
         || (SELF_GRAVITY_ENABLED == 2 && pmb->pgrav->fill_ghost))
         pmb->pgrav->gbvar.SetupPersistentMPI();
+      if (CHEMRADIATION_ENABLED && CHEMISTRY_ENABLED) {
+        pmb->pchemrad->pchemradintegrator->col_bvar.SetupPersistentMPI();
+      }
       if (IM_RADIATION_ENABLED)
         pmb->pnrrad->rad_bvar.SetupPersistentMPI();
     }
@@ -2073,12 +2100,15 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   if (NSCALARS > 0) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
-
-  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED)
+  if (CHEMRADIATION_ENABLED) {
+    ReserveTagPhysIDs(SixRayBoundaryVariable::max_phys_id);
+  }
+  if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
     ReserveTagPhysIDs(RadBoundaryVariable::max_phys_id);
-  if (CR_ENABLED)
+  }
+  if (CR_ENABLED) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
-
+  }
 #endif
   return;
 }
@@ -2095,6 +2125,8 @@ FluidFormulation GetFluidFormulation(const std::string& input_string) {
     return FluidFormulation::disabled;
   } else if (input_string == "background") {
     return FluidFormulation::background;
+  } else if (input_string == "fixed") {
+    return FluidFormulation::fixed;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in GetFluidFormulation" << std::endl

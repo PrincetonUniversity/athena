@@ -30,9 +30,7 @@
 //! GravityBoundaryTaskList constructor
 
 GravityBoundaryTaskList::GravityBoundaryTaskList(ParameterInput *pin, Mesh *pm) {
-  // Now assemble list of tasks for each stage of time integrator
   {using namespace GravityBoundaryTaskNames; // NOLINT (build/namespace)
-    // compute hydro fluxes, integrate hydro variables
     AddTask(SEND_GRAV_BND,NONE);
     AddTask(RECV_GRAV_BND,NONE);
     AddTask(SETB_GRAV_BND,(RECV_GRAV_BND|SEND_GRAV_BND));

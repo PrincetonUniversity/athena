@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file multigrid_driver.cpp
-//  \brief implementation of functions in class MultigridDriver
+//! \brief implementation of functions in class MultigridDriver
 
 // C headers
 
@@ -94,7 +94,7 @@ MultigridDriver::MultigridDriver(Mesh *pm, MGBoundaryFunc *MGBoundary,
   }
 }
 
-// destructor
+//! destructor
 
 MultigridDriver::~MultigridDriver() {
   delete [] ranklist_;
@@ -338,7 +338,7 @@ void MultigridDriver::SubtractAverage(MGVariable type) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetupMultigrid()
-//  \brief initialize the source assuming that the source terms are already loaded
+//! \brief initialize the source assuming that the source terms are already loaded
 
 void MultigridDriver::SetupMultigrid() {
   locrootlevel_ = pmy_mesh_->root_level;
@@ -462,7 +462,7 @@ void MultigridDriver::SetupMultigrid() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::TransferFromBlocksToRoot(bool initflag)
-//  \brief collect the coarsest data and transfer to the root grid
+//! \brief collect the coarsest data and transfer to the root grid
 
 void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
   int nv = nvar_, ngh = mgroot_->ngh_;
@@ -531,7 +531,7 @@ void MultigridDriver::TransferFromBlocksToRoot(bool initflag) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::TransferFromRootToBlocks(bool folddata)
-//  \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
+//! \brief Transfer the data from the root grid to the coarsest level of each MeshBlock
 
 void MultigridDriver::TransferFromRootToBlocks(bool folddata) {
   if (nreflevel_ > 0) {
@@ -550,7 +550,7 @@ void MultigridDriver::TransferFromRootToBlocks(bool folddata) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::FMGProlongate()
-//  \brief Prolongation for FMG Cycle
+//! \brief Prolongation for FMG Cycle
 
 void MultigridDriver::FMGProlongate() {
   int flag=0;
@@ -580,7 +580,7 @@ void MultigridDriver::FMGProlongate() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::OneStepToFiner(int nsmooth)
-//  \brief prolongation and smoothing one level
+//! \brief prolongation and smoothing one level
 
 void MultigridDriver::OneStepToFiner(int nsmooth) {
   int ngh=mgroot_->ngh_;
@@ -626,7 +626,7 @@ void MultigridDriver::OneStepToFiner(int nsmooth) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::OneStepToCoarser(int nsmooth)
-//  \brief smoothing and restriction one level
+//! \brief smoothing and restriction one level
 
 void MultigridDriver::OneStepToCoarser(int nsmooth) {
   int ngh=mgroot_->ngh_;
@@ -681,7 +681,7 @@ void MultigridDriver::OneStepToCoarser(int nsmooth) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth)
-//  \brief Solve the V-cycle starting from the current level
+//! \brief Solve the V-cycle starting from the current level
 
 void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
   int startlevel=current_level_;
@@ -697,7 +697,7 @@ void MultigridDriver::SolveVCycle(int npresmooth, int npostsmooth) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SolveFMGCycle()
-//  \brief Solve the FMG Cycle using the V(1,1) or F(0,1) cycle
+//! \brief Solve the FMG Cycle using the V(1,1) or F(0,1) cycle
 
 void MultigridDriver::SolveFMGCycle() {
   for (fmglevel_ = 0; fmglevel_ < ntotallevel_; fmglevel_++) {
@@ -775,7 +775,7 @@ void MultigridDriver::SolveIterativeFixedTimes() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SolveCoarsestGrid()
-//  \brief Solve the coarsest root grid
+//! \brief Solve the coarsest root grid
 
 void MultigridDriver::SolveCoarsestGrid() {
   int ni = (std::max(nrbx1_, std::max(nrbx2_, nrbx3_))
@@ -823,7 +823,7 @@ void MultigridDriver::SolveCoarsestGrid() {
 
 //----------------------------------------------------------------------------------------
 //! \fn Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n)
-//  \brief calculate the defect norm
+//! \brief calculate the defect norm
 
 Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n) {
   Real norm=0.0;
@@ -862,7 +862,7 @@ Real MultigridDriver::CalculateDefectNorm(MGNormType nrm, int n) {
 
 //----------------------------------------------------------------------------------------
 //! \fn Multigrid* MultigridDriver::FindMultigrid(int tgid)
-//  \brief return the Multigrid whose gid is tgid
+//! \brief return the Multigrid whose gid is tgid
 
 Multigrid* MultigridDriver::FindMultigrid(int tgid) {
   int first = vmg_[0]->pmy_block_->gid;
@@ -926,7 +926,7 @@ void MultigridDriver::CalculateOctetCoordinates() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::RestrictFMGSourceOctets()
-//  \brief restrict the source in octets for FMG
+//! \brief restrict the source in octets for FMG
 
 void MultigridDriver::RestrictFMGSourceOctets() {
   if (nreflevel_ > 0) {
@@ -970,7 +970,7 @@ void MultigridDriver::RestrictFMGSourceOctets() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::RestrictOctets()
-//  \brief restrict the potential in octets
+//! \brief restrict the potential in octets
 
 void MultigridDriver::RestrictOctets() {
   const int &ngh = mgroot_->ngh_;
@@ -1030,7 +1030,7 @@ void MultigridDriver::RestrictOctets() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ZeroClearOctets()
-//  \brief zero clear the data in all the octets
+//! \brief zero clear the data in all the octets
 
 void MultigridDriver::ZeroClearOctets() {
   int maxlevel = current_level_ - 1 - nrootlevel_;
@@ -1046,7 +1046,7 @@ void MultigridDriver::ZeroClearOctets() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::StoreOldDataOctets()
-//  \brief store the old u data in the uold array in octets
+//! \brief store the old u data in the uold array in octets
 
 void MultigridDriver::StoreOldDataOctets() {
   int lev = current_level_ - nrootlevel_;
@@ -1062,7 +1062,7 @@ void MultigridDriver::StoreOldDataOctets() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::CalculateFASRHSOctets()
-//  \brief Calculate the RHS for FAS in Octets
+//! \brief Calculate the RHS for FAS in Octets
 void MultigridDriver::CalculateFASRHSOctets() {
   int lev = current_level_ - nrootlevel_;
 
@@ -1077,7 +1077,7 @@ void MultigridDriver::CalculateFASRHSOctets() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SmoothOctets(int color)
-//  \brief Apply the smoothing operator on octets
+//! \brief Apply the smoothing operator on octets
 void MultigridDriver::SmoothOctets(int color) {
   int lev = current_level_ - nrootlevel_;
 
@@ -1091,7 +1091,7 @@ void MultigridDriver::SmoothOctets(int color) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ProlongateAndCorrectOctets()
-//  \brief Prolongate and correct the potential in octets
+//! \brief Prolongate and correct the potential in octets
 
 void MultigridDriver::ProlongateAndCorrectOctets() {
   int clev = current_level_ - nrootlevel_;
@@ -1168,7 +1168,7 @@ void MultigridDriver::ProlongateAndCorrectOctets() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::FMGProlongateOctets()
-//  \brief Prolongate the potential in octets for FMG
+//! \brief Prolongate the potential in octets for FMG
 
 void MultigridDriver::FMGProlongateOctets() {
   int clev = current_level_ - nrootlevel_;
@@ -1209,7 +1209,7 @@ void MultigridDriver::FMGProlongateOctets() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata)
-//  \brief Apply boundary conditions for octets
+//! \brief Apply boundary conditions for octets
 
 void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
   int lev = current_level_ - nrootlevel_;
@@ -1315,10 +1315,10 @@ void MultigridDriver::SetBoundariesOctets(bool fprolong, bool folddata) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
-//   const AthenaArray<Real> &un, AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
-//   AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
-//   int ox1, int ox2, int ox3, bool folddata)
-//  \brief set an Octet boundary from a neighbor Octet on the same level
+//!  const AthenaArray<Real> &un, AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
+//!  AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
+//!  int ox1, int ox2, int ox3, bool folddata)
+//! \brief set an Octet boundary from a neighbor Octet on the same level
 
 void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
      const AthenaArray<Real> &un, AthenaArray<Real> &uold, const AthenaArray<Real> &unold,
@@ -1370,10 +1370,10 @@ void MultigridDriver::SetOctetBoundarySameLevel(AthenaArray<Real> &dst,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
-//                            const AthenaArray<Real> &unold, AthenaArray<Real> &cbuf,
-//                            AthenaArray<Real> &cbufold, const LogicalLocation &loc,
-//                            int ox1, int ox2, int ox3, bool folddata) {
-//  \brief set a boundary in the coarse buffer from a neighbor Octet on the coarser level
+//!                           const AthenaArray<Real> &unold, AthenaArray<Real> &cbuf,
+//!                           AthenaArray<Real> &cbufold, const LogicalLocation &loc,
+//!                           int ox1, int ox2, int ox3, bool folddata) {
+//! \brief set a boundary in the coarse buffer from a neighbor Octet on the coarser level
 
 void MultigridDriver::SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
                       const AthenaArray<Real> &unold, AthenaArray<Real> &cbuf,
@@ -1411,8 +1411,8 @@ void MultigridDriver::SetOctetBoundaryFromCoarser(const AthenaArray<Real> &un,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
-//                    const LogicalLocation &loc, const MGCoordinates &coord, bool fcbuf)
-//  \brief Apply physical boundary conditions for an octet
+//!                   const LogicalLocation &loc, const MGCoordinates &coord, bool fcbuf)
+//! \brief Apply physical boundary conditions for an octet
 
 void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
               const LogicalLocation &loc, const MGCoordinates &coord, bool fcbuf) {
@@ -1567,7 +1567,7 @@ void MultigridDriver::ApplyPhysicalBoundariesOctet(AthenaArray<Real> &u,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::RestrictOctetsBeforeTransfer()
-//  \brief Restrict all the octets
+//! \brief Restrict all the octets
 
 void MultigridDriver::RestrictOctetsBeforeTransfer() {
   const int &ngh = mgroot_->ngh_;
@@ -1609,7 +1609,7 @@ void MultigridDriver::RestrictOctetsBeforeTransfer() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata)
-//  \brief Set octet boundaries before transfer from root to blocks
+//! \brief Set octet boundaries before transfer from root to blocks
 
 void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
   const int ngh = mgroot_->ngh_;
@@ -1727,9 +1727,9 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
-//           AthenaArray<Real> &uold, AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
-//           const AthenaArray<bool> &ncoarse,bool folddata)
-//  \brief Prolongate octet boundaries contacting the coarser level
+//!          AthenaArray<Real> &uold, AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
+//!          const AthenaArray<bool> &ncoarse,bool folddata)
+//! \brief Prolongate octet boundaries contacting the coarser level
 
 void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
      AthenaArray<Real> &uold, AthenaArray<Real> &cbuf, AthenaArray<Real> &cbufold,
@@ -1854,7 +1854,7 @@ void MultigridDriver::ProlongateOctetBoundaries(AthenaArray<Real> &u,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::AllocateMultipoleCoefficients()
-//  \brief Allocate arrays for multipole expansion coefficients
+//! \brief Allocate arrays for multipole expansion coefficients
 
 void MultigridDriver::AllocateMultipoleCoefficients() {
   nmpcoeff_ = 0;
@@ -1872,7 +1872,7 @@ void MultigridDriver::AllocateMultipoleCoefficients() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::CalculateMultipoleCoefficients()
-//  \brief Calculate multipole expansion coefficients
+//! \brief Calculate multipole expansion coefficients
 
 void MultigridDriver::CalculateMultipoleCoefficients() {
   for (int th = 0; th < nthreads_; ++th)
@@ -1901,7 +1901,7 @@ void MultigridDriver::CalculateMultipoleCoefficients() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::ScaleMultipoleCoefficients()
-//  \brief Scale coefficients for multipole expansion
+//! \brief Scale coefficients for multipole expansion
 
 void MultigridDriver::ScaleMultipoleCoefficients() {
   AthenaArray<Real> &mpcoeff = mpcoeff_[0];
@@ -1952,7 +1952,7 @@ void MultigridDriver::ScaleMultipoleCoefficients() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MultigridDriver::CalculateCenterOfMass()
-//  \brief Calculate the position of the center of mass for multipole expansion
+//! \brief Calculate the position of the center of mass for multipole expansion
 
 void MultigridDriver::CalculateCenterOfMass() {
   for (int th = 0; th < nthreads_; ++th) {

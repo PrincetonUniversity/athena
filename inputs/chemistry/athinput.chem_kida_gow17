@@ -1,0 +1,84 @@
+<comment>
+problem   = Chemical network in Gong, Ostriker and Wolfire (2017) in KIDA format
+reference = Gong, Ostriker and Wolfire (2017), ApJ, 843, 38
+configure = --prob=chem_uniform --chemistry=kida --kida_rates=gow17 --nspecies=18
+            --chem_radiation=const --chem_ode_solver=cvode --cvode_path=$CVODE_PATH
+
+<job>
+problem_id = kida_gow17   # problem ID: basename of output filenames
+
+<output1>
+file_type  = vtk       # vtk data dump
+variable   = prim      # variables to be output
+dt         = 1e5       # time increment between outputs
+
+<time>
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = 10        # cycle limit
+tlim       = 1e6       # time limit, 1000 Gyr
+ncycle_out = 1         # interval for stdout summary info
+
+<mesh>
+nx1        = 4         # Number of zones in X1-direction
+x1min      = -512      # minimum value of X1
+x1max      = 512       # maximum value of X1
+ix1_bc     = periodic  # inner-X1 boundary flag
+ox1_bc     = periodic  # outer-X1 boundary flag
+
+nx2        = 4         # Number of zones in X2-direction
+x2min      = -512      # minimum value of X2
+x2max      = 512       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
+
+nx3        = 4          # Number of zones in X3-direction
+x3min      = -2048      # minimum value of X3
+x3max      = 2048       # maximum value of X3
+ix3_bc     = outflow    # inner-X3 boundary flag
+ox3_bc     = outflow    # outer-X3 boundary flag
+
+<meshblock>
+nx1        =    4
+nx2        =    4
+nx3        =    4
+
+<hydro>
+gamma = 1.666666666666667 # gamma = C_p/C_v
+iso_sound_speed = 1.0     # isothermal sound speed
+sfloor   =   0            # passive scalar floor
+active   =   fixed        # post-processing
+
+<problem>
+nH         = 1.0921e+02   # density
+r_init     =  0.          # initial abundances
+r_init_H2  = 0.5
+r_init_He  = 0.1
+r_init_C   = 1.6e-4
+r_init_O   = 3.2e-4
+r_init_Si  = 1.7e-6
+
+<chemistry>
+# chemistry network parameters
+is_fixed_Zd = true        # fixing dust metallicity for implicit grain reactions
+is_fixed_PAH = true       # fixing PAH abundance for PE heating and Rec cooling
+Z_d        = 1.           # dust metallicity for implicity grain reactions
+Z_PAH      = 1.           # PAH metallcity (abundance relative to solar)
+Z_g        = 1.           # gas metallicity
+is_Tcap_2body = false     # temperature cap for rates of 2 body reactions
+# directory for kida network files, needs absolute path
+network_dir = /home/user/athena/src/chemistry/network/kida_network_files/gow17
+# chemistry solver parameters
+reltol     = 1.0e-2       # relative tolerance, default 1.0e-2
+abstol     = 1.0e-15      # absolute tolerance, default 1.0e-12
+#abstol_H2   = 1.0e-10 
+#abstol_E   = 1e-4        # for internal energy. Set to 0.01 K
+user_jac   = false        # flag for whether use user provided Jacobian. default false
+maxsteps   = 100000       # maximum number of steps in one integration. default 10000
+output_zone_sec = true    # output diagnostic
+maxorder   = 2            # maximum order. Default 2.
+stldet     = 0            # stability limit detection. Default 0/false.
+
+<chem_radiation>
+G0         = 1e-6         # radiation field strength, in Draine 1987 units
+CR         = 2e-16        # Cosmic-ray ionization rate per H
+n_frequency  = 8

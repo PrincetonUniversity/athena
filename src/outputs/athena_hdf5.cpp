@@ -21,6 +21,8 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../chem_rad/chem_rad.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
@@ -147,6 +149,15 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     // Passive scalars:
     if (NSCALARS > 0)
       num_variables[n_dataset] += NSCALARS;
+    if (CHEMRADIATION_ENABLED) {
+      num_variables[n_dataset] += pmb->pchemrad->nfreq;
+      if (DEBUG) {
+        if (CHEMISTRY_ENABLED) {
+          // for testing six-ray
+          num_variables[n_dataset] += pmb->pchemrad->pchemradintegrator->ncol + 3*8;
+        }
+      }
+    }
 
     // n_dataset = 1: face-centered FaceField variable data
     n_dataset++;

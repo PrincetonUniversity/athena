@@ -100,6 +100,21 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
+    if (NSCALARS > 0) {
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            for (int n=0; n<NSCALARS; ++n) {
+              if (std::abs(pcoord->x2v(j)) > 0.25) {
+                pscalars->s(n,k,j,i) = n % 2;
+              } else {
+                pscalars->s(n,k,j,i) = std::abs(n % 2 - 1)*drat;
+              }
+            }
+          }
+        }
+      }
+    }
 
     // initialize uniform interface B
     if (MAGNETIC_FIELDS_ENABLED) {

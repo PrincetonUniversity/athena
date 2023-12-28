@@ -80,11 +80,29 @@ time python -u ./run_tests.py gr/hydro_shocks_hlle_no_transform gr/hydro_shocks_
 time python -u ./run_tests.py mhd --silent  # (mhd/mhd_linwave.py is currenlty the slowest regression test):
 time python -u ./run_tests.py shearingbox --silent
 time python -u ./run_tests.py diffusion --silent
-
 time python -u ./run_tests.py cr --silent
 time python -u ./run_tests.py nr_radiation --silent
 time python -u ./run_tests.py implicit_radiation --silent
 time python -u ./run_tests.py multi_group --silent
+
+# ----------------
+# Install CVODE
+wget https://github.com/LLNL/sundials/releases/download/v6.2.0/cvode-6.2.0.tar.gz
+tar -xvf cvode-6.2.0.tar.gz
+mkdir cvode_build || true
+mkdir cvode_install || true
+export CVODE_PATH=$PWD/cvode_install
+cd cvode_build
+
+cmake -D CMAKE_INSTALL_LIBDIR=lib -D CMAKE_INSTALL_PREFIX=${CVODE_PATH} -D ENABLE_MPI=ON -D ENABLE_OPENMP=ON -D CMAKE_C_COMPILER=gcc -D MPI_C_COMPILER=mpicc -D MPIEXEC_EXECUTABLE=srun -D CMAKE_BUILD_TYPE=RelWithDebInfo ../cvode-6.2.0
+
+# cmake -MAKE_INSTALL_LIBDIR=${CVODE_PATH} -ENABLE_MPI=ON -ENABLE_OPENMP=ON -MAKE_C_COMPILER=icx -MPI_C_COMPILER=mpicc -MPIEXEC_EXECUTABLE=srun -MAKE_BUILD_TYPE=RelWithDebInfo ../cvode-6.2.0
+make -j16
+make install
+cd ..
+# ----------------
+
+time python -u ./run_tests.py chemistry --silent
 
 # High-order solver regression tests w/ GCC
 time python -u ./run_tests.py hydro4 --silent
@@ -135,6 +153,8 @@ time python -u ./run_tests.py cr --config=--cxx=icpx --silent
 time python -u ./run_tests.py nr_radiation --config=--cxx=icpx --silent
 time python -u ./run_tests.py implicit_radiation --config=--cxx=icpx --silent
 time python -u ./run_tests.py multi_group --config=--cxx=icpx --silent
+
+time python -u ./run_tests.py chemistry --config=--cxx=icpx --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python -u ./run_tests.py hydro4 --config=--cxx=icpx --silent

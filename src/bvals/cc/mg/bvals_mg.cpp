@@ -156,10 +156,10 @@ void MGBoundaryValues::DestroyBoundaryData() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face,
-//                           AthenaArray<Real> &dst, Real time, int nvar,
-//                           int is, int ie, int js, int je, int ks, int ke, int ngh,
-//                           const MGCoordinates &coord)
-//  \brief Call multigrid boundary function for a face
+//!                          AthenaArray<Real> &dst, Real time, int nvar,
+//!                          int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!                          const MGCoordinates &coord)
+//! \brief Call multigrid boundary function for a face
 
 void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<Real> &dst,
      Real time, int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
