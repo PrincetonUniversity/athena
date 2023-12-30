@@ -275,7 +275,7 @@ class Mesh {
   MGGravityDriver *pmgrd;
   MGCRDiffusionDriver *pmcrd;
   Units *punit;
-  
+
   // implicit radiation iteration
   IMRadiation *pimrad;
 

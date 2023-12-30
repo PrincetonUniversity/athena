@@ -46,7 +46,7 @@
 #   -nr_radiation        turn on non-relativistic radiation transport
 #   -implicit_radiation  implicit radiation transport module
 #   -cr                  enable cosmic ray transport
-#   -crdiff              enable cosmic ray transport
+#   -crdiff              enable cosmic ray diffusion with Multigrid
 # ----------------------------------------------------------------------------------------
 
 # Modules

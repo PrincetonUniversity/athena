@@ -2168,9 +2168,11 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   }
   if (CR_ENABLED) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
-    if (CRDIFFUSION_ENABLED)
-      ReserveTagPhysIDs(1);
   }
+  if (CRDIFFUSION_ENABLED) {
+    ReserveTagPhysIDs(1);
+  }
+
 #endif
   return;
 }
