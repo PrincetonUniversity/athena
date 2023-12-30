@@ -32,9 +32,9 @@ crdiff_probs = set(['cr_diffusion_mg'])
 chem_probs = set([pgen for pgen in pgen_choices if pgen[0:5] == 'chem_'])
 # Newtonian Hydro-only or MHD-optional problems are all leftover pgen/ files
 # --rsolver=hllc by default
-hydro_probs = pgen_choices - gr_probs - mhd_probs - grav_mg_probs - chem_probs - crdiff_probs
+hydro_probs = pgen_choices - gr_probs - mhd_probs - grav_mg_probs \
+            - chem_probs - crdiff_probs
 # Curvilinear problems
-
 # Define configure flags for each set:
 gr_args = ['g', 't', '-coord=minkowski']
 mhd_args = ['b']
