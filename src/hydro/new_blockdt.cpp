@@ -72,7 +72,6 @@ void Hydro::NewBlockTimeStep() {
   FluidFormulation fluid_status = pmb->pmy_mesh->fluid_setup;
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
-
       // Obtain cell widths
       pmb->pcoord->CenterWidth1(k, j, is, ie, dt1);
       pmb->pcoord->CenterWidth2(k, j, is, ie, dt2);
