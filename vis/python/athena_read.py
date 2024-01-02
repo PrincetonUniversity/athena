@@ -619,7 +619,7 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
             if nx == 1:
                 xm = (x1m, x2m, x3m)[d-1]
                 xp = (x1p, x2p, x3p)[d-1]
-                data[xf] = np.array([xm, xp], dtype=dtype)
+                data[xf] = np.array([xm, xp])
             else:
                 xmin = f.attrs['RootGridX' + repr(d)][0]
                 xmax = f.attrs['RootGridX' + repr(d)][1]
@@ -633,7 +633,7 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
                     data[xf] = face_func(xmin, xmax, xrat_root, nx+1)
                 elif xrat_root == 1.0:
                     if np.all(levels == level):
-                        data[xf] = np.empty(nx + 1, dtype=dtype)
+                        data[xf] = np.empty(nx + 1)
                         for n_block in range(int((nx - 2*num_ghost)
                                                  // (block_size[d-1] - 2*num_ghost))):
                             sample_block = np.where(logical_locations[:, d-1]
@@ -645,15 +645,15 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
                         if num_ghost > 0:
                             raise AthenaError('Cannot use ghost zones with different'
                                               + ' refinement levels')
-                        data[xf] = np.linspace(xmin, xmax, nx + 1, dtype=dtype)
+                        data[xf] = np.linspace(xmin, xmax, nx + 1)
                 else:
                     if num_ghost > 0:
                         raise AthenaError('Ghost zones incompatible with non-uniform'
                                           + ' coordinate spacing')
                     xrat = xrat_root ** (1.0 / 2**level)
-                    data[xf] = (xmin + (1.0-xrat**np.arange(nx+1, dtype=dtype))
+                    data[xf] = (xmin + (1.0-xrat**np.arange(nx+1))
                                 / (1.0-xrat**nx) * (xmax-xmin))
-            data[xv] = np.empty(nx, dtype=dtype)
+            data[xv] = np.empty(nx)
             for i in range(nx):
                 data[xv][i] = center_func(data[xf][i], data[xf][i+1])
 
