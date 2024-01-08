@@ -30,7 +30,7 @@ Real DenProfileCyl(const Real rad, const Real phi, const Real z);
 Real PoverR(const Real rad, const Real phi, const Real z);
 Real VelProfileCyl(const Real rad, const Real phi, const Real z);
 // problem parameters which are useful to make global to this file
-Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, alpha, nu_iso, scale, z, phi, r, rp, phip, d, dfloor, Omega0, cosine_term, sine_term, epsilon, R_H;
+Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, alpha, nu_iso, scale, z, phi, r, rp, rp2, phip, d, dfloor, Omega0, cosine_term, sine_term, epsilon, R_H;
 } // namespace
 
 // User-defined boundary conditions for disk simulations
@@ -75,6 +75,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Get parameters for gravitational potential of orbiting protoplanet
   gm_planet = pin -> GetOrAddReal("problem", "planetgm", 0.0);
   rp = pin -> GetOrAddReal("problem", "ptosr", 1.0);
+  rp2 = pin -> GetOrAddReal("problem", "ptosr2", 1.1);
 
   // Get viscosity parameters and scale ratio
   alpha = pin -> GetOrAddReal("problem", "alpha", 0.0);
@@ -119,11 +120,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
               AthenaArray<Real> &cons, AthenaArray<Real> &cons_scalar);
   EnrollUserExplicitSourceFunction(Planet);
 
+  void Planet2(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
+              const AthenaArray<Real> &prim_scalar, const AthenaArray<Real> &bcc,
+              AthenaArray<Real> &cons, AthenaArray<Real> &cons_scalar);
+  EnrollUserExplicitSourceFunction(Planet2);
+
   void Viscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, 
             int is, int ie, int js, int je, int ks, int ke);
   EnrollViscosityCoefficient(Viscosity);
 
+  Real Torque(MeshBlock *pmb,  int iout);
+  AllocateUserHistoryOutput(1);
+  EnrollUserHistoryOutput(0, Torque, "sum_torque");
   return;
+}
+void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
+    AllocateUserOutputVariables(2);
+    return;
 }
   
 //========================================================================================
@@ -205,6 +218,45 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
   }
 }
 
+void Planet2(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
+            const AthenaArray<Real> &prim_scalar, const AthenaArray<Real> &bbc,
+            AthenaArray<Real> &cons, AthenaArray<Real> &cons_scalar) {
+  for (int k = pmb->ks; k <= pmb->ke; ++k) {
+    z = pmb->pcoord->x3v(k);
+    for (int j = pmb->js; j <= pmb->je; ++j) {
+      phi = pmb->pcoord->x2v(j);
+      for (int i = pmb->is; i <= pmb->ie; ++i) {
+        r = pmb->pcoord->x1v(i);
+        Real period = 2*M_PI*sqrt(pow(rp2,3)/gm0);
+        phip = 2*(M_PI / period)*time;
+        d = sqrt(pow(rp2,2) + pow(r,2) - 2*rp2*r*cos(phi - phip));
+        Real dens = prim(IDN,k,j,i);
+        Real velocity_x = prim(IVX,k,j,i);
+        Real velocity_y = prim(IVY,k,j,i);
+        epsilon = 0.3;
+        R_H = cbrt(gm_planet/3);
+        Real F_g = -(dens)* ((gm_planet*d) / (sqrt(pow(pow(d,2) + pow(epsilon,2)*pow(R_H,2), 3))));
+        cosine_term = (pow(r,2)*(pow(cos(phi),2)) - r*rp2*cos(phi)*cos(phip) + pow(r,2)*(pow(sin(phi),2)) - r*rp*sin(phi)*sin(phip)) / (r*d);
+        sine_term = (r*rp2*cos(phi)*sin(phip) - r*rp2*sin(phi)*cos(phip)) / (r*d);
+        Real Fg_x = F_g*cosine_term;
+        Real Fg_y = -F_g*sine_term;
+        Real delta_momentum_x = Fg_x * dt;
+        Real delta_momentum_y = Fg_y * dt;
+        cons(IM1, k,j,i) += delta_momentum_x;
+        cons(IM2, k,j,i) += delta_momentum_y;
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += (Fg_x * velocity_x + Fg_y * velocity_y) * dt;
+        Real gamma = (rho0*p0_over_r0) / (pow(r0, dslope));
+        Real beta = rho0/(pow(r0, dslope));
+        Real pressure_0 = gamma * pow(r,pslope+dslope);
+        Real surface_density_0 = beta * pow(r, dslope);
+        Real pressure = dens * (pressure_0/surface_density_0); //definition of isothermal eos
+        //if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) = (3.0/2.0 * pressure + 0.5*dens*((pow(velocity_x,2) + pow(velocity_y,2))));
+        if (NON_BAROTROPIC_EOS) cons(IEN,k,j,i) += 3.0/2.0 * (pressure-prim(IPR,k,j,i));
+      }
+    }
+  }
+}
+
 void Viscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, 
                int is, int ie, int js, int je, int ks, int ke) {
     if (phdif->nu_iso > 0.0) {
@@ -222,11 +274,6 @@ void Viscosity(HydroDiffusion *phdif, MeshBlock *pmb, const AthenaArray<Real> &p
       }
     }
   }
-}
-
-void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
-    AllocateUserOutputVariables(2);
-    return;
 }
 
 void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
@@ -250,6 +297,27 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
       }
     }
   }
+}
+
+Real Torque(MeshBlock *pmb, int iout) {
+  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  Real sum_torque = 0;
+  for(int k=ks; k<=ke; k++) {
+    z = pmb->pcoord->x3v(k);
+    for(int j=js; j<=je; j++) {
+      phi = pmb->pcoord->x2v(j);
+      for(int i=is; i<=ie; i++) {
+        r = pmb->pcoord->x1v(i);
+        Real d = sqrt(pow(rp,2) + pow(r,2) - 2*rp*r*cos(phi - phip));
+        Real g_mag = -1*((gm_planet*d) / (sqrt(pow(pow(d,2) + pow(epsilon,2)*pow(R_H,2), 3))));
+        Real dens = pmb->phydro->u(IDN,k,j,i);
+        Real volume = pmb ->pcoord->GetCellVolume(k,j,i);
+        Real sine_term = (r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
+        sum_torque +=  dens * volume *r * -g_mag * sine_term;
+      }
+    }
+  }
+  return sum_torque;
 }
 
 
