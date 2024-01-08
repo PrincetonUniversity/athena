@@ -299,7 +299,7 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
   }
 }
 
-Real Torque(MeshBlock *pmb, int iout) {
+Real Torque(MeshBlock *pmb, int iout) { //This torque is only calculated for first planet
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   Real sum_torque = 0;
   for(int k=ks; k<=ke; k++) {
