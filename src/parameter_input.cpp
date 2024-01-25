@@ -499,7 +499,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
   // get pointer to node with same block name in singly linked list of InputBlocks
   pb = GetPtrToBlock(block);
   if (pb == nullptr) {
-    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
+    msg << "### FATAL ERROR in function [ParameterInput::GetBoolean]" << std::endl
         << "Block name '" << block << "' not found when trying to set value "
         << "for parameter '" << name << "'";
     ATHENA_ERROR(msg);
@@ -508,7 +508,7 @@ bool ParameterInput::GetBoolean(std::string block, std::string name) {
   // get pointer to node with same parameter name in singly linked list of InputLines
   pl = pb->GetPtrToLine(name);
   if (pl == nullptr) {
-    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
+    msg << "### FATAL ERROR in function [ParameterInput::GetBoolean]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
     ATHENA_ERROR(msg);
   }
@@ -545,7 +545,7 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
   // get pointer to node with same block name in singly linked list of InputBlocks
   pb = GetPtrToBlock(block);
   if (pb == nullptr) {
-    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
+    msg << "### FATAL ERROR in function [ParameterInput::GetString]" << std::endl
         << "Block name '" << block << "' not found when trying to set value "
         << "for parameter '" << name << "'";
     ATHENA_ERROR(msg);
@@ -554,7 +554,7 @@ std::string ParameterInput::GetString(std::string block, std::string name) {
   // get pointer to node with same parameter name in singly linked list of InputLines
   pl = pb->GetPtrToLine(name);
   if (pl == nullptr) {
-    msg << "### FATAL ERROR in function [ParameterInput::GetReal]" << std::endl
+    msg << "### FATAL ERROR in function [ParameterInput::GetString]" << std::endl
         << "Parameter name '" << name << "' not found in block '" << block << "'";
     ATHENA_ERROR(msg);
   }
