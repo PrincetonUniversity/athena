@@ -511,7 +511,6 @@ MeshBlock::MeshBlock(int igid, int ilid, Mesh *pm, ParameterInput *pin,
           }
         }
       }
-      fre_ratio.DeleteAthenaArray();
       os += pnrrad->ir_gray.GetSizeInBytes();
     } else {
       std::memcpy(pnrrad->ir.data(), &(mbdata[os]), pnrrad->ir.GetSizeInBytes());

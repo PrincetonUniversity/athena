@@ -98,7 +98,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    ir_cm.DeleteAthenaArray();
   }
   return;
 }
