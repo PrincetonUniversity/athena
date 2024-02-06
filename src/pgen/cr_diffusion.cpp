@@ -89,11 +89,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 #ifdef MPI_PARALLEL
   MPI_Allreduce(&sum_error, &sum_error, 1, MPI_DOUBLE,MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(&num_cell, &num_cell, 1, MPI_INT,MPI_SUM, MPI_COMM_WORLD);
-
 #endif
+
   if (Globals::my_rank == 0) {
     sum_error /= num_cell;
-
     std::string fname;
     fname.assign("diffusion_error.dat");
     std::stringstream msg;
@@ -289,11 +288,8 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
   // b_angle[2]=sin_phi_b
   // b_angle[3]=cos_phi_b
 
-
-
-
   if (MAGNETIC_FIELDS_ENABLED) {
-    //First, calculate B_dot_grad_Pc
+    // First, calculate B_dot_grad_Pc
     for(int k=kl; k<=ku; ++k) {
       for(int j=jl; j<=ju; ++j) {
         // x component
@@ -327,18 +323,12 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           Real dprdz=(u_cr(CRE,k+1,j,i) - u_cr(CRE,k-1,j,i))/3.0;
           dprdz /= distance;
           pcr->b_grad_pc(k,j,i) += bcc(IB3,k,j,i) * dprdz;
-
-          // now only get the sign
-          //  if (pcr->b_grad_pc(k,j,i) > TINY_NUMBER) pcr->b_grad_pc(k,j,i) = 1.0;
-          //  else if (-pcr->b_grad_pc(k,j,i) > TINY_NUMBER) pcr->b_grad_pc(k,j,i)
-          //    = -1.0;
-          //  else pcr->b_grad_pc(k,j,i) = 0.0;
         }
 
-      // now calculate the streaming velocity
-      // streaming velocity is calculated with respect to the current coordinate
-      //  system
-      // diffusion coefficient is calculated with respect to B direction
+        // now calculate the streaming velocity
+        // streaming velocity is calculated with respect to the current coordinate
+        //  system
+        // diffusion coefficient is calculated with respect to B direction
         for(int i=il; i<=iu; ++i) {
           Real pb= bcc(IB1,k,j,i)*bcc(IB1,k,j,i)
                   +bcc(IB2,k,j,i)*bcc(IB2,k,j,i)
@@ -359,7 +349,6 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
           pcr->v_adv(2,k,j,i) = -va3 * dpc_sign;
 
           // now the diffusion coefficient
-
           if (va < TINY_NUMBER) {
             pcr->sigma_adv(0,k,j,i) = pcr->max_opacity;
           } else {
@@ -395,7 +384,7 @@ void Diffusion(MeshBlock *pmb, AthenaArray<Real> &u_cr,
   } else {
   for(int k=kl; k<=ku; ++k) {
     for(int j=jl; j<=ju; ++j) {
-  // x component
+      // x component
       pmb->pcoord->CenterWidth1(k,j,il-1,iu+1,pcr->cwidth);
       for(int i=il; i<=iu; ++i) {
          Real distance = 0.5*(pcr->cwidth(i-1) + pcr->cwidth(i+1))
