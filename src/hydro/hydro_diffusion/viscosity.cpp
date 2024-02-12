@@ -25,7 +25,6 @@
 
 void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &p,
                      const AthenaArray<Real> &p_i, AthenaArray<Real> *flx) {
-  Hydro *ph = pmb_->phydro;
   const bool f2 = pmb_->pmy_mesh->f2;
   const bool f3 = pmb_->pmy_mesh->f3;
   AthenaArray<Real> &x1flux = flx[X1DIR];
