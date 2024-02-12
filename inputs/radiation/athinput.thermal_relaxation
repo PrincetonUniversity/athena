@@ -12,10 +12,15 @@ problem_id = thermal  # problem ID: basename of output filenames
 file_type = hst  # History data dump
 dt        = 1.9  # time increment between outputs
 
+#<output2>
+#file_type = hdf5
+#variable  = prim
+#dt        = 0.01  # time increment between outputs
+
 
 <time>
 cfl_number = 0.4     # The Courant, Friedrichs, & Lewy (CFL) Number
-nlim       = 100000  # cycle limit
+nlim       = 50  # cycle limit
 tlim       = 2.0     # time limit
 ncycle_out = 1       # interval for stdout summary info
 
@@ -38,9 +43,13 @@ x3max      = 1.0       # maximum value of X3
 ix3_bc     = periodic  # inner-X3 boundary flag
 ox3_bc     = periodic  # inner-X3 boundary flag
 
+refinement  = adaptive # AMR
+derefine_count = 5     # allow derefinement after 5 steps
+numlevel    = 4        # number of AMR levels
+
 <meshblock>
-nx1 = 32
-nx2 = 32
+nx1 = 4
+nx2 = 4
 
 <hydro>
 gamma = 1.6666666666667  # gamma = C_p/C_v
@@ -52,6 +61,6 @@ crat        = 10
 error_limit = 1.e-12
 
 <problem>
-er    = 10.0
-tgas  = 1.0
+er    = 1.0
+tgas  = 100.0
 sigma = 100.0
