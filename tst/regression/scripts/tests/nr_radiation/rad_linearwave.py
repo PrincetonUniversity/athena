@@ -8,7 +8,6 @@ import sys
 import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
 
-# Prepare Athena++
 
 
 def prepare(**kwargs):
@@ -17,8 +16,6 @@ def prepare(**kwargs):
                      coord='cartesian',
                      flux='hllc')
     athena.make()
-
-# Run Athena++
 
 
 def run(**kwargs):
@@ -115,8 +112,6 @@ def run(**kwargs):
 
 #  bashcommand="cp bin/linearwave-errors.dat ~/linearwave-errors.dat"
 #  os.system(bashcommand)
-
-# Analyze outputs
 
 
 def analyze():

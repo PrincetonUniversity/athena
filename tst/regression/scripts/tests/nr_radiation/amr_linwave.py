@@ -12,7 +12,6 @@ athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
 
-# Prepare Athena++
 def prepare(**kwargs):
     logger.debug('Running test ' + __name__)
     athena.configure('nr_radiation',
@@ -22,7 +21,6 @@ def prepare(**kwargs):
     athena.make()
 
 
-# Run Athena++
 def run(**kwargs):
     # L-going fast wave (set by default in input)
     arguments = ['time/cfl_number=0.3',  # default =0.4, but tolerances measured w/ 0.3
@@ -31,7 +29,6 @@ def run(**kwargs):
     athena.run('radiation/athinput.rad_linearwave_amr', arguments)
 
 
-# Analyze outputs
 def analyze():
     # read data from error file
     filename = 'bin/linearwave-errors.dat'
