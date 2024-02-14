@@ -9,7 +9,6 @@ import scripts.utils.athena as athena
 sys.path.insert(0, '../../vis/python')
 
 
-
 def prepare(**kwargs):
     athena.configure('nr_radiation',
                      prob='rad_linearwave',
