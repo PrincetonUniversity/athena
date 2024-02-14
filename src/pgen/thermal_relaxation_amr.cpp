@@ -39,6 +39,10 @@
 #include "../nr_radiation/radiation.hpp"
 #include "../parameter_input.hpp"
 
+
+int RefinementCondition(MeshBlock *pmb);
+
+
 //======================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
 //  \brief
@@ -98,7 +102,32 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    ir_cm.DeleteAthenaArray();
   }
   return;
+}
+
+void Mesh::InitUserMeshData(ParameterInput *pin) {
+  if (adaptive) {
+    EnrollUserRefinementCondition(RefinementCondition);
+  }
+}
+
+
+int RefinementCondition(MeshBlock *pmb) {
+  Coordinates *pco = pmb->pcoord;
+  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je;
+  int ks=pmb->ks; // ke=pmb->ke;
+
+  Real xmin = pco->x1f(is);
+  Real xmax = pco->x1f(ie+1);
+  Real ymin = pco->x2f(js);
+  Real ymax = pco->x2f(je+1);
+  Real tgas = pmb->phydro->w(IPR,ks,js,is)/pmb->phydro->w(IDN,ks,js,is);
+  if (xmin > 0.25 && xmax < 0.75 && ymin > 0.25 && ymax < 0.75 && tgas > 50.0) {
+    return 1;
+  }
+  if (xmin > 0.25 && xmax < 0.75 && ymin > 0.25 && ymax < 0.75 && tgas < 50.0) {
+    return -1;
+  }
+  return 0;
 }
