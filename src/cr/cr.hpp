@@ -31,16 +31,15 @@ class CosmicRay {
   friend class BoundaryValues;
  public:
   CosmicRay(MeshBlock *pmb, ParameterInput *pin);
-  //  ~CosmicRay();
 
-  MeshBlock* pmy_block;    // ptr to MeshBlock containing this Fluid
-  AthenaArray<Real> u_cr, u_cr1, u_cr2; //cosmic ray energy density and flux
+  MeshBlock* pmy_block;
+  AthenaArray<Real> u_cr, u_cr1, u_cr2;  // cosmic ray energy density and flux
   AthenaArray<Real> coarse_cr_;
 
-  //   diffusion coefficients for both normal diffusion term, and advection term
+  // diffusion coefficients for both normal diffusion term, and advection term
   AthenaArray<Real> sigma_diff, sigma_adv;
 
-  AthenaArray<Real> v_adv; // streaming velocity
+  AthenaArray<Real> v_adv;  // streaming velocity
   AthenaArray<Real> v_diff; // the diffuion velocity, need to calculate the flux
 
   int refinement_idx{-1};
@@ -54,10 +53,9 @@ class CosmicRay {
   CellCenteredBoundaryVariable cr_bvar;
   CRIntegrator *pcrintegrator;
 
-  // Function in problem generators to update opacity
+  // Function in problem generators to update opacity, streaming, source terms
   void EnrollOpacityFunction(CROpacityFunc MyOpacityFunction);
   void EnrollStreamingFunction(CRStreamingFunc MyStreamingFunction);
-
   void EnrollUserCRSource(CRSrcTermFunc my_func);
   bool cr_source_defined;
 
@@ -72,7 +70,7 @@ class CosmicRay {
   AthenaArray<Real> b_angle; //sin\theta,cos\theta,sin\phi,cos\phi of B direction
 
   int stream_flag; // flag to include streaming or not
-  int src_flag; // flag to
+  int src_flag;    // flag to include CR source term or not
 
  private:
   CRSrcTermFunc UserSourceTerm_;

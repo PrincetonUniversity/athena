@@ -385,9 +385,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    rax.DeleteAthenaArray();
-    ray.DeleteAthenaArray();
-    raz.DeleteAthenaArray();
   }
 
   // initialize total energy

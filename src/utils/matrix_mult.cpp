@@ -58,8 +58,6 @@ void InverseMatrix(int n, AthenaArray<Real> &a, AthenaArray<Real> &b) {
       b(i,j) = col(i);
     }
   }
-  indx.DeleteAthenaArray();
-  col.DeleteAthenaArray();
   return;
 }
 
@@ -131,28 +129,25 @@ void Ludcmp_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
     // row interchange
     if (j != imax) {
       for (int k=0; k<n; ++k) {
-        dum=a(imax,k);
-        a(imax,k)=a(j,k);
-        a(j,k)=dum;
+        dum = a(imax,k);
+        a(imax,k) = a(j,k);
+        a(j,k) = dum;
       }
       *d = -(*d);
-      rowscale(imax)=rowscale(j);
+      rowscale(imax) = rowscale(j);
     }
-    indx(j)=imax; // record row interchange history
+    indx(j) = imax; // record row interchange history
     // Calculate the lower block (second step)
-    if (a(j,j) == 0.0) a(j,j)=TINY_NUMBER;
-    dum=1.0/(a(j,j));
+    if (a(j,j) == 0.0) a(j,j) = TINY_NUMBER;
+    dum = 1.0/(a(j,j));
     for (int i=j+1; i<n; ++i)
       a(i,j) *= dum;
   }
-  // free the memory
-  rowscale.DeleteAthenaArray();
 }
 
 //======================================================================================
 //! \file lubksb.cpp
 //======================================================================================
-
 
 
 //--------------------------------------------------------------------------------------
@@ -189,4 +184,3 @@ void Lubksb_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
     b(i)=sum/a(i,i);
   }
 }
-
