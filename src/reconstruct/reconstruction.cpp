@@ -433,12 +433,10 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       // for nonuniform and uniform radial mesh spacings.
       for (int i=(pmb->is)-1; i<=(pmb->ie)+1; ++i) {
         Real h_plus, h_minus;
-        Real& dx_i   = pco->dx1f(i);
-        Real& xv_i   = pco->x1v(i);
+        Real dx_i   = pco->dx1f(i);
 
         // radius may beomce negative in the lower x1 ghost cells:
-        xv_i = 0.5*(pco->x1f(i+1) + pco->x1f(i));
-        xv_i = std::abs(xv_i);
+        Real xv_i = std::abs(0.5*(pco->x1f(i+1) + pco->x1f(i)));
 
         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
           // cylindrical radial coordinate
