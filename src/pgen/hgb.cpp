@@ -457,9 +457,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    rax.DeleteAthenaArray();
-    ray.DeleteAthenaArray();
-    raz.DeleteAthenaArray();
   }
 
   // add magnetic energy

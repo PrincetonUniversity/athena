@@ -163,8 +163,6 @@ void NRRadiation::AngularGrid(int angle_flag, int nmu) {
           mu(0,0,0,n1,i)=mutmp1d(i);
         }
       }
-      mutmp1d.DeleteAthenaArray();
-      wtmp1d.DeleteAthenaArray();
     } else if (ndim == 2) {
       // for spherical coordinate system, it should be r-theta-phi
       for (int n2=0; n2<n2z; ++n2) {
@@ -282,17 +280,6 @@ void NRRadiation::AngularGrid(int angle_flag, int nmu) {
 
   // Now change the angle cosines to different coordinate systems
   pmy_block->pcoord->ConvertAngle(pmy_block,nang, mu);
-
-  // free the temporary arrays
-  mu2tmp.DeleteAthenaArray();
-  mutmp.DeleteAthenaArray();
-  wtmp2.DeleteAthenaArray();
-  wtmp.DeleteAthenaArray();
-  pmat.DeleteAthenaArray();
-  pinv.DeleteAthenaArray();
-  plab.DeleteAthenaArray();
-  pl.DeleteAthenaArray();
-  wpf.DeleteAthenaArray();
   return;
 }
 
