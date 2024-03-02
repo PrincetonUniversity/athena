@@ -43,6 +43,7 @@ MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
                       pm->MGGravitySourceMaskFunction_, pm->MGGravitySourceMaskFunction_,
                       1, 0, 0) {
   four_pi_G_ = pmy_mesh_->four_pi_G_;
+  omega_ = pin->GetOrAddReal("gravity", "omega", 1.15);
   eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("gravity", "fas", ffas_);
@@ -226,7 +227,7 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real dx2 = SQR(dx);
-  Real isix = omega_/6.0;
+  Real isix = static_cast<MGGravityDriver*>(pmy_driver_)->omega_/6.0;
   color ^= pmy_driver_->coffset_;
 
 #pragma omp parallel for num_threads(pmy_driver_->nthreads_) if (th && (ku-kl) >= minth_)

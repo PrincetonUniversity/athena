@@ -45,7 +45,6 @@ CRDiffusion::CRDiffusion(MeshBlock *pmb, ParameterInput *pin) :
   Dpara_ = pin->GetReal("crdiffusion", "Dpara");
   Dperp_ = pin->GetReal("crdiffusion", "Dperp");
   Lambda_ = pin->GetReal("crdiffusion", "Lambda");
-  zeta_factor_ = pin->GetReal("crdiffusion", "zeta_factor");
 
   output_defect = pin->GetOrAddBoolean("crdiffusion", "output_defect", false);
   if (output_defect)

@@ -265,13 +265,6 @@ void MGCRDiffusionDriver::Solve(int stage, Real dt) {
 
   crtlist_->DoTaskListOneStage(pmy_mesh_, stage);
 
-  for (auto itr = vmg_.begin(); itr < vmg_.end(); itr++) {
-    Multigrid *pmg = *itr;
-    CRDiffusion *pcrdiff = pmg->pmy_block_->pcrdiff;
-    Hydro *phydro = pmg->pmy_block_->phydro;
-    pcrdiff->CalculateIonizationRate(phydro->w);
-  }
-
   return;
 }
 
