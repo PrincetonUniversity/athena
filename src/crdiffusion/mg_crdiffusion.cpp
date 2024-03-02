@@ -53,7 +53,7 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   niter_ = pin->GetOrAddInteger("crdiffusion", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("crdiffusion", "fas", ffas_);
   fsubtract_average_ = false;
-  omega_ = pin->GetOrAddReal("crdiffusion", "omega", omega_);
+  omega_ = pin->GetOrAddReal("crdiffusion", "omega", 1.0);
   fsteady_ = pin->GetOrAddBoolean("crdiffusion", "steady", false);
   npresmooth_ = pin->GetOrAddReal("crdiffusion", "npresmooth", 2);
   npostsmooth_ = pin->GetOrAddReal("crdiffusion", "npostsmooth", 2);
