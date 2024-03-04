@@ -436,7 +436,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
         const Real& dx_i   = pco->dx1f(i);
 
         // radius may beomce negative in the lower x1 ghost cells:
-        Real xv_i = std::abs(0.5*(pco->x1f(i+1) + pco->x1f(i)));
+        const Real xv_i = std::abs(0.5*(pco->x1f(i+1) + pco->x1f(i)));
 
         if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
           // cylindrical radial coordinate
