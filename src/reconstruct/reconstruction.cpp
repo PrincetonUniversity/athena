@@ -479,7 +479,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
           const Real& dx_im1 = pco->dx1f(i-1);
           const Real& dx_i   = pco->dx1f(i  );
           const Real& dx_ip1 = pco->dx1f(i+1);
-          const Real qe = dx_i/(dx_im1 + dx_i + dx_ip1);       // Outermost coeff in CW eq 1.7
+          const Real qe = dx_i/(dx_im1 + dx_i + dx_ip1);  // Outermost coeff in CW eq 1.7
           c1i(i) = qe*(2.0*dx_im1+dx_i)/(dx_ip1 + dx_i); // First term in CW eq 1.7
           c2i(i) = qe*(2.0*dx_ip1+dx_i)/(dx_im1 + dx_i); // Second term in CW eq 1.7
           if (i > (pmb->is)-NGHOST+1) {  // c3-c6 are not computed in first iteration
@@ -604,7 +604,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
             const Real& dx_jm1 = pco->dx2f(j-1);
             const Real& dx_j   = pco->dx2f(j  );
             const Real& dx_jp1 = pco->dx2f(j+1);
-            const Real qe = dx_j/(dx_jm1 + dx_j + dx_jp1);       // Outermost coeff in CW eq 1.7
+            const Real qe = dx_j/(dx_jm1 + dx_j + dx_jp1); // Outermost coeff in CW eq1.7
             c1j(j) = qe*(2.0*dx_jm1 + dx_j)/(dx_jp1 + dx_j); // First term in CW eq 1.7
             c2j(j) = qe*(2.0*dx_jp1 + dx_j)/(dx_jm1 + dx_j); // Second term in CW eq 1.7
 
@@ -655,7 +655,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
           const Real& dx_km1 = pco->dx3f(k-1);
           const Real& dx_k   = pco->dx3f(k  );
           const Real& dx_kp1 = pco->dx3f(k+1);
-          const Real qe = dx_k/(dx_km1 + dx_k + dx_kp1);       // Outermost coeff in CW eq 1.7
+          const Real qe = dx_k/(dx_km1 + dx_k + dx_kp1);  // Outermost coeff in CW eq 1.7
           c1k(k) = qe*(2.0*dx_km1+dx_k)/(dx_kp1 + dx_k); // First term in CW eq 1.7
           c2k(k) = qe*(2.0*dx_kp1+dx_k)/(dx_km1 + dx_k); // Second term in CW eq 1.7
 
