@@ -186,15 +186,18 @@ void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Re
           r = pmb->pcoord->x1v(i);
           Real period;
           Real phip;
+          Real com;
           Real rp_value;
 
           if (planetnumber == 1) {
             period = 2 * M_PI * sqrt(pow(rp, 3) / gm0);
             phip = 2 * (M_PI / period) * time;
-            rp_value = rp;
+            //com = (gm_planet * rp)/ (1 + gm_planet);
+            rp_value = rp; //center of mass is calculated since the two planet system orbits around the barycenter rather than the central star
           } else {
             period = 2 * M_PI * sqrt(pow(rp2, 3) / gm0);
             phip = 2 * (M_PI / period) * time;
+            //com = ((gm_planet * rp) + (gm_planet * rp2)) / (1 + (2.0 * gm_planet));
             rp_value = rp2;
           }
 
