@@ -35,6 +35,7 @@
 // Athena++ headers
 #include "athena.hpp"
 #include "chem_rad/chem_rad.hpp"
+#include "crdiffusion/mg_crdiffusion.hpp"
 #include "fft/turbulence.hpp"
 #include "globals.hpp"
 #include "gravity/fft_gravity.hpp"
@@ -481,6 +482,10 @@ int main(int argc, char *argv[]) {
     }
 
     if (pmesh->turb_flag > 1) pmesh->ptrbd->Driving(); // driven turbulence
+
+    if (CRDIFFUSION_ENABLED) {
+      pmesh->pmcrd->Solve(0, pmesh->dt);
+    }
 
     // chemistry with radiation
     if (CHEMRADIATION_ENABLED) {

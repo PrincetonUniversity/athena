@@ -34,6 +34,8 @@
 #include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../cr/cr.hpp"
+#include "../crdiffusion/crdiffusion.hpp"
+#include "../crdiffusion/mg_crdiffusion.hpp"
 #include "../eos/eos.hpp"
 #include "../fft/athena_fft.hpp"
 #include "../fft/turbulence.hpp"
@@ -122,7 +124,11 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     ConductionCoeff_{}, FieldDiffusivity_{},
     OrbitalVelocity_{}, OrbitalVelocityDerivative_{nullptr, nullptr},
     MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
-    MGGravitySourceMaskFunction_{} {
+    MGCRDiffusionBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+    MGCRDiffusionCoeffBoundaryFunction_{nullptr, nullptr, nullptr,
+                                        nullptr, nullptr, nullptr},
+    MGGravitySourceMaskFunction_{}, MGCRDiffusionSourceMaskFunction_{},
+    MGCRDiffusionCoeffMaskFunction_{} {
   std::stringstream msg;
   BoundaryFlag block_bcs[6];
   std::int64_t nbmax;
@@ -535,6 +541,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     pmgrd = new MGGravityDriver(this, pin);
   }
 
+  if (CRDIFFUSION_ENABLED)
+    pmcrd = new MGCRDiffusionDriver(this, pin);
+
   if (IM_RADIATION_ENABLED) {
     pimrad = new IMRadiation(this, pin);
   }
@@ -617,7 +626,11 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     ConductionCoeff_{}, FieldDiffusivity_{},
     OrbitalVelocity_{}, OrbitalVelocityDerivative_{nullptr, nullptr},
     MGGravityBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
-    MGGravitySourceMaskFunction_{} {
+    MGCRDiffusionBoundaryFunction_{nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+    MGCRDiffusionCoeffBoundaryFunction_{nullptr, nullptr, nullptr,
+                                        nullptr, nullptr, nullptr},
+    MGGravitySourceMaskFunction_{}, MGCRDiffusionSourceMaskFunction_{},
+    MGCRDiffusionCoeffMaskFunction_{} {
   std::stringstream msg;
   BoundaryFlag block_bcs[6];
   IOWrapperSizeT *offset{};
@@ -861,6 +874,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     // MGDriver must be initialzied before MeshBlocks
     pmgrd = new MGGravityDriver(this, pin);
   }
+
+  if (CRDIFFUSION_ENABLED)
+    pmcrd = new MGCRDiffusionDriver(this, pin);
 
   if (IM_RADIATION_ENABLED) {
     pimrad = new IMRadiation(this, pin);
@@ -1199,7 +1215,7 @@ void Mesh::EnrollUserBoundaryFunction(int dir, BValFunc my_bc) {
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir,
 //!                                                    MGBoundaryFunc my_bc)
-//! \brief Enroll a user-defined Multigrid boundary function
+//! \brief Enroll a user-defined Multigrid gravity boundary function
 
 void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc) {
   std::stringstream msg;
@@ -1212,12 +1228,51 @@ void Mesh::EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc 
   return;
 }
 
+
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask)
+//! \fn void Mesh::EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir,
+//!                                                        MGBoundaryFunc my_bc)
+//! \brief Enroll a user-defined Multigrid CR Diffusion boundary function
+
+void Mesh::EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir,
+                                                   MGBoundaryFunc my_bc) {
+  std::stringstream msg;
+  if (dir < 0 || dir > 5) {
+    msg << "### FATAL ERROR in EnrollUserMGCRDiffusionBoundaryFunction" << std::endl
+        << "dirName = " << dir << " not valid" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  MGCRDiffusionBoundaryFunction_[static_cast<int>(dir)] = my_bc;
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGGravitySourceMaskFunction(MGMaskFunc srcmask)
 //  \brief Enroll a user-defined Multigrid gravity source mask function
 
-void Mesh::EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask) {
+void Mesh::EnrollUserMGGravitySourceMaskFunction(MGMaskFunc srcmask) {
   MGGravitySourceMaskFunction_ = srcmask;
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGCRDiffusionSourceMaskFunction(MGMaskFunc srcmask)
+//  \brief Enroll a user-defined Multigrid CR diffusion source mask function
+
+void Mesh::EnrollUserMGCRDiffusionSourceMaskFunction(MGMaskFunc srcmask) {
+  MGCRDiffusionSourceMaskFunction_ = srcmask;
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::EnrollUserMGCRDiffusionCoefficientMaskFunction(MGMaskFunc coeffmask)
+//  \brief Enroll a user-defined Multigrid CR diffusion coefficient mask function
+
+void Mesh::EnrollUserMGCRDiffusionCoefficientMaskFunction(MGMaskFunc coeffmask) {
+  MGCRDiffusionCoeffMaskFunction_ = coeffmask;
   return;
 }
 
@@ -1509,6 +1564,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
       }
       if (IM_RADIATION_ENABLED)
         pmb->pnrrad->rad_bvar.SetupPersistentMPI();
+      if (CRDIFFUSION_ENABLED)
+        pmb->pcrdiff->crbvar.SetupPersistentMPI();
     }
 
     // solve gravity for the first time
@@ -1771,6 +1828,9 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
       }
     }
+
+    if (CRDIFFUSION_ENABLED) // CR has to be processed after MHD boundaries
+      pmcrd->Solve(1, 0.0);
 
     if (!res_flag && adaptive) {
       iflag = false;
@@ -2095,7 +2155,7 @@ void Mesh::ReserveMeshBlockPhysIDs() {
     ReserveTagPhysIDs(FaceCenteredBoundaryVariable::max_phys_id);
   }
   if (SELF_GRAVITY_ENABLED) {
-    ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
+    ReserveTagPhysIDs(1);
   }
   if (NSCALARS > 0) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
@@ -2109,6 +2169,10 @@ void Mesh::ReserveMeshBlockPhysIDs() {
   if (CR_ENABLED) {
     ReserveTagPhysIDs(CellCenteredBoundaryVariable::max_phys_id);
   }
+  if (CRDIFFUSION_ENABLED) {
+    ReserveTagPhysIDs(1);
+  }
+
 #endif
   return;
 }

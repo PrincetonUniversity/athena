@@ -50,11 +50,14 @@ MGBoundaryValues::MGBoundaryValues(Multigrid *pmg, BoundaryFlag *input_bcs)
 #endif
   for (int i = 0; i < 6; ++i)
     MGBoundaryFunction_[i] = pmg->pmy_driver_->MGBoundaryFunction_[i];
+  for (int i = 0; i < 6; ++i)
+    MGCoeffBoundaryFunction_[i] = pmg->pmy_driver_->MGCoeffBoundaryFunction_[i];
   if (pmy_mg_->pmy_block_ != nullptr) {
-    InitBoundaryData(BoundaryQuantity::mggrav);
+    InitBoundaryData(BoundaryQuantity::mg);
     int nc = block_size_.nx1 + 2*pmy_mg_->ngh_;
-    cbuf_.NewAthenaArray(pmy_mg_->nvar_, nc, nc, nc);
-    cbufold_.NewAthenaArray(pmy_mg_->nvar_, nc, nc, nc);
+    int nv = std::max(pmy_mg_->nvar_, pmy_mg_->ncoeff_);
+    cbuf_.NewAthenaArray(nv, nc, nc, nc);
+    cbufold_.NewAthenaArray(nv, nc, nc, nc);
     for (int i = 0; i < 6; ++i) {
       if (block_bcs[i] != BoundaryFlag::block && block_bcs[i] != BoundaryFlag::periodic)
         apply_bndry_fn_[i] = true;
@@ -80,7 +83,6 @@ MGBoundaryValues::~MGBoundaryValues() {
 //! \brief Initialize BoundaryData<> structure
 
 void MGBoundaryValues::InitBoundaryData(BoundaryQuantity type) {
-  int size = 0;
   int nbuf = triplebuf_?3:1;
   for (int c = 0; c < nbuf; ++c) {
     bdata_[c].nbmax = maxneighbor_;
@@ -97,35 +99,26 @@ void MGBoundaryValues::InitBoundaryData(BoundaryQuantity type) {
 
       // Allocate buffers
       // calculate the buffer size
-      switch (type) {
-        case BoundaryQuantity::mggrav: {
-          int ngh = pmy_mg_->ngh_;
-          int nc = block_size_.nx1;
-          if (BoundaryValues::ni[n].type == NeighborConnect::face)
-            size = SQR(nc)*ngh;
-          else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
-            size = nc*ngh*ngh;
-          else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
-            size = ngh*ngh*ngh;
-          if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
-            if (BoundaryValues::ni[n].type == NeighborConnect::face)
-              size += SQR(nc/2)*ngh;
-            else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
-              size += nc/2*ngh*ngh;
-            else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
-              size += ngh*ngh*ngh;
-          }
-        }
-          break;
-        default: {
-          std::stringstream msg;
-          msg << "### FATAL ERROR in InitBoundaryData" << std::endl
-              << "Invalid boundary type is specified." << std::endl;
-          ATHENA_ERROR(msg);
-        }
-          break;
+      int ngh = pmy_mg_->ngh_;
+      int nc = block_size_.nx1;
+      int size = 0;
+      if (BoundaryValues::ni[n].type == NeighborConnect::face)
+        size = SQR(nc)*ngh;
+      else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
+        size = nc*ngh*ngh;
+      else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
+        size = ngh*ngh*ngh;
+      if (pmy_mg_->pmy_driver_->pmy_mesh_->multilevel) {
+        if (BoundaryValues::ni[n].type == NeighborConnect::face)
+          size += SQR(nc/2)*ngh;
+        else if (BoundaryValues::ni[n].type == NeighborConnect::edge)
+          size += nc/2*ngh*ngh;
+        else if (BoundaryValues::ni[n].type == NeighborConnect::corner)
+          size += ngh*ngh*ngh;
       }
-      size *= pmy_mg_->nvar_*2; // for FAS
+
+      size *= std::max(pmy_mg_->nvar_*(1+pmy_mg_->pmy_driver_->ffas_), pmy_mg_->ncoeff_);
+
       bdata_[c].send[n] = new Real[size];
       bdata_[c].recv[n] = new Real[size];
     }
@@ -156,180 +149,248 @@ void MGBoundaryValues::DestroyBoundaryData() {
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face,
-//!                          AthenaArray<Real> &dst, Real time, int nvar,
-//!                          int is, int ie, int js, int je, int ks, int ke, int ngh,
-//!                          const MGCoordinates &coord)
-//! \brief Call multigrid boundary function for a face
+//                           AthenaArray<Real> &dst, Real time, int nvar,
+//                           int is, int ie, int js, int je, int ks, int ke, int ngh,
+//                           const MGCoordinates &coord, bool fcoeff)
+//  \brief Call multigrid boundary function for a face
 
 void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<Real> &dst,
      Real time, int nvar, int is, int ie, int js, int je, int ks, int ke, int ngh,
-     const MGCoordinates &coord) {
-  AthenaArray<Real> &mpcoeff = pmy_mg_->pmy_driver_->mpcoeff_[0];
-  AthenaArray<Real> &mpo = pmy_mg_->pmy_driver_->mpo_;
-  int &mporder = pmy_mg_->pmy_driver_->mporder_;
-  switch (face) {
-    case BoundaryFace::inner_x1:
-      switch (block_bcs[BoundaryFace::inner_x1]) {
-        case BoundaryFlag::user:
-          MGBoundaryFunction_[BoundaryFace::inner_x1](dst, time, nvar,
-                              is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::periodic:
+     const MGCoordinates &coord, bool fcoeff) {
+  if (!fcoeff) {
+    AthenaArray<Real> &mpcoeff = pmy_mg_->pmy_driver_->mpcoeff_[0];
+    AthenaArray<Real> &mpo = pmy_mg_->pmy_driver_->mpo_;
+    int &mporder = pmy_mg_->pmy_driver_->mporder_;
+    switch (face) {
+      case BoundaryFace::inner_x1:
+        switch (block_bcs[BoundaryFace::inner_x1]) {
+          case BoundaryFlag::user:
+            MGBoundaryFunction_[BoundaryFace::inner_x1](dst, time, nvar,
+                                is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::periodic:
+            MGPeriodicInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerograd:
+            MGZeroGradientInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerofixed:
+            MGZeroFixedInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_multipole:
+            MGMultipoleInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                               mpcoeff, mpo, mporder);
+            break;
+          default:
+            break;
+        }
+        break;
+      case BoundaryFace::outer_x1:
+        switch (block_bcs[BoundaryFace::outer_x1]) {
+          case BoundaryFlag::user:
+            MGBoundaryFunction_[BoundaryFace::outer_x1](dst, time, nvar,
+                                is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::periodic:
+            MGPeriodicOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerograd:
+            MGZeroGradientOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerofixed:
+            MGZeroFixedOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_multipole:
+            MGMultipoleOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                               mpcoeff, mpo, mporder);
+            break;
+          default:
+            break;
+        }
+        break;
+      case BoundaryFace::inner_x2:
+        switch (block_bcs[BoundaryFace::inner_x2]) {
+          case BoundaryFlag::user:
+            MGBoundaryFunction_[BoundaryFace::inner_x2](dst, time, nvar,
+                                is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::periodic:
+            MGPeriodicInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerograd:
+            MGZeroGradientInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerofixed:
+            MGZeroFixedInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_multipole:
+            MGMultipoleInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                               mpcoeff, mpo, mporder);
+            break;
+          default:
+            break;
+        }
+        break;
+      case BoundaryFace::outer_x2:
+        switch (block_bcs[BoundaryFace::outer_x2]) {
+          case BoundaryFlag::user:
+            MGBoundaryFunction_[BoundaryFace::outer_x2](dst, time, nvar,
+                                is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::periodic:
+            MGPeriodicOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerograd:
+            MGZeroGradientOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerofixed:
+            MGZeroFixedOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_multipole:
+            MGMultipoleOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                               mpcoeff, mpo, mporder);
+            break;
+          default:
+            break;
+        }
+        break;
+      case BoundaryFace::inner_x3:
+        switch (block_bcs[BoundaryFace::inner_x3]) {
+          case BoundaryFlag::user:
+            MGBoundaryFunction_[BoundaryFace::inner_x3](dst, time, nvar,
+                                is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::periodic:
+            MGPeriodicInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerograd:
+            MGZeroGradientInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerofixed:
+            MGZeroFixedInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_multipole:
+            MGMultipoleInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                               mpcoeff, mpo, mporder);
+            break;
+          default:
+            break;
+        }
+        break;
+      case BoundaryFace::outer_x3:
+        switch (block_bcs[BoundaryFace::outer_x3]) {
+          case BoundaryFlag::user:
+            MGBoundaryFunction_[BoundaryFace::outer_x3](dst, time, nvar,
+                                is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::periodic:
+            MGPeriodicOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerograd:
+            MGZeroGradientOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_zerofixed:
+            MGZeroFixedOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
+            break;
+          case BoundaryFlag::mg_multipole:
+            MGMultipoleOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
+                               mpcoeff, mpo, mporder);
+            break;
+          default:
+            break;
+        }
+        break;
+      default:
+        break;
+    }
+  } else { // coeffient
+    switch (face) {
+      case BoundaryFace::inner_x1:
+        if (block_bcs[face] == BoundaryFlag::periodic)
           MGPeriodicInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerograd:
+        else if (MGCoeffBoundaryFunction_[face] != nullptr)
+          MGCoeffBoundaryFunction_[face](dst, time, nvar, is, ie, js, je, ks, ke,
+                                         ngh, coord);
+        else // default: zero gradient
           MGZeroGradientInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerofixed:
-          MGZeroFixedInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_multipole:
-          MGMultipoleInnerX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mpo, mporder);
-          break;
-        default:
-          break;
-      }
-      break;
-    case BoundaryFace::outer_x1:
-      switch (block_bcs[BoundaryFace::outer_x1]) {
-        case BoundaryFlag::user:
-          MGBoundaryFunction_[BoundaryFace::outer_x1](dst, time, nvar,
-                              is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::periodic:
+        break;
+      case BoundaryFace::outer_x1:
+        if (block_bcs[face] == BoundaryFlag::periodic)
           MGPeriodicOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerograd:
+        else if (MGCoeffBoundaryFunction_[face] != nullptr)
+          MGCoeffBoundaryFunction_[face](dst, time, nvar, is, ie, js, je, ks, ke,
+                                         ngh, coord);
+        else // default: zero gradient
           MGZeroGradientOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerofixed:
-          MGZeroFixedOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_multipole:
-          MGMultipoleOuterX1(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mpo, mporder);
-          break;
-        default:
-          break;
-      }
-      break;
-    case BoundaryFace::inner_x2:
-      switch (block_bcs[BoundaryFace::inner_x2]) {
-        case BoundaryFlag::user:
-          MGBoundaryFunction_[BoundaryFace::inner_x2](dst, time, nvar,
-                              is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::periodic:
+        break;
+      case BoundaryFace::inner_x2:
+        if (block_bcs[face] == BoundaryFlag::periodic)
           MGPeriodicInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerograd:
+        else if (MGCoeffBoundaryFunction_[face] != nullptr)
+          MGCoeffBoundaryFunction_[face](dst, time, nvar, is, ie, js, je, ks, ke,
+                                         ngh, coord);
+        else // default: zero gradient
           MGZeroGradientInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerofixed:
-          MGZeroFixedInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_multipole:
-          MGMultipoleInnerX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mpo, mporder);
-          break;
-        default:
-          break;
-      }
-      break;
-    case BoundaryFace::outer_x2:
-      switch (block_bcs[BoundaryFace::outer_x2]) {
-        case BoundaryFlag::user:
-          MGBoundaryFunction_[BoundaryFace::outer_x2](dst, time, nvar,
-                              is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::periodic:
+        break;
+      case BoundaryFace::outer_x2:
+        if (block_bcs[face] == BoundaryFlag::periodic)
           MGPeriodicOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerograd:
+        else if (MGCoeffBoundaryFunction_[face] != nullptr)
+          MGCoeffBoundaryFunction_[face](dst, time, nvar, is, ie, js, je, ks, ke,
+                                         ngh, coord);
+        else // default: zero gradient
           MGZeroGradientOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerofixed:
-          MGZeroFixedOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_multipole:
-          MGMultipoleOuterX2(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mpo, mporder);
-          break;
-        default:
-          break;
-      }
-      break;
-    case BoundaryFace::inner_x3:
-      switch (block_bcs[BoundaryFace::inner_x3]) {
-        case BoundaryFlag::user:
-          MGBoundaryFunction_[BoundaryFace::inner_x3](dst, time, nvar,
-                              is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::periodic:
+        break;
+      case BoundaryFace::inner_x3:
+        if (block_bcs[face] == BoundaryFlag::periodic)
           MGPeriodicInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerograd:
+        else if (MGCoeffBoundaryFunction_[face] != nullptr)
+          MGCoeffBoundaryFunction_[face](dst, time, nvar, is, ie, js, je, ks, ke,
+                                         ngh, coord);
+        else // default: zero gradient
           MGZeroGradientInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerofixed:
-          MGZeroFixedInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_multipole:
-          MGMultipoleInnerX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mpo, mporder);
-          break;
-        default:
-          break;
-      }
-      break;
-    case BoundaryFace::outer_x3:
-      switch (block_bcs[BoundaryFace::outer_x3]) {
-        case BoundaryFlag::user:
-          MGBoundaryFunction_[BoundaryFace::outer_x3](dst, time, nvar,
-                              is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::periodic:
+        break;
+      case BoundaryFace::outer_x3:
+        if (block_bcs[face] == BoundaryFlag::periodic)
           MGPeriodicOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerograd:
+        else if (MGCoeffBoundaryFunction_[face] != nullptr)
+          MGCoeffBoundaryFunction_[face](dst, time, nvar, is, ie, js, je, ks, ke,
+                                         ngh, coord);
+        else // default: zero gradient
           MGZeroGradientOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_zerofixed:
-          MGZeroFixedOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord);
-          break;
-        case BoundaryFlag::mg_multipole:
-          MGMultipoleOuterX3(dst, time, nvar, is, ie, js, je, ks, ke, ngh, coord,
-                             mpcoeff, mpo, mporder);
-          break;
-        default:
-          break;
-      }
-      break;
-    default:
-      break;
+        break;
+      default:
+        break;
+    }
   }
-
   return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGBoundaryValues::ApplyPhysicalBoundaries(int flag)
+//! \fn void MGBoundaryValues::ApplyPhysicalBoundaries(int flag, bool fcoeff)
 //! \brief Apply physical boundary conditions to the current Multigrid data
 
-void MGBoundaryValues::ApplyPhysicalBoundaries(int flag) {
+void MGBoundaryValues::ApplyPhysicalBoundaries(int flag, bool fcoeff) {
   AthenaArray<Real> *u;
   MGCoordinates *c;
   int lev = pmy_mg_->GetCurrentLevel();
   int ll = pmy_mg_->nlevel_ - 1 - lev;
-  if (flag == 0)      u = &(pmy_mg_->GetCurrentData()), c=&(pmy_mg_->coord_[lev]);
-  else if (flag == 1) u = &cbuf_,                       c=&(pmy_mg_->ccoord_[lev]);
-  else                u = &cbufold_,                    c=&(pmy_mg_->ccoord_[lev]);
+  int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
+  if (!fcoeff) {
+    if (flag == 0)      u = &(pmy_mg_->GetCurrentData()), c = &(pmy_mg_->coord_[lev]);
+    else if (flag == 1) u = &cbuf_,                       c = &(pmy_mg_->ccoord_[lev]);
+    else                u = &cbufold_,                    c = &(pmy_mg_->ccoord_[lev]);
+  } else {
+    nvar = pmy_mg_->ncoeff_;
+    if (flag == 0)
+      u = &(pmy_mg_->GetCurrentCoefficient()), c = &(pmy_mg_->coord_[lev]);
+    else
+      u = &cbuf_, c=&(pmy_mg_->ccoord_[lev]);
+  }
   AthenaArray<Real> &dst = *u;
   MGCoordinates &coord = *c;
   if (flag > 0) ll++;
-  int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int ncx = block_size_.nx1 >> ll, ncy = block_size_.nx2 >> ll,
       ncz = block_size_.nx3 >> ll;
   int is = ngh, ie = ncx + ngh - 1;
@@ -340,6 +401,7 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(int flag) {
   int bjs = js,       bje = je;
   int bks = ks,       bke = ke;
   Real time = pmy_mesh_->time;
+
   if (!apply_bndry_fn_[BoundaryFace::inner_x2]) bjs = js - ngh;
   if (!apply_bndry_fn_[BoundaryFace::outer_x2]) bje = je + ngh;
   if (!apply_bndry_fn_[BoundaryFace::inner_x3]) bks = ks - ngh;
@@ -347,23 +409,23 @@ void MGBoundaryValues::ApplyPhysicalBoundaries(int flag) {
 
   if (apply_bndry_fn_[BoundaryFace::inner_x1])
     DispatchBoundaryFunction(BoundaryFace::inner_x1, dst, time, nvar,
-                             is, ie, bjs, bje, bks, bke, ngh, coord);
+                             is, ie, bjs, bje, bks, bke, ngh, coord, fcoeff);
   if (apply_bndry_fn_[BoundaryFace::outer_x1])
     DispatchBoundaryFunction(BoundaryFace::outer_x1, dst, time, nvar,
-                             is, ie, bjs, bje, bks, bke, ngh, coord);
+                             is, ie, bjs, bje, bks, bke, ngh, coord, fcoeff);
   if (apply_bndry_fn_[BoundaryFace::inner_x2])
     DispatchBoundaryFunction(BoundaryFace::inner_x2, dst, time, nvar,
-                             bis, bie, js, je, bks, bke, ngh, coord);
+                             bis, bie, js, je, bks, bke, ngh, coord, fcoeff);
   if (apply_bndry_fn_[BoundaryFace::outer_x2])
     DispatchBoundaryFunction(BoundaryFace::outer_x2, dst, time, nvar,
-                             bis, bie, js, je, bks, bke, ngh, coord);
+                             bis, bie, js, je, bks, bke, ngh, coord, fcoeff);
   bjs = js - ngh, bje = je + ngh;
   if (apply_bndry_fn_[BoundaryFace::inner_x3])
     DispatchBoundaryFunction(BoundaryFace::inner_x3, dst, time, nvar,
-                             bis, bie, bjs, bje, ks, ke, ngh, coord);
+                             bis, bie, bjs, bje, ks, ke, ngh, coord, fcoeff);
   if (apply_bndry_fn_[BoundaryFace::outer_x3])
     DispatchBoundaryFunction(BoundaryFace::outer_x3, dst, time, nvar,
-                             bis, bie, bjs, bje, ks, ke, ngh, coord);
+                             bis, bie, bjs, bje, ks, ke, ngh, coord, fcoeff);
   return;
 }
 
@@ -380,11 +442,12 @@ void MGBoundaryValues::StartReceivingMultigrid(BoundaryQuantity type, bool foldd
 #ifdef MPI_PARALLEL
   int nvar = pmy_mg_->nvar_, ngh = pmy_mg_->ngh_, cngh = ngh;
   int nc = pmy_mg_->GetCurrentNumberOfCells();
+  if (type == BoundaryQuantity::mg_coeff) nvar = pmy_mg_->ncoeff_;
 
   for (int n = 0; n < nneighbor; ++n) {
     NeighborBlock& nb = neighbor[n];
     if (nb.snb.rank!=Globals::my_rank) {
-      if (type == BoundaryQuantity::mggrav_f && nb.snb.level > loc.level
+      if (type == BoundaryQuantity::mg_faceonly && nb.snb.level > loc.level
         && nb.ni.type != NeighborConnect::face) continue;
       int size = 0;
       if (nb.snb.level == loc.level) { // same
@@ -429,7 +492,7 @@ void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type) {
     bdata_[bcolor_].sflag[nb.bufid] = BoundaryStatus::waiting;
 #ifdef MPI_PARALLEL
     if (nb.snb.rank != Globals::my_rank) {
-      if (!(type == BoundaryQuantity::mggrav_f
+      if (!(type == BoundaryQuantity::mg_faceonly
         &&  nb.ni.type != NeighborConnect::face && nb.snb.level < loc.level))
         MPI_Wait(&(bdata_[bcolor_].req_send[nb.bufid]),MPI_STATUS_IGNORE);
     }
@@ -441,13 +504,11 @@ void MGBoundaryValues::ClearBoundaryMultigrid(BoundaryQuantity type) {
 
 //----------------------------------------------------------------------------------------
 //! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
-//!                                                const NeighborBlock& nb, bool folddata)
+//!                               const NeighborBlock& nb, bool folddata, bool fcoeff)
 //! \brief Set Multigrid boundary buffers for sending to a block on the same level
 
 int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
-                                           const NeighborBlock& nb, bool folddata) {
-  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
-  const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
+                                   const NeighborBlock& nb, bool folddata, bool fcoeff) {
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int fs = ngh, fe = fs + nc - 1;
@@ -457,6 +518,15 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
   int ej = (nb.ni.ox2 < 0) ? (fs + ngh - 1) : fe;
   int sk = (nb.ni.ox3 > 0) ? (fe - ngh + 1) : fs;
   int ek = (nb.ni.ox3 < 0) ? (fs + ngh - 1) : fe;
+  AthenaArray<Real> *t;
+  if (!fcoeff) {
+    t = &(pmy_mg_->GetCurrentData());
+  } else {
+    nvar = pmy_mg_->ncoeff_;
+    t = &(pmy_mg_->GetCurrentCoefficient());
+  }
+  const AthenaArray<Real> &u = *t;
+  const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
 
   int p = 0;
   BufferUtility::PackData(u, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
@@ -515,13 +585,11 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferSameLevel(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
-//!                                                const NeighborBlock& nb, bool folddata)
+//!                               const NeighborBlock& nb, bool folddata, bool fcoeff)
 //! \brief Set Multigrid boundary buffers for sending to a block on the coarser level
 
 int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
-                                           const NeighborBlock& nb, bool folddata) {
-  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
-  const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
+                                   const NeighborBlock& nb, bool folddata, bool fcoeff) {
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int cn = ngh - 1, cs = ngh, ce = cs + nc/2 - 1;
@@ -532,6 +600,15 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
   int ej = (nb.ni.ox2 < 0) ? (cs + cn) : ce;
   int sk = (nb.ni.ox3 > 0) ? (ce - cn) : cs;
   int ek = (nb.ni.ox3 < 0) ? (cs + cn) : ce;
+  AthenaArray<Real> *t;
+  if (!fcoeff) {
+    t = &(pmy_mg_->GetCurrentData());
+  } else {
+    nvar = pmy_mg_->ncoeff_;
+    t = &(pmy_mg_->GetCurrentCoefficient());
+  }
+  const AthenaArray<Real> &u = *t;
+  const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
 
   // restrict and store in the coarse buffer
   for (int n=0; n<nvar; ++n) {
@@ -577,12 +654,10 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarser(Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
-//!                                        const NeighborBlock& nb, bool folddata)
+//!                               const NeighborBlock& nb, bool folddata, bool fcoeff)
 //! \brief Set Multigrid boundary buffers for sending to a block on the finer level
 int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
-                                           const NeighborBlock& nb, bool folddata) {
-  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
-  const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
+                                   const NeighborBlock& nb, bool folddata, bool fcoeff) {
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int cn = ngh - 1, fs = ngh, fe = fs + nc - 1;
@@ -592,6 +667,15 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
   int ej = (nb.ni.ox2 < 0) ? (fs + cn) : fe;
   int sk = (nb.ni.ox3 > 0) ? (fe - cn) : fs;
   int ek = (nb.ni.ox3 < 0) ? (fs + cn) : fe;
+  AthenaArray<Real> *t;
+  if (!fcoeff) {
+    t = &(pmy_mg_->GetCurrentData());
+  } else {
+    nvar = pmy_mg_->ncoeff_;
+    t = &(pmy_mg_->GetCurrentCoefficient());
+  }
+  const AthenaArray<Real> &u = *t;
+  const AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
 
   int nred = nc/2 - ngh;
   if (nb.ni.ox1 == 0) {
@@ -634,11 +718,14 @@ int MGBoundaryValues::LoadMultigridBoundaryBufferToFiner(Real *buf,
 bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
                                                     bool folddata) {
   bool bflag = true;
+  bool fcoeff = false;
+  if (type == BoundaryQuantity::mg_coeff)
+    fcoeff = true;
   Multigrid *pmg = nullptr;
   for (int n = 0; n < nneighbor; ++n) {
     NeighborBlock& nb = neighbor[n];
     if (bdata_[bcolor_].sflag[nb.bufid] == BoundaryStatus::completed) continue;
-    if (type == BoundaryQuantity::mggrav_f && nb.snb.level < loc.level
+    if (type == BoundaryQuantity::mg_faceonly && nb.snb.level < loc.level
       && nb.ni.type != NeighborConnect::face) continue;
     int ssize = 0;
     if (nb.snb.rank == Globals::my_rank) {
@@ -651,21 +738,21 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
     }
     if (nb.snb.level == loc.level) {
       ssize = LoadMultigridBoundaryBufferSameLevel(bdata_[bcolor_].send[nb.bufid],
-                                                   nb, folddata);
+                                                   nb, folddata, fcoeff);
     } else if (nb.snb.level < loc.level) {
-      if (type == BoundaryQuantity::mggrav_f)
+      if (type == BoundaryQuantity::mg_faceonly)
         ssize = LoadMultigridBoundaryBufferToCoarserFluxCons(
                                                     bdata_[bcolor_].send[nb.bufid], nb);
       else
         ssize = LoadMultigridBoundaryBufferToCoarser(bdata_[bcolor_].send[nb.bufid],
-                                                     nb, folddata);
+                                                     nb, folddata, fcoeff);
     } else {
-      if (type == BoundaryQuantity::mggrav_f)
+      if (type == BoundaryQuantity::mg_faceonly)
         ssize = LoadMultigridBoundaryBufferToFinerFluxCons(
                                                   bdata_[bcolor_].send[nb.bufid], nb);
       else
         ssize = LoadMultigridBoundaryBufferToFiner(bdata_[bcolor_].send[nb.bufid],
-                                                   nb, folddata);
+                                                   nb, folddata, fcoeff);
     }
     if (nb.snb.rank == Globals::my_rank) {
       std::memcpy(pmg->pmgbval->bdata_[bcolor_].recv[nb.targetid],
@@ -689,16 +776,23 @@ bool MGBoundaryValues::SendMultigridBoundaryBuffers(BoundaryQuantity type,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::SetMultigridBoundarySameLevel(const Real *buf,
-//!                                                const NeighborBlock& nb, bool folddata)
+//!                               const NeighborBlock& nb, bool folddata, bool fcoeff)
 //! \brief Set Multigrid boundary received from a block on the same level
 
 void MGBoundaryValues::SetMultigridBoundarySameLevel(const Real *buf,
-                                           const NeighborBlock& nb, bool folddata) {
-  AthenaArray<Real> &dst = pmy_mg_->GetCurrentData();
-  AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
+                                   const NeighborBlock& nb, bool folddata, bool fcoeff) {
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int si, sj, sk, ei, ej, ek;
+  AthenaArray<Real> *t;
+  if (!fcoeff) {
+    t = &(pmy_mg_->GetCurrentData());
+  } else {
+    nvar = pmy_mg_->ncoeff_;
+    t = &(pmy_mg_->GetCurrentCoefficient());
+  }
+  AthenaArray<Real> &dst = *t;
+  AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
 
   if (nb.ni.ox1 == 0)     si = ngh,      ei = nc + ngh - 1;
   else if (nb.ni.ox1 > 0) si = nc + ngh, ei = nc + 2*ngh - 1;
@@ -749,13 +843,14 @@ void MGBoundaryValues::SetMultigridBoundarySameLevel(const Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::SetMultigridBoundaryFromCoarser(const Real *buf,
-//!                                        const NeighborBlock& nb, boolf folddata)
+//!                               const NeighborBlock& nb, boolf folddata, bool fcoeff)
 //! \brief Set hydro boundary received from a block on the same level
 
 void MGBoundaryValues::SetMultigridBoundaryFromCoarser(const Real *buf,
-                                           const NeighborBlock& nb, bool folddata) {
+                                   const NeighborBlock& nb, bool folddata, bool fcoeff) {
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
+  if (fcoeff) nvar = pmy_mg_->ncoeff_;
   int si, sj, sk, ei, ej, ek;
   int cng = 1;
   int cs = cng, ce = cng + nc/2 -1;
@@ -799,17 +894,24 @@ void MGBoundaryValues::SetMultigridBoundaryFromCoarser(const Real *buf,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::SetMultigridBoundaryFromFiner(const Real *buf,
-//!                                                const NeighborBlock& nb, bool folddata)
+//!                               const NeighborBlock& nb, bool folddata, bool fcoeff)
 //! \brief Set hydro boundary received from a block on the same level
 
 void MGBoundaryValues::SetMultigridBoundaryFromFiner(const Real *buf,
-                                               const NeighborBlock& nb, bool folddata) {
-  AthenaArray<Real> &dst = pmy_mg_->GetCurrentData();
-  AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
+                                   const NeighborBlock& nb, bool folddata, bool fcoeff) {
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   int fs = ngh, fe = fs + nc - 1;
   int si, sj, sk, ei, ej, ek;
+  AthenaArray<Real> *t;
+  if (!fcoeff) {
+    t = &(pmy_mg_->GetCurrentData());
+  } else {
+    nvar = pmy_mg_->ncoeff_;
+    t = &(pmy_mg_->GetCurrentCoefficient());
+  }
+  AthenaArray<Real> &dst = *t;
+  AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
 
   if (nb.ni.ox1 == 0) {
     si = fs, ei = fe;
@@ -870,7 +972,7 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(BoundaryQuantity type,
   for (int n = 0; n < nneighbor; ++n) {
     NeighborBlock& nb = neighbor[n];
     if (bdata_[bcolor_].flag[nb.bufid] == BoundaryStatus::completed) continue;
-    if (type == BoundaryQuantity::mggrav_f && nb.snb.level > loc.level
+    if (type == BoundaryQuantity::mg_faceonly && nb.snb.level > loc.level
       && nb.ni.type != NeighborConnect::face) continue;
     if (bdata_[bcolor_].flag[nb.bufid] == BoundaryStatus::waiting) {
       if (nb.snb.rank == Globals::my_rank) {// on the same process
@@ -891,17 +993,19 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(BoundaryQuantity type,
 #endif
     }
     if (nb.snb.level == loc.level) {
-      SetMultigridBoundarySameLevel(bdata_[bcolor_].recv[nb.bufid], nb, folddata);
+      SetMultigridBoundarySameLevel(bdata_[bcolor_].recv[nb.bufid], nb, folddata, false);
     } else if (nb.snb.level < loc.level) {
-      if (type == BoundaryQuantity::mggrav_f)
+      if (type == BoundaryQuantity::mg_faceonly)
         SetMultigridBoundaryFromCoarserFluxCons(bdata_[bcolor_].recv[nb.bufid], nb);
       else
-        SetMultigridBoundaryFromCoarser(bdata_[bcolor_].recv[nb.bufid], nb, folddata);
+        SetMultigridBoundaryFromCoarser(bdata_[bcolor_].recv[nb.bufid], nb,
+                                        folddata, false);
     } else {
-      if (type == BoundaryQuantity::mggrav_f)
+      if (type == BoundaryQuantity::mg_faceonly)
         SetMultigridBoundaryFromFinerFluxCons(bdata_[bcolor_].recv[nb.bufid], nb);
       else
-        SetMultigridBoundaryFromFiner(bdata_[bcolor_].recv[nb.bufid], nb, folddata);
+        SetMultigridBoundaryFromFiner(bdata_[bcolor_].recv[nb.bufid], nb,
+                                      folddata, false);
     }
     bdata_[bcolor_].flag[nb.bufid] = BoundaryStatus::completed; // completed
   }
@@ -911,22 +1015,53 @@ bool MGBoundaryValues::ReceiveMultigridBoundaryBuffers(BoundaryQuantity type,
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata)
+//! \fn void MGBoundaryValues::ReceiveMultigridCoefficientBoundaryBuffers()
+//! \brief receive the boundary data for Multigrid coefficients
+
+void MGBoundaryValues::ReceiveMultigridCoefficientBoundaryBuffers() {
+  for (int n = 0; n < nneighbor; ++n) {
+    NeighborBlock& nb = neighbor[n];
+#ifdef MPI_PARALLEL
+    if (nb.snb.rank != Globals::my_rank)
+      MPI_Wait(&(bdata_[bcolor_].req_recv[nb.bufid]),MPI_STATUS_IGNORE);
+#endif
+    if (nb.snb.level == loc.level)
+      SetMultigridBoundarySameLevel(bdata_[bcolor_].recv[nb.bufid], nb, false, true);
+    else if (nb.snb.level < loc.level)
+      SetMultigridBoundaryFromCoarser(bdata_[bcolor_].recv[nb.bufid], nb, false, true);
+    else
+      SetMultigridBoundaryFromFiner(bdata_[bcolor_].recv[nb.bufid], nb, false, true);
+    bdata_[bcolor_].flag[nb.bufid] = BoundaryStatus::completed; // completed
+  }
+
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata, bool fcoeff)
 //! \brief prolongate boundaries for Multigrid
 
-void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata) {
-  AthenaArray<Real> &dst = pmy_mg_->GetCurrentData();
-  AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
+void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata, bool fcoeff) {
   int nc = pmy_mg_->GetCurrentNumberOfCells();
   int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
   Real time = pmy_mesh_->time;
   int ll = pmy_mg_->nlevel_ - 1 - pmy_mg_->GetCurrentLevel();
   const int cn = 1, cs = cn, ce = cs + nc/2 -1;
   const int flim = ngh + nc;
+  AthenaArray<Real> *t;
+  if (!fcoeff) {
+    t = &(pmy_mg_->GetCurrentData());
+  } else {
+    nvar = pmy_mg_->ncoeff_;
+    t = &(pmy_mg_->GetCurrentCoefficient());
+  }
+  AthenaArray<Real> &dst = *t;
+  AthenaArray<Real> &old = pmy_mg_->GetCurrentOldData();
 
-  ApplyPhysicalBoundaries(1);
+  ApplyPhysicalBoundaries(1, fcoeff);
   if (folddata)
-    ApplyPhysicalBoundaries(2);
+    ApplyPhysicalBoundaries(2, fcoeff);
 
   for (int n = 0; n < nneighbor; ++n) {
     NeighborBlock& nb = neighbor[n];
@@ -1076,354 +1211,61 @@ void MGBoundaryValues::ProlongateMultigridBoundaries(bool folddata) {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(
+//! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(
 //!                                               Real *buf, const NeighborBlock& nb)
 //! \brief Set Multigrid boundary buffers for sending to a block on the coarser level
-//!        using the Mass Conservation formula for gravity
+//!        with flux-conservation for the base class (just call the normal version)
 
-int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,
+int MGBoundaryValues::LoadMultigridBoundaryBufferToCoarserFluxCons(Real *buf,
                                                           const NeighborBlock& nb) {
-  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
-  int nc = pmy_mg_->GetCurrentNumberOfCells();
-  int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
-  int cn = ngh, fs = ngh, cs = cn, fe = fs + nc - 1, ce = cs + nc/2 - 1;
-  int p = 0;
-
-  // take averages of four cells contacting the interface and pack
-  if (nb.ni.ox1 != 0) { // x1 face
-    int fi;
-    if (nb.ni.ox1 < 0) fi = fs;
-    else               fi = fe;
-    for (int v=0; v<nvar; ++v) {
-      for (int fk=fs; fk<=fe; fk+=2) {
-#pragma ivdep
-        for (int fj=fs; fj<=fe; fj+=2)
-          buf[p++] = 0.25*((u(v, fk,   fj,   fi)+u(v, fk,   fj+1, fi))
-                          +(u(v, fk+1, fj,   fi)+u(v, fk+1, fj+1, fi)));
-      }
-    }
-  } else if (nb.ni.ox2 != 0) { // x2 face
-    int fj;
-    if (nb.ni.ox2 < 0) fj = fs;
-    else               fj = fe;
-    for (int v=0; v<nvar; ++v) {
-      for (int fk=fs; fk<=fe; fk+=2) {
-#pragma ivdep
-        for (int fi=fs; fi<=fe; fi+=2)
-          buf[p++] = 0.25*((u(v, fk,   fj, fi)+u(v, fk,   fj, fi+1))
-                          +(u(v, fk+1, fj, fi)+u(v, fk+1, fj, fi+1)));
-      }
-    }
-  } else { // x3 face
-    int fk;
-    if (nb.ni.ox3 < 0) fk = fs;
-    else               fk = fe;
-    for (int v=0; v<nvar; ++v) {
-      for (int fj=fs; fj<=fe; fj+=2) {
-#pragma ivdep
-        for (int fi=fs; fi<=fe; fi+=2)
-          buf[p++] = 0.25*((u(v, fk, fj,   fi)+u(v, fk, fj,   fi+1))
-                          +(u(v, fk, fj+1, fi)+u(v, fk, fj+1, fi+1)));
-      }
-    }
-  }
-
-  return p;
+  return LoadMultigridBoundaryBufferToCoarser(buf, nb, false, false);
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
+//! \fn int MGBoundaryValues::LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
 //!                                                             const NeighborBlock& nb)
 //! \brief Set Multigrid boundary buffers for sending to a block on the finer level
-int MGGravityBoundaryValues::LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
+//!        with flux-conservation for the base class (just call the normal version)
+
+int MGBoundaryValues::LoadMultigridBoundaryBufferToFinerFluxCons(Real *buf,
                                                                const NeighborBlock& nb) {
-  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
-  int nc = pmy_mg_->GetCurrentNumberOfCells();
-  int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
-  int cn = ngh - 1, fs = ngh, fe = fs + nc - 1;
-  int si = (nb.ni.ox1 > 0) ? (fe - cn) : fs;
-  int ei = (nb.ni.ox1 < 0) ? (fs + cn) : fe;
-  int sj = (nb.ni.ox2 > 0) ? (fe - cn) : fs;
-  int ej = (nb.ni.ox2 < 0) ? (fs + cn) : fe;
-  int sk = (nb.ni.ox3 > 0) ? (fe - cn) : fs;
-  int ek = (nb.ni.ox3 < 0) ? (fs + cn) : fe;
-
-  int nred = nc/2 - ngh;
-  if (nb.ni.ox1 == 0) {
-    if (nb.ni.fi1 == 1)   si += nred;
-    else                  ei -= nred;
-  }
-  if (nb.ni.ox2 == 0) {
-    if (nb.ni.ox1 != 0) {
-      if (nb.ni.fi1 == 1) sj += nred;
-      else                ej -= nred;
-    } else {
-      if (nb.ni.fi2 == 1) sj += nred;
-      else                ej -= nred;
-    }
-  }
-  if (nb.ni.ox3 == 0) {
-    if (nb.ni.ox1 != 0 && nb.ni.ox2 != 0) {
-      if (nb.ni.fi1 == 1) sk += nred;
-      else                ek -= nred;
-    } else {
-      if (nb.ni.fi2 == 1) sk += nred;
-      else                ek -= nred;
-    }
-  }
-
-  int p = 0;
-  BufferUtility::PackData(u, buf, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
-
-  return p;
+  return LoadMultigridBoundaryBufferToFiner(buf, nb, false, false);
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravityBoundaryValues::SetMultigridBoundaryFromCoarserFluxCons(
+//! \fn void MGBoundaryValues::SetMultigridBoundaryFromCoarserFluxCons(
 //!                                      const Real *buf, const NeighborBlock& nb)
-//! \brief Set hydro boundary received from a block on the same level
+//! \brief Set Multigrid boundary received from a block from the coarser level
+//!        with flux-conservation for the base class (just call the normal version)
 
-void MGGravityBoundaryValues::SetMultigridBoundaryFromCoarserFluxCons(const Real *buf,
+void MGBoundaryValues::SetMultigridBoundaryFromCoarserFluxCons(const Real *buf,
                                                              const NeighborBlock& nb) {
-  int nc = pmy_mg_->GetCurrentNumberOfCells();
-  int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
-  int si, sj, sk, ei, ej, ek;
-  int cng = 1;
-  int cs = cng, ce = cng + nc/2 -1;
-
-  if (nb.ni.ox1 == 0) {
-    si = cs, ei = ce;
-    if ((loc.lx1 & 1LL) == 0LL) ei += cng;
-    else                        si -= cng;
-  } else if (nb.ni.ox1 > 0)  {
-    si = ce + 1,   ei = ce + cng;
-  } else {
-    si = cs - cng, ei = cs - 1;
-  }
-  if (nb.ni.ox2 == 0) {
-    sj = cs, ej = ce;
-    if ((loc.lx2 & 1LL) == 0LL) ej += cng;
-    else                        sj -= cng;
-  } else if (nb.ni.ox2 > 0) {
-    sj = ce + 1,   ej = ce + cng;
-  } else {
-    sj = cs - cng, ej = cs - 1;
-  }
-  if (nb.ni.ox3 == 0) {
-    sk = cs, ek = ce;
-    if ((loc.lx3 & 1LL) == 0LL) ek += cng;
-    else                        sk -= cng;
-  } else if (nb.ni.ox3 > 0)  {
-    sk = ce + 1,   ek = ce + cng;
-  } else {
-    sk = cs - cng, ek = cs - 1;
-  }
-
-  int p = 0;
-  BufferUtility::UnpackData(buf, cbuf_, 0, nvar-1, si, ei, sj, ej, sk, ek, p);
-
+  SetMultigridBoundaryFromCoarser(buf, nb, false, false);
   return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravityBoundaryValues::SetMultigridBoundaryFromFinerFluxCons(
+//! \fn void MGBoundaryValues::SetMultigridBoundaryFromFinerFluxCons(
 //!                                      const Real *buf, const NeighborBlock& nb)
+//! \brief Set Multigrid boundary received from a block from the finer level
+//!        with flux-conservation for the base class (just call the normal version)
 
-void MGGravityBoundaryValues::SetMultigridBoundaryFromFinerFluxCons(const Real *buf,
+void MGBoundaryValues::SetMultigridBoundaryFromFinerFluxCons(const Real *buf,
                                                              const NeighborBlock& nb) {
-  AthenaArray<Real> &dst = pmy_mg_->GetCurrentData();
-  int nc = pmy_mg_->GetCurrentNumberOfCells();
-  int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
-  int fs = ngh, fe = fs + nc - 1;
-  int si, sj, sk, ei, ej, ek;
-  int oi = 0, oj = 0, ok = 0;
-
-  // could reuse the index calculation for normal boundaries
-  // but in general this depends on physics
-  if (nb.ni.ox1 == 0) {
-    si = fs, ei = fe;
-    if (nb.ni.fi1 == 1)   si += nc/2;
-    else                  ei -= nc/2;
-  } else if (nb.ni.ox1 > 0) {
-    si = fe + 1,   ei = fe + ngh, oi = -1;
-  } else {
-    si = fs - ngh, ei = fs - 1,   oi = 1;
-  }
-  if (nb.ni.ox2 == 0) {
-    sj = fs, ej = fe;
-    if (nb.ni.ox1 != 0) {
-      if (nb.ni.fi1 == 1) sj += nc/2;
-      else                ej -= nc/2;
-    } else {
-      if (nb.ni.fi2 == 1) sj += nc/2;
-      else                ej -= nc/2;
-    }
-  } else if (nb.ni.ox2 > 0) {
-    sj = fe + 1,   ej = fe + ngh, oj = -1;
-  } else {
-    sj = fs - ngh, ej = fs - 1,   oj = 1;
-  }
-  if (nb.ni.ox3 == 0) {
-    sk = fs, ek = fe;
-    if (nb.ni.ox1 != 0 && nb.ni.ox2 != 0) {
-      if (nb.ni.fi1 == 1) sk += nc/2;
-      else                ek -= nc/2;
-    } else {
-      if (nb.ni.fi2 == 1) sk += nc/2;
-      else                ek -= nc/2;
-    }
-  } else if (nb.ni.ox3 > 0) {
-    sk = fe + 1,   ek = fe + ngh, ok = -1;
-  } else {
-    sk = fs - ngh, ek = fs - 1,   ok = 1;
-  }
-
-  constexpr Real ot = 1.0/3.0;
-  int p = 0;
-
-  // correct the ghost values using the mass conservation formula
-  for (int v=0; v<nvar; ++v) {
-    for (int k=sk; k<=ek; ++k) {
-      for (int j=sj; j<=ej; ++j) {
-        for (int i=si; i<=ei; ++i) {
-          dst(v,k,j,i) = ot * (4.0*buf[p++] - dst(v,k+ok,j+oj,i+oi));
-        }
-      }
-    }
-  }
+  SetMultigridBoundaryFromFiner(buf, nb, false, false);
   return;
 }
-
 
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons()
-//! \brief prolongate boundaries for Multigrid
+//! \brief prolongate Multigrid boundaries with the flux-conservation formula
+//!        for the base class (just call the normal version)
 
 void MGBoundaryValues::ProlongateMultigridBoundariesFluxCons() {
-  const AthenaArray<Real> &u = pmy_mg_->GetCurrentData();
-  AthenaArray<Real> &dst = pmy_mg_->GetCurrentData();
-  int nc = pmy_mg_->GetCurrentNumberOfCells();
-  int ngh = pmy_mg_->ngh_, nvar = pmy_mg_->nvar_;
-  Real time = pmy_mesh_->time;
-  int lev = pmy_mg_->GetCurrentLevel();
-  int ll = pmy_mg_->nlevel_ - 1 - lev;
-  MGCoordinates &coord = pmy_mg_->ccoord_[lev];
-  constexpr Real ot = 1.0 / 3.0;
-  int cn = 1, cs = cn, ce = cs + nc/2 -1;
-  int fs = ngh, fe = fs + nc - 1;
-  int flim = ngh + nc;
-
-  // x1face
-  for (int ox1=-1; ox1<=1; ox1+=2) {
-    if (nblevel[1][1][ox1+1] == loc.level - 1) {
-      int i, fi, fig;
-      if (ox1 > 0) i = ce + 1, fi = fe, fig = fe + 1;
-      else         i = cs - 1, fi = fs, fig = fs - 1;
-      if (apply_bndry_fn_[BoundaryFace::inner_x2])
-        DispatchBoundaryFunction(BoundaryFace::inner_x2, cbuf_, time, nvar,
-                                 i, i, cs, ce, cs, ce, ngh, coord);
-      if (apply_bndry_fn_[BoundaryFace::outer_x2])
-        DispatchBoundaryFunction(BoundaryFace::outer_x2, cbuf_, time, nvar,
-                                 i, i, cs, ce, cs, ce, ngh, coord);
-      if (apply_bndry_fn_[BoundaryFace::inner_x3])
-        DispatchBoundaryFunction(BoundaryFace::inner_x3, cbuf_, time, nvar,
-                                 i, i, cs, ce, cs, ce, ngh, coord);
-      if (apply_bndry_fn_[BoundaryFace::outer_x3])
-        DispatchBoundaryFunction(BoundaryFace::outer_x3, cbuf_, time, nvar,
-                                 i, i, cs, ce, cs, ce, ngh, coord);
-      for (int v=0; v<nvar; ++v) {
-        for(int k=cs; k<=ce; ++k) {
-          int fk = (k - cs) * 2 + fs;
-          for(int j=cs; j<=ce; ++j) {
-            int fj = (j - cs) * 2 + fs;
-            Real ccval = cbuf_(v, k, j, i);
-            Real gx2c = 0.125*(cbuf_(v, k, j+1, i) -  cbuf_(v, k, j-1, i));
-            Real gx3c = 0.125*(cbuf_(v, k+1, j, i) -  cbuf_(v, k-1, j, i));
-            dst(v,fk  ,fj  ,fig) = ot*(2.0*(ccval - gx2c - gx3c) + u(v,fk  ,fj  ,fi));
-            dst(v,fk  ,fj+1,fig) = ot*(2.0*(ccval + gx2c - gx3c) + u(v,fk  ,fj+1,fi));
-            dst(v,fk+1,fj  ,fig) = ot*(2.0*(ccval - gx2c + gx3c) + u(v,fk+1,fj  ,fi));
-            dst(v,fk+1,fj+1,fig) = ot*(2.0*(ccval + gx2c + gx3c) + u(v,fk+1,fj+1,fi));
-          }
-        }
-      }
-    }
-  }
-
-  // x2face
-  for (int ox2=-1; ox2<=1; ox2+=2) {
-    if (nblevel[1][ox2+1][1] == loc.level - 1) {
-      int j, fj, fjg;
-      if (ox2 > 0) j = ce + 1, fj = fe, fjg = fe + 1;
-      else         j = cs - 1, fj = fs, fjg = fs - 1;
-      if (apply_bndry_fn_[BoundaryFace::inner_x1])
-        DispatchBoundaryFunction(BoundaryFace::inner_x1, cbuf_, time, nvar,
-                                 cs, ce, j, j, cs, ce, ngh, coord);
-      if (apply_bndry_fn_[BoundaryFace::outer_x1])
-        DispatchBoundaryFunction(BoundaryFace::outer_x1, cbuf_, time, nvar,
-                                 cs, ce, j, j, cs, ce, ngh, coord);
-      if (apply_bndry_fn_[BoundaryFace::inner_x3])
-        DispatchBoundaryFunction(BoundaryFace::inner_x3, cbuf_, time, nvar,
-                                 cs, ce, j, j, cs, ce, ngh, coord);
-      if (apply_bndry_fn_[BoundaryFace::outer_x3])
-        DispatchBoundaryFunction(BoundaryFace::outer_x3, cbuf_, time, nvar,
-                                 cs, ce, j, j, cs, ce, ngh, coord);
-      for (int v=0; v<nvar; ++v) {
-        for(int k=cs; k<=ce; ++k) {
-          int fk = (k - cs) * 2 + fs;
-          for(int i=cs; i<=ce; ++i) {
-            int fi = (i - cs) * 2 + fs;
-            Real ccval = cbuf_(v, k, j, i);
-            Real gx1c = 0.125*(cbuf_(v, k, j, i+1) -  cbuf_(v, k, j, i-1));
-            Real gx3c = 0.125*(cbuf_(v, k+1, j, i) -  cbuf_(v, k-1, j, i));
-            dst(v,fk  ,fjg,fi  ) = ot*(2.0*(ccval - gx1c - gx3c) + u(v,fk,  fj,fi  ));
-            dst(v,fk  ,fjg,fi+1) = ot*(2.0*(ccval + gx1c - gx3c) + u(v,fk,  fj,fi+1));
-            dst(v,fk+1,fjg,fi  ) = ot*(2.0*(ccval - gx1c + gx3c) + u(v,fk+1,fj,fi  ));
-            dst(v,fk+1,fjg,fi+1) = ot*(2.0*(ccval + gx1c + gx3c) + u(v,fk+1,fj,fi+1));
-          }
-        }
-      }
-    }
-  }
-
-  // x3face
-  for (int ox3=-1; ox3<=1; ox3+=2) {
-    if (nblevel[ox3+1][1][1] == loc.level - 1) {
-      int k, fk, fkg;
-      if (ox3 > 0) k = ce + 1, fk = fe, fkg = fe + 1;
-      else         k = cs - 1, fk = fs, fkg = fs - 1;
-      if (apply_bndry_fn_[BoundaryFace::inner_x1])
-        DispatchBoundaryFunction(BoundaryFace::inner_x1, cbuf_, time, nvar,
-                                 cs, ce, cs, ce, k, k, ngh, coord);
-      if (apply_bndry_fn_[BoundaryFace::outer_x1])
-        DispatchBoundaryFunction(BoundaryFace::outer_x1, cbuf_, time, nvar,
-                                 cs, ce, cs, ce, k, k, ngh, coord);
-      if (apply_bndry_fn_[BoundaryFace::inner_x2])
-        DispatchBoundaryFunction(BoundaryFace::inner_x2, cbuf_, time, nvar,
-                                 cs, ce, cs, ce, k, k, ngh, coord);
-      if (apply_bndry_fn_[BoundaryFace::outer_x2])
-        DispatchBoundaryFunction(BoundaryFace::outer_x2, cbuf_, time, nvar,
-                                 cs, ce, cs, ce, k, k, ngh, coord);
-      for (int v=0; v<nvar; ++v) {
-        for(int j=cs; j<=ce; ++j) {
-          int fj = (j - cs) * 2 + fs;
-          for(int i=cs; i<=ce; ++i) {
-            int fi = (i - cs) * 2 + fs;
-            Real ccval = cbuf_(v, k, j, i);
-            Real gx1c = 0.125*(cbuf_(v, k, j, i+1) -  cbuf_(v, k, j, i-1));
-            Real gx2c = 0.125*(cbuf_(v, k, j+1, i) -  cbuf_(v, k, j-1, i));
-            dst(v,fkg,fj  ,fi  ) = ot*(2.0*(ccval - gx1c - gx2c) + u(v,fk,fj  ,fi  ));
-            dst(v,fkg,fj  ,fi+1) = ot*(2.0*(ccval + gx1c - gx2c) + u(v,fk,fj  ,fi+1));
-            dst(v,fkg,fj+1,fi  ) = ot*(2.0*(ccval - gx1c + gx2c) + u(v,fk,fj+1,fi  ));
-            dst(v,fkg,fj+1,fi+1) = ot*(2.0*(ccval + gx1c + gx2c) + u(v,fk,fj+1,fi+1));
-          }
-        }
-      }
-    }
-  }
-
+  ProlongateMultigridBoundaries(false, false);
   return;
 }

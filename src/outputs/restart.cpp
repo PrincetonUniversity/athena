@@ -23,6 +23,7 @@
 #include "../athena_arrays.hpp"
 #include "../chem_rad/chem_rad.hpp"
 #include "../cr/cr.hpp"
+#include "../crdiffusion/crdiffusion.hpp"
 #include "../field/field.hpp"
 #include "../globals.hpp"
 #include "../hydro/hydro.hpp"
@@ -188,6 +189,11 @@ void RestartOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool force_wr
     if (CR_ENABLED) {
       std::memcpy(pdata,pmb->pcr->u_cr.data(),pmb->pcr->u_cr.GetSizeInBytes());
       pdata += pmb->pcr->u_cr.GetSizeInBytes();
+    }
+
+    if (CRDIFFUSION_ENABLED) {
+      std::memcpy(pdata,pmb->pcrdiff->ecr.data(),pmb->pcrdiff->ecr.GetSizeInBytes());
+      pdata += pmb->pcrdiff->ecr.GetSizeInBytes();
     }
 
     // (conserved variable) Passive scalars:

@@ -70,6 +70,9 @@
 // include cosmic ray transport? default=0 (false)
 #define CR_ENABLED @CR_ENABLED@
 
+// include cosmic ray diffusion? default=0 (false)
+#define CRDIFFUSION_ENABLED @CRDIFFUSION_ENABLED@
+
 // enable special or general relativity? default=0 (false)
 #define RELATIVISTIC_DYNAMICS @RELATIVISTIC_DYNAMICS@
 

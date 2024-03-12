@@ -48,14 +48,11 @@ class Gravity {
 
   void SaveFaceBoundaries();
   void RestoreFaceBoundaries();
-  void ExpandPhysicalBoundaries();
 
   friend class MGGravityDriver;
 
  private:
   MGGravity *pmg;
-  bool gravity_tensor_momentum_;
-  bool gravity_tensor_energy_;
   AthenaArray<Real> fbuf_[6];
 };
 

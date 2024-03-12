@@ -16,11 +16,7 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../eos/eos.hpp"
-#include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
-#include "../hydro/hydro.hpp"
-#include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "grav_task_list.hpp"
@@ -120,14 +116,14 @@ TaskStatus GravityBoundaryTaskList::SetGravityBoundary(MeshBlock *pmb, int stage
 
 TaskStatus GravityBoundaryTaskList::ProlongateGravityBoundary(MeshBlock *pmb,
                                                               int stage) {
-  pmb->pbval->ProlongateGravityBoundaries(pmb->pmy_mesh->time, 0.0);
+  pmb->pbval->ProlongateBoundariesPostMG(&(pmb->pgrav->gbvar));
   return TaskStatus::success;
 }
 
 TaskStatus GravityBoundaryTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   if (pmb->pgrav->fill_ghost) {
     pmb->pgrav->RestoreFaceBoundaries();
-    pmb->pgrav->ExpandPhysicalBoundaries();
+    pmb->pgrav->gbvar.ExpandPhysicalBoundaries();
   }
   return TaskStatus::next;
 }

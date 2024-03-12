@@ -514,8 +514,8 @@ void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct,
   if (lev >= 0) {
     oid = noct[lev];
     oct[lev][oid].loc = loc_;
-    octmap[lev][loc_] = oid;
     oct[lev][oid].fleaf = true;
+    octmap[lev][loc_] = oid;
     noct[lev]++;
   }
   for (int n=0; n<nleaf_; n++) {
