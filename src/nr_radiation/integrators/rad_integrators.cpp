@@ -390,11 +390,11 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
   NRRadiation *prad=pmb->pnrrad;
   Coordinates *pco=pmb->pcoord;
 
-  Real& prat = prad->prat;
+  const Real& prat = prad->prat;
   Real invcrat = 1.0/prad->crat;
 
-  int &nang =prad->nang;
-  int &nfreq=prad->nfreq;
+  const int &nang =prad->nang;
+  const int &nfreq=prad->nfreq;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;

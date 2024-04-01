@@ -47,8 +47,8 @@ void RadIntegrator::LabToCom(const Real vx, const Real vy, const Real vz,
                           Real *ir_lab, AthenaArray<Real> &ir_cm) {
   //Real& prat = pmy_rad->prat;
   Real invcrat = 1.0/pmy_rad->crat;
-  int& nang=pmy_rad->nang;
-  int& nfreq=pmy_rad->nfreq;
+  const int& nang=pmy_rad->nang;
+  const int& nfreq=pmy_rad->nfreq;
 
   // square of Lorentz factor
   Real lorzsq = 1.0/(1.0 - (vx * vx + vy * vy + vz * vz) * invcrat * invcrat);
@@ -74,8 +74,8 @@ void RadIntegrator::ComToLab(const Real vx, const Real vy, const Real vz,
                           Real *mux, Real *muy, Real *muz,
                           AthenaArray<Real> &ir_cm, Real *ir_lab) {
   Real invcrat = 1.0/pmy_rad->crat;
-  int& nang=pmy_rad->nang;
-  int& nfreq=pmy_rad->nfreq;
+  const int& nang=pmy_rad->nang;
+  const int& nfreq=pmy_rad->nfreq;
 
   // square of Lorentz factor
   Real lorzsq = 1.0/(1.0 - (vx * vx + vy * vy + vz * vz) * invcrat * invcrat);
@@ -101,8 +101,8 @@ void RadIntegrator::ComToLabMultiGroup(const Real vx, const Real vy, const Real 
                           Real *mux, Real *muy, Real *muz,
                           AthenaArray<Real> &ir_cm, Real *ir_lab) {
   Real invcrat = 1.0/pmy_rad->crat;
-  int& nang=pmy_rad->nang;
-  int& nfreq=pmy_rad->nfreq;
+  const int& nang=pmy_rad->nang;
+  const int& nfreq=pmy_rad->nfreq;
   AthenaArray<Real> split_ratio;
   AthenaArray<int> map_start, map_end;
 
