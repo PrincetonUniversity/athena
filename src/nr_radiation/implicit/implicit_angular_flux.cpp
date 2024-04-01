@@ -53,7 +53,7 @@ void RadIntegrator::ImplicitAngularFluxesCoef(const Real wght) {
   Coordinates *pco=pmb->pcoord;
   std::stringstream msg;
 
-  int &nzeta = prad->nzeta;
+  const int& nzeta = prad->nzeta;
   //int &npsi = prad->npsi;
   AthenaArray<Real> &area_zeta = zeta_area_, &ang_vol = ang_vol_;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
@@ -105,7 +105,7 @@ void RadIntegrator::ImplicitPsiFluxCoef(int k, int j, int i, int n_zeta, Real wg
   NRRadiation *prad=pmy_rad;
   Coordinates *pco=prad->pmy_block->pcoord;
   AthenaArray<Real> &area_psi = psi_area_, &ang_vol = ang_vol_, &zeta_area = zeta_area_;
-  int &npsi = prad->npsi;
+  const int& npsi = prad->npsi;
   // the equation to solve
   //(1+zeta_coef0+zeta_coef1) I + Div F_psi = 0
   pco->GetGeometryPsi(prad,k,j,i,n_zeta,g_psi_);
@@ -147,10 +147,10 @@ void RadIntegrator::ImplicitAngularFluxes(const int k, const int j, const int i,
   NRRadiation *prad=pmy_rad;
   std::stringstream msg;
 
-  int &nzeta = prad->nzeta;
-  // int &npsi = prad->npsi;
-  int &nang = prad->nang;
-  int &nfreq = prad->nfreq;
+  const int& nzeta = prad->nzeta;
+  // const int& npsi = prad->npsi;
+  const int& nang = prad->nang;
+  const int& nfreq = prad->nfreq;
 
   // AthenaArray<Real> &area_zeta = zeta_area_, &ang_vol = ang_vol_;
 
@@ -176,10 +176,10 @@ void RadIntegrator::ImplicitAngularFluxes(const int k, const int j, const int i,
 void RadIntegrator::ImplicitPsiFlux(const int k, const int j, const int i,
                       int ifr, int n_zeta, AthenaArray<Real> &ir_ini) {
   NRRadiation *prad=pmy_rad;
-  int &npsi = prad->npsi;
+  const int& npsi = prad->npsi;
   // m=0
   int ang_num = n_zeta*2*npsi;
-  int &nang = prad->nang;
+  const int& nang = prad->nang;
 
   Real *psi_l = &(imp_ang_psi_l_(k,j,i,ang_num));
   Real *psi_r = &(imp_ang_psi_r_(k,j,i,ang_num));

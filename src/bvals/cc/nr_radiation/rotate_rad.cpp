@@ -174,9 +174,9 @@ void CopyIntensity5(Real *ir, int n_ang, int direction) {
 void RadBoundaryVariable::RotateHPi_InnerX2(
     Real time, Real dt, int il, int iu, int jl, int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -199,9 +199,9 @@ void RadBoundaryVariable::RotateHPi_InnerX2(
 
 void RadBoundaryVariable::RotateHPi_OuterX2(
     Real time, Real dt, int il, int iu, int ju, int kl, int ku, int ngh) {
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang =pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -228,9 +228,9 @@ void RadBoundaryVariable::RotateHPi_OuterX2(
 void RadBoundaryVariable::RotateHPi_InnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
   // copy radiation variables into ghost zones
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq =pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq =pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -257,9 +257,9 @@ void RadBoundaryVariable::RotateHPi_InnerX3(
 void RadBoundaryVariable::RotateHPi_OuterX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
   // copy radiation variables into ghost zones
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -287,9 +287,9 @@ void RadBoundaryVariable::RotateHPi_OuterX3(
 void RadBoundaryVariable::RotatePi_InnerX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int kl, int ngh) {
   // copy radiation variables into ghost zones
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -316,9 +316,9 @@ void RadBoundaryVariable::RotatePi_InnerX3(
 void RadBoundaryVariable::RotatePi_OuterX3(
     Real time, Real dt, int il, int iu, int jl, int ju, int ku, int ngh) {
   // copy radiation variables into ghost zones
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {

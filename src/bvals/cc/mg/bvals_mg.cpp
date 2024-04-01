@@ -160,7 +160,7 @@ void MGBoundaryValues::DispatchBoundaryFunction(BoundaryFace face, AthenaArray<R
   if (!fcoeff) {
     AthenaArray<Real> &mpcoeff = pmy_mg_->pmy_driver_->mpcoeff_[0];
     AthenaArray<Real> &mpo = pmy_mg_->pmy_driver_->mpo_;
-    int &mporder = pmy_mg_->pmy_driver_->mporder_;
+    const int& mporder = pmy_mg_->pmy_driver_->mporder_;
     switch (face) {
       case BoundaryFace::inner_x1:
         switch (block_bcs[BoundaryFace::inner_x1]) {

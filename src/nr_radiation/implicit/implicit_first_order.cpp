@@ -59,14 +59,6 @@ void RadIntegrator::FirstOrderFluxDivergenceCoef(const Real wght) {
                  &x2area_p1 = x2face_area_p1_, &x3area = x3face_area_,
                  &x3area_p1 = x3face_area_p1_, &vol = cell_volume_;
 
-  // AthenaArray<Real> &x1flux=prad->flux[X1DIR];
-  // AthenaArray<Real> &x2flux=prad->flux[X2DIR];
-  // AthenaArray<Real> &x3flux=prad->flux[X3DIR];
-
-  // AthenaArray<Real> &area_zeta = zeta_area_, &area_psi = psi_area_,
-  //                &ang_vol = ang_vol_;
-  // int &nzeta = prad->nzeta, &npsi = prad->npsi;
-
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {
       pco->CenterWidth1(k,j,is-1,ie+1,dxw1_);

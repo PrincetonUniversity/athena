@@ -36,8 +36,8 @@
 void RadBoundaryVariable::OutflowInnerX1(Real time, Real dt, int il, int jl, int ju,
                                          int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones,
-  int &nang = pmy_block_->pnrrad->nang; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nang = pmy_block_->pnrrad->nang; // angles per octant
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -62,8 +62,8 @@ void RadBoundaryVariable::OutflowInnerX1(Real time, Real dt, int il, int jl, int
 void RadBoundaryVariable::OutflowOuterX1(Real time, Real dt, int iu, int jl, int ju,
                                          int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones,
-  int &nang = pmy_block_->pnrrad->nang; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nang = pmy_block_->pnrrad->nang; // angles per octant
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -89,7 +89,7 @@ void RadBoundaryVariable::OutflowInnerX2(Real time, Real dt, int il, int iu, int
                                          int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones,
   int nang = pmy_block_->pnrrad->nang;
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -114,8 +114,8 @@ void RadBoundaryVariable::OutflowInnerX2(Real time, Real dt, int il, int iu, int
 void RadBoundaryVariable::OutflowOuterX2(Real time, Real dt, int il, int iu, int ju,
                                          int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones,
-  int &nang = pmy_block_->pnrrad->nang; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nang = pmy_block_->pnrrad->nang; // angles per octant
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -141,8 +141,8 @@ void RadBoundaryVariable::OutflowInnerX3(Real time, Real dt, int il, int iu, int
                                          int ju, int kl, int ngh) {
   // copy radiation variables into ghost zones,
 
-  int &nang = pmy_block_->pnrrad->nang;
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nang = pmy_block_->pnrrad->nang;
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -168,8 +168,8 @@ void RadBoundaryVariable::OutflowOuterX3(Real time, Real dt, int il, int iu, int
                                          int ju, int ku, int ngh) {
   // copy radiation variables into ghost zones,
 
-  int &nang = pmy_block_->pnrrad->nang; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nang = pmy_block_->pnrrad->nang; // angles per octant
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {

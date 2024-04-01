@@ -33,7 +33,7 @@ class CellCenteredCellCenteredBoundaryVariable;
 
 void BoundaryValues::ProlongateBoundariesPostMG(CellCenteredBoundaryVariable* pbvar) {
   MeshBlock *pmb = pmy_block_;
-  int &mylevel = loc.level;
+  const int &mylevel = loc.level;
 
   // For each finer neighbor, to prolongate a boundary we need to fill one more cell
   // surrounding the boundary zone to calculate the slopes ("ghost-ghost zone"). 3x steps:

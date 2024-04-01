@@ -136,7 +136,7 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
-  int &xgh = pbval_->xgh_;
+  const int& xgh = pbval_->xgh_;
   si = pmb->is-NGHOST; ei = pmb->is-1;
   sk = pmb->ks;        ek = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1)  ek += NGHOST, sk -= NGHOST;
@@ -215,9 +215,9 @@ void CellCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
   OrbitalAdvection *porb = pmb->porb;
   AthenaArray<Real> &var = *var_cc;
   AthenaArray<Real> &pflux = pbval_->pflux_;
-  int &xgh = pbval_->xgh_;
-  int &xorder = pbval_->xorder_;
-  int nb_offset[2]{0, 4};
+  const int& xgh = pbval_->xgh_;
+  const int& xorder = pbval_->xorder_;
+  //int nb_offset[2]{0, 4};
   int ib[2]{pmb->is - NGHOST, pmb->ie + 1};
   int js = pmb->js, je = pmb->je;
   int kl = pmb->ks, ku = pmb->ke;

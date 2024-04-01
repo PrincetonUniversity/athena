@@ -273,8 +273,8 @@ void RadIntegrator::AddMultiGroupCompt(MeshBlock *pmb, const Real dt,
 
   Real *lab_ir;
 
-  int &nang =prad->nang;
-  int &nfreq=prad->nfreq;
+  const int& nang =prad->nang;
+  const int& nfreq=prad->nfreq;
 
   // only apply for multi-grou case
   if ((nfreq > 1) && (compton_flag_ > 0) && (split_compton_ > 0)) {
@@ -427,8 +427,8 @@ void RadIntegrator::GetHydroSourceTerms(MeshBlock *pmb,
   Real invredc = 1.0/prad->reduced_c;
   Real invredfactor = invredc/invcrat;
 
-  int &nang =prad->nang;
-  int &nfreq=prad->nfreq;
+  const int& nang =prad->nang;
+  const int& nfreq=prad->nfreq;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;

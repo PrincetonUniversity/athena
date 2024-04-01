@@ -87,7 +87,7 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
 
   std::int64_t nrootmesh, noffset;
   std::int64_t &lx1 = pmy_block->loc.lx1;
-  int &ll = pmy_block->loc.level;
+  const int &ll = pmy_block->loc.level;
 
   //--- X1-DIRECTION: initialize coordinates and spacing of cell FACES (x1f,dx1f)
 
@@ -817,7 +817,7 @@ void Coordinates::AngularVol(NRRadiation *prad, AthenaArray<Real> &vol) {
 
 void Coordinates::GetGeometryZeta(NRRadiation *prad, const int k, const int j,
                                   const int i, AthenaArray<Real> &g_zeta) {
-  int &nzeta = prad->nzeta;
+  const int& nzeta = prad->nzeta;
   for (int n=0; n<nzeta*2+1; ++n) {
     g_zeta(n) = 1.0;
   }
@@ -826,7 +826,7 @@ void Coordinates::GetGeometryZeta(NRRadiation *prad, const int k, const int j,
 void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
                                  const int i, const int n_zeta,
                                  AthenaArray<Real> &g_psi) {
-  int &npsi = prad->npsi;
+  const int& npsi = prad->npsi;
   for (int n=0; n<2*npsi+1; ++n) {
     g_psi(n) = 1.0;
   }
@@ -835,7 +835,7 @@ void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
 // function overwirte in case nzeta = 0
 void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
                                  const int i, AthenaArray<Real> &g_psi) {
-  int &npsi = prad->npsi;
+  const int& npsi = prad->npsi;
   for (int n=0; n<2*npsi+1; ++n) {
     g_psi(n) = 1.0;
   }

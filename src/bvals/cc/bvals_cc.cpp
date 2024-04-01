@@ -86,7 +86,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     int nc2 = pmb->ncells2;
     int nc3 = pmb->ncells3;
     int nx3 = pmb->block_size.nx3;
-    int &xgh = pbval_->xgh_;
+    const int& xgh = pbval_->xgh_;
     for (int upper=0; upper<2; upper++) {
       if (pbval_->is_shear[upper]) {
         shear_cc_[upper].NewAthenaArray(nu_+1, nc3, NGHOST, nc2+2*xgh+1);
@@ -196,7 +196,7 @@ CellCenteredBoundaryVariable::CellCenteredBoundaryVariable(
     int nc2 = pmb->ncells2;
     int nc3 = pmb->ncells3;
     int nx3 = pmb->block_size.nx3;
-    int &xgh = pbval_->xgh_;
+    const int& xgh = pbval_->xgh_;
     for (int upper=0; upper<2; upper++) {
       if (pbval_->is_shear[upper]) {
         shear_cc_[upper].NewAthenaArray(nc3, NGHOST, nc2+2*xgh+1, nu_+1);
@@ -614,7 +614,7 @@ void CellCenteredBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
 void CellCenteredBoundaryVariable::SetupPersistentMPI() {
 #ifdef MPI_PARALLEL
   MeshBlock* pmb = pmy_block_;
-  int &mylevel = pmb->loc.level;
+  const int& mylevel = pmb->loc.level;
 
   int f2 = pmy_mesh_->f2, f3 = pmy_mesh_->f3;
   int cng, cng1, cng2, cng3;
@@ -1120,4 +1120,3 @@ void CellCenteredBoundaryVariable::ExpandPhysicalBoundaries() {
 
   return;
 }
-

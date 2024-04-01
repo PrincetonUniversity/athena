@@ -46,7 +46,7 @@ inline void DefaultFrequency(NRRadiation *prad) {
 // The default opacity function.
 // Do nothing. Keep the opacity as the initial value
 inline void DefaultEmission(NRRadiation *prad, Real tgas) {
-  int &nfreq = prad->nfreq;
+  const int &nfreq = prad->nfreq;
   if (nfreq > 1) {
     for(int ifr=0; ifr<nfreq-1; ++ifr) {
       prad->emission_spec(ifr) =

@@ -717,7 +717,7 @@ void SphericalPolar::ConvertAngle(MeshBlock *pmb, const int nang,
 // this needs to go throug all the nzeta
 void SphericalPolar::GetGeometryZeta(NRRadiation *prad, const int k, const int j,
                                      const int i, AthenaArray<Real> &g_zeta) {
-  int &nzeta = prad->nzeta;
+  const int& nzeta = prad->nzeta;
   Real radius = x1v(i);
   for(int n=0; n<nzeta*2+1; ++n) {
     g_zeta(n) = 1./radius;
@@ -729,11 +729,11 @@ void SphericalPolar::GetGeometryZeta(NRRadiation *prad, const int k, const int j
 void SphericalPolar::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
                                     const int i, const int n_zeta,
                                     AthenaArray<Real> &g_psi) {
-  int &npsi = prad->npsi;
+  const int &npsi = prad->npsi;
   Real radius = x1v(i);
   Real sinzeta_v = 1.0 - prad->coszeta_v(n_zeta) * prad->coszeta_v(n_zeta);
   sinzeta_v = std::sqrt(sinzeta_v);
-  Real &cottheta = prad->cot_theta(j);
+  const Real &cottheta = prad->cot_theta(j);
   if (npsi == 1) {
     for(int n=0; n<2*npsi+1; ++n) {
       g_psi(n) = 0.0;
@@ -748,10 +748,10 @@ void SphericalPolar::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
 
 void SphericalPolar::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
                         const int i, AthenaArray<Real> &g_psi) {
-  int &npsi = prad->npsi;
+  const int& npsi = prad->npsi;
   Real radius = x1v(i);
 
-  Real &cottheta = prad->cot_theta(j);
+  const Real &cottheta = prad->cot_theta(j);
   if (npsi == 1) {
     for(int n=0; n<2*npsi+1; ++n) {
       g_psi(n) = 0.0;
