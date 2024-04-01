@@ -315,8 +315,8 @@ void Cylindrical::AddCoordTermsDivergence(
         u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
 
         // src_2 = -< M_{phi r} ><1/r>
-        Real& x_i   = x1f(i);
-        Real& x_ip1 = x1f(i+1);
+        const Real& x_i   = x1f(i);
+        const Real& x_ip1 = x1f(i+1);
         // Ju PhD thesis equation 2.14
         u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[X1DIR](IM2,k,j,i)
                                              + x_ip1*flux[X1DIR](IM2,k,j,i+1));
@@ -347,8 +347,8 @@ void Cylindrical::AddCoordTermsDivergence_STS(
           u(IM1,k,j,i) += dt*coord_src1_i_(i)*m_pp;
 
           // src_2 = -< M_{phi r} ><1/r>
-          Real& x_i   = x1f(i);
-          Real& x_ip1 = x1f(i+1);
+          const Real& x_i   = x1f(i);
+          const Real& x_ip1 = x1f(i+1);
           u(IM2,k,j,i) -= dt*coord_src2_i_(i)*(x_i*flux[X1DIR](IM2,k,j,i)
                                                + x_ip1*flux[X1DIR](IM2,k,j,i+1));
 
@@ -430,7 +430,7 @@ void Cylindrical::ConvertAngle(MeshBlock *pmb, const int nang,
 
     for (int k=0; k<n3z; ++k) {
       for (int j=0; j<n2z; ++j) {
-        Real& x2 = x2v(j);
+        const Real& x2 = x2v(j);
         Real cosx2 = cos(x2);
         Real sinx2 = sin(x2);
         if (n2z == 1) {

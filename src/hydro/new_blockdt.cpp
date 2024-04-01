@@ -146,14 +146,14 @@ void Hydro::NewBlockTimeStep() {
 
       // compute minimum of (v1 +/- C)
       for (int i=is; i<=ie; ++i) {
-        Real& dt_1 = dt1(i);
+        const Real& dt_1 = dt1(i);
         min_dt_hyperbolic = std::min(min_dt_hyperbolic, dt_1);
       }
 
       // if grid is 2D/3D, compute minimum of (v2 +/- C)
       if (pmb->block_size.nx2 > 1) {
         for (int i=is; i<=ie; ++i) {
-          Real& dt_2 = dt2(i);
+          const Real& dt_2 = dt2(i);
           min_dt_hyperbolic = std::min(min_dt_hyperbolic, dt_2);
         }
       }
@@ -161,7 +161,7 @@ void Hydro::NewBlockTimeStep() {
       // if grid is 3D, compute minimum of (v3 +/- C)
       if (pmb->block_size.nx3 > 1) {
         for (int i=is; i<=ie; ++i) {
-          Real& dt_3 = dt3(i);
+          const Real& dt_3 = dt3(i);
           min_dt_hyperbolic = std::min(min_dt_hyperbolic, dt_3);
         }
       }
