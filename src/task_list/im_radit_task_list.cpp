@@ -111,7 +111,7 @@ void IMRadITTaskList::AddTask(const TaskID& id, const TaskID& dep) {
 TaskStatus IMRadITTaskList::AddFluxAndSourceTerms(MeshBlock *pmb) {
   NRRadiation *prad = pmb->pnrrad;
   Hydro *ph = pmb->phydro;
-  int &rb_or_not = pmy_mesh->pimrad->rb_or_not;
+  const int &rb_or_not = pmy_mesh->pimrad->rb_or_not;
 
   int is=pmb->is, ie=pmb->ie;
   int js=pmb->js, je=pmb->je;

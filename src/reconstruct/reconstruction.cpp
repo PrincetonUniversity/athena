@@ -127,9 +127,9 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
             << "x3rat= " << pmb->block_size.x3rat << std::endl;
         ATHENA_ERROR(msg);
       }
-      Real& dx_i   = pmb->pcoord->dx1f(pmb->is);
-      Real& dx_j   = pmb->pcoord->dx2f(pmb->js);
-      Real& dx_k   = pmb->pcoord->dx3f(pmb->ks);
+      const Real& dx_i   = pmb->pcoord->dx1f(pmb->is);
+      const Real& dx_j   = pmb->pcoord->dx2f(pmb->js);
+      const Real& dx_k   = pmb->pcoord->dx3f(pmb->ks);
       // Note, probably want to make the following condition less strict (signal warning
       // for small differences due to floating-point issues) but upgrade to error for
       // large deviations from a square mesh. Currently signals a warning for each
