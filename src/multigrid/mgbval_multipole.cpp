@@ -4,7 +4,7 @@
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
 //! \file mgbval_multipole.cpp
-//  \brief Multipole expansion (up to 4 and 16) boundary functions for Multigrid
+//! \brief Multipole expansion (up to 4 and 16) boundary functions for Multigrid
 
 // C headers
 
@@ -19,11 +19,11 @@
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
-//             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
-//             const AthenaArray<Real> &mporigin, int mporder)
-//  \brief Multipole boundary condition in the inner-X1 direction
-//   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
+//!            int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!            const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//!            const AthenaArray<Real> &mporigin, int mporder)
+//! \brief Multipole boundary condition in the inner-X1 direction
+//!  *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -89,10 +89,10 @@ void MGMultipoleInnerX1(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
-//             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
-//             const AthenaArray<Real> &mporigin, int mporder)
-//   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
+//!            int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!            const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//!            const AthenaArray<Real> &mporigin, int mporder)
+//!  *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -158,11 +158,11 @@ void MGMultipoleOuterX1(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
-//             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
-//             const AthenaArray<Real> &mporigin, int mporder)
-//  \brief Multipole boundary condition in the inner-X2 direction
-//   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
+//!            int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!            const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//!            const AthenaArray<Real> &mporigin, int mporder)
+//! \brief Multipole boundary condition in the inner-X2 direction
+//!  *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -226,11 +226,11 @@ void MGMultipoleInnerX2(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
-//             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
-//             const AthenaArray<Real> &mporigin, int mporder)
-//  \brief Multipole boundary condition in the outer-X2 direction
-//   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
+//!            int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!            const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//!            const AthenaArray<Real> &mporigin, int mporder)
+//! \brief Multipole boundary condition in the outer-X2 direction
+//!  *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -294,11 +294,11 @@ void MGMultipoleOuterX2(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
-//             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
-//             const AthenaArray<Real> &mporigin, int mporder)
-//  \brief Multipole boundary condition in the inner-X3 direction
-//   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
+//!            int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!            const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//!            const AthenaArray<Real> &mporigin, int mporder)
+//! \brief Multipole boundary condition in the inner-X3 direction
+//!  *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,
@@ -360,12 +360,12 @@ void MGMultipoleInnerX3(AthenaArray<Real> &dst, Real time, int nvar,
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
-//             int is, int ie, int js, int je, int ks, int ke, int ngh,
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder)
-//             const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
-//             const AthenaArray<Real> &mporigin, int mporder)
-//  \brief Multipole boundary condition in the outer-X3 direction
-//   *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
+//!            int is, int ie, int js, int je, int ks, int ke, int ngh,
+//!            const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff, int mporder)
+//!            const MGCoordinates &coord, const AthenaArray<Real> &mpcoeff,
+//!            const AthenaArray<Real> &mporigin, int mporder)
+//! \brief Multipole boundary condition in the outer-X3 direction
+//!  *** Note ***: Currently this calculates the zeroth variable and nghost = 1 only.
 
 void MGMultipoleOuterX3(AthenaArray<Real> &dst, Real time, int nvar,
        int is, int ie, int js, int je, int ks, int ke, int ngh,

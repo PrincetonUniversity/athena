@@ -39,12 +39,18 @@ class MeshBlock;
 //! \brief MGGravityDriver constructor
 
 MGGravityDriver::MGGravityDriver(Mesh *pm, ParameterInput *pin)
-    : MultigridDriver(pm, pm->MGGravityBoundaryFunction_,
-                      pm->MGGravitySourceMaskFunction_, 1) {
+    : MultigridDriver(pm, pm->MGGravityBoundaryFunction_, pm->MGGravityBoundaryFunction_,
+                      pm->MGGravitySourceMaskFunction_, pm->MGGravitySourceMaskFunction_,
+                      1, 0, 0) {
   four_pi_G_ = pmy_mesh_->four_pi_G_;
+  omega_ = pin->GetOrAddReal("gravity", "omega", 1.15);
   eps_ = pin->GetOrAddReal("gravity", "threshold", -1.0);
   niter_ = pin->GetOrAddInteger("gravity", "niteration", -1);
   ffas_ = pin->GetOrAddBoolean("gravity", "fas", ffas_);
+  npresmooth_ = pin->GetOrAddReal("gravity", "npresmooth", npresmooth_);
+  npostsmooth_ = pin->GetOrAddReal("gravity", "npostsmooth", npostsmooth_);
+  redblack_ = true;
+  fshowdef_ = pin->GetOrAddBoolean("gravity", "show_defect", fshowdef_);
   std::string m = pin->GetOrAddString("gravity", "mgmode", "none");
   std::transform(m.begin(), m.end(), m.begin(), ::tolower);
   if (m == "fmg") {
@@ -143,9 +149,9 @@ MGGravityDriver::~MGGravityDriver() {
 //! \fn MGGravity::MGGravity(MultigridDriver *pmd, MeshBlock *pmb)
 //! \brief MGGravity constructor
 
-MGGravity::MGGravity(MultigridDriver *pmd, MeshBlock *pmb) : Multigrid(pmd, pmb, 1, 1) {
-  btype = BoundaryQuantity::mggrav;
-  btypef = BoundaryQuantity::mggrav_f;
+MGGravity::MGGravity(MultigridDriver *pmd, MeshBlock *pmb) : Multigrid(pmd, pmb, 1) {
+  btype = BoundaryQuantity::mg;
+  btypef = BoundaryQuantity::mg_faceonly;
   pmgbval = new MGGravityBoundaryValues(this, mg_block_bcs_);
 }
 
@@ -160,15 +166,14 @@ MGGravity::~MGGravity() {
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void MGGravityDriver::Solve(int stage)
+//! \fn void MGGravityDriver::Solve(int stage, Real dt)
 //! \brief load the data and solve
 
-void MGGravityDriver::Solve(int stage) {
-  four_pi_G_ = pmy_mesh_->four_pi_G_;
+void MGGravityDriver::Solve(int stage, Real dt) {
   // Construct the Multigrid array
   vmg_.clear();
   for (int i = 0; i < pmy_mesh_->nblocal; ++i)
-    vmg_.push_back(pmy_mesh_->my_blocks(i)->pmg);
+    vmg_.push_back(pmy_mesh_->my_blocks(i)->pgrav->pmg);
 
   // load the source
 #pragma omp parallel for num_threads(nthreads_)
@@ -180,7 +185,7 @@ void MGGravityDriver::Solve(int stage) {
       pmg->LoadFinestData(pmg->pmy_block_->pgrav->phi, 0, NGHOST);
   }
 
-  SetupMultigrid();
+  SetupMultigrid(dt, false);
 
   if (mode_ == 0) {
     SolveFMGCycle();
@@ -210,40 +215,29 @@ void MGGravityDriver::Solve(int stage) {
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
-//!        int rlev, int il, int iu, int jl, int ju, int kl, int ku, int color, bool th)
+//!           const AthenaArray<Real> &coeff, const AthenaArray<Real> &mmatrix, int rlev,
+//!           int il, int iu, int jl, int ju, int kl, int ku, int color, bool th)
 //! \brief Implementation of the Red-Black Gauss-Seidel Smoother
 //!        rlev = relative level from the finest level of this Multigrid block
 
-void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
+void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
+                const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix, int rlev,
                 int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real dx2 = SQR(dx);
-  Real isix = omega_/6.0;
+  Real isix = static_cast<MGGravityDriver*>(pmy_driver_)->omega_/6.0;
   color ^= pmy_driver_->coffset_;
-  if (th == true && (ku-kl) >=  minth_) {
-#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-        int c = (color + k + j) & 1;
+
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_) if (th && (ku-kl) >= minth_)
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+      int c = (color + k + j) & 1;
 #pragma ivdep
-        for (int i=il+c; i<=iu; i+=2)
-          u(0,k,j,i) -= ((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                        - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))
-                         + src(0,k,j,i)*dx2)*isix;
-      }
-    }
-  } else {
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-        int c = (color + k + j) & 1;
-#pragma ivdep
-        for (int i=il+c; i<=iu; i+=2)
-          u(0,k,j,i) -= ((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                        - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))
-                         + src(0,k,j,i)*dx2)*isix;
-      }
+      for (int i=il+c; i<=iu; i+=2)
+        u(k,j,i) -= ((6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
+                      - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1)) + src(k,j,i)*dx2)*isix;
     }
   }
 
@@ -255,15 +249,15 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
       for (int i=il; i<=iu; i++)
-        temp(0,k,j,i) = u(0,k,j,i) - (((6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i)
-                      - u(0,k,j,i+1) - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))
-                      + src(0,k,j,i)*dx2)*isix);
+        temp(k,j,i) = u(k,j,i) - (((6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i)
+                      - u(k,j,i+1) - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1))
+                      + src(k,j,i)*dx2)*isix);
     }
   }
   for (int k=kl; k<=ku; k++) {
     for (int j=jl; j<=ju; j++) {
       for (int i=il; i<=iu; i++)
-      u(0,k,j,i) = temp(0,k,j,i);
+      u(k,j,i) = temp(k,j,i);
     }
   }*/
   return;
@@ -272,38 +266,28 @@ void MGGravity::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src, int r
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateDefect(AthenaArray<Real> &def,
-//!           const AthenaArray<Real> &u, const AthenaArray<Real> &src, int rlev,
-//!           int il, int iu, int jl, int ju, int kl, int ku, bool th)
+//!             const AthenaArray<Real> &u, const AthenaArray<Real> &src,
+//!             const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix,
+//!            int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th)
 //! \brief Implementation of the Defect calculation
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-                                const AthenaArray<Real> &src, int rlev,
-                                int il, int iu, int jl, int ju, int kl, int ku, bool th) {
+                const AthenaArray<Real> &src, const AthenaArray<Real> &coeff,
+                const AthenaArray<Real> &matrix, int rlev,
+                int il, int iu, int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real idx2 = 1.0/SQR(dx);
-  if (th == true && (ku-kl) >=  minth_) {
-#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
+
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_) if (th && (ku-kl) >= minth_)
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-        for (int i=il; i<=iu; i++)
-          def(0,k,j,i) = (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                         - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2
-                         + src(0,k,j,i);
-      }
-    }
-  } else {
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-#pragma omp simd
-        for (int i=il; i<=iu; i++)
-          def(0,k,j,i) = (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                         - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2
-                         + src(0,k,j,i);
-      }
+      for (int i=il; i<=iu; i++)
+        def(k,j,i) = (6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
+                       - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1))*idx2 + src(k,j,i);
     }
   }
 
@@ -313,44 +297,37 @@ void MGGravity::CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> 
 
 //----------------------------------------------------------------------------------------
 //! \fn  void MGGravity::CalculateFASRHS(AthenaArray<Real> &src,
-//!                      const AthenaArray<Real> &u, int rlev,
-//!                      int il, int iu, int jl, int ju, int kl, int ku, bool th)
+//!             const AthenaArray<Real> &u, const AthenaArray<Real> &coeff,
+//!             const AthenaArray<Real> &matrix, int rlev, int il, int iu, int jl, int ju,
+//!             int kl, int ku, bool th)
 //! \brief Implementation of the RHS calculation for FAS
 //!        rlev = relative level from the finest level of this Multigrid block
 
 void MGGravity::CalculateFASRHS(AthenaArray<Real> &src, const AthenaArray<Real> &u,
+                const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix,
                 int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) {
   Real dx;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real idx2 = 1.0/SQR(dx);
-  if (th == true && (ku-kl) >=  minth_) {
-#pragma omp parallel for num_threads(pmy_driver_->nthreads_)
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
+
+#pragma omp parallel for num_threads(pmy_driver_->nthreads_) if (th && (ku-kl) >= minth_)
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
 #pragma omp simd
-        for (int i=il; i<=iu; i++)
-          src(0,k,j,i) -= (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                          - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2;
-      }
-    }
-  } else {
-    for (int k=kl; k<=ku; k++) {
-      for (int j=jl; j<=ju; j++) {
-#pragma omp simd
-        for (int i=il; i<=iu; i++)
-          src(0,k,j,i) -= (6.0*u(0,k,j,i) - u(0,k+1,j,i) - u(0,k,j+1,i) - u(0,k,j,i+1)
-                          - u(0,k-1,j,i) - u(0,k,j-1,i) - u(0,k,j,i-1))*idx2;
-      }
+      for (int i=il; i<=iu; i++)
+        src(k,j,i) -= (6.0*u(k,j,i) - u(k+1,j,i) - u(k,j+1,i) - u(k,j,i+1)
+                        - u(k-1,j,i) - u(k,j-1,i) - u(k,j,i-1))*idx2;
     }
   }
+
   return;
 }
 
 
 //----------------------------------------------------------------------------------------
 //! \fn void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
-//                            AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse)
+//!                           AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse)
 //! \brief prolongate octet boundaries using the flux conservation formula
 
 void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
@@ -366,13 +343,13 @@ void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
       int i, fi, fig;
       if (ox1 > 0) i = ngh + 1, fi = ngh + 1, fig = ngh + 2;
       else         i = ngh - 1, fi = ngh,     fig = ngh - 1;
-      Real ccval = cbuf(0, ck, cj, i);
-      Real gx2c = 0.125*(cbuf(0, ck, cj+1, i) - cbuf(0, ck, cj-1, i));
-      Real gx3c = 0.125*(cbuf(0, ck+1, cj, i) - cbuf(0, ck-1, cj, i));
-      dst(0, l, l, fig) = ot*(2.0*(ccval - gx2c - gx3c) + u(0, l, l, fi));
-      dst(0, l, r, fig) = ot*(2.0*(ccval + gx2c - gx3c) + u(0, l, r, fi));
-      dst(0, r, l, fig) = ot*(2.0*(ccval - gx2c + gx3c) + u(0, r, l, fi));
-      dst(0, r, r, fig) = ot*(2.0*(ccval + gx2c + gx3c) + u(0, r, r, fi));
+      Real ccval = cbuf(ck, cj, i);
+      Real gx2c = 0.125*(cbuf(ck, cj+1, i) - cbuf(ck, cj-1, i));
+      Real gx3c = 0.125*(cbuf(ck+1, cj, i) - cbuf(ck-1, cj, i));
+      dst(l, l, fig) = ot*(2.0*(ccval - gx2c - gx3c) + u(l, l, fi));
+      dst(l, r, fig) = ot*(2.0*(ccval + gx2c - gx3c) + u(l, r, fi));
+      dst(r, l, fig) = ot*(2.0*(ccval - gx2c + gx3c) + u(r, l, fi));
+      dst(r, r, fig) = ot*(2.0*(ccval + gx2c + gx3c) + u(r, r, fi));
     }
   }
 
@@ -382,13 +359,13 @@ void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
       int j, fj, fjg;
       if (ox2 > 0) j = ngh + 1, fj = ngh + 1, fjg = ngh + 2;
       else         j = ngh - 1, fj = ngh,     fjg = ngh - 1;
-      Real ccval = cbuf(0, ck, j, ci);
-      Real gx1c = 0.125*(cbuf(0, ck, j, ci+1) - cbuf(0, ck, j, ci-1));
-      Real gx3c = 0.125*(cbuf(0, ck+1, j, ci) - cbuf(0, ck-1, j, ci));
-      dst(0, l, fjg, l) = ot*(2.0*(ccval - gx1c - gx3c) + u(0, l, fj, l));
-      dst(0, l, fjg, r) = ot*(2.0*(ccval + gx1c - gx3c) + u(0, l, fj, r));
-      dst(0, r, fjg, l) = ot*(2.0*(ccval - gx1c + gx3c) + u(0, r, fj, l));
-      dst(0, r, fjg, r) = ot*(2.0*(ccval + gx1c + gx3c) + u(0, r, fj, r));
+      Real ccval = cbuf(ck, j, ci);
+      Real gx1c = 0.125*(cbuf(ck, j, ci+1) - cbuf(ck, j, ci-1));
+      Real gx3c = 0.125*(cbuf(ck+1, j, ci) - cbuf(ck-1, j, ci));
+      dst(l, fjg, l) = ot*(2.0*(ccval - gx1c - gx3c) + u(l, fj, l));
+      dst(l, fjg, r) = ot*(2.0*(ccval + gx1c - gx3c) + u(l, fj, r));
+      dst(r, fjg, l) = ot*(2.0*(ccval - gx1c + gx3c) + u(r, fj, l));
+      dst(r, fjg, r) = ot*(2.0*(ccval + gx1c + gx3c) + u(r, fj, r));
     }
   }
 
@@ -398,13 +375,13 @@ void MGGravityDriver::ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
       int k, fk, fkg;
       if (ox3 > 0) k = ngh + 1, fk = ngh + 1, fkg = ngh + 2;
       else         k = ngh - 1, fk = ngh,     fkg = ngh - 1;
-      Real ccval = cbuf(0, k, cj, ci);
-      Real gx1c = 0.125*(cbuf(0, k, cj, ci+1) - cbuf(0, k, cj, ci-1));
-      Real gx2c = 0.125*(cbuf(0, k, cj+1, ci) - cbuf(0, k, cj-1, ci));
-      dst(0, fkg, l, l) = ot*(2.0*(ccval - gx1c - gx2c) + u(0, fk, l, l));
-      dst(0, fkg, l, r) = ot*(2.0*(ccval + gx1c - gx2c) + u(0, fk, l, r));
-      dst(0, fkg, r, l) = ot*(2.0*(ccval - gx1c + gx2c) + u(0, fk, r, l));
-      dst(0, fkg, r, r) = ot*(2.0*(ccval + gx1c + gx2c) + u(0, fk, r, r));
+      Real ccval = cbuf(k, cj, ci);
+      Real gx1c = 0.125*(cbuf(k, cj, ci+1) - cbuf(k, cj, ci-1));
+      Real gx2c = 0.125*(cbuf(k, cj+1, ci) - cbuf(k, cj-1, ci));
+      dst(fkg, l, l) = ot*(2.0*(ccval - gx1c - gx2c) + u(fk, l, l));
+      dst(fkg, l, r) = ot*(2.0*(ccval + gx1c - gx2c) + u(fk, l, r));
+      dst(fkg, r, l) = ot*(2.0*(ccval - gx1c + gx2c) + u(fk, r, l));
+      dst(fkg, r, r) = ot*(2.0*(ccval + gx1c + gx2c) + u(fk, r, r));
     }
   }
 

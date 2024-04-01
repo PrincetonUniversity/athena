@@ -56,6 +56,11 @@ void ShowConfig() {
   } else {
     std::cout<<"  Cosmic Ray Transport:       OFF" << std::endl;
   }
+  if (CRDIFFUSION_ENABLED) {
+    std::cout<<"  Cosmic Ray Diffusion:       ON" << std::endl;
+  } else {
+    std::cout<<"  Cosmic Ray Diffusion:       OFF" << std::endl;
+  }
 
   // configure.py output: "Frame transformations"
   if (SELF_GRAVITY_ENABLED == 1) {

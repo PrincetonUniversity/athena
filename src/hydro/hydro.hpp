@@ -105,7 +105,7 @@ class Hydro {
   AthenaArray<Real> lambdas_p_r_;  // most positive wavespeeds in right state
   AthenaArray<Real> lambdas_m_r_;  // most negative wavespeeds in right state
   // 2D GR
-  AthenaArray<Real> g_, gi_;       // metric and inverse, for some GR Riemann solvers
+  AthenaArray<Real> g_, gi_;       // metric and inverse, for timesteps and some rsolvers
   AthenaArray<Real> cons_;         // conserved state, for some GR Riemann solvers
 
   // fourth-order hydro

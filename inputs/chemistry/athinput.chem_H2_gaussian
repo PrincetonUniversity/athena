@@ -1,0 +1,59 @@
+<comment>
+problem   = H-H2 chemistry with advection
+reference = Section 4.1 in Gong et al. 2023, arXiv:2305.04965
+configure = --prob=chem_uniform --chemistry=H2 --chem_ode_solver=cvode --cvode_path=$CVODE_PATH
+            --eos=isothermal --nghost=3
+
+<job>
+problem_id = chem_H2   # problem ID: basename of output filenames
+
+<time>
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1        # cycle limit
+tlim       = 5         # time limit
+ncycle_out = 1         # interval for stdout summary info
+integrator = rk2
+xorder     = 2
+
+<mesh>
+nx1        = 512       # Number of zones in X1-direction
+x1min      = 0         # minimum value of X1
+x1max      = 2         # maximum value of X1
+ix1_bc     = periodic  # inner-X1 boundary flag
+ox1_bc     = periodic  # outer-X1 boundary flag
+
+nx2        = 1         # Number of zones in X2-direction
+x2min      = -0.1      # minimum value of X2
+x2max      = 0.1       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
+
+nx3        = 1         # Number of zones in X3-direction
+x3min      = -0.01     # minimum value of X3
+x3max      = 0.01      # maximum value of X3
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # outer-X3 boundary flag
+
+<meshblock>
+nx1        =    32
+nx2        =    1
+nx3        =    1
+
+<hydro>
+gamma = 1.666666666666667 # gamma = C_p/C_v
+iso_sound_speed = 1.0     # isothermal sound speed
+sfloor   =   0            # passive scalar floor
+active   =   background   # post-processing
+
+<problem>
+nH         = 100          # initial density
+vx_kms     = 0.2          # initial x-velocity
+compute_error = true
+
+<chemistry>
+reltol     = 1.0e-10      # relative tolerance, default 1.0e-2
+abstol     = 1.0e-20      # absolute tolerance, default 1.0e-12
+#abstol_H2   = 1.0e-10    # set absolute tolerance to a certain species
+user_jac   = false        # flag for whether use user provided Jacobian. default false
+maxsteps   = 100000       # maximum number of steps in one integration. default 10000
+#output_zone_sec = true   # output diagnostic

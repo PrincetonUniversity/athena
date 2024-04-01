@@ -353,11 +353,11 @@ void MeshBlockTree::GetMeshBlockList(LogicalLocation *list, int *pglist, int& co
 
 //----------------------------------------------------------------------------------------
 //! \fn MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
-//                     int ox1, int ox2, int ox3, BoundaryFlag *bcs, bool amrflag)
-//  \brief find a neighboring block, called from the root of the tree
-//         If it is coarser or same level, return the pointer to that block.
-//         If it is a finer block, return the pointer to its parent.
-//         Note that this function must be called on a completed tree only
+//!                    int ox1, int ox2, int ox3, BoundaryFlag *bcs, bool amrflag)
+//! \brief find a neighboring block, called from the root of the tree
+//!        If it is coarser or same level, return the pointer to that block.
+//!        If it is a finer block, return the pointer to its parent.
+//!        Note that this function must be called on a completed tree only
 
 MeshBlockTree* MeshBlockTree::FindNeighbor(LogicalLocation myloc,
                int ox1, int ox2, int ox3, BoundaryFlag *bcs, bool amrflag) {
@@ -514,8 +514,8 @@ void MeshBlockTree::GetMGOctetList(std::vector<MGOctet> *oct,
   if (lev >= 0) {
     oid = noct[lev];
     oct[lev][oid].loc = loc_;
-    octmap[lev][loc_] = oid;
     oct[lev][oid].fleaf = true;
+    octmap[lev][loc_] = oid;
     noct[lev]++;
   }
   for (int n=0; n<nleaf_; n++) {

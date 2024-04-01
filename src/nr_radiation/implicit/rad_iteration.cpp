@@ -36,6 +36,7 @@
 //--------------------------------------------------------------------------------------
 // \!fn void Iteration()
 // \brief function to perform iterations
+
 void IMRadiation::Iteration(
     Mesh *pm, TimeIntegratorTaskList *ptlist, int stage) {
   // perform Jacobi iteration including both source and flux terms
@@ -110,7 +111,7 @@ void IMRadiation::Iteration(
     if (srj_p > 0)
       omega = srj_w[0];
 
-    while(iteration) {
+    while (iteration) {
       // initialize the pointer
       pmb = pm->my_blocks(0);
       sum_full_ = 0.0;

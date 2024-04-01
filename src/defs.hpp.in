@@ -29,6 +29,14 @@
 // Equation of state
 #define EQUATION_OF_STATE "@EQUATION_OF_STATE@"
 
+// ChemNetwork class header file included in species.hpp
+#define CHEMNETWORK_HEADER "@CHEMNETWORK_HEADER@"
+
+// ChemRadiation integrator method, used in constructing ChemRadiationIntegratorTaskList
+#define CHEMRADIATION_INTEGRATOR "@CHEMRADIATION_INTEGRATOR@"
+
+// configure.py dict(definitions) Boolean 1/0 macros:
+
 // use general EOS framework default=0 (false).
 #define GENERAL_EOS @GENERAL_EOS@
 
@@ -47,6 +55,12 @@
 // include self gravity? default=0 (false)
 #define SELF_GRAVITY_ENABLED @SELF_GRAVITY_ENABLED@
 
+// include chemistry? default=0 (false)
+#define CHEMISTRY_ENABLED @CHEMISTRY_ENABLED@
+
+// include radiative transfer in chemistry calculations? default=0 (false)
+#define CHEMRADIATION_ENABLED @CHEMRADIATION_ENABLED@
+
 // include nonrelativistic radiative transfer? default=0 (false)
 #define NR_RADIATION_ENABLED @NR_RADIATION_ENABLED@
 
@@ -55,6 +69,9 @@
 
 // include cosmic ray transport? default=0 (false)
 #define CR_ENABLED @CR_ENABLED@
+
+// include cosmic ray diffusion? default=0 (false)
+#define CRDIFFUSION_ENABLED @CRDIFFUSION_ENABLED@
 
 // enable special or general relativity? default=0 (false)
 #define RELATIVISTIC_DYNAMICS @RELATIVISTIC_DYNAMICS@
@@ -71,7 +88,6 @@
 // compile with debug symbols and use optional sections of source code? default=0 (false)
 #define DEBUG @DEBUG_OPTION@
 
-
 // configure.py dict(definitions) Boolean string macros:
 // (these options have the latter (false) option as defaults, unless noted otherwise)
 
@@ -86,6 +102,12 @@
 
 // HDF5 output (HDF5OUTPUT or NO_HDF5OUTPUT)
 #define @HDF5_OPTION@
+
+// FFTW library (FFT or NO_FFT)
+#define @FFT_OPTION@
+
+// CVODE solver (CVODE or NO_CVODE)
+#define @CVODE_OPTION@
 
 // try/throw/catch C++ exception handling (ENABLE_EXCEPTIONS or DISABLE_EXCEPTIONS)
 // (enabled by default)
@@ -103,6 +125,7 @@
 #define NFIELD @NFIELD_VARIABLES@
 #define NWAVE @NWAVE_VALUE@
 #define NSCALARS @NUMBER_PASSIVE_SCALARS@
+#define NSPECIES @NUMBER_CHEMICAL_SPECIES@
 #define NGHOST @NUMBER_GHOST_CELLS@
 #define NGRAV @NGRAV_VARIABLES@
 #define NCR @NCR_VARIABLES@   // cosmic ray transport module variable
@@ -124,6 +147,7 @@
 #define BIG_NUMBER 1.0e+10
 #define HUGE_NUMBER 1.0e+36
 #define SQR(x) ( (x)*(x) )
+#define CUBE(x) ( (x)*(x)*(x) )
 #define SIGN(x) ( ((x) < 0.0) ? -1.0 : 1.0 )
 #define PI_FOUR_POWER 97.409091034002415
 #define ONE_PI_FOUR_POWER 0.010265982254684

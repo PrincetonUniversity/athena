@@ -194,6 +194,7 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus SendScalarFlux(MeshBlock *pmb, int stage);
   TaskStatus ReceiveScalarFlux(MeshBlock *pmb, int stage);
   TaskStatus IntegrateScalars(MeshBlock *pmb, int stage);
+  TaskStatus IntegrateChemistry(MeshBlock *pmb, int stage);
   TaskStatus SendScalars(MeshBlock *pmb, int stage);
   TaskStatus ReceiveScalars(MeshBlock *pmb, int stage);
   TaskStatus SetBoundariesScalars(MeshBlock *pmb, int stage);
@@ -209,26 +210,21 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus ReceiveFieldOrbital(MeshBlock *pmb, int stage);
   TaskStatus CalculateFieldOrbital(MeshBlock *pmb, int stage);
 
-
-// Tasks for radiation transport
   TaskStatus CalculateRadFlux(MeshBlock *pmb, int stage);
   TaskStatus IntegrateRad(MeshBlock *pmb, int stage);
   TaskStatus AddSourceTermsRad(MeshBlock *pmb, int stage);
-  TaskStatus AddSourceTermsIMRad(MeshBlock *pmb, int stage);
   TaskStatus SendRadFlux(MeshBlock *pmb, int stage);
   TaskStatus ReceiveAndCorrectRadFlux(MeshBlock *pmb, int stage);
   TaskStatus SendRad(MeshBlock *pmb, int stage);
   TaskStatus ReceiveRad(MeshBlock *pmb, int stage);
   TaskStatus SetBoundariesRad(MeshBlock *pmb, int stage);
   TaskStatus RadMomOpacity(MeshBlock *pmb, int stage);
-  // shearing box
+
   TaskStatus SendRadFluxShear(MeshBlock *pmb, int stage);
   TaskStatus ReceiveRadFluxShear(MeshBlock *pmb, int stage);
   TaskStatus SendRadShear(MeshBlock *pmb, int stage);
   TaskStatus ReceiveRadShear(MeshBlock *pmb, int stage);
 
-
-  // Task functions for cosmic rays
   TaskStatus CalculateCRTCFlux(MeshBlock *pmb, int stage);
   TaskStatus IntegrateCRTC(MeshBlock *pmb, int stage);
   TaskStatus AddSourceTermsCRTC(MeshBlock *pmb, int stage);
@@ -238,7 +234,6 @@ class TimeIntegratorTaskList : public TaskList {
   TaskStatus ReceiveCRTC(MeshBlock *pmb, int stage);
   TaskStatus SetBoundariesCRTC(MeshBlock *pmb, int stage);
   TaskStatus CRTCOpacity(MeshBlock *pmb, int stage);
-
 
   bool CheckNextMainStage(int stage) const {return stage_wghts[stage%nstages].main_stage;}
 
@@ -306,51 +301,42 @@ const TaskID CLEAR_ALLBND(1);
 const TaskID CALC_HYDFLX(2);
 const TaskID CALC_FLDFLX(3);
 const TaskID CALC_RADFLX(4);
-const TaskID CALC_CHMFLX(5);
 
-const TaskID SEND_HYDFLX(6);
-const TaskID SEND_FLDFLX(7);
-const TaskID SEND_RADFLX(8);
-const TaskID SEND_CRTCFLX(9);
-// const TaskID SEND_CHMFLX(9);
+const TaskID SEND_HYDFLX(5);
+const TaskID SEND_FLDFLX(6);
+const TaskID SEND_RADFLX(7);
+const TaskID SEND_CRTCFLX(8);
 
-const TaskID RECV_HYDFLX(10);
-const TaskID RECV_FLDFLX(11);
-const TaskID RECV_RADFLX(12);
-const TaskID RECV_CRTCFLX(13);
+const TaskID RECV_HYDFLX(9);
+const TaskID RECV_FLDFLX(10);
+const TaskID RECV_RADFLX(11);
+const TaskID RECV_CRTCFLX(12);
 
-// const TaskID RECV_CHMFLX(13);
+const TaskID SRC_TERM(13);
+const TaskID SRCTERM_CRTC(14);
+const TaskID SRCTERM_RAD(15);
 
-const TaskID SRC_TERM(14);
-const TaskID SRCTERM_CRTC(15);
-const TaskID SRCTERM_RAD(16);
-
-// const TaskID SRCTERM_CHM(17);
-const TaskID INT_CRTC(17);
-const TaskID INT_HYD(18);
-const TaskID INT_FLD(19);
-const TaskID INT_RAD(20);
-// const TaskID INT_CHM(21);
+const TaskID INT_CRTC(16);
+const TaskID INT_HYD(17);
+const TaskID INT_FLD(18);
+const TaskID INT_RAD(19);
+const TaskID INT_CHM(20);
 
 const TaskID SEND_CRTC(21);
 const TaskID SEND_HYD(22);
 const TaskID SEND_FLD(23);
 const TaskID SEND_RAD(24);
 
-// const TaskID SEND_CHM(25);
 const TaskID RECV_CRTC(25);
 const TaskID RECV_HYD(26);
 const TaskID RECV_FLD(27);
 const TaskID RECV_RAD(28);
-// const TaskID RECV_RAD(28);
-// const TaskID RECV_CHM(29);
+
 const TaskID SETB_CRTC(29);
 const TaskID SETB_HYD(30);
 const TaskID SETB_FLD(31);
 const TaskID SETB_RAD(32);
 const TaskID CALC_CRTCFLX(33);
-// const TaskID SETB_RAD(32);
-// const TaskID SETB_CHM(33);
 
 const TaskID PROLONG(34);
 const TaskID CONS2PRIM(35);
@@ -391,15 +377,15 @@ const TaskID SEND_FLDORB(65);
 const TaskID RECV_FLDORB(66);
 const TaskID CALC_FLDORB(67);
 
-const TaskID CRTC_OPACITY(69);
-const TaskID RAD_MOMOPACITY(70);
+const TaskID CRTC_OPACITY(68);
+const TaskID RAD_MOMOPACITY(69);
 
-const TaskID SEND_RADFLXSH(71);
-const TaskID RECV_RADFLXSH(72);
-const TaskID SEND_RADSH(73);
-const TaskID RECV_RADSH(74);
+const TaskID SEND_RADFLXSH(70);
+const TaskID RECV_RADFLXSH(71);
+const TaskID SEND_RADSH(72);
+const TaskID RECV_RADSH(73);
 
-const TaskID SRCTERM_IMRAD(75);
+const TaskID SRCTERM_IMRAD(74);
 
 }  // namespace HydroIntegratorTaskNames
 #endif  // TASK_LIST_TASK_LIST_HPP_

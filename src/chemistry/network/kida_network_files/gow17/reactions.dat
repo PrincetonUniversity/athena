@@ -1,0 +1,98 @@
+! comment start with '!', add reactions to each line, definitions see http://kida.obs.u-bordeaux1.fr/help
+! alpha, beta, gamma: coefficients of reaction rates
+! F: the uncertainty factor on the rate coefficient
+! g: the temperature dependence of the uncertainty factor F
+! err: Type of uncertainty : lognormal (logn) , normal (norm) , loguniform (logu) , uniform (unif)
+!
+! itype: the type of reaction:
+! 1: direct CR ionization/dissociation. Format A + CR -> B + C
+! 2: CR induced ionization/dissociation by UV photons emitted following H2 excitation. Format A + CRP -> B + C
+! 3: FUV dissociation/ionization
+! 4: Neutral-neutral (A + B → C + D), ion-neutral (A+ + B → C+ +D, A- + B → C- + D), anion-cation (A+ + B- → C + D) reactions and associative ionization (A + B → AB+ + e-)
+! 5: Exchange reaction A+ + B → A + B+ and A+ + B- → A + B
+! 6: Association reactions between two species (neutral or ionized) stabilized by the emission of a photon (A + B → AB + photon or A+ + B → AB+ + photon).
+! 7: Association of a neutral species and an anion, resulting in the ejection of the extra electron (A- + B → AB + e-).
+! 8: Recombination of a positive ion with an electron resulting in the dissociation of the molecule (AB+ + e- → A + B) or the emission of a photon
+!    (AB+ + e- → AB + photon) or the attachment of the electron (A + e- → A- + photon)
+! 9: grain assisted reactions (H2 formation, recombination)
+! 10: other special reactions, up to 3 reactants and 5 products
+! Tmin, Tmax: temperature range. When we do not have information on Trange, default values are used: -9999,9999.
+!
+! frml: formular for reaction rates:
+! 1: Cosmic-ray ionization (direct and undirect)
+! 2: Photo-dissociation (Draine)
+! 3: Kooij 
+! 4: ionpol1 
+! 5: ionpol2 
+! 6: Troe fall-off
+! 7: customized
+! ID: the number of reaction, the special rates are also set by this ID. ID has
+!     to be an unique integer (int type in c++), but doesn't have to match the number of the line or any order.
+! ni: the number of (alpha, beta, gamma) in the downloaded network when several values are present in KIDA. 
+!
+! r: Recommendation is the recommendation given by experts in KIDA. 
+! 0: the value is not recommended. 
+! 1: means that there is no recommendation (experts have not looked at the data). 
+! 2: means that the value has been validated by experts over the Trange
+! 3: means that it is the recommended value over Trange.
+! 4: other (set in code. alpha, beta and gamma are irrelevant in this case)
+!
+! only columns starts with "*" is used in our program, the temperature range is extrapolated.
+!   *Reactants 3x(s10+' ') + ' ' *Products 5x(s10+' ') + 2x' '                            *alpha     *beta      *gamma     F        g      err *itype Tmin  Tmax *frml  *ID ni r 
+! Gong, Ostriker and Wolfire (2017) network
+H          CR                     H+         e-                                            0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  7     1 1  1
+H2         CR                     H2+        e-                                            0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  7     2 1  1
+He         CR                     He+        e-                                            1.100e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1     3 1  1
+C          CR                     C+         e-                                            3.850e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  1  -9999   9999  1     4 1  1
+! CO + CR -> CO+ + e- and CO+ + H/H2 -> HCO+, the rate is CR rate
+CO         H                      HCO+       e-                                            0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  10 -9999   9999  7     5 1  1
+C          CRP                    C+         e-                                            5.600e+02  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1     6 1  1
+CO         CRP                    C          O                                             9.000e+01  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1     7 1  1
+Si         CRP                    Si+        e-                                            8.400e+03  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  2  -9999   9999  1     8 1  1
+C          Photon                 C+         e-                                            3.500e-10  0.000e+00  3.760e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2     9 1  2
+CHx        Photon                 C          H                                             9.100e-10  0.000e+00  2.120e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2    10 1  2
+CO         Photon                 C          O                                             2.400e-10  0.000e+00  3.880e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2    11 1  2
+OHx        Photon                 H          O                                             3.800e-10  0.000e+00  2.660e+00 1.50e+00 0.00e+00 logn  3  -9999   9999  2    12 1  2
+Si         Photon                 Si+        e-                                            4.500e-09  0.000e+00  2.610e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2    13 1  2
+H2         Photon                 H          H                                             5.700e-11  0.000e+00  4.180e+00 2.00e+00 0.00e+00 logn  3  -9999   9999  2    14 1  1
+! grain assisted reactions
+H          H                      H2                                                       0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  9  -9999   9999  7    15 1  1
+H+         e-                     H                                                        0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  9  -9999   9999  7    16 1  1
+C+         e-                     C                                                        0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  9  -9999   9999  7    17 1  1
+He+        e-                     He                                                       0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  9  -9999   9999  7    18 1  1
+Si+        e-                     Si                                                       0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  9  -9999   9999  7    19 1  1
+! two body reactions
+C          H3+        e-          H2         CHx                                           0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  10 -9999   9999  7    20 1  1
+O          H3+        e-          H2         OHx                                           0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  10 -9999   9999  7    21 1  1
+O          H3+        e-          H2         O          H                                  0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  10 -9999   9999  7    22 1  1
+H2         O+         e-          H          OHx                                           0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  10 -9999   9999  7    23 1  1
+H2         O+         e-          H          H          O                                  0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  10 -9999   9999  7    24 1  1
+CO         H3+                    H2         HCO+                                          1.700e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4  -9999   9999  3    25 1  1
+H2         He+                    H          He         H+                                 1.260e-13  0.000e+00  2.250e+01 2.00e+00 0.00e+00 logn  4  -9999   9999  3    26 1  1
+CO         He+                    He         O          C+                                 1.600e-09  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4  -9999   9999  3    27 1  1
+H2         C+         e-          CHx        H                                             0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  10 -9999   9999  7    28 1  1
+H2         C+         e-          C          H          H                                  0.000e+00  0.000e+00  0.000e+00 0.00e+00 0.00e+00 logn  10 -9999   9999  7    29 1  1
+OHx        C+                     HCO+                                                     1.000e+00  9.150e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     10     20  4    30 1  1
+OHx        C+                     HCO+                                                     1.000e+00  9.150e-10  5.500e+00 2.00e+00 0.00e+00 logn  4     30    800  4    30 1  1
+O          CHx                    H          CO                                            7.000e-11  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4     10    300  3    31 1  2
+C          OHx                    H          CO                                            1.150e-10 -3.390e-01 -1.080e-01 2.00e+00 0.00e+00 norm  4     10    500  3    32 1  2
+He+        e-                     He                                                       0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  8  -9999   9999  7    33 1  1
+H3+        e-                     H          H2                                            2.339e-08 -5.200e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3    34 1  1
+H3+        e-                     H          H          H                                  4.360e-08 -5.200e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3    35 1  1
+C+         e-                     C                                                        0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  8  -9999   9999  7    36 1  1
+HCO+       e-                     H          CO                                            2.754e-07 -6.400e-01  0.000e+00 1.25e+00 0.00e+00 logn  8     10    300  3    37 1  1
+H2         H2+                    H          H3+                                           0.000e+00  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  4  -9999   9999  7    38 1  1
+H          H2+                    H2         H+                                            6.400e-10  0.000e+00  0.000e+00 1.25e+00 0.00e+00 logn  5     10    300  3    39 1  1
+H+         e-                     H                                                        0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  8  -9999   9999  7    40 1  1
+H2         H                      H          H          H                                  0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4  -9999   9999  7    41 1  1
+H2         H2                     H          H          H2                                 0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4  -9999   9999  7    42 1  1
+H          e-                     H+         e-         e-                                 0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  4  -9999   9999  7    43 1  1
+H2         He+                    He         H2+                                           7.200e-15  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5     10    300  3    44 1  1
+H          CHx                    C          H2                                            1.238e-10  2.600e-01  0.000e+00 3.00e+00 1.40e+01 logn  4     10    500  3    45 1  3
+O          OHx                    H          O          O                                  3.500e-11  0.000e+00  0.000e+00 3.00e+00 0.00e+00 logn  4     10     50  3    46 1  3
+Si+        e-                     Si                                                       4.251e-12 -6.200e-01  0.000e+00 2.00e+00 0.00e+00 logn  8     10    300  3    47 1  1
+OHx        He+                    H          He         O+                                 1.000e+00  1.350e-09  5.500e+00 2.00e+00 0.00e+00 logn  4     10    800  4    48 1  1
+O          H+                     H          O+                                            0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5  -9999   9999  7    49 1  1
+H          O+                     O          H+                                            0.000e+00  0.000e+00  0.000e+00 2.00e+00 0.00e+00 logn  5  -9999   9999  7    50 1  1
+
+

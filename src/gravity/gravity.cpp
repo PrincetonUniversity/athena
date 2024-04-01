@@ -35,7 +35,7 @@
 //! \brief Gravity constructor
 Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block(pmb), phi(pmb->ncells3, pmb->ncells2, pmb->ncells1),
-    coarse_phi(NHYDRO, pmb->ncc3, pmb->ncc2, pmb->ncc1,
+    coarse_phi(pmb->ncc3, pmb->ncc2, pmb->ncc1,
               (pmb->pmy_mesh->multilevel ? AthenaArray<Real>::DataStatus::allocated :
                AthenaArray<Real>::DataStatus::empty)),
     empty_flux{AthenaArray<Real>(), AthenaArray<Real>(), AthenaArray<Real>()},
@@ -52,6 +52,7 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   }
 
   if (SELF_GRAVITY_ENABLED == 2) {
+    pmg = new MGGravity(pmb->pmy_mesh->pmgrd, pmb);
     output_defect = pin->GetOrAddBoolean("gravity", "output_defect", false);
     if (output_defect)
       def.NewAthenaArray(pmb->ncells3, pmb->ncells2, pmb->ncells1);
@@ -82,6 +83,14 @@ Gravity::Gravity(MeshBlock *pmb, ParameterInput *pin) :
   pmb->pbval->pgbvar = &gbvar;
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn Gravity::~Gravity()
+//! \brief Gravity destructor
+Gravity::~Gravity() {
+  if (SELF_GRAVITY_ENABLED == 2)
+    delete pmg;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn Gravity::SaveFaceBoundaries()
@@ -166,256 +175,6 @@ void Gravity::RestoreFaceBoundaries() {
     int p = 0;
     BufferUtility::UnpackData(fbuf_[outer_x3].data(), phi, 0, 0,
                               is,   ie,   js,   je,   ke+1, ke+1, p);
-  }
-
-  return;
-}
-
-
-//----------------------------------------------------------------------------------------
-//! \fn Gravity::ExpandPhysicalBoundaries()
-//! \brief Expand physical boundary values to NGHOST = 2 and to edges/corners.
-void Gravity::ExpandPhysicalBoundaries() {
-  int is = pmy_block->is, ie = pmy_block->ie,
-      js = pmy_block->js, je = pmy_block->je,
-      ks = pmy_block->ks, ke = pmy_block->ke;
-
-  // push face boundary values
-  if (pmy_block->pbval->nblevel[1][1][0] < 0) {
-    for (int k = ks; k <= ke; k++) {
-      for (int j = js; j <= je; j++)
-        phi(k, j, is-2) = phi(k, j, is-1);
-    }
-  }
-  if (pmy_block->pbval->nblevel[1][1][2] < 0) {
-    for (int k = ks; k <= ke; k++) {
-      for (int j = js; j <= je; j++)
-        phi(k, j, ie+2) = phi(k, j, ie+1);
-    }
-  }
-  if (pmy_block->pbval->nblevel[1][0][1] < 0) {
-    for (int k = ks; k <= ke; k++) {
-      for (int i = is; i <= ie; i++)
-        phi(k, js-2, i) = phi(k, js-1, i);
-    }
-  }
-  if (pmy_block->pbval->nblevel[1][2][1] < 0) {
-    for (int k = ks; k <= ke; k++) {
-      for (int i = is; i <= ie; i++)
-        phi(k, je+2, i) = phi(k, je+1, i);
-    }
-  }
-  if (pmy_block->pbval->nblevel[0][1][1] < 0) {
-    for (int j = js; j <= je; j++) {
-      for (int i = is; i <= ie; i++)
-        phi(ks-2, j, i) = phi(ks-1, j, i);
-    }
-  }
-  if (pmy_block->pbval->nblevel[2][1][1] < 0) {
-    for (int j = js; j <= je; j++) {
-      for (int i = is; i <= ie; i++)
-        phi(ke+2, j, i) = phi(ke+1, j, i);
-    }
-  }
-
-  // fill edges
-  if (pmy_block->pbval->nblevel[1][0][0] < 0) {
-    for (int k = ks; k <= ke; k++) {
-      Real p = 0.5*(phi(k, js-1, is) + phi(k, js, is-1));
-      phi(k, js-1, is-1) = p;
-      phi(k, js-1, is-2) = p;
-      phi(k, js-2, is-1) = p;
-      phi(k, js-2, is-2) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[1][0][2] < 0) {
-    for (int k = ks; k <= ke; k++) {
-      Real p = 0.5*(phi(k, js-1, ie) + phi(k, js, ie+1));
-      phi(k, js-1, ie+1) = p;
-      phi(k, js-1, ie+2) = p;
-      phi(k, js-2, ie+1) = p;
-      phi(k, js-2, ie+2) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[1][2][0] < 0) {
-    for (int k = ks; k <= ke; k++) {
-      Real p = 0.5*(phi(k, je+1, is) + phi(k, je, is-1));
-      phi(k, je+1, is-1) = p;
-      phi(k, je+1, is-2) = p;
-      phi(k, je+2, is-1) = p;
-      phi(k, je+2, is-2) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[1][2][2] < 0) {
-    for (int k = ks; k <= ke; k++) {
-      Real p = 0.5*(phi(k, je+1, ie) + phi(k, je, ie+1));
-      phi(k, je+1, ie+1) = p;
-      phi(k, je+1, ie+2) = p;
-      phi(k, je+2, ie+1) = p;
-      phi(k, je+2, ie+2) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[0][1][0] < 0) {
-    for (int j = js; j <= je; j++) {
-      Real p = 0.5*(phi(ks-1, j, is) + phi(ks, j, is-1));
-      phi(ks-1, j, is-1) = p;
-      phi(ks-1, j, is-2) = p;
-      phi(ks-2, j, is-1) = p;
-      phi(ks-2, j, is-2) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[0][1][2] < 0) {
-    for (int j = js; j <= je; j++) {
-      Real p = 0.5*(phi(ks-1, j, ie) + phi(ks, j, ie+1));
-      phi(ks-1, j, ie+1) = p;
-      phi(ks-1, j, ie+2) = p;
-      phi(ks-2, j, ie+1) = p;
-      phi(ks-2, j, ie+2) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[2][1][0] < 0) {
-    for (int j = js; j <= je; j++) {
-      Real p = 0.5*(phi(ke+1, j, is) + phi(ke, j, is-1));
-      phi(ke+1, j, is-1) = p;
-      phi(ke+1, j, is-2) = p;
-      phi(ke+2, j, is-1) = p;
-      phi(ke+2, j, is-2) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[2][1][2] < 0) {
-    for (int j = js; j <= je; j++) {
-      Real p = 0.5*(phi(ke+1, j, ie) + phi(ke, j, ie+1));
-      phi(ke+1, j, ie+1) = p;
-      phi(ke+1, j, ie+2) = p;
-      phi(ke+2, j, ie+1) = p;
-      phi(ke+2, j, ie+2) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[0][0][1] < 0) {
-    for (int i = is; i <= ie; i++) {
-      Real p = 0.5*(phi(ks-1, js, i) + phi(ks, js-1, i));
-      phi(ks-1, js-1, i) = p;
-      phi(ks-1, js-2, i) = p;
-      phi(ks-2, js-1, i) = p;
-      phi(ks-2, js-2, i) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[0][2][1] < 0) {
-    for (int i = is; i <= ie; i++) {
-      Real p = 0.5*(phi(ks-1, je, i) + phi(ks, je+1, i));
-      phi(ks-1, je+1, i) = p;
-      phi(ks-1, je+2, i) = p;
-      phi(ks-2, je+1, i) = p;
-      phi(ks-2, je+2, i) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[2][0][1] < 0) {
-    for (int i = is; i <= ie; i++) {
-      Real p = 0.5*(phi(ke+1, js, i) + phi(ke, js-1, i));
-      phi(ke+1, js-1, i) = p;
-      phi(ke+1, js-2, i) = p;
-      phi(ke+2, js-1, i) = p;
-      phi(ke+2, js-2, i) = p;
-    }
-  }
-  if (pmy_block->pbval->nblevel[2][2][1] < 0) {
-    for (int i = is; i <= ie; i++) {
-      Real p = 0.5*(phi(ke+1, je, i) + phi(ke, je+1, i));
-      phi(ke+1, je+1, i) = p;
-      phi(ke+1, je+2, i) = p;
-      phi(ke+2, je+1, i) = p;
-      phi(ke+2, je+2, i) = p;
-    }
-  }
-
-  // fill corners
-  if (pmy_block->pbval->nblevel[0][0][0] < 0) {
-    Real p = (phi(ks, js-1, is-1) + phi(ks-1, js, is-1) + phi(ks-1, js-1, is))/3.0;
-    phi(ks-1, js-1, is-1) = p;
-    phi(ks-1, js-1, is-2) = p;
-    phi(ks-1, js-2, is-1) = p;
-    phi(ks-1, js-2, is-2) = p;
-    phi(ks-2, js-1, is-1) = p;
-    phi(ks-2, js-1, is-2) = p;
-    phi(ks-2, js-2, is-1) = p;
-    phi(ks-2, js-2, is-2) = p;
-  }
-  if (pmy_block->pbval->nblevel[0][0][2] < 0) {
-    Real p = (phi(ks, js-1, ie+1) + phi(ks-1, js, ie+1) + phi(ks-1, js-1, ie))/3.0;
-    phi(ks-1, js-1, ie+1) = p;
-    phi(ks-1, js-1, ie+2) = p;
-    phi(ks-1, js-2, ie+1) = p;
-    phi(ks-1, js-2, ie+2) = p;
-    phi(ks-2, js-1, ie+1) = p;
-    phi(ks-2, js-1, ie+2) = p;
-    phi(ks-2, js-2, ie+1) = p;
-    phi(ks-2, js-2, ie+2) = p;
-  }
-  if (pmy_block->pbval->nblevel[0][2][0] < 0) {
-    Real p = (phi(ks, je+1, is-1) + phi(ks-1, je, is-1) + phi(ks-1, je+1, is))/3.0;
-    phi(ks-1, je+1, is-1) = p;
-    phi(ks-1, je+1, is-2) = p;
-    phi(ks-1, je+2, is-1) = p;
-    phi(ks-1, je+2, is-2) = p;
-    phi(ks-2, je+1, is-1) = p;
-    phi(ks-2, je+1, is-2) = p;
-    phi(ks-2, je+2, is-1) = p;
-    phi(ks-2, je+2, is-2) = p;
-  }
-  if (pmy_block->pbval->nblevel[2][0][0] < 0) {
-    Real p = (phi(ke, js-1, is-1) + phi(ke+1, js, is-1) + phi(ke+1, js-1, is))/3.0;
-    phi(ke+1, js-1, is-1) = p;
-    phi(ke+1, js-1, is-2) = p;
-    phi(ke+1, js-2, is-1) = p;
-    phi(ke+1, js-2, is-2) = p;
-    phi(ke+2, js-1, is-1) = p;
-    phi(ke+2, js-1, is-2) = p;
-    phi(ke+2, js-2, is-1) = p;
-    phi(ke+2, js-2, is-2) = p;
-  }
-  if (pmy_block->pbval->nblevel[0][2][2] < 0) {
-    Real p = (phi(ks, je+1, ie+1) + phi(ks-1, je, ie+1) + phi(ks-1, je+1, ie))/3.0;
-    phi(ks-1, je+1, ie+1) = p;
-    phi(ks-1, je+1, ie+2) = p;
-    phi(ks-1, je+2, ie+1) = p;
-    phi(ks-1, je+2, ie+2) = p;
-    phi(ks-2, je+1, ie+1) = p;
-    phi(ks-2, je+1, ie+2) = p;
-    phi(ks-2, je+2, ie+1) = p;
-    phi(ks-2, je+2, ie+2) = p;
-  }
-  if (pmy_block->pbval->nblevel[2][0][2] < 0) {
-    Real p = (phi(ke, js-1, ie+1) + phi(ke+1, js, ie+1) + phi(ke+1, js-1, ie))/3.0;
-    phi(ke+1, js-1, ie+1) = p;
-    phi(ke+1, js-1, ie+2) = p;
-    phi(ke+1, js-2, ie+1) = p;
-    phi(ke+1, js-2, ie+2) = p;
-    phi(ke+2, js-1, ie+1) = p;
-    phi(ke+2, js-1, ie+2) = p;
-    phi(ke+2, js-2, ie+1) = p;
-    phi(ke+2, js-2, ie+2) = p;
-  }
-  if (pmy_block->pbval->nblevel[2][2][0] < 0) {
-    Real p = (phi(ke, je+1, is-1) + phi(ke+1, je, is-1) + phi(ke+1, je+1, is))/3.0;
-    phi(ke+1, je+1, is-1) = p;
-    phi(ke+1, je+1, is-2) = p;
-    phi(ke+1, je+2, is-1) = p;
-    phi(ke+1, je+2, is-2) = p;
-    phi(ke+2, je+1, is-1) = p;
-    phi(ke+2, je+1, is-2) = p;
-    phi(ke+2, je+2, is-1) = p;
-    phi(ke+2, je+2, is-2) = p;
-  }
-  if (pmy_block->pbval->nblevel[2][2][2] < 0) {
-    Real p = (phi(ke, je+1, ie+1) + phi(ke+1, je, ie+1) + phi(ke+1, je+1, ie))/3.0;
-    phi(ke+1, je+1, ie+1) = p;
-    phi(ke+1, je+1, ie+2) = p;
-    phi(ke+1, je+2, ie+1) = p;
-    phi(ke+1, je+2, ie+2) = p;
-    phi(ke+2, je+1, ie+1) = p;
-    phi(ke+2, je+1, ie+2) = p;
-    phi(ke+2, je+2, ie+1) = p;
-    phi(ke+2, je+2, ie+2) = p;
   }
 
   return;

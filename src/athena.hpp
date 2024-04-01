@@ -50,7 +50,7 @@ class Coordinates;
 class ParameterInput;
 class HydroDiffusion;
 class FieldDiffusion;
-struct MGCoordinates;
+class MGCoordinates;
 class OrbitalAdvection;
 class NRRadiation;
 class IMRadiation;
@@ -166,12 +166,14 @@ enum CoordinateDirection {X1DIR=0, X2DIR=1, X3DIR=2};
 // KGF: Except for the 2x MG* enums, these may be unnessary w/ the new class inheritance
 // Now, only passed to BoundaryVariable::InitBoundaryData(); could replace w/ bool switch
 // TODO(tomo-ono): consider necessity of orbita_cc and orbital_fc
-enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mggrav,
-                             mggrav_f, orbital_cc, orbital_fc};
+enum class BoundaryQuantity {cc, fc, cc_flcor, fc_flcor, mg, mg_faceonly, mg_coeff,
+                             orbital_cc, orbital_fc};
 enum class HydroBoundaryQuantity {cons, prim};
 enum class BoundaryCommSubset {mesh_init, gr_amr, all, orbital, radiation, radhydro};
 // TODO(felker): consider generalizing/renaming to QuantityFormulation
-enum class FluidFormulation {evolve, background, disabled}; // rename background -> fixed?
+// TODO(Gong): currently disabled=background (with passive scalar advection),
+// and fixed is without passive scalar advection.
+enum class FluidFormulation {evolve, background, fixed, disabled};
 enum class TaskType {op_split_before, main_int, op_split_after};
 enum class UserHistoryOperation {sum, max, min};
 
@@ -211,7 +213,7 @@ using FieldDiffusionCoeffFunc = void (*)(
     const AthenaArray<Real> &w,
     const AthenaArray<Real> &bmag,
     int is, int ie, int js, int je, int ks, int ke);
-using MGSourceMaskFunc = void (*)(AthenaArray<Real> &src,
+using MGMaskFunc = void (*)(AthenaArray<Real> &dat,
     int is, int ie, int js, int je, int ks, int ke, const MGCoordinates &coord);
 using OrbitalVelocityFunc = Real (*)(
     OrbitalAdvection *porb, Real x1, Real x2, Real x3);

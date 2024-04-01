@@ -31,16 +31,16 @@ class MGGravity : public Multigrid {
   MGGravity(MultigridDriver *pmd, MeshBlock *pmb);
   ~MGGravity();
 
-  void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src, int rlev,
+  void Smooth(AthenaArray<Real> &dst, const AthenaArray<Real> &src,
+              const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix, int rlev,
               int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) final;
   void CalculateDefect(AthenaArray<Real> &def, const AthenaArray<Real> &u,
-                       const AthenaArray<Real> &src, int rlev,
-                       int il, int iu, int jl, int ju, int kl, int ku, bool th) final;
+                const AthenaArray<Real> &src, const AthenaArray<Real> &coeff,
+                const AthenaArray<Real> &matrix, int rlev, int il, int iu, int jl, int ju,
+                int kl, int ku, bool th) final;
   void CalculateFASRHS(AthenaArray<Real> &def, const AthenaArray<Real> &src,
+                const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix,
                 int rlev, int il, int iu, int jl, int ju, int kl, int ku, bool th) final;
-
- private:
-  static constexpr Real omega_ = 1.15;
 };
 
 
@@ -51,11 +51,12 @@ class MGGravityDriver : public MultigridDriver {
  public:
   MGGravityDriver(Mesh *pm, ParameterInput *pin);
   ~MGGravityDriver();
-  void Solve(int stage) final;
+  void Solve(int stage, Real dt = 0.0) final;
   void ProlongateOctetBoundariesFluxCons(AthenaArray<Real> &dst,
                  AthenaArray<Real> &cbuf, const AthenaArray<bool> &ncoarse) final;
+  friend class MGGravity;
  private:
-  Real four_pi_G_;
+  Real four_pi_G_, omega_;
   GravityBoundaryTaskList *gtlist_;
 };
 

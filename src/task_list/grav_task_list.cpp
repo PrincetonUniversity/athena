@@ -16,11 +16,7 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "../eos/eos.hpp"
-#include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
-#include "../hydro/hydro.hpp"
-#include "../hydro/srcterms/hydro_srcterms.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "grav_task_list.hpp"
@@ -30,9 +26,7 @@
 //! GravityBoundaryTaskList constructor
 
 GravityBoundaryTaskList::GravityBoundaryTaskList(ParameterInput *pin, Mesh *pm) {
-  // Now assemble list of tasks for each stage of time integrator
   {using namespace GravityBoundaryTaskNames; // NOLINT (build/namespace)
-    // compute hydro fluxes, integrate hydro variables
     AddTask(SEND_GRAV_BND,NONE);
     AddTask(RECV_GRAV_BND,NONE);
     AddTask(SETB_GRAV_BND,(RECV_GRAV_BND|SEND_GRAV_BND));
@@ -122,14 +116,14 @@ TaskStatus GravityBoundaryTaskList::SetGravityBoundary(MeshBlock *pmb, int stage
 
 TaskStatus GravityBoundaryTaskList::ProlongateGravityBoundary(MeshBlock *pmb,
                                                               int stage) {
-  pmb->pbval->ProlongateGravityBoundaries(pmb->pmy_mesh->time, 0.0);
+  pmb->pbval->ProlongateBoundariesPostMG(&(pmb->pgrav->gbvar));
   return TaskStatus::success;
 }
 
 TaskStatus GravityBoundaryTaskList::PhysicalBoundary(MeshBlock *pmb, int stage) {
   if (pmb->pgrav->fill_ghost) {
     pmb->pgrav->RestoreFaceBoundaries();
-    pmb->pgrav->ExpandPhysicalBoundaries();
+    pmb->pgrav->gbvar.ExpandPhysicalBoundaries();
   }
   return TaskStatus::next;
 }

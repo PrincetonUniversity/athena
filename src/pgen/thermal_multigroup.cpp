@@ -149,7 +149,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    ir_cm.DeleteAthenaArray();
   }
   return;
 }
@@ -230,5 +229,4 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     fprintf(pfile,"\n");
     fclose(pfile);
   }
-  sum_var.DeleteAthenaArray();
 }

@@ -74,6 +74,7 @@ class MultigridTaskList {
   void SetMGTaskListToFiner(int nsmooth, int ngh, int flag = 0);
   void SetMGTaskListToCoarser(int nsmooth, int ngh);
   void SetMGTaskListFMGProlongate(int flag = 0);
+  void SetMGTaskListBoundaryCommunication();
 
  private:
   MultigridDriver* pmy_mgdriver_;

@@ -27,6 +27,7 @@
 #include "../parameter_input.hpp"
 #include "../task_list/im_rad_task_list.hpp"
 #include "../task_list/task_list.hpp"
+#include "../units/units.hpp"
 #include "../utils/interp_table.hpp"
 #include "mesh_refinement.hpp"
 #include "meshblock_tree.hpp"
@@ -45,20 +46,24 @@ struct TaskStates;
 class Coordinates;
 class Reconstruction;
 class Hydro;
-class NRRadiation;
-class IMRadiation;
+
 class CosmicRay;
-class Field;
-class Particles;
-class PassiveScalars;
-class Gravity;
-class MGGravity;
-class MGGravityDriver;
+class CRDiffusion;
+class MGCRDiffusionDriver;
 class EquationOfState;
+class Field;
+class Gravity;
+class MGGravityDriver;
 class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
+class ChemRadiation;
 class OrbitalAdvection;
+class Particles;
+class PassiveScalars;
+class NRRadiation;
+class IMRadiation;
+class TurbulenceDriver;
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
 
@@ -74,6 +79,8 @@ class MeshBlock {
   friend class Mesh;
   friend class Hydro;
   friend class TaskList;
+  friend class ChemRadiation;
+  friend class ChemRadIntegrator;
   friend class IMRadTaskList;
 #ifdef HDF5OUTPUT
   friend class ATHDF5Output;
@@ -121,11 +128,12 @@ class MeshBlock {
   Hydro *phydro;
   NRRadiation *pnrrad;
   CosmicRay *pcr;
+  CRDiffusion *pcrdiff;
   Field *pfield;
   Gravity *pgrav;
-  MGGravity* pmg;
   PassiveScalars *pscalars;
   EquationOfState *peos;
+  ChemRadiation *pchemrad;
   OrbitalAdvection *porb;
 
 
@@ -217,6 +225,7 @@ class Mesh {
   friend class TurbulenceDriver;
   friend class MultigridDriver;
   friend class MGGravityDriver;
+  friend class MGCRDiffusionDriver;
   friend class Gravity;
   friend class HydroDiffusion;
   friend class FieldDiffusion;
@@ -264,6 +273,8 @@ class Mesh {
   TurbulenceDriver *ptrbd;
   FFTGravityDriver *pfgrd;
   MGGravityDriver *pmgrd;
+  MGCRDiffusionDriver *pmcrd;
+  Units *punit;
 
   // implicit radiation iteration
   IMRadiation *pimrad;
@@ -347,7 +358,11 @@ class Mesh {
   FieldDiffusionCoeffFunc FieldDiffusivity_;
   OrbitalVelocityFunc OrbitalVelocity_, OrbitalVelocityDerivative_[2];
   MGBoundaryFunc MGGravityBoundaryFunction_[6];
-  MGSourceMaskFunc MGGravitySourceMaskFunction_;
+  MGBoundaryFunc MGCRDiffusionBoundaryFunction_[6];
+  MGBoundaryFunc MGCRDiffusionCoeffBoundaryFunction_[6];
+  MGMaskFunc MGGravitySourceMaskFunction_;
+  MGMaskFunc MGCRDiffusionSourceMaskFunction_;
+  MGMaskFunc MGCRDiffusionCoeffMaskFunction_;
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -385,10 +400,14 @@ class Mesh {
   // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
   void EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
-  void EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask);
+  void EnrollUserMGGravitySourceMaskFunction(MGMaskFunc srcmask);
+  void EnrollUserMGCRDiffusionSourceMaskFunction(MGMaskFunc srcmask);
+  void EnrollUserMGCRDiffusionCoefficientMaskFunction(MGMaskFunc coeffmask);
 
   void EnrollUserRadBoundaryFunction(BoundaryFace face, RadBoundaryFunc my_func);
   void EnrollUserCRBoundaryFunction(BoundaryFace face, CRBoundaryFunc my_func);
+
+  void EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
 
   //! \deprecated (felker):
   //! * provide trivial overload for old-style BoundaryFace enum argument

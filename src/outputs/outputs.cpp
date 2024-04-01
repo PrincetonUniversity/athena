@@ -89,8 +89,11 @@
 // Athena++ headers
 #include "../athena.hpp"
 #include "../athena_arrays.hpp"
+#include "../chem_rad/chem_rad.hpp"
+#include "../chem_rad/integrators/rad_integrators.hpp"
 #include "../coordinates/coordinates.hpp"
 #include "../cr/cr.hpp"
+#include "../crdiffusion/crdiffusion.hpp"
 #include "../field/field.hpp"
 #include "../gravity/gravity.hpp"
 #include "../hydro/hydro.hpp"
@@ -350,7 +353,9 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
   Field *pfld = pmb->pfield;
   NRRadiation *prad=pmb->pnrrad;
   CosmicRay *pcr=pmb->pcr;
+  CRDiffusion *pcrdiff=pmb->pcrdiff;
   PassiveScalars *psclr = pmb->pscalars;
+  ChemRadiation *pchemrad = pmb->pchemrad;
   Gravity *pgrav = pmb->pgrav;
   OrbitalAdvection *porb = pmb->porb;
   num_vars_ = 0;
@@ -586,8 +591,21 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     std::string root_name_cons = "s";
     std::string root_name_prim = "r";
     for (int n=0; n<NSCALARS; n++) {
-      std::string scalar_name_cons = root_name_cons + std::to_string(n);
-      std::string scalar_name_prim = root_name_prim + std::to_string(n);
+      std::string scalar_name_cons, scalar_name_prim;
+      if (CHEMISTRY_ENABLED) {
+        if (n < NSPECIES) {
+          scalar_name_cons = root_name_cons +
+                             psclr->chemnet.species_names[n];
+          scalar_name_prim = root_name_prim +
+                             psclr->chemnet.species_names[n];
+        } else {
+          scalar_name_cons = root_name_cons + std::to_string(n-NSPECIES);
+          scalar_name_prim = root_name_prim + std::to_string(n-NSPECIES);
+        }
+      } else {
+        scalar_name_cons = root_name_cons + std::to_string(n);
+        scalar_name_prim = root_name_prim + std::to_string(n);
+      }
       if (ContainVariable(output_params.variable, scalar_name_cons) ||
           ContainVariable(output_params.variable, "cons")) {
         pod = new OutputData;
@@ -609,7 +627,89 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   }
 
-
+  if (CHEMRADIATION_ENABLED) {
+    if (ContainVariable(output_params.variable, "rad") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
+      std::string name_ir_avg = "ir_avg";
+      for (int i=0; i<pchemrad->nfreq; i++) {
+        std::string vi = name_ir_avg + std::to_string(i);
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = vi;
+        pod->data.InitWithShallowSlice(pchemrad->ir_avg, 4, i, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+      if (CHEMISTRY_ENABLED) {
+        if (DEBUG) {
+          // for testing six-ray. Not implemented in HDF5 output yet
+          if (std::strcmp(CHEMRADIATION_INTEGRATOR, "six_ray") == 0) {
+            // average column density
+            std::string name_col_avg = "col_avg";
+            for (int i=0; i<pchemrad->pchemradintegrator->ncol; i++) {
+              std::string vi = name_col_avg + std::to_string(i);
+              pod = new OutputData;
+              pod->type = "SCALARS";
+              pod->name = vi;
+              pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_avg,4,i,1);
+              AppendOutputDataNode(pod);
+              num_vars_++;
+            }
+            // column density components
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_Htot_p";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_Htot,4,0,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_H2_p";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_H2,4,0,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_CO_p";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_CO,4,0,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_C_p";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_C,4,0,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_Htot_m";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_Htot,4,3,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_H2_m";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_H2,4,3,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_CO_m";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_CO,4,3,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+            pod = new OutputData;
+            pod->type = "VECTORS";
+            pod->name = "col_C_m";
+            pod->data.InitWithShallowSlice(pchemrad->pchemradintegrator->col_C,4,3,3);
+            AppendOutputDataNode(pod);
+            num_vars_ += 3;
+          }
+        }
+      }
+    }
+  }
   // The following radiation/cosmic ray/thermal conduction are all
   // cell centered variable
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
@@ -922,7 +1022,7 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
       }
     }
     //-------------------------------------------------------
-    for(int ifr=0; ifr<prad->nfreq; ++ifr) {
+    for (int ifr=0; ifr<prad->nfreq; ++ifr) {
       std::string sigmaa_ifr = "Sigma_a_" + std::to_string(ifr);
       std::string sigmas_ifr = "Sigma_s_" + std::to_string(ifr);
       std::string sigmap_ifr = "Sigma_p_" + std::to_string(ifr);
@@ -958,9 +1058,8 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         AppendOutputDataNode(pod);
         num_vars_ += 1;
       }
-    }// end ifr loop
-  }// End (RADIATION_ENABLED)
-
+    } // end ifr loop
+  } // End (RADIATION_ENABLED)
 
   if (CR_ENABLED) {
     if (ContainVariable(output_params.variable, "Ec") ||
@@ -1046,8 +1145,36 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
     }
   }// end Cosmic Rays
 
-
-
+  if (CRDIFFUSION_ENABLED) {
+    if (ContainVariable(output_params.variable, "ecr") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "ecr";
+      pod->data.InitWithShallowSlice(pcrdiff->ecr,4,0,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+      if (pcrdiff->output_defect) {
+        pod = new OutputData;
+        pod->type = "SCALARS";
+        pod->name = "defect-ecr";
+        pod->data.InitWithShallowSlice(pcrdiff->def, 4, 0, 1);
+        AppendOutputDataNode(pod);
+        num_vars_++;
+      }
+    }
+    if (ContainVariable(output_params.variable, "zeta") ||
+        ContainVariable(output_params.variable, "prim") ||
+        ContainVariable(output_params.variable, "cons")) {
+      pod = new OutputData;
+      pod->type = "SCALARS";
+      pod->name = "zeta";
+      pod->data.InitWithShallowSlice(pcrdiff->zeta,4,0,1);
+      AppendOutputDataNode(pod);
+      num_vars_++;
+    }
+  }
 
   // note, the Bcc variables are stored in a separate HDF5 dataset from the above Output
   // nodes, and it must come after those nodes in the linked list
@@ -1252,7 +1379,6 @@ void Outputs::MakeOutputs(Mesh *pm, ParameterInput *pin, bool wtflag) {
         }
         rad_mom = false;
       }
-
       if (first && ptype->output_params.file_type != "hst") {
         pm->ApplyUserWorkBeforeOutput(pin);
         first = false;

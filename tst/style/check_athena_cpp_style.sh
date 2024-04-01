@@ -16,9 +16,13 @@
 
 # src/plimpton/ should probably be removed from the src/ folder. Exclude from style checks for now.
 
+exit_on_error=1
+
+grep -V | grep -q 'GNU grep'; if [ $? -eq 1 ]; then echo "WARNING: 'grep' does not appear to be GNU grep.\nNot all style checks are compatible with BSD grep"; fi
+
 # Apply Google C++ Style Linter to all source code files at once:
 echo "Starting Google C++ Style cpplint.py test"
-set -e
+if [ $exit_on_error -eq 1 ]; then set -e; fi
 # Use "python[23] -u" to prevent buffering of sys.stdout,stderr.write() calls in cpplint.py and mix-up in Jenkins logs,
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -not -name "defs.hpp" -print | xargs python -u ./cpplint.py --counting=detailed
 set +e
@@ -34,7 +38,7 @@ do
     # TYPE 1: may cause bugs, or introduces abhorrent style (e.g. mixing tabs and spaces).
     # --------------------------
     grep -n "$(printf '\t')" $file
-    if [ $? -ne 1 ]; then echo "ERROR: Do not use \t tab characters"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Do not use \t tab characters"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     # TYPE 2: strict ISO C++11 compilance and/or technical edge-cases.
     # Code would be fine for >95% of environments and libraries with these violations, but they may affect portability.
@@ -44,38 +48,38 @@ do
     # Note, currently all such chained grep calls will miss violations if a comment is at the end of line, e.g.:
     #     }}  // this is a comment after a style error
     grep -nri "sqrt(" "$file" | grep -v "std::sqrt(" | grep -v "//"
-    if [ $? -ne 1 ]; then echo "ERROR: Use std::sqrt(), not sqrt()"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::sqrt(), not sqrt()"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     grep -nri "cbrt(" "$file" | grep -v "std::cbrt(" | grep -v "//"
-    if [ $? -ne 1 ]; then echo "ERROR: Use std::cbrt(), not cbrt()"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::cbrt(), not cbrt()"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     grep -nri "log(" "$file" | grep -v "std::log(" | grep -v "//"
-    if [ $? -ne 1 ]; then echo "ERROR: Use std::log(), not log()"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::log(), not log()"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     grep -nri "log10(" "$file" | grep -v "std::log10(" | grep -v "//"
-    if [ $? -ne 1 ]; then echo "ERROR: Use std::log10(), not log10()"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::log10(), not log10()"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     grep -nri "exp(" "$file" | grep -v "std::exp(" | grep -v "//"
-    if [ $? -ne 1 ]; then echo "ERROR: Use std::exp(), not exp()"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::exp(), not exp()"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     grep -nri "pow(" "$file" | grep -v "std::pow(" | grep -v "//"
-    if [ $? -ne 1 ]; then echo "ERROR: Use std::pow(), not pow()"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::pow(), not pow()"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     grep -nri "fabs(" "$file" | grep -v "std::abs(" | grep -v "//"
-    if [ $? -ne 1 ]; then echo "ERROR: Use std::abs(), not fabs()"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::abs(), not fabs()"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     grep -nri "abs(" "$file" | grep -v "std::abs(" | grep -v "//"
-    if [ $? -ne 1 ]; then echo "ERROR: Use std::abs(), not abs()"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Use std::abs(), not abs()"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     # TYPE 3: purely stylistic inconsistencies.
     # These errors would not cause any changes to code behavior if they were ignored, but they may affect readability.
     # --------------------------
     grep -nri "}}" "$file" | grep -v "//"
-    if [ $? -ne 1 ]; then echo "ERROR: Use single closing brace '}}' per line"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Use single closing brace '}}' per line"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     # GNU Grep Extended Regex (ERE) syntax:
     grep -nrEi '^\s+#pragma' "$file"
-    if [ $? -ne 1 ]; then echo "ERROR: Left justify any #pragma statements"; exit 1; fi
+    if [ $? -ne 1 ]; then echo "ERROR: Left justify any #pragma statements"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 
     # To lint each src/ file separately, use:
     # ./cpplint.py --counting=detailed "$file"
@@ -87,7 +91,7 @@ echo "End of std::sqrt(), std::cbrt(), \t test"
 # (Google C++ Style Linter does not check for this, but flake8 via pycodestyle warning W291 will check *.py)
 echo "Checking for trailing whitespace in src/"
 find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp*" \) -not -path "*/fft/plimpton/*" -exec grep -n -E " +$" {} +
-if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with trailing whitespace"; exit 1; fi
+if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with trailing whitespace"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 echo "End of trailing whitespace test"
 
 # Check that all files in src/ have the correct, non-executable octal permission 644
@@ -118,5 +122,5 @@ echo "Checking for correct file permissions in src/"
 # Furthermore, even the latest version of "git ls-tree" will silently fail & return nothing if [<path>...]
 # is in repository but does not match any tree contents.
 git ls-tree -r --full-tree HEAD src/ | awk '{print substr($1,4,5), $4}' | grep -v "644"
-if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with executable permission"; exit 1; fi
+if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with executable permission"; if [ $exit_on_error -eq 1 ]; then exit 1; fi; fi
 echo "End of file permissions test"

@@ -1,0 +1,54 @@
+<comment>
+problem   = Read VTK file from Athena 4.2 output
+reference = Section 4.4 in Gong et al. 2023, arXiv:2305.04965
+configure = --prob=read_vtk 
+
+<job>
+problem_id = read_vtk   # problem ID: basename of output filenames
+
+<output1>
+file_type  = vtk       # vtk data dump
+variable   = prim      # variables to be output
+dt         = 0.01      # time increment between outputs
+
+<time>
+cfl_number = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = 1         # cycle limit
+tlim       = 1.        # time limit
+ncycle_out = 1         # interval for stdout summary info
+
+<mesh>
+nx1        = 16        # Number of zones in X1-direction
+x1min      = -512      # minimum value of X1
+x1max      = 0         # maximum value of X1
+ix1_bc     = user      # inner-X1 boundary flag
+ox1_bc     = user      # outer-X1 boundary flag
+
+nx2        = 16        # Number of zones in X2-direction
+x2min      = -512      # minimum value of X2
+x2max      = 0         # maximum value of X2
+ix2_bc     = user      # inner-X2 boundary flag
+ox2_bc     = user      # outer-X2 boundary flag
+
+nx3        = 32        # Number of zones in X3-direction
+x3min      = 0         # minimum value of X3
+x3max      = 1024      # maximum value of X3
+ix3_bc     = user      # inner-X3 boundary flag
+ox3_bc     = user      # outer-X3 boundary flag
+
+<meshblock>
+nx1        =    16
+nx2        =    16
+nx3        =    32
+
+<hydro>
+gamma = 1.666666666666667 # gamma = C_p/C_v
+iso_sound_speed = 1.0     # isothermal sound speed
+
+<problem>
+vtkfile    = ../data/chem_cgk_input.vtk # filename of the vtkfile to be read in
+scalars    = density, pressure          # scalar fields to be read in, separated by comma
+vectors    = velocity                   # vector fields to be read in, separated by comma, assume 3 components
+# assume float format, and lookup_table default
+is_joined_vtk = 0                       # 0/1 for unjoined/joined vtk files
+r_init     = 1.0e-6                     # initial abundances

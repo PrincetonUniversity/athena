@@ -25,10 +25,8 @@ class RadIntegrator {
   friend class IMRadiation;
  public:
   RadIntegrator(NRRadiation *prad, ParameterInput *pin);
-  ~RadIntegrator();
 
   NRRadiation *pmy_rad;
-
 
   void FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
                                        AthenaArray<Real> &ir_out);

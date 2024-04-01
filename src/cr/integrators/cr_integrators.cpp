@@ -91,34 +91,3 @@ CRIntegrator::CRIntegrator(CosmicRay *pcr, ParameterInput *pin) {
   ec_source_.NewAthenaArray(ncells3,ncells2,ncells1);
   coord_source_.NewAthenaArray(NCR,ncells3,ncells2,ncells1);
 }
-
-// destructor
-
-CRIntegrator::~CRIntegrator() {
-  x1face_area_.DeleteAthenaArray();
-  if (pmy_cr->pmy_block->ncells2 > 1) {
-    x2face_area_.DeleteAthenaArray();
-    x2face_area_p1_.DeleteAthenaArray();
-  }
-  if (pmy_cr->pmy_block->ncells3 > 1) {
-    x3face_area_.DeleteAthenaArray();
-    x3face_area_p1_.DeleteAthenaArray();
-  }
-  cell_volume_.DeleteAthenaArray();
-
-  cwidth2_.DeleteAthenaArray();
-  cwidth3_.DeleteAthenaArray();
-  dflx_.DeleteAthenaArray();
-  ucr_l_.DeleteAthenaArray();
-  ucr_r_.DeleteAthenaArray();
-  ucr_lb_.DeleteAthenaArray();
-  vdiff_l_.DeleteAthenaArray();
-  vdiff_r_.DeleteAthenaArray();
-
-  new_sol_.DeleteAthenaArray();
-
-  grad_pc_.DeleteAthenaArray();
-  ec_source_.DeleteAthenaArray();
-  coord_source_.DeleteAthenaArray();
-  ucr_vel_.DeleteAthenaArray();
-}

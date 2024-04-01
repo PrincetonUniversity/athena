@@ -69,7 +69,7 @@ def main(**kwargs):
         with h5py.File(output_filename, 'w') as f:
 
             # Write attributes
-            for key, val in attributes:
+            for key, val in attrs.items():
                 if key == 'RootGridX1' or key == 'RootGridX2' or key == 'RootGridX3':
                     if val[2] > 0.0:
                         value = [val[0], val[1], val[2]**(1.0/2.0**level)]
@@ -106,10 +106,11 @@ def main(**kwargs):
             var_offset = 0
             for dataset_name, num_vars in zip(
                     f.attrs['DatasetNames'], f.attrs['NumVariables']):
-                f.create_dataset(dataset_name, dtype='>f4',
+                f.create_dataset(dataset_name.decode('ascii', 'replace'), dtype='>f4',
                                  shape=(num_vars, 1, nx3, nx2, nx1))
                 for var_num in range(num_vars):
                     variable_name = f.attrs['VariableNames'][var_num + var_offset]
+                    variable_name = variable_name.decode('ascii', 'replace')
                     f[dataset_name][var_num, 0, :, :, :] = data[variable_name]
                 var_offset += num_vars
 

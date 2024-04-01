@@ -1,0 +1,75 @@
+<comment>
+problem   = CR diffusion test with Multigrid
+reference = 
+configure = --prob=cr_diffusion_mg -crdiff
+
+<job>
+problem_id = MGCRDiffusion # problem ID: basename of output filenames
+
+<nooutput1>
+file_type  = hst        # History data dump
+dt         = 0.01       # time increment between outputs
+
+<output1>
+file_type  = vtk        # Binary data dump
+variable   = prim       # variables to be output
+dcycle        = 1       # time increment between outputs
+
+<time>
+cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = 1          # cycle limit
+tlim       = 1.0        # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
+
+<mesh>
+nx1        = 64         # Number of zones in X1-direction
+x1min      = -0.5       # minimum value of X1
+x1max      = 0.5        # maximum value of X1
+ix1_bc     = outflow    # inner-X1 boundary flag
+ox1_bc     = outflow    # outer-X1 boundary flag
+
+nx2        = 64         # Number of zones in X2-direction
+x2min      = -0.5       # minimum value of X2
+x2max      = 0.5        # maximum value of X2
+ix2_bc     = outflow    # inner-X2 boundary flag
+ox2_bc     = outflow    # outer-X2 boundary flag
+
+nx3        = 64         # Number of zones in X3-direction
+x3min      = -0.5       # minimum value of X3
+x3max      = 0.5        # maximum value of X3
+ix3_bc     = outflow    # inner-X3 boundary flag
+ox3_bc     = outflow    # outer-X3 boundary flag
+
+<meshblock>
+nx1        = 64
+nx2        = 64
+nx3        = 64
+
+<hydro>
+gamma           = 1.666666666667 # gamma = C_p/C_v
+iso_sound_speed = 0.4082482905   # equivalent to sqrt(gamma*p/d) for p=0.1, d=1
+
+<crdiffusion>
+mgmode          = FMG
+fas             = true
+npresmooth      = 2
+npostsmooth     = 2
+omega           = 1.3
+niteration      = 10
+#threshold       = 0.00001
+output_defect   = true
+ix1_bc          = user 
+ox1_bc          = user
+ix2_bc          = user
+ox2_bc          = user
+ix3_bc          = zerograd
+ox3_bc          = zerograd
+
+Dpara           = 100.0
+Dperp           = 1.0
+Lambda          = 100.0
+zeta_factor     = 1.0
+
+<problem>
