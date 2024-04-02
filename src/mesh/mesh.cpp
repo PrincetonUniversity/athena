@@ -1055,7 +1055,7 @@ void Mesh::OutputMeshStructure(int ndim) {
         std::int64_t &lx1 = loclist[j].lx1;
         std::int64_t &lx2 = loclist[j].lx2;
         std::int64_t &lx3 = loclist[j].lx3;
-        int &ll = loclist[j].level;
+        const int &ll = loclist[j].level;
         mincost = std::min(mincost,costlist[i]);
         maxcost = std::max(maxcost,costlist[i]);
         totalcost += costlist[i];
@@ -1883,7 +1883,7 @@ MeshBlock* Mesh::FindMeshBlock(int tgid) {
 void Mesh::SetBlockSizeAndBoundaries(LogicalLocation loc, RegionSize &block_size,
                                      BoundaryFlag *block_bcs) {
   std::int64_t &lx1 = loc.lx1;
-  int &ll = loc.level;
+  const int &ll = loc.level;
   std::int64_t nrbx_ll = nrbx1 << (ll - root_level);
 
   // calculate physical block size, x1

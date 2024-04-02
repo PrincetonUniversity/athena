@@ -247,8 +247,8 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin) {
   imp_ang_psi_l_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
 
   if (prad->angle_flag == 1) {
-    int &nzeta = prad->nzeta;
-    int &npsi = prad->npsi;
+    const int& nzeta = prad->nzeta;
+    const int& npsi = prad->npsi;
     if (nzeta > 0) {
       g_zeta_.NewAthenaArray(2*nzeta+1);
       q_zeta_.NewAthenaArray(2*nzeta+2*NGHOST);
@@ -390,11 +390,11 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
   NRRadiation *prad=pmb->pnrrad;
   Coordinates *pco=pmb->pcoord;
 
-  Real& prat = prad->prat;
+  const Real& prat = prad->prat;
   Real invcrat = 1.0/prad->crat;
 
-  int &nang =prad->nang;
-  int &nfreq=prad->nfreq;
+  const int &nang =prad->nang;
+  const int &nfreq=prad->nfreq;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -672,11 +672,11 @@ void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i,
                                Real dt, Real rho, Real *vx, Real *vy, Real *vz) {
   NRRadiation *prad = pmy_rad;
 
-  Real &prat = prad->prat;
+  const Real &prat = prad->prat;
   Real invcrat = 1.0/prad->crat;
   Real ct = dt * prad->reduced_c;
-  int& nang =prad->nang;
-  int& nfreq=prad->nfreq;
+  const int& nang =prad->nang;
+  const int& nfreq=prad->nfreq;
   // first, calculate the moments
   Real er =0.0, fr1=0.0, fr2=0.0, fr3=0.0,
       pr11=0.0,pr12=0.0,pr13=0.0,pr22=0.0,

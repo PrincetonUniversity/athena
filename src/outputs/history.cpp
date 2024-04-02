@@ -98,10 +98,10 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             // NEW_OUTPUT_TYPES:
 
             // Hydro conserved variables:
-            Real& u_d  = porb->u_orb(IDN,k,j,i);
-            Real& u_mx = porb->u_orb(IM1,k,j,i);
-            Real& u_my = porb->u_orb(IM2,k,j,i);
-            Real& u_mz = porb->u_orb(IM3,k,j,i);
+            const Real& u_d  = porb->u_orb(IDN,k,j,i);
+            const Real& u_mx = porb->u_orb(IM1,k,j,i);
+            const Real& u_my = porb->u_orb(IM2,k,j,i);
+            const Real& u_mz = porb->u_orb(IM3,k,j,i);
 
             hst_data[0] += vol(i)*u_d;
             hst_data[1] += vol(i)*u_mx;
@@ -113,19 +113,19 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             hst_data[6] += vol(i)*0.5*SQR(u_mz)/u_d;
 
             if (NON_BAROTROPIC_EOS) {
-              Real& u_e = porb->u_orb(IEN,k,j,i);
+              const Real& u_e = porb->u_orb(IEN,k,j,i);
               hst_data[7] += vol(i)*u_e;
             }
             // Graviatational potential energy:
             if (SELF_GRAVITY_ENABLED) {
-              Real& phi = pgrav->phi(k,j,i);
+              const Real& phi = pgrav->phi(k,j,i);
               hst_data[NHYDRO + 3] += vol(i)*0.5*u_d*phi;
             }
             // Cell-centered magnetic energy, partitioned by coordinate direction:
             if (MAGNETIC_FIELDS_ENABLED) {
-              Real& bcc1 = pfld->bcc(IB1,k,j,i);
-              Real& bcc2 = pfld->bcc(IB2,k,j,i);
-              Real& bcc3 = pfld->bcc(IB3,k,j,i);
+              const Real& bcc1 = pfld->bcc(IB1,k,j,i);
+              const Real& bcc2 = pfld->bcc(IB2,k,j,i);
+              const Real& bcc3 = pfld->bcc(IB3,k,j,i);
               constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0);
               hst_data[prev_out] += vol(i)*0.5*bcc1*bcc1;
               hst_data[prev_out + 1] += vol(i)*0.5*bcc2*bcc2;
@@ -133,14 +133,14 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             }
             // (conserved variable) Passive scalars:
             for (int n=0; n<NSCALARS; n++) {
-              Real& s = psclr->s(n,k,j,i);
+              const Real& s = psclr->s(n,k,j,i);
               constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD;
               hst_data[prev_out + n] += vol(i)*s;
             }
             // average radiation field strength:
             if (CHEMRADIATION_ENABLED) {
               for (int n=0; n<pchemrad->nfreq; n++) {
-                Real& ir = pchemrad->ir_avg(n,k,j,i);
+                const Real& ir = pchemrad->ir_avg(n,k,j,i);
                 constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD
                   + NSCALARS;
                 hst_data[prev_out + n] += vol(i)*ir;
@@ -201,10 +201,10 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             // NEW_OUTPUT_TYPES:
 
             // Hydro conserved variables:
-            Real& u_d  = phyd->u(IDN,k,j,i);
-            Real& u_mx = phyd->u(IM1,k,j,i);
-            Real& u_my = phyd->u(IM2,k,j,i);
-            Real& u_mz = phyd->u(IM3,k,j,i);
+            const Real& u_d  = phyd->u(IDN,k,j,i);
+            const Real& u_mx = phyd->u(IM1,k,j,i);
+            const Real& u_my = phyd->u(IM2,k,j,i);
+            const Real& u_mz = phyd->u(IM3,k,j,i);
 
             hst_data[0] += vol(i)*u_d;
             hst_data[1] += vol(i)*u_mx;
@@ -216,19 +216,19 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             hst_data[6] += vol(i)*0.5*SQR(u_mz)/u_d;
 
             if (NON_BAROTROPIC_EOS) {
-              Real& u_e = phyd->u(IEN,k,j,i);
+              const Real& u_e = phyd->u(IEN,k,j,i);
               hst_data[7] += vol(i)*u_e;
             }
             // Graviatational potential energy:
             if (SELF_GRAVITY_ENABLED) {
-              Real& phi = pgrav->phi(k,j,i);
+              const Real& phi = pgrav->phi(k,j,i);
               hst_data[NHYDRO + 3] += vol(i)*0.5*u_d*phi;
             }
             // Cell-centered magnetic energy, partitioned by coordinate direction:
             if (MAGNETIC_FIELDS_ENABLED) {
-              Real& bcc1 = pfld->bcc(IB1,k,j,i);
-              Real& bcc2 = pfld->bcc(IB2,k,j,i);
-              Real& bcc3 = pfld->bcc(IB3,k,j,i);
+              const Real& bcc1 = pfld->bcc(IB1,k,j,i);
+              const Real& bcc2 = pfld->bcc(IB2,k,j,i);
+              const Real& bcc3 = pfld->bcc(IB3,k,j,i);
               constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0);
               hst_data[prev_out] += vol(i)*0.5*bcc1*bcc1;
               hst_data[prev_out + 1] += vol(i)*0.5*bcc2*bcc2;
@@ -236,14 +236,14 @@ void HistoryOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             }
             // (conserved variable) Passive scalars:
             for (int n=0; n<NSCALARS; n++) {
-              Real& s = psclr->s(n,k,j,i);
+              const Real& s = psclr->s(n,k,j,i);
               constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD;
               hst_data[prev_out + n] += vol(i)*s;
             }
             // average radiation field strength:
             if (CHEMRADIATION_ENABLED) {
               for (int n=0; n<pchemrad->nfreq; n++) {
-                Real& ir = pchemrad->ir_avg(n,k,j,i);
+                const Real& ir = pchemrad->ir_avg(n,k,j,i);
                 constexpr int prev_out = NHYDRO + 3 + (SELF_GRAVITY_ENABLED > 0) + NFIELD
                   + NSCALARS;
                 hst_data[prev_out + n] += vol(i)*ir;

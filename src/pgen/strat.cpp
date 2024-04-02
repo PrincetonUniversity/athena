@@ -368,9 +368,9 @@ void MeshBlock::UserWorkInLoop() {
           Real gam = peos->GetGamma();
           Real& w_p  = phydro->w(IPR,k,j,i);
           Real& u_e  = phydro->u(IEN,k,j,i);
-          Real& u_m1 = phydro->u(IM1,k,j,i);
-          Real& u_m2 = phydro->u(IM2,k,j,i);
-          Real& u_m3 = phydro->u(IM3,k,j,i);
+          const Real& u_m1 = phydro->u(IM1,k,j,i);
+          const Real& u_m2 = phydro->u(IM2,k,j,i);
+          const Real& u_m3 = phydro->u(IM3,k,j,i);
           w_p = (w_p > pfloor) ?  w_p : pfloor;
           Real di = 1.0/u_d;
           Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));

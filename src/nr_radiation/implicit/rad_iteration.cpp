@@ -206,8 +206,8 @@ void IMRadiation::Iteration(
 void IMRadiation::CheckResidual(MeshBlock *pmb,
                                 AthenaArray<Real> &ir_old, AthenaArray<Real> &ir_new) {
   NRRadiation *prad = pmb->pnrrad;
-  int &nang =prad->nang;
-  int &nfreq=prad->nfreq;
+  const int& nang =prad->nang;
+  const int& nfreq=prad->nfreq;
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
 

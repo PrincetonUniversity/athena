@@ -856,7 +856,7 @@ void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, i
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       if (nb==0) {
         for(int k=pmb->ks; k<=pmb->ke; k++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
@@ -889,7 +889,7 @@ void OrbitalBoundaryCommunication::LoadHydroBufferSameLevel(Real *buf, int &p, i
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       if (nb==0) {
         for(int j=pmb->js; j<=pmb->je; j++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
@@ -1022,7 +1022,7 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToFiner(Real *buf, int &p, int
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int &onx = pmb->block_size.nx2;
       int il, iu, jl, ju, kl, ku;
       if (pmb->block_size.nx3>1) {
         if(nb%4<2) {
@@ -1059,7 +1059,7 @@ void OrbitalBoundaryCommunication::LoadHydroBufferToFiner(Real *buf, int &p, int
       BufferUtility::PackData(ui, buf, 0, NHYDRO-1,
                               il, iu, jl, ju, kl, ku, p);
     } else if (porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int &onx = pmb->block_size.nx3;
       int il, iu, jl, ju, kl, ku;
       if(nb%4<2) {
         jl = pmb->js-1;
@@ -1109,7 +1109,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int &onx = pmb->block_size.nx2;
       if (nb==0) {
         for(int k=pmb->ks; k<=pmb->ke; k++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
@@ -1152,7 +1152,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferSameLevel(
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       if (nb==0) {
         for(int j=pmb->js; j<=pmb->je; j++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
@@ -1213,7 +1213,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       int il, iu, kl, ku;
       if (pmb->block_size.nx3>1) {
         kl = pmb->cks-1;
@@ -1296,7 +1296,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromCoarser(
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       int il, iu, jl, ju;
       il = pmb->cis-1;
       iu = pmb->cie+1;
@@ -1390,7 +1390,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       int hnx1 = pmb->block_size.nx1/2;
       int hnx3 = pmb->block_size.nx3/2;
       int il, iu, kl, ku;
@@ -1462,7 +1462,7 @@ void OrbitalBoundaryCommunication::SetHydroBufferFromFiner(
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       int hnx1 = pmb->block_size.nx1/2;
       int hnx2 = pmb->block_size.nx2/2;
       int il, iu, jl, ju;
@@ -1537,7 +1537,7 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       if (nb==0) {
         // b1
         for(int k=pmb->ks; k<=pmb->ke  ; k++) {
@@ -1588,7 +1588,7 @@ void OrbitalBoundaryCommunication::LoadFieldBufferSameLevel(Real *buf, int &p, i
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       if (nb==0) {
         // -b1
         for(int j=pmb->js; j<=pmb->je  ; j++) {
@@ -1889,7 +1889,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       if (nb==0) {
         for(int k=pmb->ks; k<=pmb->ke  ; k++) {
           for(int i=pmb->is; i<=pmb->ie+1; i++) {
@@ -1956,7 +1956,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferSameLevel(
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       if (nb==0) {
         for(int j=pmb->js; j<=pmb->je  ; j++) {
           for(int i=pmb->is; i<=pmb->ie+1; i++) {
@@ -2298,7 +2298,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       int hnx1 = pmb->block_size.nx1/2;
       int hnx3 = pmb->block_size.nx3/2;
       int il, iu, kl, ku;
@@ -2394,7 +2394,7 @@ void OrbitalBoundaryCommunication::SetFieldBufferFromFiner(
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       int hnx1 = pmb->block_size.nx1/2;
       int hnx2 = pmb->block_size.nx2/2;
       int il, iu, jl, ju;
@@ -2493,7 +2493,7 @@ void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       if (nb==0) {
         for(int k=pmb->ks; k<=pmb->ke; k++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
@@ -2526,7 +2526,7 @@ void OrbitalBoundaryCommunication::LoadScalarBufferSameLevel(
         ATHENA_ERROR(msg);
       }
     } else if (porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       if (nb==0) {
         for(int j=pmb->js; j<=pmb->je; j++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
@@ -2659,7 +2659,7 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToFiner(Real *buf, int &p, in
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       int il, iu, jl, ju, kl, ku;
       if (pmb->block_size.nx3>1) {
         if(nb%4<2) {
@@ -2696,7 +2696,7 @@ void OrbitalBoundaryCommunication::LoadScalarBufferToFiner(Real *buf, int &p, in
       BufferUtility::PackData(si, buf, 0, NSCALARS-1,
                               il, iu, jl, ju, kl, ku, p);
     } else if (porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       int il, iu, jl, ju, kl, ku;
       if (nb%4<2) {
         jl = pmb->js-1;
@@ -2746,7 +2746,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       if(nb==0) {
         for(int k=pmb->ks; k<=pmb->ke; k++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
@@ -2789,7 +2789,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferSameLevel(
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       if (nb==0) {
         for(int j=pmb->js; j<=pmb->je; j++) {
           for(int i=pmb->is; i<=pmb->ie; i++) {
@@ -2850,7 +2850,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       int il, iu, kl, ku;
       if(pmb->block_size.nx3>1) {
         kl = pmb->cks-1;
@@ -2933,7 +2933,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromCoarser(
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       int il, iu, jl, ju;
       jl = pmb->cjs-1;
       ju = pmb->cje+1;
@@ -3027,7 +3027,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
 
   if(porb->orbital_uniform_mesh) { // uniform mesh
     if(porb->orbital_direction == 1) {
-      int &onx = pmb->block_size.nx2;
+      const int& onx = pmb->block_size.nx2;
       int hnx1 = pmb->block_size.nx1/2;
       int hnx3 = pmb->block_size.nx3/2;
       int il, iu, kl, ku;
@@ -3099,7 +3099,7 @@ void OrbitalBoundaryCommunication::SetScalarBufferFromFiner(
         ATHENA_ERROR(msg);
       }
     } else if(porb->orbital_direction == 2) {
-      int &onx = pmb->block_size.nx3;
+      const int& onx = pmb->block_size.nx3;
       int hnx1 = pmb->block_size.nx1/2;
       int hnx2 = pmb->block_size.nx2/2;
       int il, iu, jl, ju;

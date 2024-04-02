@@ -143,7 +143,7 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
                            FaceField &dst, Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
-  int &xgh = pbval_->xgh_;
+  const int& xgh = pbval_->xgh_;
   int si, sj, sk, ei, ej, ek;
   si = pmb->is-NGHOST; ei = pmb->is-1;
   sk = pmb->ks;        ek = pmb->ke;
@@ -239,8 +239,8 @@ bool FaceCenteredBoundaryVariable::ReceiveShearingBoxBoundaryBuffers() {
 void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
-  int &xgh = pbval_->xgh_;
-  int &xorder = pbval_->xorder_;
+  const int& xgh = pbval_->xgh_;
+  const int& xorder = pbval_->xorder_;
   AthenaArray<Real> &pflux = pbval_->pflux_;
   FaceField &var = *var_fc;
   Coordinates *pco = pmb->pcoord;
@@ -296,12 +296,12 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
       // present way is only for cartesian
       if (upper==0) {
         for (int k=kl; k<=ku; k++) {
-          Real &dx3 = pco->dx3f(k);
+          const Real& dx3 = pco->dx3f(k);
           for (int j=jl; j<=ju; j++) {
-            Real &dx2 = pco->dx2f(j);
+            const Real& dx2 = pco->dx2f(j);
             for (int i=0; i<NGHOST; i++) {
               int ii = pmb->is-1-i;
-              Real &dx1 = pco->dx1f(ii);
+              const Real& dx1 = pco->dx1f(ii);
               var.x1f(k,j,ii) =
                  var.x1f(k,j,ii+1) +
                  dx1/dx2*(var.x2f(k,j+1,ii)-var.x2f(k,j,ii)) +
@@ -311,12 +311,12 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
         }
       } else {
         for (int k=kl; k<=ku; k++) {
-          Real &dx3 = pco->dx3f(k);
+          const Real& dx3 = pco->dx3f(k);
           for (int j=jl; j<=ju; j++) {
-            Real &dx2 = pco->dx2f(j);
+            const Real& dx2 = pco->dx2f(j);
             for (int i=0; i<NGHOST; i++) {
               int ii = pmb->ie+1+i;
-              Real &dx1 = pco->dx1f(ii);
+              const Real& dx1 = pco->dx1f(ii);
               var.x1f(k,j,ii+1) =
                  var.x1f(k,j,ii) -
                  dx1/dx2*(var.x2f(k,j+1,ii)-var.x2f(k,j,ii)) -

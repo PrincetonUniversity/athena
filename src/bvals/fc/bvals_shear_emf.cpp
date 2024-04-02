@@ -153,7 +153,7 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
 void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(
                                    EdgeField &dst, Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
-  int &xgh = pbval_->xgh_;
+  const int& xgh = pbval_->xgh_;
   int sj, sk, ej, ek;
 
   sk = pmb->ks; ek = pmb->ke;
@@ -244,8 +244,8 @@ bool FaceCenteredBoundaryVariable::ReceiveEMFShearingBoxBoundaryCorrection() {
 void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundaryCorrection() {
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmb->porb;
-  int &xgh = pbval_->xgh_;
-  int &xorder = pbval_->xorder_;
+  const int& xgh = pbval_->xgh_;
+  const int& xorder = pbval_->xorder_;
   AthenaArray<Real> &pflux = pbval_->pflux_;
   AthenaArray<Real> &e2 = pmb->pfield->e.x2e;
   AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
