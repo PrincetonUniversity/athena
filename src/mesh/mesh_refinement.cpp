@@ -60,16 +60,21 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
         << "Reconfigure with an even number of ghost cells " << std::endl;
     ATHENA_ERROR(msg);
   }
-
+  int qx1;
   int nc1 = pmb->ncells1;
+  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+    qx1 = 2;
+  }else{
+    qx1 = 1;
+  }
   fvol_[0][0].NewAthenaArray(nc1);
   fvol_[0][1].NewAthenaArray(nc1);
   fvol_[1][0].NewAthenaArray(nc1);
   fvol_[1][1].NewAthenaArray(nc1);
-  sarea_x1_[0][0].NewAthenaArray(nc1+1);
-  sarea_x1_[0][1].NewAthenaArray(nc1+1);
-  sarea_x1_[1][0].NewAthenaArray(nc1+1);
-  sarea_x1_[1][1].NewAthenaArray(nc1+1);
+  sarea_x1_[0][0].NewAthenaArray(nc1+qx1);
+  sarea_x1_[0][1].NewAthenaArray(nc1+qx1);
+  sarea_x1_[1][0].NewAthenaArray(nc1+qx1);
+  sarea_x1_[1][1].NewAthenaArray(nc1+qx1);
   sarea_x2_[0][0].NewAthenaArray(nc1);
   sarea_x2_[0][1].NewAthenaArray(nc1);
   sarea_x2_[0][2].NewAthenaArray(nc1);
@@ -82,6 +87,12 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
   sarea_x3_[1][1].NewAthenaArray(nc1);
   sarea_x3_[2][0].NewAthenaArray(nc1);
   sarea_x3_[2][1].NewAthenaArray(nc1);
+
+  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+    csarea_x1.NewAthenaArray(nc1);
+    csarea_x2.NewAthenaArray(nc1);
+    csarea_x3.NewAthenaArray(nc1);
+  }
 
   // KGF: probably don't need to preallocate space for pointers in these vectors
   pvars_cc_.reserve(3);
@@ -768,6 +779,7 @@ void MeshRefinement::ProlongateSharedFieldX1(
     int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
+  int fsi = (si - pmb->cis)*2 + pmb->is, fei = (ei - pmb->cis)*2 + pmb->is + 1;
   if (pmb->block_size.nx3 > 1) {
     for (int k=sk; k<=ek; k++) {
       int fk = (k - pmb->cks)*2 + pmb->ks;
@@ -787,6 +799,13 @@ void MeshRefinement::ProlongateSharedFieldX1(
         Real dx2p = x2p - x2c;
         const Real& fx2m = pco->x2s1(fj);
         const Real& fx2p = pco->x2s1(fj+1);
+	if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+	  pco->Face1Area(fk,   fj,   fsi, fei, sarea_x1_[0][0]);
+	  pco->Face1Area(fk,   fj+1, fsi, fei, sarea_x1_[0][1]);
+	  pco->Face1Area(fk+1, fj,   fsi, fei, sarea_x1_[1][0]);
+	  pco->Face1Area(fk+1, fj+1, fsi, fei, sarea_x1_[1][1]);
+	  pcoarsec->Face1Area(k, j, si, ei, csarea_x1);
+	}
         for (int i=si; i<=ei; i++) {
           int fi = (i - pmb->cis)*2 + pmb->is;
           Real ccval = coarse(k,j,i);
@@ -799,11 +818,23 @@ void MeshRefinement::ProlongateSharedFieldX1(
           Real gx3p = (coarse(k+1,j,i) - ccval)/dx3p;
           Real gx3c = 0.5*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
                                                              std::abs(gx3p));
-
+	  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+	    Real dfx2 = fx2p - fx2m;
+	    Real dfx3 = fx3p - fx3m;
+	    fine(fk  ,fj  ,fi) = ccval - gx2c*dfx2*(sarea_x1_[0][1](fi) + sarea_x1_[1][1](fi))/csarea_x1(i)
+                                       - gx3c*dfx3*(sarea_x1_[1][0](fi) + sarea_x1_[1][1](fi))/csarea_x1(i); 
+	    fine(fk  ,fj+1,fi) = ccval + gx2c*dfx2*(sarea_x1_[0][0](fi) + sarea_x1_[1][0](fi))/csarea_x1(i) 
+                                       - gx3c*dfx3*(sarea_x1_[1][0](fi) + sarea_x1_[1][1](fi))/csarea_x1(i);
+	    fine(fk+1,fj  ,fi) = ccval - gx2c*dfx2*(sarea_x1_[0][1](fi) + sarea_x1_[1][1](fi))/csarea_x1(i) 
+                                       + gx3c*dfx3*(sarea_x1_[0][0](fi) + sarea_x1_[0][1](fi))/csarea_x1(i);
+	    fine(fk+1,fj+1,fi) = ccval + gx2c*dfx2*(sarea_x1_[0][0](fi) + sarea_x1_[1][0](fi))/csarea_x1(i)
+                                       + gx3c*dfx3*(sarea_x1_[0][0](fi) + sarea_x1_[0][1](fi))/csarea_x1(i);
+	  }else{
           fine(fk  ,fj  ,fi) = ccval - gx2c*(x2c - fx2m) - gx3c*(x3c - fx3m);
           fine(fk  ,fj+1,fi) = ccval + gx2c*(fx2p - x2c) - gx3c*(x3c - fx3m);
           fine(fk+1,fj  ,fi) = ccval - gx2c*(x2c - fx2m) + gx3c*(fx3p - x3c);
           fine(fk+1,fj+1,fi) = ccval + gx2c*(fx2p - x2c) + gx3c*(fx3p - x3c);
+	  }
         }
       }
     }
@@ -850,6 +881,7 @@ void MeshRefinement::ProlongateSharedFieldX2(
     int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
+  int fsi = (si - pmb->cis)*2 + pmb->is, fei = (ei - pmb->cis)*2 + pmb->is + 1;
   if (pmb->block_size.nx3 > 1) {
     for (int k=sk; k<=ek; k++) {
       int fk = (k - pmb->cks)*2 + pmb->ks;
@@ -862,6 +894,11 @@ void MeshRefinement::ProlongateSharedFieldX2(
       const Real& fx3p = pco->x3s2(fk+1);
       for (int j=sj; j<=ej; j++) {
         int fj = (j - pmb->cjs)*2 + pmb->js;
+	if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+	  pco->Face2Area(fk,   fj,  fsi, fei, sarea_x2_[0][0]);
+	  pco->Face2Area(fk+1, fj,  fsi, fei, sarea_x2_[1][0]);
+	  pcoarsec->Face2Area(k, j, si, ei, csarea_x2);
+	}
         for (int i=si; i<=ei; i++) {
           int fi = (i - pmb->cis)*2 + pmb->is;
           const Real& x1m = pcoarsec->x1s2(i-1);
@@ -881,11 +918,23 @@ void MeshRefinement::ProlongateSharedFieldX2(
           Real gx3p = (coarse(k+1,j,i) - ccval)/dx3p;
           Real gx3c = 0.5*(SIGN(gx3m) + SIGN(gx3p))*std::min(std::abs(gx3m),
                                                              std::abs(gx3p));
-
+	  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+	    Real dfx1 = fx1p - fx1m;
+	    Real dfx3 = fx3p - fx3m;
+	    fine(fk  ,fj  ,fi) = ccval - gx1c*dfx1*(sarea_x2_[0][0](fi+1) + sarea_x2_[1][0](fi+1))/csarea_x2(i) 
+                                       - gx3c*dfx3*(sarea_x2_[1][0](fi) + sarea_x2_[1][0](fi+1))/csarea_x2(i); 
+	    fine(fk  ,fj,fi+1) = ccval + gx1c*dfx1*(sarea_x2_[0][0](fi) + sarea_x2_[1][0](fi))/csarea_x2(i)
+                                       - gx3c*dfx3*(sarea_x2_[1][0](fi) + sarea_x2_[1][0](fi+1))/csarea_x2(i);
+	    fine(fk+1,fj  ,fi) = ccval - gx1c*dfx1*(sarea_x2_[0][0](fi+1) + sarea_x2_[1][0](fi+1))/csarea_x2(i)
+                                       + gx3c*dfx3*(sarea_x2_[0][0](fi) + sarea_x2_[0][0](fi+1))/csarea_x2(i);
+	    fine(fk+1,fj,fi+1) = ccval + gx1c*dfx1*(sarea_x2_[0][0](fi) + sarea_x2_[1][0](fi))/csarea_x2(i) 
+                                       + gx3c*dfx3*(sarea_x2_[0][0](fi) + sarea_x2_[0][0](fi+1))/csarea_x2(i);
+	  }else{
           fine(fk  ,fj,fi  ) = ccval - gx1c*(x1c - fx1m) - gx3c*(x3c - fx3m);
           fine(fk  ,fj,fi+1) = ccval + gx1c*(fx1p - x1c) - gx3c*(x3c - fx3m);
           fine(fk+1,fj,fi  ) = ccval - gx1c*(x1c - fx1m) + gx3c*(fx3p - x3c);
           fine(fk+1,fj,fi+1) = ccval + gx1c*(fx1p - x1c) + gx3c*(fx3p - x3c);
+	  }
         }
       }
     }
@@ -939,6 +988,7 @@ void MeshRefinement::ProlongateSharedFieldX3(
     int si, int ei, int sj, int ej, int sk, int ek) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
+  int fsi = (si - pmb->cis)*2 + pmb->is, fei = (ei - pmb->cis)*2 + pmb->is + 1;
   if (pmb->block_size.nx3 > 1) {
     for (int k=sk; k<=ek; k++) {
       int fk = (k - pmb->cks)*2 + pmb->ks;
@@ -951,6 +1001,11 @@ void MeshRefinement::ProlongateSharedFieldX3(
         Real dx2p = x2p - x2c;
         const Real& fx2m = pco->x2s3(fj);
         const Real& fx2p = pco->x2s3(fj+1);
+	if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+	  pco->Face3Area(fk,   fj,  fsi, fei, sarea_x3_[0][0]);
+	  pco->Face3Area(fk, fj+1,  fsi, fei, sarea_x3_[0][1]);
+	  pcoarsec->Face3Area(k, j, si, ei, csarea_x3);
+	}
         for (int i=si; i<=ei; i++) {
           int fi = (i - pmb->cis)*2 + pmb->is;
           const Real& x1m = pcoarsec->x1s3(i-1);
@@ -970,11 +1025,23 @@ void MeshRefinement::ProlongateSharedFieldX3(
           Real gx2p = (coarse(k,j+1,i) - ccval)/dx2p;
           Real gx2c = 0.5*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
                                                              std::abs(gx2p));
-
+	  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+	    Real dfx1 = fx1p - fx1m;
+	    Real dfx2 = fx2p - fx2m;
+	    fine(fk  ,fj  ,fi) = ccval - gx1c*dfx1*(sarea_x3_[0][0](fi+1) + sarea_x3_[0][1](fi+1))/csarea_x3(i)
+                                       - gx2c*dfx2*(sarea_x3_[0][1](fi) + sarea_x3_[0][1](fi+1))/csarea_x3(i); 
+	    fine(fk  ,fj,fi+1) = ccval + gx1c*dfx1*(sarea_x3_[0][0](fi) + sarea_x3_[0][1](fi))/csarea_x3(i)
+                                       - gx2c*dfx2*(sarea_x3_[0][1](fi) + sarea_x3_[0][1](fi+1))/csarea_x3(i);
+	    fine(fk,fj+1  ,fi) = ccval - gx1c*dfx1*(sarea_x3_[0][0](fi+1) + sarea_x3_[0][1](fi+1))/csarea_x3(i)
+                                       + gx2c*dfx2*(sarea_x3_[0][0](fi) + sarea_x3_[0][0](fi+1))/csarea_x3(i);
+	    fine(fk,fj+1,fi+1) = ccval + gx1c*dfx1*(sarea_x3_[0][0](fi) + sarea_x3_[0][1](fi))/csarea_x3(i)
+                                       + gx2c*dfx2*(sarea_x3_[0][0](fi) + sarea_x3_[0][0](fi+1))/csarea_x3(i);
+	  }else{
           fine(fk,fj  ,fi  ) = ccval - gx1c*(x1c - fx1m) - gx2c*(x2c - fx2m);
           fine(fk,fj  ,fi+1) = ccval + gx1c*(fx1p - x1c) - gx2c*(x2c - fx2m);
           fine(fk,fj+1,fi  ) = ccval - gx1c*(x1c - fx1m) + gx2c*(fx2p - x2c);
           fine(fk,fj+1,fi+1) = ccval + gx1c*(fx1p - x1c) + gx2c*(fx2p - x2c);
+	  }
         }
       }
     }

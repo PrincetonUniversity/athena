@@ -45,11 +45,11 @@ void BoundaryValues::CheckPolarBoundaries() {
   // Check that AMR is disabled (SMR is ok)
   if (pmy_mesh_->multilevel) {
     if (pmy_mesh_->adaptive) {
-      std::stringstream msg;
+      /*std::stringstream msg; //commented for testing
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "The use of AMR with any 'polar' or 'polar_wedge' boundary \n"
           << "flags is currently unsupported" << std::endl;
-      ATHENA_ERROR(msg);
+	  ATHENA_ERROR(msg);*/
     }
   }
 

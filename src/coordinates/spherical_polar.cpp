@@ -144,8 +144,47 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Allocate memory for internal scratch arrays to store partial calculations
-  // (note this is skipped if object is for coarse mesh with AMR)
-  if (!coarse_flag) {
+  if (coarse_flag && std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+    coord_area1_i_.NewAthenaArray(nc1+1);
+    coord_area2_i_.NewAthenaArray(nc1);
+    coord_area3_i_.NewAthenaArray(nc1);
+    coord_area1_j_.NewAthenaArray(nc2);
+    coord_area2_j_.NewAthenaArray(nc2+1);
+#pragma omp simd
+    for (int i=il-ng; i<=iu+ng; ++i) {
+      Real rm = x1f(i  );
+      Real rp = x1f(i+1);
+      // R^2
+      coord_area1_i_(i) = rm*rm;
+      // 0.5*(R_{i+1}^2 - R_{i}^2)
+      coord_area2_i_(i) = 0.5*(rp*rp - rm*rm);
+      // 0.5*(R_{i+1}^2 - R_{i}^2)
+      coord_area3_i_(i) = coord_area2_i_(i);
+      // dV = (R_{i+1}^3 - R_{i}^3)/3
+    }
+    coord_area1_i_(iu+ng+1) = x1f(iu+ng+1)*x1f(iu+ng+1);
+    if (pmb->block_size.nx2 > 1) {
+#pragma omp simd
+      for (int j=jl-ng; j<=ju+ng; ++j) {
+	Real sm = std::abs(std::sin(x2f(j  )));
+	Real cm = std::cos(x2f(j  ));
+	Real cp = std::cos(x2f(j+1));
+	// d(sin theta) = d(-cos theta)
+	coord_area1_j_(j) = std::abs(cm - cp);
+	// sin theta
+	coord_area2_j_(j) = sm;
+      }
+      coord_area2_j_(ju+ng+1) = std::abs(sin(x2f(ju+ng+1)));
+    }else{
+      Real sm = std::abs(std::sin(x2f(jl  )));
+      Real sp = std::abs(std::sin(x2f(jl+1)));
+      Real cm = std::cos(x2f(jl  ));
+      Real cp = std::cos(x2f(jl+1));
+      coord_area1_j_(jl) = std::abs(cm - cp);
+      coord_area2_j_(jl) = sm;
+      coord_area2_j_(jl+1) = sp;
+    }
+  }else if (!coarse_flag){
     coord_area1_i_.NewAthenaArray(nc1+1);
     coord_area2_i_.NewAthenaArray(nc1);
     coord_area3_i_.NewAthenaArray(nc1);
@@ -203,35 +242,35 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
     if (pmb->block_size.nx2 > 1) {
 #pragma omp simd
       for (int j=jl-ng; j<=ju+ng; ++j) {
-        Real sm = std::abs(std::sin(x2f(j  )));
-        Real sp = std::abs(std::sin(x2f(j+1)));
-        Real cm = std::cos(x2f(j  ));
-        Real cp = std::cos(x2f(j+1));
-        // d(sin theta) = d(-cos theta)
-        coord_area1_j_(j) = std::abs(cm - cp);
-        // sin theta
-        coord_area2_j_(j) = sm;
-        // d(sin theta) = d(-cos theta)
-        coord_vol_j_(j) = coord_area1_j_(j);
-        // (A2^{+} - A2^{-})/dV
-        coord_src1_j_(j) = (sp - sm)/coord_vol_j_(j);
-        // (dS/2)/(S_c dV)
-        coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
-        // < cot theta > = (|sin th_p| - |sin th_m|) / |cos th_m - cos th_p|
-        coord_src3_j_(j) = (sp - sm)/coord_vol_j_(j);
-        // sin theta at the volume center for non-ideal MHD
-        coord_area2vc_j_(j)= std::abs(std::sin(x2v(j)));
+	Real sm = std::abs(std::sin(x2f(j  )));
+	Real sp = std::abs(std::sin(x2f(j+1)));
+	Real cm = std::cos(x2f(j  ));
+	Real cp = std::cos(x2f(j+1));
+	// d(sin theta) = d(-cos theta)
+	coord_area1_j_(j) = std::abs(cm - cp);
+	// sin theta
+	coord_area2_j_(j) = sm;
+	// d(sin theta) = d(-cos theta)
+	coord_vol_j_(j) = coord_area1_j_(j);
+	// (A2^{+} - A2^{-})/dV
+	coord_src1_j_(j) = (sp - sm)/coord_vol_j_(j);
+	// (dS/2)/(S_c dV)
+	coord_src2_j_(j) = (sp - sm)/((sm + sp)*coord_vol_j_(j));
+	// < cot theta > = (|sin th_p| - |sin th_m|) / |cos th_m - cos th_p|
+	coord_src3_j_(j) = (sp - sm)/coord_vol_j_(j);
+	// sin theta at the volume center for non-ideal MHD
+	coord_area2vc_j_(j)= std::abs(std::sin(x2v(j)));
       }
 #pragma omp simd
       for (int j=jl-ng; j<=ju+ng-1; ++j) {
-        // d(sin theta) = d(-cos theta) at the volume center for non-ideal MHD
-        coord_area1vc_j_(j)= std::abs(cos(x2v(j))-cos(x2v(j+1)));
+	// d(sin theta) = d(-cos theta) at the volume center for non-ideal MHD
+	coord_area1vc_j_(j)= std::abs(cos(x2v(j))-cos(x2v(j+1)));
       }
       coord_area2_j_(ju+ng+1) = std::abs(sin(x2f(ju+ng+1)));
       if (IsPole(jl))   // inner polar boundary
-        coord_area1vc_j_(jl-1)= 2.0-std::cos(x2v(jl-1))-std::cos(x2v(jl));
+	coord_area1vc_j_(jl-1)= 2.0-std::cos(x2v(jl-1))-std::cos(x2v(jl));
       if (IsPole(ju+1))   // outer polar boundary
-        coord_area1vc_j_(ju)  = 2.0+std::cos(x2v(ju))+std::cos(x2v(ju+1));
+	coord_area1vc_j_(ju)  = 2.0+std::cos(x2v(ju))+std::cos(x2v(ju+1));
     } else {
       Real sm = std::abs(std::sin(x2f(jl  )));
       Real sp = std::abs(std::sin(x2f(jl+1)));
