@@ -30,7 +30,7 @@ Real DenProfileCyl(const Real rad, const Real phi, const Real z);
 Real PoverR(const Real rad, const Real phi, const Real z);
 Real VelProfileCyl(const Real rad, const Real phi, const Real z);
 // problem parameters which are useful to make global to this file
-Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, alpha, nu_iso, scale, z, phi, r, rp, rp2, phip, d, dfloor, Omega0, cosine_term, sine_term, epsilon, R_H;
+Real gm0, r0, rho0, dslope, p0_over_r0, pslope, gamma_gas, gm_planet, gm_planet2, alpha, nu_iso, scale, z, phi, r, rp, rp2, d, dfloor, Omega0, cosine_term, sine_term, epsilon, R_H;
 } // namespace
 
 // User-defined boundary conditions for disk simulations
@@ -74,6 +74,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Get parameters for gravitational potential of orbiting protoplanet
   gm_planet = pin -> GetOrAddReal("problem", "planetgm", 0.0);
+  gm_planet2 = pin -> GetOrAddReal("problem", "planetgm2", 0.0);
   rp = pin -> GetOrAddReal("problem", "ptosr", 1.0);
   rp2 = pin -> GetOrAddReal("problem", "ptosr2", 1.1);
 
@@ -128,7 +129,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real Torque2(MeshBlock *pmb, int iout);
   AllocateUserHistoryOutput(2);
   EnrollUserHistoryOutput(0, Torque, "first planet torque");
-  EnrollUserHistoryOutput(1, Torque2, "secondplanet torque");
+  EnrollUserHistoryOutput(1, Torque2, "second planet torque");
   return;
 }
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
@@ -175,7 +176,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   return;
 }
-//Center-of-Mass for planet-star system
+
+//Change code to take into account different second planet mass
 void Planet(MeshBlock *pmb, const Real time, const Real dt, const AthenaArray<Real> &prim,
             const AthenaArray<Real> &prim_scalar, const AthenaArray<Real> &bbc,
             AthenaArray<Real> &cons, AthenaArray<Real> &cons_scalar) {
@@ -259,7 +261,7 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
       for (int i = is; i <= ie; ++i) {
         r = pcoord->x1v(i);
         Real period = 2*M_PI*sqrt(pow(rp,3)/gm0);
-        phip = 2*(M_PI / period)*time1;
+        Real phip = 2*(M_PI / period)*time1;
         d = sqrt(pow(rp,2) + pow(r,2) - 2*rp*r*cos(phi - phip));
         epsilon = 0.3;
         R_H = cbrt(gm_planet/3);
@@ -276,18 +278,21 @@ void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
 Real Torque(MeshBlock *pmb, int iout) { //This torque is only calculated for first planet
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   Real sum_torque = 0;
+  Real time2 = pmb->pmy_mesh->time;
   for(int k=ks; k<=ke; k++) {
     z = pmb->pcoord->x3v(k);
     for(int j=js; j<=je; j++) {
       phi = pmb->pcoord->x2v(j);
       for(int i=is; i<=ie; i++) {
         r = pmb->pcoord->x1v(i);
+        Real period = 2 * M_PI * sqrt(pow(rp, 3) / gm0);
+        Real phip = 2 * (M_PI / period) * time2;
         Real d = sqrt(pow(rp,2) + pow(r,2) - 2*rp*r*cos(phi - phip));
         Real g_mag = -1*((gm_planet*d) / (sqrt(pow(pow(d,2) + pow(epsilon,2)*pow(R_H,2), 3))));
         Real dens = pmb->phydro->u(IDN,k,j,i);
         Real volume = pmb ->pcoord->GetCellVolume(k,j,i);
         Real sine_term = (r*rp*cos(phi)*sin(phip) - r*rp*sin(phi)*cos(phip)) / (r*d);
-        sum_torque +=  dens * volume *r * -g_mag * sine_term;
+        sum_torque +=  dens * volume *r * g_mag * sine_term;
       }
     }
   }
@@ -297,14 +302,17 @@ Real Torque(MeshBlock *pmb, int iout) { //This torque is only calculated for fir
 Real Torque2 (MeshBlock *pmb, int iout) { 
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
   Real sum_torque2 = 0;
+  Real time3 = pmb->pmy_mesh->time;
   for(int k=ks; k<=ke; k++) {
     z = pmb->pcoord->x3v(k); 
     for(int j=js; j<=je; j++) {
       phi = pmb->pcoord->x2v(j);
       for(int i=is; i<=ie; i++) {
         r = pmb->pcoord->x1v(i);
+        Real period = 2 * M_PI * sqrt(pow(rp2, 3) / gm0);
+        Real phip = 2 * (M_PI / period) * time3;
         Real d = sqrt(pow(rp2,2) + pow(r,2) - 2*rp2*r*cos(phi - phip));
-        Real g_mag = -1*((gm_planet*d) / (sqrt(pow(pow(d,2) + pow(epsilon,2)*pow(R_H,2), 3))));
+        Real g_mag = -1*((gm_planet2*d) / (sqrt(pow(pow(d,2) + pow(epsilon,2)*pow(R_H,2), 3))));
         Real dens = pmb->phydro->u(IDN,k,j,i);
         Real volume = pmb ->pcoord->GetCellVolume(k,j,i);
         Real sine_term = (r*rp2*cos(phi)*sin(phip) - r*rp2*sin(phi)*cos(phip)) / (r*d);
