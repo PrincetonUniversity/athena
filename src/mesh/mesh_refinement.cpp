@@ -91,9 +91,9 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
   sarea_x3_[2][0].NewAthenaArray(nc1);
   sarea_x3_[2][1].NewAthenaArray(nc1);
 
-  // Create coarse area arrays used in prolongation of shared face-centered fields in 
+  // Create coarse area arrays used in prolongation of shared face-centered fields in
   // spherical polar grids
-  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
+  if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     csarea_x1.NewAthenaArray(nc1);
     csarea_x2.NewAthenaArray(nc1);
     csarea_x3.NewAthenaArray(nc1);
@@ -907,7 +907,7 @@ void MeshRefinement::ProlongateSharedFieldX2(
       const Real& fx3p = pco->x3s2(fk+1);
       for (int j=sj; j<=ej; j++) {
         int fj = (j - pmb->cjs)*2 + pmb->js;
-	if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+        if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
           pco->Face2Area(fk,   fj,  fsi, fei, sarea_x2_[0][0]);
           pco->Face2Area(fk+1, fj,  fsi, fei, sarea_x2_[1][0]);
           pcoarsec->Face2Area(k, j, si, ei, csarea_x2);

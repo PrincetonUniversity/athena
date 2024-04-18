@@ -81,7 +81,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   rho0 = pin->GetReal("problem","rho0");
   vy0 = pin->GetOrAddReal("problem","vy0",0.0);
   divb = pin->GetOrAddBoolean("problem","divb",false);
-  
+
   // Get parameters of initial pressure and cooling parameters
   isocs2=SQR(pin->GetReal("hydro","iso_sound_speed"));
   if (NON_BAROTROPIC_EOS) {
@@ -155,7 +155,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
             a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
             a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
-	  } else {
+          } else {
             if ((pbval->nblevel[1][0][1]>level && j==js)
                 || (pbval->nblevel[1][2][1]>level && j==je+1)
                 || (pbval->nblevel[0][1][1]>level && k==ks)
