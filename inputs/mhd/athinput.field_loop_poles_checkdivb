@@ -72,4 +72,4 @@ yc              = 1.0
 zc              = 0.5
 beta            = 1.e5
 vy0             = -1.0
-divb            = true     #check divergence of magnetic field
+divb            = true     # check divergence of magnetic field

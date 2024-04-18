@@ -184,7 +184,7 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
       coord_area2_j_(jl) = sm;
       coord_area2_j_(jl+1) = sp;
     }
-  } else if (!coarse_flag) {
+  } else {
     coord_area1_i_.NewAthenaArray(nc1+1);
     coord_area2_i_.NewAthenaArray(nc1);
     coord_area3_i_.NewAthenaArray(nc1);

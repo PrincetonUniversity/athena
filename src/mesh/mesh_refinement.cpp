@@ -62,9 +62,9 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
   }
   int qx1;
   int nc1 = pmb->ncells1;
-  //In spherical polar grids, prolongation of shared face-centered fields requires face
-  //area arrays, these are longer than the arrays used in the prolongation of internal
-  //faces
+  // In spherical polar grids, prolongation of shared face-centered fields requires face
+  // area arrays, these are longer than the arrays used in the prolongation of internal
+  // face fields
   if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     qx1 = 2;
   } else {
@@ -91,8 +91,8 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
   sarea_x3_[2][0].NewAthenaArray(nc1);
   sarea_x3_[2][1].NewAthenaArray(nc1);
 
-  //Create coarse area arrays used in prolongation of shared face-centered fields in 
-  //spherical polar grids
+  // Create coarse area arrays used in prolongation of shared face-centered fields in 
+  // spherical polar grids
   if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0){
     csarea_x1.NewAthenaArray(nc1);
     csarea_x2.NewAthenaArray(nc1);

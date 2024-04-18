@@ -49,7 +49,7 @@ void BoundaryValues::CheckPolarBoundaries() {
       msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
           << "The use of AMR with any 'polar' or 'polar_wedge' boundary \n"
           << "flags is currently unsupported" << std::endl;
-	  ATHENA_ERROR(msg);
+      ATHENA_ERROR(msg);
     }
   }
 

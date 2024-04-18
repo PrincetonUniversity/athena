@@ -63,7 +63,7 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Face
 int RefinementCondition(MeshBlock *pmb);
 int RefinementCondition2(MeshBlock *pmb);
 
-//Check divergence of the magnetic field
+// Check divergence of the magnetic field
 Real WAbsDivergenceB(MeshBlock *pmb, int out);
 Real ncells(MeshBlock *pmb, int out);
 Real totcells(MeshBlock *pmb, int out);
@@ -606,7 +606,7 @@ int RefinementCondition(MeshBlock *pmb) {
   return 0;
 }
 
-//force refinement to check divB growth
+// force refinement to check divB growth
 int RefinementCondition2(MeshBlock *pmb) {
   AthenaArray<Real> &bc = pmb->pfield->bcc;
   int refflag=0;
@@ -629,8 +629,8 @@ int RefinementCondition2(MeshBlock *pmb) {
   return 0;
 }
 
-//Absolute value of the divergence of the magnetic field weighted by its magnitude and
-//smallest cell size. This can be scaled with the hst output "ncells".
+// Absolute value of the divergence of the magnetic field weighted by its magnitude and
+// smallest cell size. This can be scaled with the hst output "ncells".
 Real WAbsDivergenceB(MeshBlock *pmb, int iout) {
   Real div = 0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
@@ -671,7 +671,7 @@ Real WAbsDivergenceB(MeshBlock *pmb, int iout) {
   return div;
 }
 
-//Number of cells used in computation of the divergence of the magnetic field
+// Number of cells used in computation of the divergence of the magnetic field
 Real ncells(MeshBlock *pmb, int iout) {
   int ncell = 0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
@@ -693,7 +693,7 @@ Real ncells(MeshBlock *pmb, int iout) {
   return ncell;
 }
 
-//Total number of cells in the simulation
+// Total number of cells in the simulation
 Real totcells(MeshBlock *pmb, int iout) {
   int tcell = 0;
   int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
