@@ -397,7 +397,7 @@ void HydroDiffusion::FaceYdz(const int k, const int j, const int il, const int i
                / pco_->h31v(i)
                / (pco_->dx3v(k-1) + pco_->dx3v(k))
                // edge case for polar boundary
-               / ( !pco_->h32f(j) ? 1.0 : pco_->h32f(j) );
+               / ( pco_->IsPole(j) ? 1.0 : pco_->h32f(j) );
     }
   } else if (pmb_->pmy_mesh->f2) {
 #pragma omp simd
