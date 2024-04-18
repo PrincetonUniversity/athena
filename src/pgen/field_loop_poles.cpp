@@ -660,10 +660,12 @@ Real WAbsDivergenceB(MeshBlock *pmb, int iout) {
                             pmb->pcoord->GetEdge2Length(k,j,i)),
                             pmb->pcoord->GetEdge3Length(k,j,i));
           Real cellvol = pmb->pcoord->GetCellVolume(k,j,i);
-          div += fabs(((face1(i+1)*pfield->b.x1f(k,j,i+1) - face1(i)*pfield->b.x1f(k,j,i)
-                      + face2p(i)*pfield->b.x2f(k,j+1,i) - face2m(i)*pfield->b.x2f(k,j,i)
-                      + face3p(i)*pfield->b.x3f(k+1,j,i)
-                      -face3m(i)*pfield->b.x3f(k,j,i)))/cellvol)/(bmag/dl);
+          div += std::fabs(((face1(i+1)*pfield->b.x1f(k,j,i+1)
+                             - face1(i)*pfield->b.x1f(k,j,i)
+                             + face2p(i)*pfield->b.x2f(k,j+1,i)
+                             - face2m(i)*pfield->b.x2f(k,j,i)
+                             + face3p(i)*pfield->b.x3f(k+1,j,i)
+                             -face3m(i)*pfield->b.x3f(k,j,i)))/cellvol)/(bmag/dl);
         }
       }
     }
