@@ -210,6 +210,9 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
                          * y_H2 * y_Cplus;
   ksr_(id7map_(29)) = 0.99e-13 * std::pow(T, -1.3) * std::exp(-23./T) * nH_
                          * y_H2 * y_Cplus;
+  //(63) H + H+ -> H2+ -- Galli and Palla (1998)
+  ksr_(id7map_(63)) = pow(10, -19.38 - 1.523*logT + 1.118*logT*logT
+                              - 0.1269*logT*logT*logT);
   //sanity check
   if (check_index) {
     std::stringstream msg; //error message
