@@ -804,6 +804,7 @@ void MeshRefinement::ProlongateSharedFieldX1(
         Real dx3p = x3p - x3c;
         const Real& fx3m = pco->x3s1(fk);
         const Real& fx3p = pco->x3s1(fk+1);
+        Real dfx3 = fx3p - fx3m;
         for (int j=sj; j<=ej; j++) {
           int fj = (j - pmb->cjs)*2 + pmb->js;
           const Real& x2m = pcoarsec->x2s1(j-1);
@@ -813,6 +814,7 @@ void MeshRefinement::ProlongateSharedFieldX1(
           Real dx2p = x2p - x2c;
           const Real& fx2m = pco->x2s1(fj);
           const Real& fx2p = pco->x2s1(fj+1);
+          Real dfx2 = fx2p - fx2m;
           pco->Face1Area(fk,   fj,   fsi, fei, sarea_x1_[0][0]);
           pco->Face1Area(fk,   fj+1, fsi, fei, sarea_x1_[0][1]);
           pco->Face1Area(fk+1, fj,   fsi, fei, sarea_x1_[1][0]);
@@ -820,8 +822,6 @@ void MeshRefinement::ProlongateSharedFieldX1(
           pcoarsec->Face1Area(k, j, si, ei, csarea_x1);
           for (int i=si; i<=ei; i++) {
             int fi = (i - pmb->cis)*2 + pmb->is;
-            Real dfx2 = fx2p - fx2m;
-            Real dfx3 = fx3p - fx3m;
             Real ccval = coarse(k,j,i);
             Real csarea = csarea_x1(i);
             Real fsa00 = sarea_x1_[0][0](fi);
@@ -940,6 +940,7 @@ void MeshRefinement::ProlongateSharedFieldX2(
         const Real& x3p = pcoarsec->x3s2(k+1);
         Real dx3m = x3c - x3m;
         Real dx3p = x3p - x3c;
+        Real dfx3 = fx3p - fx3m;
         const Real& fx3m = pco->x3s2(fk);
         const Real& fx3p = pco->x3s2(fk+1);
         for (int j=sj; j<=ej; j++) {
@@ -958,7 +959,6 @@ void MeshRefinement::ProlongateSharedFieldX2(
             const Real& fx1p = pco->x1s2(fi+1);
             Real ccval = coarse(k,j,i);
             Real dfx1 = fx1p - fx1m;
-            Real dfx3 = fx3p - fx3m;
             Real csarea = csarea_x2(i) + TINY_NUMBER;
             Real fsa00 = sarea_x2_[0][0](fi);
             Real fsa01 = sarea_x2_[0][0](fi+1);
