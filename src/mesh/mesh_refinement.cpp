@@ -68,12 +68,12 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
   // face fields
   if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0 ||
       std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-    fluxinterp = true;
+    fluxinterp_ = true;
   } else {
-    fluxinterp = false;
+    fluxinterp_ = false;
   }
 
-  if (fluxinterp) {
+  if (fluxinterp_) {
     qx1 = 2;
   } else {
     qx1 = 1;
@@ -101,7 +101,7 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
 
   // Create coarse area arrays used in prolongation of shared face-centered fields in
   // curvilinear grids
-  if (fluxinterp) {
+  if (fluxinterp_) {
     csarea_x1.NewAthenaArray(nc1);
     csarea_x2.NewAthenaArray(nc1);
     csarea_x3.NewAthenaArray(nc1);
@@ -794,7 +794,7 @@ void MeshRefinement::ProlongateSharedFieldX1(
   Coordinates *pco = pmb->pcoord;
   int fsi = (si - pmb->cis)*2 + pmb->is, fei = (ei - pmb->cis)*2 + pmb->is + 1;
   if (pmb->block_size.nx3 > 1) {
-    if (fluxinterp) {
+    if (fluxinterp_) {
       for (int k=sk; k<=ek; k++) {
         int fk = (k - pmb->cks)*2 + pmb->ks;
         const Real& x3m = pcoarsec->x3s1(k-1);
@@ -932,7 +932,7 @@ void MeshRefinement::ProlongateSharedFieldX2(
   Coordinates *pco = pmb->pcoord;
   int fsi = (si - pmb->cis)*2 + pmb->is, fei = (ei - pmb->cis)*2 + pmb->is + 1;
   if (pmb->block_size.nx3 > 1) {
-    if (fluxinterp) {
+    if (fluxinterp_) {
       for (int k=sk; k<=ek; k++) {
         int fk = (k - pmb->cks)*2 + pmb->ks;
         const Real& x3m = pcoarsec->x3s2(k-1);
@@ -1076,7 +1076,7 @@ void MeshRefinement::ProlongateSharedFieldX3(
   Coordinates *pco = pmb->pcoord;
   int fsi = (si - pmb->cis)*2 + pmb->is, fei = (ei - pmb->cis)*2 + pmb->is + 1;
   if (pmb->block_size.nx3 > 1) {
-    if (fluxinterp) {
+    if (fluxinterp_) {
       for (int k=sk; k<=ek; k++) {
         int fk = (k - pmb->cks)*2 + pmb->ks;
         for (int j=sj; j<=ej; j++) {
