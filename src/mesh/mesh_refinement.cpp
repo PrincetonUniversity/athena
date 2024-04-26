@@ -102,9 +102,9 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
   // Create coarse area arrays used in prolongation of shared face-centered fields in
   // curvilinear grids
   if (fluxinterp_) {
-    csarea_x1.NewAthenaArray(nc1);
-    csarea_x2.NewAthenaArray(nc1);
-    csarea_x3.NewAthenaArray(nc1);
+    csarea_x1_.NewAthenaArray(nc1);
+    csarea_x2_.NewAthenaArray(nc1);
+    csarea_x3_.NewAthenaArray(nc1);
   }
 
   // KGF: probably don't need to preallocate space for pointers in these vectors
@@ -819,11 +819,11 @@ void MeshRefinement::ProlongateSharedFieldX1(
           pco->Face1Area(fk,   fj+1, fsi, fei, sarea_x1_[0][1]);
           pco->Face1Area(fk+1, fj,   fsi, fei, sarea_x1_[1][0]);
           pco->Face1Area(fk+1, fj+1, fsi, fei, sarea_x1_[1][1]);
-          pcoarsec->Face1Area(k, j, si, ei, csarea_x1);
+          pcoarsec->Face1Area(k, j, si, ei, csarea_x1_);
           for (int i=si; i<=ei; i++) {
             int fi = (i - pmb->cis)*2 + pmb->is;
             Real ccval = coarse(k,j,i);
-            Real csarea = csarea_x1(i);
+            Real csarea = csarea_x1_(i);
             Real fsa00 = sarea_x1_[0][0](fi);
             Real fsa01 = sarea_x1_[0][1](fi);
             Real fsa10 = sarea_x1_[1][0](fi);
@@ -947,7 +947,7 @@ void MeshRefinement::ProlongateSharedFieldX2(
           int fj = (j - pmb->cjs)*2 + pmb->js;
           pco->Face2Area(fk,   fj,  fsi, fei, sarea_x2_[0][0]);
           pco->Face2Area(fk+1, fj,  fsi, fei, sarea_x2_[1][0]);
-          pcoarsec->Face2Area(k, j, si, ei, csarea_x2);
+          pcoarsec->Face2Area(k, j, si, ei, csarea_x2_);
           for (int i=si; i<=ei; i++) {
             int fi = (i - pmb->cis)*2 + pmb->is;
             const Real& x1m = pcoarsec->x1s2(i-1);
@@ -959,7 +959,7 @@ void MeshRefinement::ProlongateSharedFieldX2(
             const Real& fx1p = pco->x1s2(fi+1);
             Real ccval = coarse(k,j,i);
             Real dfx1 = fx1p - fx1m;
-            Real csarea = csarea_x2(i) + TINY_NUMBER;
+            Real csarea = csarea_x2_(i) + TINY_NUMBER;
             Real fsa00 = sarea_x2_[0][0](fi);
             Real fsa01 = sarea_x2_[0][0](fi+1);
             Real fsa10 = sarea_x2_[1][0](fi);
@@ -1091,7 +1091,7 @@ void MeshRefinement::ProlongateSharedFieldX3(
           Real dfx2 = fx2p - fx2m;
           pco->Face3Area(fk,   fj,  fsi, fei, sarea_x3_[0][0]);
           pco->Face3Area(fk, fj+1,  fsi, fei, sarea_x3_[0][1]);
-          pcoarsec->Face3Area(k, j, si, ei, csarea_x3);
+          pcoarsec->Face3Area(k, j, si, ei, csarea_x3_);
 
           for (int i=si; i<=ei; i++) {
             int fi = (i - pmb->cis)*2 + pmb->is;
@@ -1113,7 +1113,7 @@ void MeshRefinement::ProlongateSharedFieldX3(
             Real gx2c = 0.5*(SIGN(gx2m) + SIGN(gx2p))*std::min(std::abs(gx2m),
                                                              std::abs(gx2p));
             Real dfx1 = fx1p - fx1m;
-            Real csarea = csarea_x3(i);
+            Real csarea = csarea_x3_(i);
             Real fsa00 = sarea_x3_[0][0](fi);
             Real fsa01 = sarea_x3_[0][0](fi+1);
             Real fsa10 = sarea_x3_[0][1](fi);
