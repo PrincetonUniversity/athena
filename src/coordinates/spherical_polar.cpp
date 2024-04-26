@@ -131,9 +131,9 @@ SphericalPolar::SphericalPolar(MeshBlock *pmb, ParameterInput *pin, bool flag)
       x2s1(jl) = x2s3(jl) = x2v(jl);
     } else {
       for (int j=jl-ng; j<=ju+ng; ++j) {
-        x2s1(j) = (std::sin(x2f(j+1)) - x2f(j+1)*std::cos(x2f(j+1)) - std::sin(x2f(j)) 
+        x2s1(j) = (std::sin(x2f(j+1)) - x2f(j+1)*std::cos(x2f(j+1)) - std::sin(x2f(j))
                   + x2f(j)*std::cos(x2f(j)))/(std::cos(x2f(j)) - std::cos(x2f(j+1)));
-	x2s3(j) = 0.5*(x2f(j+1) + x2f(j));
+        x2s3(j) = 0.5*(x2f(j+1) + x2f(j));
       }
     }
     if (pmb->block_size.nx3 == 1) {

@@ -823,7 +823,7 @@ void MeshRefinement::ProlongateSharedFieldX1(
             Real dfx2 = fx2p - fx2m;
             Real dfx3 = fx3p - fx3m;
             Real ccval = coarse(k,j,i);
-	    Real csarea = csarea_x1(i);
+            Real csarea = csarea_x1(i);
             Real fsa00 = sarea_x1_[0][0](fi);
             Real fsa01 = sarea_x1_[0][1](fi);
             Real fsa10 = sarea_x1_[1][0](fi);
@@ -845,8 +845,8 @@ void MeshRefinement::ProlongateSharedFieldX1(
                                        + gx3c*dfx3*(fsa00 + fsa01)/csarea;
             fine(fk+1,fj+1,fi) = ccval + gx2c*dfx2*(fsa00 + fsa10)/csarea
                                        + gx3c*dfx3*(fsa00 + fsa01)/csarea;
-	  }
-	}
+          }
+        }
       }
     } else {
       for (int k=sk; k<=ek; k++) {
@@ -1020,8 +1020,8 @@ void MeshRefinement::ProlongateSharedFieldX2(
             fine(fk  ,fj,fi+1) = ccval + gx1c*(fx1p - x1c) - gx3c*(x3c - fx3m);
             fine(fk+1,fj,fi  ) = ccval - gx1c*(x1c - fx1m) + gx3c*(fx3p - x3c);
             fine(fk+1,fj,fi+1) = ccval + gx1c*(fx1p - x1c) + gx3c*(fx3p - x3c);
-	  }
-	}
+          }
+        }
       }
     }
   } else if (pmb->block_size.nx2 > 1) {
@@ -1164,8 +1164,8 @@ void MeshRefinement::ProlongateSharedFieldX3(
             fine(fk,fj  ,fi+1) = ccval + gx1c*(fx1p - x1c) - gx2c*(x2c - fx2m);
             fine(fk,fj+1,fi  ) = ccval - gx1c*(x1c - fx1m) + gx2c*(fx2p - x2c);
             fine(fk,fj+1,fi+1) = ccval + gx1c*(fx1p - x1c) + gx2c*(fx2p - x2c);
-	  }
-	}
+          }
+        }
       }
     }
   } else if (pmb->block_size.nx2 > 1) {
