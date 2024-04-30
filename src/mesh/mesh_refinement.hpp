@@ -97,8 +97,9 @@ class MeshRefinement {
   Coordinates *pcoarsec;
 
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
-  AthenaArray<Real> csarea_x1, csarea_x2, csarea_x3;
+  AthenaArray<Real> csarea_x1_, csarea_x2_, csarea_x3_;
   int refine_flag_, neighbor_rflag_, deref_count_, deref_threshold_;
+  bool fluxinterp_;
 
   // functions
   AMRFlagFunc AMRFlag_; // duplicate of Mesh class member

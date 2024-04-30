@@ -697,15 +697,6 @@ Real ncells(MeshBlock *pmb, int iout) {
 
 // Total number of cells in the simulation
 Real totcells(MeshBlock *pmb, int iout) {
-  int tcell = 0;
-  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
-
-  for(int k=ks; k<=ke; k++) {
-    for(int j=js; j<=je; j++) {
-      for(int i=is; i<=ie; i++) {
-        tcell += 1;
-      }
-    }
-  }
+  int tcell = pmb->GetNumberOfMeshBlockCells();
   return tcell;
 }

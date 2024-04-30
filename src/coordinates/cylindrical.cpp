@@ -97,27 +97,39 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   // initialize area-averaged coordinates used with MHD AMR
   if ((pmb->pmy_mesh->multilevel) && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
-      x1s2(i) = x1s3(i) = x1v(i);
+      x1s2(i) = 0.5*(x1f(i+1) + x1f(i));
+      x1s3(i) = (2.0/3.0)*(std::pow(x1f(i+1),3) - std::pow(x1f(i),3))
+                /(SQR(x1f(i+1)) - SQR(x1f(i)));
     }
     if (pmb->block_size.nx2 == 1) {
       x2s1(jl) = x2s3(jl) = x2v(jl);
     } else {
       for (int j=jl-ng; j<=ju+ng; ++j) {
-        x2s1(j) = x2s3(j) = x2v(j);
+        x2s1(j) = x2s3(j) = 0.5*(x2f(j+1) + x2f(j));
       }
     }
     if (pmb->block_size.nx3 == 1) {
       x3s1(kl) = x3s2(kl) = x3v(kl);
     } else {
       for (int k=kl-ng; k<=ku+ng; ++k) {
-        x3s1(k) = x3s2(k) = x3v(k);
+        x3s1(k) = x3s2(k) = 0.5*(x3f(k+1) + x3f(k));
       }
     }
   }
 
   // Allocate memory for internal scratch arrays to store partial calculations
-  // (note this is skipped if object is for coarse mesh with AMR)
-  if (!coarse_flag) {
+  if (coarse_flag) {
+    coord_area3_i_.NewAthenaArray(nc1);
+    // Compute and store constant coefficients needed for face-areas, cell-volumes, etc.
+    // This helps improve performance.
+#pragma omp simd
+    for (int i=il-ng; i<=iu+ng; ++i) {
+      Real rm = x1f(i  );
+      Real rp = x1f(i+1);
+      // dV = 0.5*(R_{i+1}^2 - R_{i}^2)
+      coord_area3_i_(i)= 0.5*(rp*rp - rm*rm);
+    }
+  } else {
     coord_area3_i_.NewAthenaArray(nc1);
     coord_area3vc_i_.NewAthenaArray(nc1);
     coord_vol_i_.NewAthenaArray(nc1);
