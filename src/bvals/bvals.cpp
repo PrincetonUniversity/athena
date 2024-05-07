@@ -122,6 +122,13 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   // set parameters for shearing box bc and allocate buffers
   shearing_box = 0;
   if (pmy_mesh_->shear_periodic) {
+    // see discussion #569
+    if (pmy_mesh_->multilevel && MAGNETIC_FIELDS_ENABLED) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+          << "SMR is incompatible with shearing box with MHD" << std::endl;
+      ATHENA_ERROR(msg);
+    }
     // It is required to know the reconstruction scheme before pmb->precon is defined.
     // If a higher-order scheme than PPM is implemented, xgh_ must be larger than 2.
     std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
@@ -145,7 +152,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
           << "<orbital_advection> shboxcoord must be 1 or 2." << std::endl;
       ATHENA_ERROR(msg);
     }
-
     if (pmb->block_size.nx3>1) { // 3D
       if (shearing_box == 2) {
         std::stringstream msg;
@@ -264,12 +270,18 @@ void BoundaryValues::SetupPersistentMPI() {
   }
 
   // KGF: begin exclusive shearing-box section in BoundaryValues::SetupPersistentMPI()
+  // TODO(KGF): it is confusing that it is not wrapped in #ifdef MPI_PARALLEL
+  // The shearing box metadata is required regardless if MPI is used, so might be better
+  // encapsulated in a separate function
+
   // initialize the shearing block lists
   if (shearing_box != 0) {
     MeshBlock *pmb = pmy_block_;
     int *ranklist = pmy_mesh_->ranklist;
     int *nslist = pmy_mesh_->nslist;
     LogicalLocation *loclist = pmy_mesh_->loclist;
+    // this error needs to be downgraded to a non-fatal warning if the AMR+SMR workaround
+    // to the MHD+shear+refinement restriction is employed. See discussion #569
     if (pmy_mesh_->adaptive) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
@@ -473,7 +485,6 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
     ps = pmb->pscalars;
   }
 
-
   NRRadiation *prad = nullptr;
   RadBoundaryVariable *pradbvar = nullptr;
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
@@ -487,8 +498,6 @@ void BoundaryValues::ApplyPhysicalBoundaries(const Real time, const Real dt,
     pcr = pmb->pcr;
     //pcrbvar = &(pcr->cr_bvar);
   }
-
-
 
   // Apply boundary function on inner-x1 and update W,bcc (if not periodic)
   if (apply_bndry_fn_[BoundaryFace::inner_x1]) {
