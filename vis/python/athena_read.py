@@ -779,7 +779,9 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
                             block_data = np.repeat(block_data, s, axis=0)[kl_s:ku_s,:,:]
                         data[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_data
                     else:
-                        data[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_data[kl_s:ku_s,jl_s:ju_s,il_s:iu_s]
+                        data[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_data[kl_s:ku_s,
+                                                                          jl_s:ju_s,
+                                                                          il_s:iu_s]
 
             # Restrict fine data
             else:
