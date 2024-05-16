@@ -780,8 +780,8 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
                         data[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_data
                     else:
                         data[q][kl_d:ku_d, jl_d:ju_d, il_d:iu_d] = block_data[kl_s:ku_s,
-                                                                          jl_s:ju_s,
-                                                                          il_s:iu_s]
+                                                                              jl_s:ju_s,
+                                                                              il_s:iu_s]
 
             # Restrict fine data
             else:
