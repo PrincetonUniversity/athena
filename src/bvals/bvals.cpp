@@ -297,14 +297,14 @@ void BoundaryValues::SetupPersistentMPI() {
           for (int64_t lx2=0; lx2<nblx2; lx2++) {
             loc.lx2 = lx2;
             MeshBlockTree *mbt = pmy_mesh_->tree.FindMeshBlock(loc);
-            int gid = mbt->GetGid();
-            if (mbt == nullptr || gid == -1) {
+            if (mbt == nullptr || mbt->GetGid() == -1) {
               std::stringstream msg;
               msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
                   << "shear_periodic boundaries do NOT work "
                   << "if there is refinment in the x2 direction." << std::endl;
               ATHENA_ERROR(msg);
             }
+            int gid = mbt->GetGid();
             shbb_[upper][lx2].gid = gid;
             shbb_[upper][lx2].lid = gid - nslist[ranklist[gid]];
             shbb_[upper][lx2].rank = ranklist[gid];
