@@ -60,6 +60,7 @@
 BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs), pmy_block_(pmb),
+      is_shear{}, loc_shear{0, pmy_mesh_->nrbx1*(1L << pmb->loc.level - 1)},
       sb_data_{}, sb_flux_data_{} {
   // Check BC functions for each of the 6 boundaries in turn ---------------------
   for (int i=0; i<6; i++) {
@@ -122,13 +123,6 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
   // set parameters for shearing box bc and allocate buffers
   shearing_box = 0;
   if (pmy_mesh_->shear_periodic) {
-    // see discussion #569
-    if (pmy_mesh_->multilevel && MAGNETIC_FIELDS_ENABLED) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
-          << "SMR is incompatible with shearing box with MHD" << std::endl;
-      ATHENA_ERROR(msg);
-    }
     // It is required to know the reconstruction scheme before pmb->precon is defined.
     // If a higher-order scheme than PPM is implemented, xgh_ must be larger than 2.
     std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
@@ -210,15 +204,10 @@ BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
     }
 
     int level = pmb->loc.level - pmy_mesh_->root_level;
-    // nblx2 is only used for allocating SimpleNeighborBlock arrays; nblx1 for loc_shear
-    // TODO(felker): initialize loc_shear{0, pmy_mesh_->nrbx2*(1L << pmb->loc.level - ..)}
-    // in ctor member initializer list and update as refinement occurs. And nblx2
+    // nblx2 is the only var used in the ctor for alllocating SimpleNeighborBlock arrays
+    nblx1 = pmy_mesh_->nrbx1*(1L << level);
     nblx2 = pmy_mesh_->nrbx2*(1L << level);
-    // is_shear{} in member init_list
-    is_shear[0] = false;
-    is_shear[1] = false;
-    loc_shear[0] = 0;
-    loc_shear[1] = pmy_mesh_->nrbx1*(1L << level) - 1;
+    nblx3 = pmy_mesh_->nrbx3*(1L << level);
 
     if (shearing_box == 1) {
       if (NGHOST+xgh_ > pmb->block_size.nx2) {
@@ -264,15 +253,16 @@ BoundaryValues::~BoundaryValues() {
 //! initializes the shearing block lists
 
 void BoundaryValues::SetupPersistentMPI() {
+  // TODO(KGF): given the fn name, it is confusing that the fn contents are not entirely
+  // wrapped in #ifdef MPI_PARALLEL
   for (auto bvars_it = bvars_main_int.begin(); bvars_it != bvars_main_int.end();
        ++bvars_it) {
     (*bvars_it)->SetupPersistentMPI();
   }
-
   // KGF: begin exclusive shearing-box section in BoundaryValues::SetupPersistentMPI()
-  // TODO(KGF): it is confusing that it is not wrapped in #ifdef MPI_PARALLEL
-  // The shearing box metadata is required regardless if MPI is used, so might be better
-  // encapsulated in a separate function
+
+  // TODO(KGF): the shearing box metadata is required regardless if MPI is used, so better
+  // to encapsulate it in a separate function
 
   // initialize the shearing block lists
   if (shearing_box != 0) {
@@ -281,7 +271,8 @@ void BoundaryValues::SetupPersistentMPI() {
     int *nslist = pmy_mesh_->nslist;
     LogicalLocation *loclist = pmy_mesh_->loclist;
     // this error needs to be downgraded to a non-fatal warning if the AMR+SMR workaround
-    // to the MHD+shear+refinement restriction is employed. See discussion #569
+    // to the MHD+shear+refinement restriction is employed (#569)--- or remove entirely,
+    // hoping that RefinementCondition() does not violate below restrictions
     if (pmy_mesh_->adaptive) {
       std::stringstream msg;
       msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
@@ -293,6 +284,22 @@ void BoundaryValues::SetupPersistentMPI() {
           LogicalLocation loc;
           loc.level = pmb->loc.level;
           loc.lx1   = loc_shear[upper];
+          loc.lx2   = pmb->loc.lx2;
+          for (int64_t lx3=0; lx3<nblx3; lx3++) {
+            loc.lx3   = lx3;
+            MeshBlockTree *mbt = pmy_mesh_->tree.FindMeshBlock(loc);
+            // see discussion #569: hydro+shear with SMR (not AMR) works with x1, x3
+            // refinement but MHD with x3 refinement will NOT work without adjusting
+            // corner E-field flux correction to also take into account adjacent x3 block
+            // emf (currently just averages emf values between inner/outermost x1 MBs)
+            if ((mbt == nullptr || mbt->GetGid() == -1) && MAGNETIC_FIELDS_ENABLED) {
+              std::stringstream msg;
+              msg << "### FATAL ERROR in BoundaryValues Class" << std::endl
+                  << "shear_periodic boundaries do NOT work with MHD"
+                  << "if there is refinment in the x3 direction." << std::endl;
+              ATHENA_ERROR(msg);
+            }
+          }
           loc.lx3   = pmb->loc.lx3;
           for (int64_t lx2=0; lx2<nblx2; lx2++) {
             loc.lx2 = lx2;
