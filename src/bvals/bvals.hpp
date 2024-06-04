@@ -183,17 +183,17 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
 
   // Shearing box (shared with Field and Hydro)
   // KGF: remove the redundancies in these variables:
-  int shearing_box; // flag for shearing box: 0 = none, 1: xy, 2: xz
-  int joverlap_, joverlap_flux_; // # of cells the shear runs over one block
-  Real ssize_;                  // # of ghost cells in x-z plane
-  Real eps_, eps_flux_;          // fraction part of the shear
+  int shearing_box;               // flag for shearing box: 0 = none, 1: xy, 2: xz
+  int joverlap_, joverlap_flux_;  // # of cells the shear runs over one block
+  Real ssize_;                    // # of ghost cells in x-z plane
+  Real eps_, eps_flux_;           // fraction part of the shear
   Real qomL_;
   int xorder_, xgh_;
   AthenaArray<Real> pflux_;    // pencil buffer for remapping
 
   std::int64_t nblx2;
-  //! it is possible for a MeshBlock to have is_shear={true, true},
-  //! if it is the only block along x1
+  //! note: it is possible for a MeshBlock to have is_shear={true, true},
+  //! if it is the only block along entire x1 range of domain
   bool is_shear[2]; // inner_x1=0, outer_x1=1
   SimpleNeighborBlock *shbb_[2];
   std::int64_t loc_shear[2];  // x1 LogicalLocation of block(s) on inner/outer shear bndry
