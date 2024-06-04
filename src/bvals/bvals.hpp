@@ -189,14 +189,20 @@ class BoundaryValues : public BoundaryBase, //public BoundaryPhysics,
   Real eps_, eps_flux_;           // fraction part of the shear
   Real qomL_;
   int xorder_, xgh_;
-  AthenaArray<Real> pflux_;    // pencil buffer for remapping
+  AthenaArray<Real> pflux_;        // pencil buffer for remapping
 
-  std::int64_t nblx2;
+
+  std::int64_t nblx1, nblx2, nblx3; // max number of MeshBlocks in each dir
+                                    // on this level of refinement
+
   //! note: it is possible for a MeshBlock to have is_shear={true, true},
   //! if it is the only block along entire x1 range of domain
-  bool is_shear[2]; // inner_x1=0, outer_x1=1
+  bool is_shear[2];                 // inner_x1=0, outer_x1=1
+
+  std::int64_t loc_shear[2];        // x1 LogicalLocation of block(s)
+                                    // on inner/outer shear bndry
+
   SimpleNeighborBlock *shbb_[2];
-  std::int64_t loc_shear[2];  // x1 LogicalLocation of block(s) on inner/outer shear bndry
 
   // tomo-ono: 3x arrays and 4x arrays are required for int and fc, respectively
   ShearNeighborData<4> sb_data_[2];
