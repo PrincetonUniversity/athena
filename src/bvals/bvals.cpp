@@ -60,7 +60,7 @@
 BoundaryValues::BoundaryValues(MeshBlock *pmb, BoundaryFlag *input_bcs,
                                ParameterInput *pin)
     : BoundaryBase(pmb->pmy_mesh, pmb->loc, pmb->block_size, input_bcs), pmy_block_(pmb),
-      is_shear{}, loc_shear{0, pmy_mesh_->nrbx1*(1L << pmb->loc.level - 1)},
+      is_shear{}, loc_shear{0, pmy_mesh_->nrbx1*(1L << pmb->loc.level) - 1},
       sb_data_{}, sb_flux_data_{} {
   // Check BC functions for each of the 6 boundaries in turn ---------------------
   for (int i=0; i<6; i++) {
