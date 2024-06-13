@@ -5,7 +5,6 @@ athena
 <!-- [![Jenkins Build Status](https://jenkins.princeton.edu/buildStatus/icon?job=athena/PrincetonUniversity_athena_jenkins_master)](https://jenkins.princeton.edu/job/athena/job/PrincetonUniversity_athena_jenkins_master/) -->
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4455880.svg)](https://doi.org/10.5281/zenodo.4455880) <!-- v21.0, not Concept DOI that tracks the "latest" version (erroneously sorted by DOI creation date on Zenodo). 10.5281/zenodo.4455879 -->
-[![Travis CI Build Status](https://travis-ci.com/PrincetonUniversity/athena.svg?token=Ejzw3yndG1Fqub679gCB&branch=master)](https://travis-ci.com/PrincetonUniversity/athena)
 [![codecov](https://codecov.io/gh/PrincetonUniversity/athena/branch/master/graph/badge.svg?token=ZzniY084kP)](https://codecov.io/gh/PrincetonUniversity/athena)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa.svg)](code_of_conduct.md)

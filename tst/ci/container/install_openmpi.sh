@@ -4,7 +4,7 @@
 # will need to manually adjust below URL after major version 3.0
 version_str=3.0.2
 # for macOS builds, install OpenMPI from Homebrew:
-if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+if [ "$OS_NAME" == "osx" ]; then
     export HOMEBREW_NO_AUTO_UPDATE=1
     cd openmpi
     brew unlink mpich || true
@@ -23,7 +23,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
 	echo "Using cached OpenMPI"
     else
         echo "Installing OpenMPI with Homebrew"
-	HOMEBREW_TEMP=$TRAVIS_BUILD_DIR/openmpi
+	HOMEBREW_TEMP=$BUILD_DIR/openmpi
 	# brew update
         brew install open-mpi #--cc=gcc-7 --build-from-source --without-fortran
 	brew unlink open-mpi
@@ -48,7 +48,7 @@ else
 	cd openmpi-${version_str}
 	echo "Configuring and building OpenMPI"
 	# The configure output is not printed to the Travis CI log due to the redirect
-	./configure --prefix=$TRAVIS_BUILD_DIR/openmpi &> openmpi.configure # CC=$C_COMPILER CXX=$CXX_COMPILER --without-fortran
+	./configure --prefix=$BUILD_DIR/openmpi &> openmpi.configure # CC=$C_COMPILER CXX=$CXX_COMPILER --without-fortran
 	make -j4 &> openmpi.make
 	make install &> openmpi.install
 	cd ..

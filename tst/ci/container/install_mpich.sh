@@ -3,7 +3,7 @@
 # MPICH 3.2.1 = released 2017-11-10
 version_str=3.2.1
 # for macOS builds, install MPICH from Homebrew
-if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+if [ "$OS_NAME" == "osx" ]; then
     export HOMEBREW_NO_AUTO_UPDATE=1
     cd mpich
     brew unlink open-mpi || true
@@ -21,7 +21,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
 	echo "Using cached MPICH"
     else
         echo "Installing MPICH with Homebrew"
-	HOMEBREW_TEMP=$TRAVIS_BUILD_DIR/mpich
+	HOMEBREW_TEMP=$BUILD_DIR/mpich
 	# There is no libtoolize in macOS system. Homebrew uses "g" prefix
 	ln -s `which glibtoolize`  /usr/local/opt/libtool/bin/libtoolize
 	brew install mpich # --HEAD
