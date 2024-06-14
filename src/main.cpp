@@ -63,7 +63,7 @@
 //! \brief Athena++ main program
 
 int main(int argc, char *argv[]) {
-  std::string athena_version = "version 21.0 - January 2021";
+  std::string athena_version = "version 24.0 - June 2024";
   char *input_filename = nullptr, *restart_filename = nullptr;
   char *prundir = nullptr;
   int res_flag = 0;   // set to 1 if -r        argument is on cmdline
