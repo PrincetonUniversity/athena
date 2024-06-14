@@ -24,6 +24,9 @@ The automatically-generated content should be used for reference when writing th
 
 **Implemented enhancements:**
 
+-  Fixes athena\_read's unnecessarily large memory allocation [\#587](https://github.com/PrincetonUniversity/athena/pull/587) ([dgagnier](https://github.com/dgagnier))
+- Divergence-preserving prolongation of coarse/fine shared face-centered fields for 3D spherical polar and cylindrical grids  [\#584](https://github.com/PrincetonUniversity/athena/pull/584) ([mariareneemf](https://github.com/mariareneemf))
+- Divergence-preserving prolongation of coarse/fine shared face-centered fields for 3D spherical polar grids [\#582](https://github.com/PrincetonUniversity/athena/pull/582) ([mariareneemf](https://github.com/mariareneemf))
 - Remove unused DEBUG macro [\#531](https://github.com/PrincetonUniversity/athena/issues/531)
 - Make DEBUG macro a binary 1/0 instead of string [\#533](https://github.com/PrincetonUniversity/athena/pull/533) ([felker](https://github.com/felker))
 - Update cpplint.py [\#524](https://github.com/PrincetonUniversity/athena/pull/524) ([felker](https://github.com/felker))
@@ -53,6 +56,8 @@ The automatically-generated content should be used for reference when writing th
 - 4th order reconstruction and outflow BCs bug [\#298](https://github.com/PrincetonUniversity/athena/issues/298)
 - Add more runtime NGHOST checks \(especially for SMR/AMR\) [\#163](https://github.com/PrincetonUniversity/athena/issues/163)
 - GR-AMR incompatibility [\#64](https://github.com/PrincetonUniversity/athena/issues/64)
+- Remove division-by-zero bug for viscosity + 3d polar boundary condition [\#581](https://github.com/PrincetonUniversity/athena/pull/581) ([apbailey](https://github.com/apbailey))
+- Replace more nonconstant references with const [\#577](https://github.com/PrincetonUniversity/athena/pull/577) ([felker](https://github.com/felker))
 - Fix x1v for Curvilinear+PPM [\#566](https://github.com/PrincetonUniversity/athena/pull/566) ([forrestglines](https://github.com/forrestglines))
 - Remove all possibly extraneous DeleteAthenaArray calls [\#560](https://github.com/PrincetonUniversity/athena/pull/560) ([felker](https://github.com/felker))
 - Fixed Typo in Error Messages [\#557](https://github.com/PrincetonUniversity/athena/pull/557) ([Rgokemeijer](https://github.com/Rgokemeijer))
@@ -93,6 +98,8 @@ The automatically-generated content should be used for reference when writing th
 
 **Closed issues:**
 
+- athena\_read allocates unnecessarily large amount of memory [\#586](https://github.com/PrincetonUniversity/athena/issues/586)
+- Array indexing errors in llf\_mhd\_rel\_no\_transform.cpp [\#568](https://github.com/PrincetonUniversity/athena/issues/568)
 - Access ParameterInput instance from user boundary conditions [\#563](https://github.com/PrincetonUniversity/athena/issues/563)
 - Remove extraneous DeleteAthenaArray\(\) calls [\#559](https://github.com/PrincetonUniversity/athena/issues/559)
 - Inconsistency in documentation of user-defined source terms? [\#556](https://github.com/PrincetonUniversity/athena/issues/556)
@@ -122,6 +129,8 @@ The automatically-generated content should be used for reference when writing th
 
 **Merged pull requests:**
 
+- Remove Travis CI YAML and badge from README [\#592](https://github.com/PrincetonUniversity/athena/pull/592) ([felker](https://github.com/felker))
+- Add better exclusion for MHD+shearing box+SMR with refinement in x3 dir at shearing boundary [\#591](https://github.com/PrincetonUniversity/athena/pull/591) ([felker](https://github.com/felker))
 - Fully-implicit cosmic-ray diffusion module using Multigrid [\#550](https://github.com/PrincetonUniversity/athena/pull/550) ([tomidakn](https://github.com/tomidakn))
 - Replace std::fabs with std::abs [\#523](https://github.com/PrincetonUniversity/athena/pull/523) ([felker](https://github.com/felker))
 - Trigger PR test on new Jenkins server and fix all violations [\#518](https://github.com/PrincetonUniversity/athena/pull/518) ([changgoo](https://github.com/changgoo))
