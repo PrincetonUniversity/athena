@@ -28,8 +28,7 @@ def main(**kwargs):
     from mpl_toolkits.mplot3d import Axes3D  # noqa
 
     # Read and plot block edges
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    fig, ax = plt.subplots(1, 1, subplot_kw={'projection': '3d'})
     x = []
     y = []
     z = []
