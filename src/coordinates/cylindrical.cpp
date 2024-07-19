@@ -24,10 +24,9 @@
 #include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
-//! Cylindrical coordinates constructor
+//! Cylindrical coordinates initialization
 
-Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
-    : Coordinates(pmb, pin, flag) {
+void Coordinates::Initialize(ParameterInput *pin) {
   // initialize volume-averaged coordinates and spacing
   // x1-direction: x1v = (\int r dV / \int dV) = d(r^3/3)d(r^2/2)
   for (int i=il-ng; i<=iu+ng; ++i) {
@@ -41,7 +40,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // x2-direction: x2v = (\int phi dV / \int dV) = dphi/2
-  if (pmb->block_size.nx2 == 1) {
+  if (pmy_block->block_size.nx2 == 1) {
     x2v(jl) = 0.5*(x2f(jl+1) + x2f(jl));
     dx2v(jl) = dx2f(jl);
   } else {
@@ -54,7 +53,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // x3-direction: x3v = (\int z dV / \int dV) = dz/2
-  if (pmb->block_size.nx3 == 1) {
+  if (pmy_block->block_size.nx3 == 1) {
     x3v(kl) = 0.5*(x3f(kl+1) + x3f(kl));
     dx3v(kl) = dx3f(kl);
   } else {
@@ -80,7 +79,7 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // x2-direction
-  if (pmb->block_size.nx2 == 1) {
+  if (pmy_block->block_size.nx2 == 1) {
     h32v(jl) = 1.0;
     h32f(jl) = 1.0;
     dh32vd2(jl) = 0.0;
@@ -95,20 +94,20 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // initialize area-averaged coordinates used with MHD AMR
-  if ((pmb->pmy_mesh->multilevel) && MAGNETIC_FIELDS_ENABLED) {
+  if ((pmy_block->pmy_mesh->multilevel) && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
       x1s2(i) = 0.5*(x1f(i+1) + x1f(i));
       x1s3(i) = (2.0/3.0)*(std::pow(x1f(i+1),3) - std::pow(x1f(i),3))
                 /(SQR(x1f(i+1)) - SQR(x1f(i)));
     }
-    if (pmb->block_size.nx2 == 1) {
+    if (pmy_block->block_size.nx2 == 1) {
       x2s1(jl) = x2s3(jl) = x2v(jl);
     } else {
       for (int j=jl-ng; j<=ju+ng; ++j) {
         x2s1(j) = x2s3(j) = 0.5*(x2f(j+1) + x2f(j));
       }
     }
-    if (pmb->block_size.nx3 == 1) {
+    if (pmy_block->block_size.nx3 == 1) {
       x3s1(kl) = x3s2(kl) = x3v(kl);
     } else {
       for (int k=kl-ng; k<=ku+ng; ++k) {
@@ -168,11 +167,11 @@ Cylindrical::Cylindrical(MeshBlock *pmb, ParameterInput *pin, bool flag)
 
 //----------------------------------------------------------------------------------------
 // EdgeXLength functions: compute physical length at cell edge-X as vector
-// Only overwrite functions that differ from implementation in base class (for Cartesian)
+// Only overwrite functions that differ from implementation in base class
 
 // Edge2(i,j,k) located at (i-1/2,j,k-1/2), i.e. (x1f(i), x2v(j), x3f(k))
 
-void Cylindrical::Edge2Length(const int k, const int j, const int il, const int iu,
+void Coordinates::Edge2Length(const int k, const int j, const int il, const int iu,
                               AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -184,7 +183,7 @@ void Cylindrical::Edge2Length(const int k, const int j, const int il, const int 
 //----------------------------------------------------------------------------------------
 // GetEdgeXLength functions: return length of edge-X length at (i,j,k)
 
-Real Cylindrical::GetEdge2Length(const int k, const int j, const int i) {
+Real Coordinates::GetEdge2Length(const int k, const int j, const int i) {
   return x1f(i)*dx2f(j);
 }
 
@@ -192,7 +191,7 @@ Real Cylindrical::GetEdge2Length(const int k, const int j, const int i) {
 // VolCenterXLength functions: compute physical length connecting cell centers as vector
 // VolCenter2(i,j,k) located at (i,j+1/2,k), i.e. (x1v(i), x2f(j+1), x3v(k))
 
-void Cylindrical::VolCenter2Length(const int k, const int j, const int il, const int iu,
+void Coordinates::VolCenter2Length(const int k, const int j, const int il, const int iu,
                                    AthenaArray<Real> &len) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -205,7 +204,7 @@ void Cylindrical::VolCenter2Length(const int k, const int j, const int il, const
 //----------------------------------------------------------------------------------------
 // CenterWidthX functions: return physical width in X-dir at (i,j,k) cell-center
 
-void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int iu,
+void Coordinates::CenterWidth2(const int k, const int j, const int il, const int iu,
                                AthenaArray<Real> &dx2) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -217,7 +216,7 @@ void Cylindrical::CenterWidth2(const int k, const int j, const int il, const int
 //----------------------------------------------------------------------------------------
 // FaceXArea functions: compute area of face with normal in X-dir as vector
 
-void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu,
+void Coordinates::Face1Area(const int k, const int j, const int il, const int iu,
                             AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -227,7 +226,7 @@ void Cylindrical::Face1Area(const int k, const int j, const int il, const int iu
   return;
 }
 
-void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu,
+void Coordinates::Face3Area(const int k, const int j, const int il, const int iu,
                             AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -240,12 +239,12 @@ void Cylindrical::Face3Area(const int k, const int j, const int il, const int iu
 //----------------------------------------------------------------------------------------
 // GetFaceXArea functions: return area of face with normal in X-dir at (i,j,k)
 
-Real Cylindrical::GetFace1Area(const int k, const int j, const int i) {
+Real Coordinates::GetFace1Area(const int k, const int j, const int i) {
   // area1 = r dphi dz
   return x1f(i)*dx2f(j)*dx3f(k);
 }
 
-Real Cylindrical::GetFace3Area(const int k, const int j, const int i) {
+Real Coordinates::GetFace3Area(const int k, const int j, const int i) {
   // area3 = dr r dphi = d(r^2/2) dphi
   return coord_area3_i_(i)*dx2f(j);
 }
@@ -255,7 +254,7 @@ Real Cylindrical::GetFace3Area(const int k, const int j, const int i) {
 // VolCenterFaceXArea functions: compute area of face with normal in X-dir as vector
 // where the faces are joined by cell centers (for non-ideal MHD)
 
-void Cylindrical::VolCenterFace1Area(const int k, const int j, const int il, const int iu,
+void Coordinates::VolCenterFace1Area(const int k, const int j, const int il, const int iu,
                                      AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -265,7 +264,7 @@ void Cylindrical::VolCenterFace1Area(const int k, const int j, const int il, con
   return;
 }
 
-void Cylindrical::VolCenterFace3Area(const int k, const int j, const int il, const int iu,
+void Coordinates::VolCenterFace3Area(const int k, const int j, const int il, const int iu,
                                      AthenaArray<Real> &area) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -276,7 +275,7 @@ void Cylindrical::VolCenterFace3Area(const int k, const int j, const int il, con
 }
 // Cell Volume function: compute volume of cell as vector
 
-void Cylindrical::CellVolume(const int k, const int j, const int il, const int iu,
+void Coordinates::CellVolume(const int k, const int j, const int il, const int iu,
                              AthenaArray<Real> &vol) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -289,14 +288,14 @@ void Cylindrical::CellVolume(const int k, const int j, const int il, const int i
 //----------------------------------------------------------------------------------------
 // GetCellVolume: returns cell volume at (i,j,k)
 
-Real Cylindrical::GetCellVolume(const int k, const int j, const int i) {
+Real Coordinates::GetCellVolume(const int k, const int j, const int i) {
   return coord_vol_i_(i)*dx2f(j)*dx3f(k);
 }
 
 //----------------------------------------------------------------------------------------
 //! Coordinate (Geometric) source term function
 
-void Cylindrical::AddCoordTermsDivergence(
+void Coordinates::AddCoordTermsDivergence(
     const Real dt, const AthenaArray<Real> *flux,
     const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc, AthenaArray<Real> &u) {
   Real iso_cs = pmy_block->peos->GetIsoSoundSpeed();
@@ -341,7 +340,7 @@ void Cylindrical::AddCoordTermsDivergence(
 //----------------------------------------------------------------------------------------
 //! Coordinate (Geometric) source term function for STS
 
-void Cylindrical::AddCoordTermsDivergence_STS(
+void Coordinates::AddCoordTermsDivergence_STS(
     const Real dt, int stage, const AthenaArray<Real> *flux,
     AthenaArray<Real> &u, AthenaArray<Real> &flux_div) {
 
@@ -380,7 +379,7 @@ void Cylindrical::AddCoordTermsDivergence_STS(
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term function for cosmic rays
 
-void Cylindrical::AddCRCoordTermsDivergence(
+void Coordinates::AddCRCoordTermsDivergence(
   const AthenaArray<Real> &u_input, AthenaArray<Real> &coord_src) {
   if (CR_ENABLED) {
     CosmicRay *pcr=pmy_block->pcr;
@@ -406,7 +405,7 @@ void Cylindrical::AddCRCoordTermsDivergence(
 //----------------------------------------------------------------------------------------
 // Coordinate (Geometric) source term for Grad Pc
 
-void Cylindrical::CRGradPcCoordTermsDivergence(
+void Coordinates::CRGradPcCoordTermsDivergence(
     const AthenaArray<Real> &u_cr, AthenaArray<Real> &grad_pc) {
   // Go through cellscosmicay
   if (CR_ENABLED) {
@@ -420,22 +419,22 @@ void Cylindrical::CRGradPcCoordTermsDivergence(
         }
       }// end j
     }// end k
-  }// ENd CR_ENABLED
+  }// end CR_ENABLED
   return;
 }
 
 //--------------------------------------------------------------------------
 // For radiation angles
-void Cylindrical::AxisDirection(int *axisx, int *axisy, int *axisz) {
+void Coordinates::AxisDirection(int *axisx, int *axisy, int *axisz) {
   *axisx = 0;
   *axisy = 1;
   *axisz = 2;
 }
 
-void Cylindrical::ConvertAngle(MeshBlock *pmb, const int nang,
+void Coordinates::ConvertAngle(MeshBlock *pmb, const int nang,
                                AthenaArray<Real> &mu) {
   if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
-    int n1z = pmb->ncells1, n2z = pmb->ncells2, n3z = pmb->ncells3;
+    int n1z = pmy_block->ncells1, n2z = pmy_block->ncells2, n3z = pmy_block->ncells3;
     // int ndim=1;
     // if (n2z > 1) ndim = 2;
     // if (n3z > 1) ndim = 3;

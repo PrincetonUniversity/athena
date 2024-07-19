@@ -91,8 +91,6 @@ parser.add_argument(
         'cylindrical',
         'spherical_polar',
         'minkowski',
-        'sinusoidal',
-        'tilted',
         'schwarzschild',
         'kerr-schild',
         'gr_user'],

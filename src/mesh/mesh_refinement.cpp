@@ -37,21 +37,7 @@ MeshRefinement::MeshRefinement(MeshBlock *pmb, ParameterInput *pin) :
     deref_threshold_(pin->GetOrAddInteger("mesh", "derefine_count", 10)),
     AMRFlag_(pmb->pmy_mesh->AMRFlag_) {
   // Create coarse mesh object for parent grid
-  if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
-    pcoarsec = new Cartesian(pmb, pin, true);
-  } else if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
-    pcoarsec = new Cylindrical(pmb, pin, true);
-  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
-    pcoarsec = new SphericalPolar(pmb, pin, true);
-  } else if (std::strcmp(COORDINATE_SYSTEM, "minkowski") == 0) {
-    pcoarsec = new Minkowski(pmb, pin, true);
-  } else if (std::strcmp(COORDINATE_SYSTEM, "schwarzschild") == 0) {
-    pcoarsec = new Schwarzschild(pmb, pin, true);
-  } else if (std::strcmp(COORDINATE_SYSTEM, "kerr-schild") == 0) {
-    pcoarsec = new KerrSchild(pmb, pin, true);
-  } else if (std::strcmp(COORDINATE_SYSTEM, "gr_user") == 0) {
-    pcoarsec = new GRUser(pmb, pin, true);
-  }
+  pcoarsec = new Coordinates(pmb, pin, true);
 
   if (NGHOST % 2) {
     std::stringstream msg;
