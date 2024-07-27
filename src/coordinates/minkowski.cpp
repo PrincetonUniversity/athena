@@ -27,12 +27,8 @@
 #include "coordinates.hpp"
 
 //----------------------------------------------------------------------------------------
-//! \brief Minkowski constructor
+//! \brief Minkowski coordinates initialization
 //!
-//! Inputs:
-//!  - pmb: pointer to block containing this grid
-//!  - pin: pointer to runtime inputs (not used)
-//!  - flag: true if object is for coarse grid only in an AMR calculation
 //! Notes:
 //!  - coordinates: t, x, y, z
 //!  - metric:
@@ -40,9 +36,7 @@
 //!     ds^2 = -dt^2 + dx^2 + dy^2 + dz^2
 //!   \f]
 
-Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
-    : Coordinates(pmb, pin, flag) {
-
+void Coordinates::Initialize(ParameterInput *pin) {
   // Initialize volume-averaged coordinates and spacings: x-direction
   for (int i=il-ng; i<=iu+ng; ++i) {
     x1v(i) = 0.5 * (x1f(i) + x1f(i+1));
@@ -52,7 +46,7 @@ Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Initialize volume-averaged coordinates and spacings: y-direction
-  if (pmb->block_size.nx2 == 1) {
+  if (pmy_block->block_size.nx2 == 1) {
     x2v(jl) = 0.5 * (x2f(jl) + x2f(jl+1));
     dx2v(jl) = dx2f(jl);
   } else {
@@ -65,7 +59,7 @@ Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Initialize volume-averaged coordinates and spacings: z-direction
-  if (pmb->block_size.nx3 == 1) {
+  if (pmy_block->block_size.nx3 == 1) {
     x3v(kl) = 0.5 * (x3f(kl) + x3f(kl+1));
     dx3v(kl) = dx3f(kl);
   } else {
@@ -78,18 +72,18 @@ Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
   }
 
   // Initialize area-averaged coordinates used with MHD AMR
-  if (pmb->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
+  if (pmy_block->pmy_mesh->multilevel && MAGNETIC_FIELDS_ENABLED) {
     for (int i=il-ng; i<=iu+ng; ++i) {
       x1s2(i) = x1s3(i) = x1v(i);
     }
-    if (pmb->block_size.nx2 == 1) {
+    if (pmy_block->block_size.nx2 == 1) {
       x2s1(jl) = x2s3(jl) = x2v(jl);
     } else {
       for (int j=jl-ng; j<=ju+ng; ++j) {
         x2s1(j) = x2s3(j) = x2v(j);
       }
     }
-    if (pmb->block_size.nx3 == 1) {
+    if (pmy_block->block_size.nx3 == 1) {
       x3s1(kl) = x3s2(kl) = x3v(kl);
     } else {
       for (int k=kl-ng; k<=ku+ng; ++k) {
@@ -109,7 +103,7 @@ Minkowski::Minkowski(MeshBlock *pmb, ParameterInput *pin, bool flag)
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
 
-void Minkowski::CellMetric(const int k, const int j, const int il, const int iu,
+void Coordinates::CellMetric(const int k, const int j, const int il, const int iu,
                            AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -134,7 +128,7 @@ void Minkowski::CellMetric(const int k, const int j, const int il, const int iu,
 //   g: array of metric components in 1D
 //   g_inv: array of inverse metric components in 1D
 
-void Minkowski::Face1Metric(const int k, const int j, const int il, const int iu,
+void Coordinates::Face1Metric(const int k, const int j, const int il, const int iu,
                             AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -150,7 +144,7 @@ void Minkowski::Face1Metric(const int k, const int j, const int il, const int iu
   return;
 }
 
-void Minkowski::Face2Metric(const int k, const int j, const int il, const int iu,
+void Coordinates::Face2Metric(const int k, const int j, const int il, const int iu,
                             AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -166,7 +160,7 @@ void Minkowski::Face2Metric(const int k, const int j, const int il, const int iu
   return;
 }
 
-void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu,
+void Coordinates::Face3Metric(const int k, const int j, const int il, const int iu,
                             AthenaArray<Real> &g, AthenaArray<Real> &g_inv) {
 #pragma omp simd
   for (int i=il; i<=iu; ++i) {
@@ -197,7 +191,7 @@ void Minkowski::Face3Metric(const int k, const int j, const int il, const int iu
 // Notes:
 //   transformation is trivial
 
-void Minkowski::PrimToLocal1(
+void Coordinates::PrimToLocal1(
     const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb1, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
@@ -210,7 +204,7 @@ void Minkowski::PrimToLocal1(
   return;
 }
 
-void Minkowski::PrimToLocal2(
+void Coordinates::PrimToLocal2(
     const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb2, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
@@ -223,7 +217,7 @@ void Minkowski::PrimToLocal2(
   return;
 }
 
-void Minkowski::PrimToLocal3(
+void Coordinates::PrimToLocal3(
     const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &bb3, AthenaArray<Real> &prim_l, AthenaArray<Real> &prim_r,
     AthenaArray<Real> &bbx) {
@@ -250,8 +244,7 @@ void Minkowski::PrimToLocal3(
 // Notes:
 //   transformation is trivial except for sign change from lowering time index
 
-void Minkowski::FluxToGlobal1(
-    const int k, const int j, const int il, const int iu,
+void Coordinates::FluxToGlobal1(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
 #pragma omp simd
@@ -263,8 +256,7 @@ void Minkowski::FluxToGlobal1(
   return;
 }
 
-void Minkowski::FluxToGlobal2(
-    const int k, const int j, const int il, const int iu,
+void Coordinates::FluxToGlobal2(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
 #pragma omp simd
@@ -276,8 +268,7 @@ void Minkowski::FluxToGlobal2(
   return;
 }
 
-void Minkowski::FluxToGlobal3(
-    const int k, const int j, const int il, const int iu,
+void Coordinates::FluxToGlobal3(const int k, const int j, const int il, const int iu,
     const AthenaArray<Real> &cons, const AthenaArray<Real> &bbx, AthenaArray<Real> &flux,
     AthenaArray<Real> &ey, AthenaArray<Real> &ez) {
 #pragma omp simd
@@ -297,8 +288,8 @@ void Minkowski::FluxToGlobal3(
 // Outputs:
 //   pa0,pa1,pa2,pa3: pointers to contravariant 4-vector components
 
-void Minkowski::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
-                                int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
+void Coordinates::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, int j,
+                                  int i, Real *pa0, Real *pa1, Real *pa2, Real *pa3) {
   *pa0 = -a_0;
   *pa1 = a_1;
   *pa2 = a_2;
@@ -314,8 +305,8 @@ void Minkowski::RaiseVectorCell(Real a_0, Real a_1, Real a_2, Real a_3, int k, i
 // Outputs:
 //   pa_0,pa_1,pa_2,pa_3: pointers to covariant 4-vector components
 
-void Minkowski::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
-                                int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {
+void Coordinates::LowerVectorCell(Real a0, Real a1, Real a2, Real a3, int k, int j,
+                                  int i, Real *pa_0, Real *pa_1, Real *pa_2, Real *pa_3) {
   *pa_0 = -a0;
   *pa_1 = a1;
   *pa_2 = a2;
