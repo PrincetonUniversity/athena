@@ -16,6 +16,7 @@
 // C++ headers
 #include <cstdint>     // int64_t
 #include <functional>  // reference_wrapper
+#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -341,6 +342,11 @@ class Mesh {
   double lb_tolerance_;
   int lb_interval_;
 
+  // for AMR face field correction
+  std::unordered_map<LogicalLocation, int, LogicalLocationHash> *locmap_;
+  std::vector<int> refined_;
+  std::vector<FaceFieldCorrection> ffc_send_, ffc_recv_;
+
   // functions
   MeshGenFunc MeshGenerator_[3];
   BValFunc BoundaryFunction_[6];
@@ -392,7 +398,14 @@ class Mesh {
   // step 8: receive
   void FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf);
   void FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf, LogicalLocation &lloc);
-  void FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf);
+  void ReceiveCoarseToFineAMR(MeshBlock *pb, Real *recvbuf);
+  void ProlongateMeshBlock(MeshBlock *pb);
+
+  // Face field correction
+  void PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
+                              int *ranklist, int *newrank, int *nslist, int nbtold);
+  void ReceiveAndSetFaceFieldCorrection(int *newrank);
+  int CreateFaceFieldCorrectionMPITag(int lid, int face);
 
   //! defined in either the prob file or default_pgen.cpp in ../pgen/
   void InitUserMeshData(ParameterInput *pin);
