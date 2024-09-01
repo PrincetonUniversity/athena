@@ -16,8 +16,8 @@
 // C++ headers
 #include <cstdint>     // int64_t
 #include <functional>  // reference_wrapper
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // Athena++ headers

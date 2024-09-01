@@ -1225,7 +1225,7 @@ void Mesh::ProlongateMeshBlock(MeshBlock *pb) {
 
   int il = pb->cis, iu = pb->cie+1, jl = pb->cjs, ju = pb->cje + f2,
       kl = pb->cks, ku = pb->cke + f3;
-  // Step FFC6. skip the surface fields contacting previously refined cells
+  // Step FFC8. skip the surface fields contacting previously refined MeshBlocks
   if (pmr->flag_ffc_recv_[BoundaryFace::inner_x1]) il++;
   if (pmr->flag_ffc_recv_[BoundaryFace::outer_x1]) iu--;
   if (pmr->flag_ffc_recv_[BoundaryFace::inner_x2]) jl++;
@@ -1272,7 +1272,7 @@ void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
     }
   }
 
-  // Step FFC1. Find pairs that need face field correction
+  // Step FFC2. Find pairs that need face field correction
   int s = 0;
   for (int n : refined_) { // loop over refined MeshBlocks
     LogicalLocation const &nloc = newloc[n];
@@ -1375,7 +1375,7 @@ void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
     }
   }
 
-  // Step FFC2. Initiate MPI receive
+  // Step FFC3. Initiate MPI receive
 #ifdef MPI_PARALLEL
   for (FaceFieldCorrection &t : ffc_recv_) {
     if (ranklist[t.from] != Globals::my_rank) {
@@ -1386,7 +1386,7 @@ void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
   }
 #endif
 
-  // Step FFC3. Pack and send shared face fields
+  // Step FFC4. Pack and send shared face fields
   for (FaceFieldCorrection &f : ffc_send_) {
     MeshBlock *pmb = FindMeshBlock(f.from);
     int p = 0;
@@ -1437,14 +1437,14 @@ void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
 //! \brief the second part of the face field correction
 
 void Mesh::ReceiveAndSetFaceFieldCorrection(int *newrank) {
-  // Step FFC4. clear face field correction flags
+  // Step FFC5. clear face field correction flags
   for (int n = 0; n < nblocal; ++n) {
     MeshRefinement *pmr = my_blocks(n)->pmr;
     for (int i = 0; i < 6; ++i)
       pmr->flag_ffc_recv_[i] = false;
   }
 
-  // Step FFC5. wait and unpack/set
+  // Step FFC6. wait and unpack/set
   for (FaceFieldCorrection &t : ffc_recv_) {
     MeshBlock *pmb = FindMeshBlock(t.to);
     pmb->pmr->flag_ffc_recv_[t.face] = true;
@@ -1488,7 +1488,7 @@ void Mesh::ReceiveAndSetFaceFieldCorrection(int *newrank) {
     }
   }
 
-  // Step FFC6. Finalize MPI send
+  // Step FFC7. Finalize MPI send
 #ifdef MPI_PARALLEL
   for (FaceFieldCorrection &f : ffc_send_) {
     if (newrank[f.to] != Globals::my_rank) {
