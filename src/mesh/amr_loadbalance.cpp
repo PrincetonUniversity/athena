@@ -652,9 +652,14 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   delete [] costlist;
   delete [] newtoold;
   delete [] oldtonew;
-  refined_.clear();
-  ffc_send_.clear();
-  ffc_recv_.clear();
+  if (my_blocks(0)->pmr->pvars_fc_.size() > 0) {
+    refined_.clear();
+    ffc_send_.clear();
+    ffc_recv_.clear();
+    for (int l = 0; l < max_level - root_level - 1; ++l)
+      locmap_[l].clear();
+  }
+
 #ifdef MPI_PARALLEL
   if (nsend != 0) {
     MPI_Waitall(nsend, req_send, MPI_STATUSES_IGNORE);
@@ -1257,6 +1262,16 @@ void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
   const int bnx3 = my_blocks(0)->block_size.nx3;
   const int nf = my_blocks(0)->pmr->pvars_fc_.size();
   const int sffc1 = nf*bnx2*bnx3, sffc2 = nf*bnx1*bnx3, sffc3 = nf*bnx2*bnx3;
+
+  // Step FFC1. Construct a hash map of MeshBlocks before refinement
+  for (int i = 0; i < nbtold; ++i) {
+    LogicalLocation const &loc = loclist[i];
+    if (loc.level > root_level) {
+      int lev = loc.level - root_level - 1;
+      locmap_[lev][loc] = i;
+    }
+  }
+
   // Step FFC1. Find pairs that need face field correction
   int s = 0;
   for (int n : refined_) { // loop over refined MeshBlocks
@@ -1268,45 +1283,92 @@ void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
     o1 = (xf1 << 1) - 1;
     o2 = (xf2 << 1) - 1;
     o3 = (xf3 << 1) - 1;
-    // *** KT: This loop over all the current MeshBlcks is a naive implementation.
-    // The MeshBlockTree is already updated at this point, so we have to search loclist.
-    // Perhaps we should use std::unordered_map if this part costs too much.
-    // We already have such an example in MultigridDriver (octet map).
-    for (int i = 0; i < nbtold; ++i) {
-      LogicalLocation const &floc = loclist[i];
-      if (nloc.level == floc.level) {
-        if (nloc.lx1 + o1 == floc.lx1 && nloc.lx2 == floc.lx2 && nloc.lx3 == floc.lx3) {
+    LogicalLocation floc = nloc;
+    int lev = floc.level - root_level - 1;
+    floc.lx1 += o1;
+    bool fskip = false;
+    if (floc.lx1 < 0) {
+      if (mesh_bcs[BoundaryFace::inner_x1] == BoundaryFlag::periodic)
+        floc.lx1 = (nrbx1 << (lev+1)) - 1;
+      else
+        fskip = true;
+    } else if (floc.lx1 >= (nrbx1 << (lev+1))) {
+      if (mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::periodic)
+        floc.lx1 = 0;
+      else
+        fskip = true;
+    }
+    if (!fskip) {
+      auto itr = locmap_[lev].find(floc);
+      if (itr != locmap_[lev].end()) {
+        const auto& it = *itr;
+        int i = it.second;
+        if (ranklist[i] == Globals::my_rank) {
+          ffc_send_.emplace_back(i, n, xf1^1, sffc1, -1);
+          if (newrank[n] == Globals::my_rank)
+            ffc_recv_.emplace_back(i, n, xf1, 0, s);
+          s++;
+        } else if (newrank[n] == Globals::my_rank) {
+          ffc_recv_.emplace_back(i, n, xf1, sffc1, -1);
+        }
+      }
+    }
+    if (f2) {
+      floc.lx1 = nloc.lx1, floc.lx2 += o2;
+      fskip = false;
+      if (floc.lx2 < 0) {
+        if (mesh_bcs[BoundaryFace::inner_x2] == BoundaryFlag::periodic)
+          floc.lx2 = (nrbx2 << (lev+1)) - 1;
+        else
+          fskip = true;
+      } else if (floc.lx2 >= (nrbx2 << (lev+1))) {
+        if (mesh_bcs[BoundaryFace::outer_x2] == BoundaryFlag::periodic)
+          floc.lx2 = 0;
+        else
+          fskip = true;
+      }
+      if (!fskip) {
+        auto itr = locmap_[lev].find(floc);
+        if (itr != locmap_[lev].end()) {
+          const auto& it = *itr;
+          int i = it.second;
           if (ranklist[i] == Globals::my_rank) {
-            ffc_send_.emplace_back(i, n, xf1^1, sffc1, -1);
+            ffc_send_.emplace_back(i, n, xf2^1 + 2, sffc2, -1);
             if (newrank[n] == Globals::my_rank)
-              ffc_recv_.emplace_back(i, n, xf1, 0, s);
+              ffc_recv_.emplace_back(i, n, xf2 + 2, 0, s);
             s++;
           } else if (newrank[n] == Globals::my_rank) {
-            ffc_recv_.emplace_back(i, n, xf1, sffc1, -1);
+            ffc_recv_.emplace_back(i, n, xf2 + 2, sffc2, -1);
           }
         }
-        if (f2) {
-          if (nloc.lx1 == floc.lx1 && nloc.lx2 + o2 == floc.lx2 && nloc.lx3 == floc.lx3) {
-            if (ranklist[i] == Globals::my_rank) {
-              ffc_send_.emplace_back(i, n, xf2^1 + 2, sffc2, -1);
-              if (newrank[n] == Globals::my_rank)
-                ffc_recv_.emplace_back(i, n, xf2 + 2, 0, s);
-              s++;
-            } else if (newrank[n] == Globals::my_rank) {
-              ffc_recv_.emplace_back(i, n, xf2 + 2, sffc2, -1);
-            }
-          }
-        }
-        if (f3) {
-          if (nloc.lx1 == floc.lx1 && nloc.lx2 == floc.lx2 && nloc.lx3 + o3 == floc.lx3) {
-            if (ranklist[i] == Globals::my_rank) {
-              ffc_send_.emplace_back(i, n, xf3^1 + 4, sffc3, -1);
-              if (newrank[n] == Globals::my_rank)
-                ffc_recv_.emplace_back(i, n, xf3 + 4, 0, s);
-              s++;
-            } else if (newrank[n] == Globals::my_rank) {
-              ffc_recv_.emplace_back(i, n, xf3 + 4, sffc3, -1);
-            }
+      }
+    }
+    if (f3) {
+      floc.lx2 = nloc.lx2, floc.lx3 += o3;
+      fskip = false;
+      if (floc.lx3 < 0) {
+        if (mesh_bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic)
+          floc.lx3 = (nrbx3 << (lev+1)) - 1;
+        else
+          fskip = true;
+      } else if (floc.lx3 >= (nrbx3 << (lev+1))) {
+        if (mesh_bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic)
+          floc.lx3 = 0;
+        else
+          fskip = true;
+      }
+      if (!fskip) {
+        auto itr = locmap_[lev].find(floc);
+        if (itr != locmap_[lev].end()) {
+          const auto& it = *itr;
+          int i = it.second;
+          if (ranklist[i] == Globals::my_rank) {
+            ffc_send_.emplace_back(i, n, xf3^1 + 4, sffc3, -1);
+            if (newrank[n] == Globals::my_rank)
+              ffc_recv_.emplace_back(i, n, xf3 + 4, 0, s);
+            s++;
+          } else if (newrank[n] == Globals::my_rank) {
+            ffc_recv_.emplace_back(i, n, xf3 + 4, sffc3, -1);
           }
         }
       }
