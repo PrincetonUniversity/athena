@@ -656,7 +656,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     refined_.clear();
     ffc_send_.clear();
     ffc_recv_.clear();
-    for (int l = 0; l < max_level - root_level - 1; ++l)
+    for (int l = 0; l < max_level - root_level; ++l)
       locmap_[l].clear();
   }
 
