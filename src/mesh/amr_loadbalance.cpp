@@ -396,10 +396,6 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   int nbs = nslist[Globals::my_rank];
   int nbe = nbs + nblist[Globals::my_rank] - 1;
 
-  const int bnx1 = my_blocks(0)->block_size.nx1;
-  const int bnx2 = my_blocks(0)->block_size.nx2;
-  const int bnx3 = my_blocks(0)->block_size.nx3;
-
 #ifdef MPI_PARALLEL
   // Step 3. count the number of the blocks to be sent / received
   int nsend = 0, nrecv = 0;
@@ -428,45 +424,9 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     }
   }
 
-  // Step 4. calculate buffer sizes
+  // Step 4. allocate and start receiving buffers
   Real **sendbuf, **recvbuf;
-  // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as a
-  // representative of all MeshBlocks for counting the "load-balancing registered" and
-  // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
-
-  //! \todo (felker):
-  //! * add explicit check to ensure that elements of pb->vars_cc/fc_ and
-  //!   pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
-
-  // int num_cc = my_blocks(0)->pmr->pvars_cc_.size();
-  int num_fc = my_blocks(0)->vars_fc_.size();
-  int nx4_tot = 0;
-  for (AthenaArray<Real> &var_cc : my_blocks(0)->vars_cc_) {
-    nx4_tot += var_cc.GetDim4();
-  }
-  // radiation variables are not included in vars_cc as they need different order
-  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
-    nx4_tot += my_blocks(0)->pnrrad->ir.GetDim1();
-  }
-
-  // cell-centered quantities enrolled in SMR/AMR
-  int bssame = bnx1*bnx2*bnx3*nx4_tot;
-  int bsf2c = (bnx1/2)*((bnx2 + 1)/2)*((bnx3 + 1)/2)*nx4_tot;
-  int bsc2f = (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)*nx4_tot;
-  // face-centered quantities enrolled in SMR/AMR
-  bssame += num_fc*((bnx1 + 1)*bnx2*bnx3 + bnx1*(bnx2 + f2)*bnx3
-                    + bnx1*bnx2*(bnx3 + f3));
-  bsf2c += num_fc*(((bnx1/2) + 1)*((bnx2 + 1)/2)*((bnx3 + 1)/2)
-                   + (bnx1/2)*(((bnx2 + 1)/2) + f2)*((bnx3 + 1)/2)
-                   + (bnx1/2)*((bnx2 + 1)/2)*(((bnx3 + 1)/2) + f3));
-  bsc2f += num_fc*(((bnx1/2) + 1 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
-                   + (bnx1/2 + 2)*(((bnx2 + 1)/2) + f2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
-                   + (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*(((bnx3 + 1)/2) + f3 + 2*f3));
-  // add one more element to buffer size for storing the derefinement counter
-  bssame++;
-
   MPI_Request *req_send, *req_recv;
-  // Step 5. allocate and start receiving buffers
   if (nrecv != 0) {
     recvbuf = new Real*[nrecv];
     req_recv = new MPI_Request[nrecv];
@@ -503,7 +463,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
       }
     }
   }
-  // Step 6. allocate, pack and start sending buffers
+  // Step 5. allocate, pack and start sending buffers
   if (nsend != 0) {
     sendbuf = new Real*[nsend];
     req_send = new MPI_Request[nsend];
@@ -550,7 +510,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   if (my_blocks(0)->pmr->pvars_fc_.size() > 0)
     PrepareAndSendFaceFieldCorrection(newloc, ranklist, newrank, nslist, nbtold);
 
-  // Step 7. construct a new MeshBlock list (moving the data within the MPI rank)
+  // Step 6. construct a new MeshBlock list (moving the data within the MPI rank)
   AthenaArray<MeshBlock*> newlist;
   newlist.NewAthenaArray(nblist[Globals::my_rank]);
   RegionSize block_size = my_blocks(0)->block_size;
@@ -600,7 +560,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   gids_ = nbs;
   gide_ = nbe;
 
-  // Step 8. Receive the data and load into MeshBlocks
+  // Step 7. Receive the data and load into MeshBlocks
   // This is a test: try MPI_Waitall later.
 #ifdef MPI_PARALLEL
   if (nrecv != 0) {
@@ -635,7 +595,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   if (my_blocks(0)->pmr->pvars_fc_.size() > 0)
     ReceiveAndSetFaceFieldCorrection(newrank);
 
-  // Step 8b. Prolongate MeshBlocks
+  // Step 7b. Prolongate MeshBlocks
   for (int n=nbs; n<=nbe; n++) {
     int on = newtoold[n];
     LogicalLocation const &oloc = loclist[on];

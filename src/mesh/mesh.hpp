@@ -341,6 +341,7 @@ class Mesh {
   bool lb_flag_, lb_automatic_, lb_manual_;
   double lb_tolerance_;
   int lb_interval_;
+  int bssame, bsf2c, bsc2f;
 
   // for AMR face field correction
   std::unordered_map<LogicalLocation, int, LogicalLocationHash> *locmap_;
