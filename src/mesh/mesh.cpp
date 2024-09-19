@@ -575,8 +575,8 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     const int bnx2 = block_size.nx2;
     const int bnx3 = block_size.nx3;
 
-    // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as a
-    // representative of all MeshBlocks for counting the "load-balancing registered" and
+    // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as
+    // a representative of all MeshBlocks for counting the "load-balancing registered" and
     // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
 
     //! \todo (felker):
@@ -1000,8 +1000,8 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     const int bnx2 = block_size.nx2;
     const int bnx3 = block_size.nx3;
 
-    // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as a
-    // representative of all MeshBlocks for counting the "load-balancing registered" and
+    // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as
+    // a representative of all MeshBlocks for counting the "load-balancing registered" and
     // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
 
     //! \todo (felker):
