@@ -1220,7 +1220,7 @@ void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
   const int bnx1 = my_blocks(0)->block_size.nx1;
   const int bnx2 = my_blocks(0)->block_size.nx2;
   const int bnx3 = my_blocks(0)->block_size.nx3;
-  const int nf = my_blocks(0)->pmr->pvars_fc_.size();
+  const int nf = static_cast<int>(my_blocks(0)->pmr->pvars_fc_.size());
   const int sffc1 = nf*bnx2*bnx3, sffc2 = nf*bnx1*bnx3, sffc3 = nf*bnx2*bnx3;
 
   // Step FFC1. Construct a hash map of MeshBlocks before refinement
