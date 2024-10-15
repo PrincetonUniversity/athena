@@ -1293,7 +1293,7 @@ void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
           const auto& it = *itr;
           int i = it.second;
           if (ranklist[i] == Globals::my_rank) {
-            ffc_send_.emplace_back(i, n, xf2^(1 + 2), sffc2, -1);
+            ffc_send_.emplace_back(i, n, (xf2^1) + 2, sffc2, -1);
             if (newrank[n] == Globals::my_rank)
               ffc_recv_.emplace_back(i, n, xf2 + 2, 0, s);
             s++;
@@ -1323,7 +1323,7 @@ void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
           const auto& it = *itr;
           int i = it.second;
           if (ranklist[i] == Globals::my_rank) {
-            ffc_send_.emplace_back(i, n, xf3^(1 + 4), sffc3, -1);
+            ffc_send_.emplace_back(i, n, (xf3^1) + 4, sffc3, -1);
             if (newrank[n] == Globals::my_rank)
               ffc_recv_.emplace_back(i, n, xf3 + 4, 0, s);
             s++;
