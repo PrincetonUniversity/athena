@@ -59,14 +59,14 @@ void Reconstruction::PiecewiseLinearX1(
 
   // Project slopes to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVX,IVY,IVZ)
-  if (characteristic_projection) {
+  if (characteristic_projection_) {
     LeftEigenmatrixDotVector(IVX, il, iu, bx, wc, dwl);
     LeftEigenmatrixDotVector(IVX, il, iu, bx, wc, dwr);
   }
 
   // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
   // with uniform mesh spacing
-  if (uniform[X1DIR] && !curvilinear[X1DIR]) {
+  if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
     for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -105,7 +105,7 @@ void Reconstruction::PiecewiseLinearX1(
   }
 
   // Project limited slope back to primitive variables, if necessary
-  if (characteristic_projection) {
+  if (characteristic_projection_) {
     RightEigenmatrixDotVector(IVX, il, iu, bx, wc, dwm);
   }
 
@@ -118,7 +118,7 @@ void Reconstruction::PiecewiseLinearX1(
     }
   }
 
-  if (characteristic_projection) {
+  if (characteristic_projection_) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       // Reapply EOS floors to both L/R reconstructed primitive states
@@ -173,14 +173,14 @@ void Reconstruction::PiecewiseLinearX2(
 
   // Project slopes to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVY,IVZ,IVX)
-  if (characteristic_projection) {
+  if (characteristic_projection_) {
     LeftEigenmatrixDotVector(IVY, il, iu, bx, wc, dwl);
     LeftEigenmatrixDotVector(IVY, il, iu, bx, wc, dwr);
   }
 
   // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
   // with uniform mesh spacing
-  if (uniform[X2DIR] && !curvilinear[X2DIR]) {
+  if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
     for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -217,7 +217,7 @@ void Reconstruction::PiecewiseLinearX2(
   }
 
   // Project limited slope back to primitive variables, if necessary
-  if (characteristic_projection) {
+  if (characteristic_projection_) {
     RightEigenmatrixDotVector(IVY, il, iu, bx, wc, dwm);
   }
 
@@ -233,7 +233,7 @@ void Reconstruction::PiecewiseLinearX2(
     }
   }
 
-  if (characteristic_projection) {
+  if (characteristic_projection_) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       // Reapply EOS floors to both L/R reconstructed primitive states
@@ -286,7 +286,7 @@ void Reconstruction::PiecewiseLinearX3(
 
   // Project slopes to characteristic variables, if necessary
   // Note order of characteristic fields in output vect corresponds to (IVZ,IVX,IVY)
-  if (characteristic_projection) {
+  if (characteristic_projection_) {
     LeftEigenmatrixDotVector(IVZ, il, iu, bx, wc, dwl);
     LeftEigenmatrixDotVector(IVZ, il, iu, bx, wc, dwr);
   }
@@ -294,7 +294,7 @@ void Reconstruction::PiecewiseLinearX3(
 
   // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
   // with uniform mesh spacing
-  if (uniform[X3DIR]) {
+  if (uniform_[X3DIR]) {
     for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -324,7 +324,7 @@ void Reconstruction::PiecewiseLinearX3(
   }
 
   // Project limited slope back to primitive variables, if necessary
-  if (characteristic_projection) {
+  if (characteristic_projection_) {
     RightEigenmatrixDotVector(IVZ, il, iu, bx, wc, dwm);
   }
 
@@ -339,7 +339,7 @@ void Reconstruction::PiecewiseLinearX3(
     }
   }
 
-  if (characteristic_projection) {
+  if (characteristic_projection_) {
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       // Reapply EOS floors to both L/R reconstructed primitive states

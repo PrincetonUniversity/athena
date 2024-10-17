@@ -55,7 +55,7 @@ void Reconstruction::PiecewiseLinearX1(
 
   // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
   // with uniform mesh spacing
-  if (uniform[X1DIR] && !curvilinear[X1DIR]) {
+  if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
     for (int n=0; n<=nu; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -136,7 +136,7 @@ void Reconstruction::PiecewiseLinearX1(
 
     // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
     // with uniform mesh spacing
-    if (uniform[X1DIR] && !curvilinear[X1DIR]) {
+    if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
       for (int i=il; i<=iu; ++i) {
 #pragma omp simd simdlen(SIMD_WIDTH)
         for (int n=0; n<=nu; ++n) {
@@ -225,7 +225,7 @@ void Reconstruction::PiecewiseLinearX2(
 
   // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
   // with uniform mesh spacing
-  if (uniform[X2DIR] && !curvilinear[X2DIR]) {
+  if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
     for (int n=0; n<=nu; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -304,7 +304,7 @@ void Reconstruction::PiecewiseLinearX2(
 
     // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
     // with uniform mesh spacing
-    if (uniform[X2DIR] && !curvilinear[X2DIR]) {
+    if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
       for (int i=il; i<=iu; ++i) {
         Real *dqln = &(dql(i,0));
         Real *dqrn = &(dqr(i,0));
@@ -394,7 +394,7 @@ void Reconstruction::PiecewiseLinearX3(
 
   // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
   // with uniform mesh spacing
-  if (uniform[X3DIR]) {
+  if (uniform_[X3DIR]) {
     for (int n=0; n<=nu; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -468,7 +468,7 @@ void Reconstruction::PiecewiseLinearX3(
 
     // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
     // with uniform mesh spacing
-    if (uniform[X3DIR]) {
+    if (uniform_[X3DIR]) {
       for (int i=il; i<=iu; ++i) {
         Real *dqln = &(dql(i,0));
         Real *dqrn = &(dqr(i,0));

@@ -79,7 +79,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, r, rl_, rr_);
       } else {
-        if (pmb->precon->ppm_fast) {
+        if (pmb->precon->ppm_fast_) {
           pmb->precon->PiecewiseParabolicFastX1(k, j, is-1, ie+1,
                                                 r, rl_, rr_);
         } else { // PPM with extrema-preserving limiter
@@ -172,7 +172,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, r, rl_, rr_);
       } else {
-        if (pmb->precon->ppm_fast) {
+        if (pmb->precon->ppm_fast_) {
           pmb->precon->PiecewiseParabolicFastX2(k, js-1, il, iu,
                                                 r, rl_, rr_);
         } else { // PPM with extrema-preserving limiter
@@ -193,7 +193,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX2(k, j, il, iu, r, rlb_, rr_);
         } else {
-          if (pmb->precon->ppm_fast) {
+          if (pmb->precon->ppm_fast_) {
             pmb->precon->PiecewiseParabolicFastX2(k, j, il, iu,
                                                   r, rlb_, rr_);
           } else { // PPM with extrema-preserving limiter
@@ -283,7 +283,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, r, rl_, rr_);
       } else {
-        if (pmb->precon->ppm_fast) {
+        if (pmb->precon->ppm_fast_) {
           pmb->precon->PiecewiseParabolicFastX3(ks-1, j, il, iu,
                                                 r, rl_, rr_);
         } else { // PPM with extrema-preserving limiter
@@ -304,7 +304,7 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX3(k, j, il, iu, r, rlb_, rr_);
         } else {
-          if (pmb->precon->ppm_fast) {
+          if (pmb->precon->ppm_fast_) {
             pmb->precon->PiecewiseParabolicFastX3(k, j, il, iu,
                                                   r, rlb_, rr_);
           } else { // PPM with extrema-preserving limiter

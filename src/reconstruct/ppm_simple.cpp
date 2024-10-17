@@ -89,7 +89,7 @@ void Reconstruction::PiecewiseParabolicX1(
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
       // nonuniform or uniform Cartesian-like coord reconstruction from volume averages:
-      if (!curvilinear[X1DIR]) {
+      if (!curvilinear_[X1DIR]) {
         Real qa = (q_i(n,i) - q_im1(n,i));
         Real qb = (q_ip1(n,i) - q_i(n,i));
         dd_im1(i) = c1i(i-1)*qa + c2i(i-1)*(q_im1(n,i) - q_im2(n,i));
@@ -112,7 +112,7 @@ void Reconstruction::PiecewiseParabolicX1(
 
     //--- Step 2a. -----------------------------------------------------------------------
     // Uniform Cartesian-like coordinate: limit interpolated interface states (CD 4.3.1)
-    if (uniform[X1DIR] && !curvilinear[X1DIR]) {
+    if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu+1; ++i) {
@@ -199,7 +199,7 @@ void Reconstruction::PiecewiseParabolicX1(
 
     //--- Step 4a. -----------------------------------------------------------------------
     // For uniform Cartesian-like coordinate: apply CS limiters to parabolic interpolant
-    if (uniform[X1DIR] && !curvilinear[X1DIR]) {
+    if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
@@ -343,7 +343,7 @@ void Reconstruction::PiecewiseParabolicX1(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
       // nonuniform or uniform Cartesian-like coord reconstruction from volume averages:
-        if (!curvilinear[X1DIR]) {
+        if (!curvilinear_[X1DIR]) {
           Real qa = (q_i(n,i) - q_im1(n,i));
           Real qb = (q_ip1(n,i) - q_i(n,i));
           dd_im1(i) = c1i(i-1)*qa + c2i(i-1)*(q_im1(n,i) - q_im2(n,i));
@@ -366,7 +366,7 @@ void Reconstruction::PiecewiseParabolicX1(
 
     //--- Step 2a. -----------------------------------------------------------------------
     // Uniform Cartesian-like coordinate: limit interpolated interface states (CD 4.3.1)
-      if (uniform[X1DIR] && !curvilinear[X1DIR]) {
+      if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu+1; ++i) {
@@ -453,7 +453,7 @@ void Reconstruction::PiecewiseParabolicX1(
 
     //--- Step 4a. -----------------------------------------------------------------------
     // For uniform Cartesian-like coordinate: apply CS limiters to parabolic interpolant
-      if (uniform[X1DIR] && !curvilinear[X1DIR]) {
+      if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu; ++i) {
           Real qa_tmp = dqf_minus(i)*dqf_plus(i);
@@ -601,7 +601,7 @@ void Reconstruction::PiecewiseParabolicX2(
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
       // nonuniform or uniform Cartesian-like coord reconstruction from volume averages:
-      if (!curvilinear[X2DIR]) {
+      if (!curvilinear_[X2DIR]) {
         Real qa = (q_j(n,i) - q_jm1(n,i));
         Real qb = (q_jp1(n,i) - q_j(n,i));
         dd_jm1(i) = c1j(j-1)*qa + c2j(j-1)*(q_jm1(n,i) - q_jm2(n,i));
@@ -625,7 +625,7 @@ void Reconstruction::PiecewiseParabolicX2(
 
     //--- Step 2a. ---------------------------------------------------------------------
     // Uniform Cartesian-like coordinate: limit interpolated interface states (CD 4.3.1)
-    if (uniform[X2DIR] && !curvilinear[X2DIR]) {
+    if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -711,7 +711,7 @@ void Reconstruction::PiecewiseParabolicX2(
 
     //--- Step 4a. ---------------------------------------------------------------------
     // For uniform Cartesian-like coordinate: apply CS limiters to parabolic interpolant
-    if (uniform[X2DIR] && !curvilinear[X2DIR]) {
+    if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
@@ -852,7 +852,7 @@ void Reconstruction::PiecewiseParabolicX2(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
       // nonuniform or uniform Cartesian-like coord reconstruction from volume averages:
-        if (!curvilinear[X2DIR]) {
+        if (!curvilinear_[X2DIR]) {
           Real qa = (q_j(n,i) - q_jm1(n,i));
           Real qb = (q_jp1(n,i) - q_j(n,i));
           dd_jm1(i) = c1j(j-1)*qa + c2j(j-1)*(q_jm1(n,i) - q_jm2(n,i));
@@ -876,7 +876,7 @@ void Reconstruction::PiecewiseParabolicX2(
 
     //--- Step 2a. ---------------------------------------------------------------------
     // Uniform Cartesian-like coordinate: limit interpolated interface states (CD 4.3.1)
-      if (uniform[X2DIR] && !curvilinear[X2DIR]) {
+      if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu; ++i) {
@@ -962,7 +962,7 @@ void Reconstruction::PiecewiseParabolicX2(
 
     //--- Step 4a. ---------------------------------------------------------------------
     // For uniform Cartesian-like coordinate: apply CS limiters to parabolic interpolant
-     if (uniform[X2DIR] && !curvilinear[X2DIR]) {
+     if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu; ++i) {
           Real qa_tmp = dqf_minus(i)*dqf_plus(i);
@@ -1127,7 +1127,7 @@ void Reconstruction::PiecewiseParabolicX3(
 
     //--- Step 2a. -----------------------------------------------------------------------
     // Uniform Cartesian-like coordinate: limit interpolated interface states (CD 4.3.1)
-    if (uniform[X3DIR]) {
+    if (uniform_[X3DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
@@ -1212,7 +1212,7 @@ void Reconstruction::PiecewiseParabolicX3(
 
     //--- Step 4a. -----------------------------------------------------------------------
     // For uniform Cartesian-like coordinate: apply CS limiters to parabolic interpolant
-    if (uniform[X3DIR]) {
+    if (uniform_[X3DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
@@ -1371,7 +1371,7 @@ void Reconstruction::PiecewiseParabolicX3(
 
     //--- Step 2a. -----------------------------------------------------------------------
     // Uniform Cartesian-like coordinate: limit interpolated interface states (CD 4.3.1)
-      if (uniform[X3DIR]) {
+      if (uniform_[X3DIR]) {
       // approximate second derivative at interfaces for smooth extrema preservation
 #pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu; ++i) {
@@ -1456,7 +1456,7 @@ void Reconstruction::PiecewiseParabolicX3(
 
     //--- Step 4a. -----------------------------------------------------------------------
     // For uniform Cartesian-like coordinate: apply CS limiters to parabolic interpolant
-      if (uniform[X3DIR]) {
+      if (uniform_[X3DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
         for (int i=il; i<=iu; ++i) {
           Real qa_tmp = dqf_minus(i)*dqf_plus(i);

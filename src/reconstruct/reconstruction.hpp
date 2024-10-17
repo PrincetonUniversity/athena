@@ -24,21 +24,15 @@ class ParameterInput;
 //! \brief member functions implement various spatial reconstruction algorithms
 
 class Reconstruction {
+  friend class Mesh;
+  friend class Hydro;
+  friend class Field;
+  friend class PassiveScalars;
  public:
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
 
   // data
-  // switches for reconstruction method variants:
   int xorder;   // roughly the formal order of accuracy of overall reconstruction method
-  bool characteristic_projection; // reconstruct on characteristic or primitive hydro vars
-  bool ppm_fast; // true if the fast version of PPM is used
-  bool floor_ppm_fast; // true if floor is set in the fast version of PPM
-  bool uniform[3], curvilinear[2];
-  // (Cartesian reconstruction formulas are used for x3 azimuthal coordinate in both
-  // cylindrical and spherical-polar coordinates)
-
-  // related fourth-order solver switches
-  const bool correct_ic, correct_err; // used in Mesh::Initialize() and ProblemGenerator()
 
   // x1-sliced arrays of interpolation coefficients and limiter parameters:
   AthenaArray<Real> c1i, c2i, c3i, c4i, c5i, c6i;  // coefficients for PPM in x1
@@ -212,6 +206,17 @@ class Reconstruction {
 
  private:
   MeshBlock* pmy_block_;  // ptr to MeshBlock containing this Reconstruction
+
+  // switches for reconstruction method variants:
+  bool characteristic_projection_; // reconstruction on characteristic hydro vars
+  bool ppm_fast_; // true if the fast version of PPM is used
+  bool floor_ppm_fast_; // true if floor is set in the fast version of PPM
+  bool extremum_preserving_; // true if Colella & Sekora limiter is used
+  bool uniform_[3], curvilinear_[2];
+  // (Cartesian reconstruction formulas are used for x3 azimuthal coordinate in both
+  // cylindrical and spherical-polar coordinates)
+  // fourth-order solver switches
+  const bool correct_ic_, correct_err_; // used in Mesh::Initialize and ProblemGenerator
 
   // scratch arrays used in PLM and PPM reconstruction functions
   AthenaArray<Real> scr01_i_, scr02_i_, scr03_i_, scr04_i_, scr05_i_;

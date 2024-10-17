@@ -80,7 +80,7 @@ void Reconstruction::PiecewiseParabolicFastX1(
       Real q_ip1_i = q_i(n,i+1);
       Real q_ip2_i = q_i(n,i+2);
 
-      if (!curvilinear[X1DIR]) {
+      if (!curvilinear_[X1DIR]) {
         Real qa = (q_i0_i - q_im1_i);
         Real qb = (q_ip1_i - q_i0_i);
         Real dd_im1_i = c1i(i-1)*qa + c2i(i-1)*(q_im1_i - q_im2_i);
@@ -104,7 +104,7 @@ void Reconstruction::PiecewiseParabolicFastX1(
       //--- Step 2a. --------------------------------------------------------------------
       // Uniform Cartesian-like coordinate:
       // limit interpolated interface states (CD 4.3.1)
-      if (uniform[X1DIR] && !curvilinear[X1DIR]) {
+      if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
         // approximate second derivative at interfaces for smooth extrema preservation
 
         // KGF: add the off-centered quantities first to preserve FP symmetry
@@ -254,7 +254,7 @@ void Reconstruction::PiecewiseParabolicFastX2(
       Real q_jp1_i = q_jp1(n,i);
       Real q_jp2_i = q_jp2(n,i);
 
-      if (!curvilinear[X2DIR]) {
+      if (!curvilinear_[X2DIR]) {
         Real qa = (q_j0_i - q_jm1_i);
         Real qb = (q_jp1_i - q_j0_i);
         Real dd_jm1_i = c1j(j-1)*qa + c2j(j-1)*(q_jm1_i - q_jm2_i);
@@ -279,7 +279,7 @@ void Reconstruction::PiecewiseParabolicFastX2(
       //--- Step 2a. ---------------------------------------------------------------------
       // Uniform Cartesian-like coordinate:
       // limit interpolated interface states (CD 4.3.1)
-      if (uniform[X2DIR] && !curvilinear[X2DIR]) {
+      if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
         // approximate second derivative at interfaces for smooth extrema preservation
 
         // KGF: add the off-centered quantities first to preserve FP symmetry
@@ -444,7 +444,7 @@ void Reconstruction::PiecewiseParabolicFastX3(
       //--- Step 2a. --------------------------------------------------------------------
       // Uniform Cartesian-like coordinate:
       // limit interpolated interface states (CD 4.3.1)
-      if (uniform[X3DIR]) {
+      if (uniform_[X3DIR]) {
         // approximate second derivative at interfaces for smooth extrema preservation
 
         // KGF: add the off-centered quantities first to preserve FP symmetry

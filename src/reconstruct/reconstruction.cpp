@@ -37,13 +37,12 @@ void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x);
 //!constructor
 
 Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
-    characteristic_projection(false), ppm_fast(false),
-    floor_ppm_fast{pin->GetOrAddBoolean("time", "floor_ppm_fast", false)},
-    uniform{true, true, true}, curvilinear{false, false}, 
-    // read fourth-order solver switches
-    correct_ic{pin->GetOrAddBoolean("time", "correct_ic", false)},
-    correct_err{pin->GetOrAddBoolean("time", "correct_err", false)}, pmy_block_{pmb}
-{
+    pmy_block_(pmb), characteristic_projection_(false), ppm_fast_(false),
+    floor_ppm_fast_{pin->GetOrAddBoolean("time", "floor_ppm_fast", false)},
+    extremum_preserving_{pin->GetOrAddBoolean("time", "ext_preserving", true)},
+    uniform_{true, true, true}, curvilinear_{false, false},
+    correct_ic_{pin->GetOrAddBoolean("time", "correct_ic", false)},
+    correct_err_{pin->GetOrAddBoolean("time", "correct_err", false)} {
   // Read and set type of spatial reconstruction
   // --------------------------------
   std::string input_recon = pin->GetOrAddString("time", "xorder", "2");
@@ -55,22 +54,22 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     xorder = 2;
   } else if (input_recon == "2c") {
     xorder = 2;
-    characteristic_projection = true;
+    characteristic_projection_ = true;
   } else if (input_recon == "3") {
     // PPM approximates interfaces with 4th-order accurate stencils, but use xorder=3
     // to denote that the overall scheme is "between 2nd and 4th" order w/o flux terms
     xorder = 3;
   } else if (input_recon == "3c") {
     xorder = 3;
-    characteristic_projection = true;
+    characteristic_projection_ = true;
   } else if (input_recon == "3f") {
     xorder = 3;
-    ppm_fast = true;
+    ppm_fast_ = true;
   } else if ((input_recon == "4") || (input_recon == "4c")) {
     // Full 4th-order scheme for hydro or MHD on uniform Cartesian grids
     xorder = 4;
     if (input_recon == "4c")
-      characteristic_projection = true;
+      characteristic_projection_ = true;
     if (MAGNETIC_FIELDS_ENABLED) {
       std::stringstream msg;
       msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
@@ -86,7 +85,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   }
   // Check for incompatible choices with broader solver configuration
   // --------------------------------
-  if (GENERAL_EOS && characteristic_projection) {
+  if (GENERAL_EOS && characteristic_projection_) {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
         << "General EOS does not support characteristic reconstruction."<< std::endl;
@@ -208,21 +207,21 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   // switch to secondary PLM and PPM variants for nonuniform and/or curvilinear meshes
   if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
     // cylindrical: x1=r requires special treatment. x2=phi, x3=z do not.
-    curvilinear[X1DIR] = true;
+    curvilinear_[X1DIR] = true;
   }
   if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
     // spherical_polar: x1=r and x2=theta require special treatment. x3=phi does not
-    curvilinear[X1DIR] = true;
-    curvilinear[X2DIR] = true;
+    curvilinear_[X1DIR] = true;
+    curvilinear_[X2DIR] = true;
   }
   // for all coordinate systems, nonuniform geometric spacing or user-defined
   // MeshGenerator ---> use nonuniform reconstruction weights and limiter terms
   if (pmb->block_size.x1rat != 1.0)
-    uniform[X1DIR] = false;
+    uniform_[X1DIR] = false;
   if (pmb->block_size.x2rat != 1.0)
-    uniform[X2DIR] = false;
+    uniform_[X2DIR] = false;
   if (pmb->block_size.x3rat != 1.0)
-    uniform[X3DIR] = false;
+    uniform_[X3DIR] = false;
 
   // Uniform mesh with --coord=cartesian or GR: Minkowski, Schwarzschild, Kerr-Schild,
   // GR-User will use the uniform Cartesian limiter and reconstruction weights
@@ -325,10 +324,10 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     } else { // if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
       m_coord = 2;
     }
-    if (curvilinear[X1DIR]) {
+    if (curvilinear_[X1DIR]) {
       for (int i=(pmb->is)-NGHOST+2; i<=(pmb->ie)+NGHOST-1; ++i) {
         // nonuniform Beta matrix entries reach uppermost face pmb->ncells1+1
-        if (!uniform[X1DIR]) {  // nonuniform spacing in curvilinear coordinate
+        if (!uniform_[X1DIR]) {  // nonuniform spacing in curvilinear coordinate
           for (int row=0; row<kNrows; row++) {
             b_rhs[row] = std::pow(pco->x1f(i), row);
             for (int col=0; col<kNcols; col++) {
@@ -384,7 +383,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
             c3i(i) = w_sol[2];
             c4i(i) = w_sol[3];
           }
-        } else { // if (uniform[X1DIR]) {
+        } else { // if (uniform_[X1DIR]) {
           // Mignone section 2.2: conservative reconstruction from volume averages
           const Real io = std::abs(i - pmy_block_->is);  // il=is-1 ---> io = 2
           // Notes:
@@ -429,7 +428,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
           } // end "spherical_polar"
           // TODO(felker): add check for normalization condition, Mignone eq 22.
           // (typical deviations of sum(wghts)!=1.0 are around machine precision)
-        }   // end "uniform[X1DIR]"
+        }   // end "uniform_[X1DIR]"
       }  // end loop over i
 
       // Compute curvilinear geometric factors for limiter (Mignone eq 48): radial
@@ -465,7 +464,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
         hminus_ratio_i(i) = 2.0;
       }
       // 4th order reconstruction weights along Cartesian-like x1 w/ uniform spacing
-      if (uniform[X1DIR]) {
+      if (uniform_[X1DIR]) {
 #pragma omp simd
         for (int i=(pmb->is)-NGHOST; i<=(pmb->ie)+NGHOST; ++i) {
           // reducing general formula in ppm.cpp corresonds to Mignone eq B.4 weights:
@@ -500,7 +499,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
           }
         }
       }
-    } // end !curvilinear[X1DIR]
+    } // end !curvilinear_[X1DIR]
 
     // Precompute PPM coefficients in x2-direction ---------------------------------------
     if (pmb->block_size.nx2 > 1) {
@@ -514,7 +513,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       hplus_ratio_j.NewAthenaArray(nc2);
       hminus_ratio_j.NewAthenaArray(nc2);
 
-      if (curvilinear[X2DIR]) {
+      if (curvilinear_[X2DIR]) {
         // meridional/polar/theta direction in spherical-polar coordinates
         std::function<int(int)> factorial;  // recursive lambda function
                                             // (C++14 would make this easier)
@@ -592,7 +591,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
           hminus_ratio_j(j) = 2.0;
         }
         // 4th order reconstruction weights along Cartesian-like x2 w/ uniform spacing
-        if (uniform[X2DIR]) {
+        if (uniform_[X2DIR]) {
 #pragma omp simd
           for (int j=(pmb->js)-NGHOST; j<=(pmb->je)+NGHOST; ++j) {
             c1j(j) = 0.5;
@@ -626,7 +625,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
             }
           }
         } // end nonuniform Cartesian-like
-      } // end !curvilinear[X2DIR]
+      } // end !curvilinear_[X2DIR]
     } // end 2D or 3D
 
     // Precompute PPM coefficients in x3-direction
@@ -652,7 +651,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       }
 
       // reconstruction coeffiencients in x3, Cartesian-like coordinate:
-      if (uniform[X3DIR]) { // uniform spacing
+      if (uniform_[X3DIR]) { // uniform spacing
 #pragma omp simd
         for (int k=(pmb->ks)-NGHOST; k<=(pmb->ke)+NGHOST; ++k) {
           c1k(k) = 0.5;
