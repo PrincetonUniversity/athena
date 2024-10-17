@@ -79,7 +79,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, r, rl_, rr_);
       } else {
-        pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, r, rl_, rr_);
+        if (pmb->precon->ppm_fast) {
+          pmb->precon->PiecewiseParabolicFastX1(k, j, is-1, ie+1,
+                                                r, rl_, rr_);
+        } else { // PPM with extrema-preserving limiter
+          pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, r, rl_, rr_);
+        }
         for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
           for (int i=is; i<=ie+1; ++i) {
@@ -167,7 +172,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, r, rl_, rr_);
       } else {
-        pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, r, rl_, rr_);
+        if (pmb->precon->ppm_fast) {
+          pmb->precon->PiecewiseParabolicFastX2(k, js-1, il, iu,
+                                                r, rl_, rr_);
+        } else { // PPM with extrema-preserving limiter
+          pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, r, rl_, rr_);
+        }
         for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
@@ -183,7 +193,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX2(k, j, il, iu, r, rlb_, rr_);
         } else {
-          pmb->precon->PiecewiseParabolicX2(k, j, il, iu, r, rlb_, rr_);
+          if (pmb->precon->ppm_fast) {
+            pmb->precon->PiecewiseParabolicFastX2(k, j, il, iu,
+                                                  r, rlb_, rr_);
+          } else { // PPM with extrema-preserving limiter
+            pmb->precon->PiecewiseParabolicX2(k, j, il, iu, r, rlb_, rr_);
+          }
           for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
@@ -268,7 +283,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, r, rl_, rr_);
       } else {
-        pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, r, rl_, rr_);
+        if (pmb->precon->ppm_fast) {
+          pmb->precon->PiecewiseParabolicFastX3(ks-1, j, il, iu,
+                                                r, rl_, rr_);
+        } else { // PPM with extrema-preserving limiter
+          pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, r, rl_, rr_);
+        }
         for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
@@ -284,7 +304,12 @@ void PassiveScalars::CalculateFluxes(AthenaArray<Real> &r, const int order) {
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX3(k, j, il, iu, r, rlb_, rr_);
         } else {
-          pmb->precon->PiecewiseParabolicX3(k, j, il, iu, r, rlb_, rr_);
+          if (pmb->precon->ppm_fast) {
+            pmb->precon->PiecewiseParabolicFastX3(k, j, il, iu,
+                                                  r, rlb_, rr_);
+          } else { // PPM with extrema-preserving limiter
+            pmb->precon->PiecewiseParabolicX3(k, j, il, iu, r, rlb_, rr_);
+          }
           for (int n=0; n<NSCALARS; ++n) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {

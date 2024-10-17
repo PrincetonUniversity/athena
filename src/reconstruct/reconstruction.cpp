@@ -37,8 +37,9 @@ void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x);
 //!constructor
 
 Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
-    characteristic_projection{false}, uniform{true, true, true},
-    curvilinear{false, false},
+    characteristic_projection(false), ppm_fast(false),
+    floor_ppm_fast{pin->GetOrAddBoolean("time", "floor_ppm_fast", false)},
+    uniform{true, true, true}, curvilinear{false, false}, 
     // read fourth-order solver switches
     correct_ic{pin->GetOrAddBoolean("time", "correct_ic", false)},
     correct_err{pin->GetOrAddBoolean("time", "correct_err", false)}, pmy_block_{pmb}
@@ -62,6 +63,9 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   } else if (input_recon == "3c") {
     xorder = 3;
     characteristic_projection = true;
+  } else if (input_recon == "3f") {
+    xorder = 3;
+    ppm_fast = true;
   } else if ((input_recon == "4") || (input_recon == "4c")) {
     // Full 4th-order scheme for hydro or MHD on uniform Cartesian grids
     xorder = 4;
@@ -637,6 +641,16 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       hplus_ratio_k.NewAthenaArray(nc3);
       hminus_ratio_k.NewAthenaArray(nc3);
 
+      // Compute geometric factors for x3 limiter (Mignone eq 48)
+      // (no curvilinear corrections in x3)
+      for (int k=(pmb->ks)-1; k<=(pmb->ke)+1; ++k) {
+        // h_plus = 3.0;
+        // h_minus = 3.0;
+        // Ratios are both = 2 for Cartesian and all curviliniear coords
+        hplus_ratio_k(k) = 2.0;
+        hminus_ratio_k(k) = 2.0;
+      }
+
       // reconstruction coeffiencients in x3, Cartesian-like coordinate:
       if (uniform[X3DIR]) { // uniform spacing
 #pragma omp simd
@@ -671,15 +685,6 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
             c5k(k) = dx_k/qa*qd;
             c6k(k) = -dx_km1/qa*qc;
           }
-        }
-        // Compute geometric factors for x3 limiter (Mignone eq 48)
-        // (no curvilinear corrections in x3)
-        for (int k=(pmb->ks)-1; k<=(pmb->ke)+1; ++k) {
-          // h_plus = 3.0;
-          // h_minus = 3.0;
-          // Ratios are both = 2 for Cartesian and all curviliniear coords
-          hplus_ratio_k(k) = 2.0;
-          hminus_ratio_k(k) = 2.0;
         }
       }
     }
