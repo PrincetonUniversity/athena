@@ -40,7 +40,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     pmy_block_(pmb), characteristic_projection_(false), ppm_fast_(false),
     floor_ppm_fast_{pin->GetOrAddBoolean("time", "floor_ppm_fast", false)},
     extremum_preserving_{pin->GetOrAddBoolean("time", "ext_preserving", true)},
-    uniform_{true, true, true}, curvilinear_{false, false},
+    uniform_{true, true, true}, curvilinear_{false, false}, fweno_(false),
     correct_ic_{pin->GetOrAddBoolean("time", "correct_ic", false)},
     correct_err_{pin->GetOrAddBoolean("time", "correct_err", false)} {
   // Read and set type of spatial reconstruction
@@ -65,6 +65,11 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
   } else if (input_recon == "3f") {
     xorder = 3;
     ppm_fast_ = true;
+  } else if (input_recon == "weno") {
+    // Technically WENO-Z+M can achieve 5th order, but here we use xorder=3
+    // because its stencil requirement is same as PPM.
+    xorder = 3;
+    fweno_ = true;
   } else if ((input_recon == "4") || (input_recon == "4c")) {
     // Full 4th-order scheme for hydro or MHD on uniform Cartesian grids
     xorder = 4;
@@ -222,6 +227,17 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     uniform_[X2DIR] = false;
   if (pmb->block_size.x3rat != 1.0)
     uniform_[X3DIR] = false;
+
+  // check coordinate compatibility with WENO
+  if (fweno_) {
+    if (!uniform_[X1DIR] || !uniform_[X2DIR] || !uniform_[X3DIR]
+      || curvilinear_[X1DIR] || curvilinear_[X2DIR]) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "WENO reconstruction supports only uniform Cartesian grids"<< std::endl;
+      ATHENA_ERROR(msg);
+    }
+  }
 
   // Uniform mesh with --coord=cartesian or GR: Minkowski, Schwarzschild, Kerr-Schild,
   // GR-User will use the uniform Cartesian limiter and reconstruction weights

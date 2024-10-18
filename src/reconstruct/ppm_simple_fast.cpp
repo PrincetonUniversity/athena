@@ -3,24 +3,8 @@
 // Copyright(C) 2014 James M. Stone <jmstone@princeton.edu> and other code contributors
 // Licensed under the 3-clause BSD License, see LICENSE file for details
 //========================================================================================
-//! \file ppm_simple.cpp
-//! \brief piecewise parabolic reconstruction with modified McCorquodale/Colella limiter
-//!        for a Cartesian-like coordinate with uniform spacing, Mignone modified original
-//!        PPM limiter for nonuniform and/or curvilinear coordinate.
-//! Operates on the entire nx4 range of a single AthenaArray<Real> input (no MHD).
-//! No assumptions of hydrodynamic fluid variable input; no characteristic projection.
-//!
-//! REFERENCES:
-//! - (CW) P. Colella & P. Woodward, "The Piecewise Parabolic Method (PPM) for Gas-
-//!   Dynamical Simulations", JCP, 54, 174 (1984)
-//! - (CS) P. Colella & M. Sekora, "A limiter for PPM that preserves accuracy at smooth
-//!   extrema", JCP, 227, 7069 (2008)
-//! - (MC) P. McCorquodale & P. Colella,  "A high-order finite-volume method for
-//!   conservation laws on locally refined grids", CAMCoS, 6, 1 (2011)
-//! - (CD) P. Colella, M.R. Dorr, J. Hittinger, D. Martin, "High-order, finite-volume
-//!   methods in mapped coordinates", JCP, 230, 2952 (2011)
-//! - (Mignone) A. Mignone, "High-order conservative reconstruction schemes for finite
-//!   volume methods in cylindrical and spherical coordinates", JCP, 270, 784 (2014)
+//! \file ppm_simple_fast.cpp
+//! \brief A simplified version of PPM
 //========================================================================================
 
 // C headers

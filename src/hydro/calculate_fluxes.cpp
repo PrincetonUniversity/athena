@@ -83,11 +83,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
       } else {
-        if (pmb->precon->ppm_fast_) {
-          pmb->precon->PiecewiseParabolicFastX1(k, j, is-1, ie+1,
-                                                w, bcc, wl_, wr_);
-        } else { // PPM with extrema-preserving limiter
-          pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
+        if (pmb->precon->fweno_) {
+          pmb->precon->WENOZMX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
+        } else {
+          if (pmb->precon->ppm_fast_) {
+            pmb->precon->PiecewiseParabolicFastX1(k, j, is-1, ie+1,
+                                                  w, bcc, wl_, wr_);
+          } else { // PPM with extrema-preserving limiter
+            pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
+          }
         }
       }
 
@@ -186,11 +190,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, w, bcc, wl_, wr_);
       } else {
-        if (pmb->precon->ppm_fast_) {
-            pmb->precon->PiecewiseParabolicFastX2(k, js-1, il, iu,
-                                                  w, bcc, wl_, wr_);
-        } else { // PPM with extrema-preserving limiter
-          pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, w, bcc, wl_, wr_);
+        if (pmb->precon->fweno_) {
+          pmb->precon->WENOZMX2(k, js-1, il, iu, w, bcc, wl_, wr_);
+        } else {
+          if (pmb->precon->ppm_fast_) {
+              pmb->precon->PiecewiseParabolicFastX2(k, js-1, il, iu,
+                                                    w, bcc, wl_, wr_);
+          } else { // PPM with extrema-preserving limiter
+            pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, w, bcc, wl_, wr_);
+          }
         }
       }
       for (int j=js; j<=je+1; ++j) {
@@ -200,11 +208,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX2(k, j, il, iu, w, bcc, wlb_, wr_);
         } else {
-          if (pmb->precon->ppm_fast_) {
+          if (pmb->precon->fweno_) {
+            pmb->precon->WENOZMX2(k, j, il, iu, w, bcc, wlb_, wr_);
+          } else {
+            if (pmb->precon->ppm_fast_) {
               pmb->precon->PiecewiseParabolicFastX2(k, j, il, iu,
                                                     w, bcc, wlb_, wr_);
-          } else { // PPM with extrema-preserving limiter
-            pmb->precon->PiecewiseParabolicX2(k, j, il, iu, w, bcc, wlb_, wr_);
+            } else { // PPM with extrema-preserving limiter
+              pmb->precon->PiecewiseParabolicX2(k, j, il, iu, w, bcc, wlb_, wr_);
+            }
           }
         }
 
@@ -302,11 +314,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
       } else {
-        if (pmb->precon->ppm_fast_) {
-          pmb->precon->PiecewiseParabolicFastX3(ks-1, j, il, iu,
-                                                w, bcc, wl_, wr_);
-        } else { // PPM with extrema-preserving limiter
-          pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
+        if (pmb->precon->fweno_) {
+          pmb->precon->WENOZMX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
+        } else {
+          if (pmb->precon->ppm_fast_) {
+            pmb->precon->PiecewiseParabolicFastX3(ks-1, j, il, iu,
+                                                  w, bcc, wl_, wr_);
+          } else { // PPM with extrema-preserving limiter
+            pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
+          }
         }
       }
       for (int k=ks; k<=ke+1; ++k) {
@@ -316,11 +332,15 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX3(k, j, il, iu, w, bcc, wlb_, wr_);
         } else {
-          if (pmb->precon->ppm_fast_) {
-            pmb->precon->PiecewiseParabolicFastX3(k, j, il, iu,
-                                                  w, bcc, wlb_, wr_);
-          } else { // PPM with extrema-preserving limiter
-            pmb->precon->PiecewiseParabolicX3(k, j, il, iu, w, bcc, wlb_, wr_);
+          if (pmb->precon->fweno_) {
+            pmb->precon->WENOZMX3(k, j, il, iu, w, bcc, wlb_, wr_);
+          } else {
+            if (pmb->precon->ppm_fast_) {
+              pmb->precon->PiecewiseParabolicFastX3(k, j, il, iu,
+                                                    w, bcc, wlb_, wr_);
+            } else { // PPM with extrema-preserving limiter
+              pmb->precon->PiecewiseParabolicX3(k, j, il, iu, w, bcc, wlb_, wr_);
+            }
           }
         }
 

@@ -7,7 +7,7 @@
 //! \brief piecewise parabolic reconstruction with modified McCorquodale/Colella limiter
 //!        for a Cartesian-like coordinate with uniform spacing, Mignone modified original
 //!        PPM limiter for nonuniform and/or curvilinear coordinate.
-///1
+//!
 //! REFERENCES:
 //! - (CW) P. Colella & P. Woodward, "The Piecewise Parabolic Method (PPM) for Gas-
 //!   Dynamical Simulations", JCP, 54, 174 (1984)
