@@ -365,22 +365,22 @@ void SuperTimeStepTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   } else if (id == SEND_HYDFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::SendHydroFlux);
+        (&SuperTimeStepTaskList::SendHydroFlux_STS);
     task_list_[ntasks].lb_time = true;
   } else if (id == SEND_FLDFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::SendEMF);
+        (&SuperTimeStepTaskList::SendEMF_STS);
     task_list_[ntasks].lb_time = true;
   } else if (id == RECV_HYDFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::ReceiveAndCorrectHydroFlux);
+        (&SuperTimeStepTaskList::ReceiveAndCorrectHydroFlux_STS);
     task_list_[ntasks].lb_time = false;
   } else if (id == RECV_FLDFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::ReceiveAndCorrectEMF);
+        (&SuperTimeStepTaskList::ReceiveAndCorrectEMF_STS);
     task_list_[ntasks].lb_time = false;
   } else if (id == INT_HYD) {
     task_list_[ntasks].TaskFunc=
@@ -425,12 +425,12 @@ void SuperTimeStepTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   } else if (id == SEND_HYDFLXSH) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::SendHydroFluxShear);
+        (&SuperTimeStepTaskList::SendHydroFluxShear_STS);
     task_list_[ntasks].lb_time = true;
   } else if (id == RECV_HYDFLXSH) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::ReceiveHydroFluxShear);
+        (&SuperTimeStepTaskList::ReceiveHydroFluxShear_STS);
     task_list_[ntasks].lb_time = false;
   } else if (id == SEND_HYDSH) {
     task_list_[ntasks].TaskFunc=
@@ -455,12 +455,12 @@ void SuperTimeStepTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   } else if (id == SEND_EMFSH) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::SendEMFShear);
+        (&SuperTimeStepTaskList::SendEMFShear_STS);
     task_list_[ntasks].lb_time = true;
   } else if (id == RECV_EMFSH) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::ReceiveEMFShear);
+        (&SuperTimeStepTaskList::ReceiveEMFShear_STS);
     task_list_[ntasks].lb_time = false;
   } else if (id == CALC_SCLRFLX) {
     task_list_[ntasks].TaskFunc=
@@ -470,12 +470,12 @@ void SuperTimeStepTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   } else if (id == SEND_SCLRFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::SendScalarFlux);
+        (&SuperTimeStepTaskList::SendScalarFlux_STS);
     task_list_[ntasks].lb_time = true;
   } else if (id == RECV_SCLRFLX) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::ReceiveScalarFlux);
+        (&SuperTimeStepTaskList::ReceiveScalarFlux_STS);
     task_list_[ntasks].lb_time = false;
   } else if (id == INT_SCLR) {
     task_list_[ntasks].TaskFunc=
@@ -510,12 +510,12 @@ void SuperTimeStepTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   } else if (id == SEND_SCLRFLXSH) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::SendScalarsFluxShear);
+        (&SuperTimeStepTaskList::SendScalarsFluxShear_STS);
     task_list_[ntasks].lb_time = true;
   } else if (id == RECV_SCLRFLXSH) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::ReceiveScalarsFluxShear);
+        (&SuperTimeStepTaskList::ReceiveScalarsFluxShear_STS);
     task_list_[ntasks].lb_time = false;
   } else if (id == PROLONG) {
     task_list_[ntasks].TaskFunc=
@@ -550,17 +550,17 @@ void SuperTimeStepTaskList::AddTask(const TaskID& id, const TaskID& dep) {
   } else if (id == DIFFUSE_HYD) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::DiffuseHydro);
+        (&SuperTimeStepTaskList::DiffuseHydro_STS);
     task_list_[ntasks].lb_time = true;
   } else if (id == DIFFUSE_FLD) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::DiffuseField);
+        (&SuperTimeStepTaskList::DiffuseField_STS);
     task_list_[ntasks].lb_time = true;
   } else if (id == DIFFUSE_SCLR) {
     task_list_[ntasks].TaskFunc=
         static_cast<TaskStatus (TaskList::*)(MeshBlock*,int)>
-        (&TimeIntegratorTaskList::DiffuseScalars);
+        (&SuperTimeStepTaskList::DiffuseScalars_STS);
     task_list_[ntasks].lb_time = true;
   } else {
     std::stringstream msg;
@@ -996,4 +996,269 @@ TaskStatus SuperTimeStepTaskList::CheckRefinement_STS(MeshBlock *pmb, int stage)
   if (pmb->pmy_mesh->sts_loc == TaskType::op_split_after)
     pmb->pmr->CheckRefinementCondition();
   return TaskStatus::success;
+}
+
+//----------------------------------------------------------------------------------------
+// Functions to communicate fluxes between MeshBlocks for flux correction with AMR
+
+TaskStatus SuperTimeStepTaskList::SendHydroFlux_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      pmb->phydro->hbvar.SendFluxCorrection();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+//----------------------------------------------------------------------------------------
+// Functions to communicate emf between MeshBlocks for flux correction with AMR
+
+TaskStatus SuperTimeStepTaskList::SendEMF_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      pmb->pfield->fbvar.SendFluxCorrection();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+//----------------------------------------------------------------------------------------
+// Functions to receive fluxes between MeshBlocks
+
+TaskStatus SuperTimeStepTaskList::ReceiveAndCorrectHydroFlux_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      if (pmb->phydro->hbvar.ReceiveFluxCorrection()) {
+        return TaskStatus::next;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::next;
+    }
+  }
+  return TaskStatus::fail;
+}
+
+//----------------------------------------------------------------------------------------
+// Functions to receive emf between MeshBlocks
+
+TaskStatus SuperTimeStepTaskList::ReceiveAndCorrectEMF_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      if (pmb->pfield->fbvar.ReceiveFluxCorrection()) {
+        return TaskStatus::next;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::next;
+    }
+  }
+  return TaskStatus::fail;
+}
+
+//----------------------------------------------------------------------------------------
+//! Functions to communicate Field variables between MeshBlocks with shear
+
+TaskStatus SuperTimeStepTaskList::SendHydroFluxShear_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      pmb->phydro->hbvar.SendFluxShearingBoxBoundaryBuffers();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus SuperTimeStepTaskList::ReceiveHydroFluxShear_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      if (pmb->phydro->hbvar.ReceiveFluxShearingBoxBoundaryBuffers()) {
+        pmb->phydro->hbvar.SetFluxShearingBoxBoundaryBuffers();
+        return TaskStatus::success;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::success;
+    }
+  }
+  return TaskStatus::fail;
+}
+
+//----------------------------------------------------------------------------------------
+//! Functions to communicate EMFs between MeshBlocks with shear
+
+TaskStatus SuperTimeStepTaskList::SendEMFShear_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      pmb->pfield->fbvar.SendEMFShearingBoxBoundaryCorrection();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+//----------------------------------------------------------------------------------------
+//! Functions to communicate EMFs between MeshBlocks with shear
+
+TaskStatus SuperTimeStepTaskList::ReceiveEMFShear_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      if (pmb->pfield->fbvar.ReceiveEMFShearingBoxBoundaryCorrection()) {
+        pmb->pfield->fbvar.SetEMFShearingBoxBoundaryCorrection();
+        return TaskStatus::success;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::success;
+    }
+  }
+  return TaskStatus::fail;
+}
+
+TaskStatus SuperTimeStepTaskList::SendScalarFlux_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      pmb->pscalars->sbvar.SendFluxCorrection();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus SuperTimeStepTaskList::ReceiveScalarFlux_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      if (pmb->pscalars->sbvar.ReceiveFluxCorrection()) {
+        return TaskStatus::next;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::next;
+    }
+  }
+  return TaskStatus::fail;
+}
+
+TaskStatus SuperTimeStepTaskList::SendScalarsFluxShear_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      pmb->pscalars->sbvar.SendFluxShearingBoxBoundaryBuffers();
+    }
+    return TaskStatus::success;
+  }
+  return TaskStatus::fail;
+}
+
+
+TaskStatus SuperTimeStepTaskList::ReceiveScalarsFluxShear_STS(MeshBlock *pmb, int stage) {
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      if (pmb->pscalars->sbvar.ReceiveFluxShearingBoxBoundaryBuffers()) {
+        pmb->pscalars->sbvar.SetFluxShearingBoxBoundaryBuffers();
+        return TaskStatus::success;
+      } else {
+        return TaskStatus::fail;
+      }
+    } else {
+      return TaskStatus::success;
+    }
+  }
+  return TaskStatus::fail;
+}
+
+//----------------------------------------------------------------------------------------
+//! Functions to calculate hydro diffusion fluxes (stored in HydroDiffusion::visflx[],
+//! cndflx[], added at the end of Hydro::CalculateFluxes()
+
+TaskStatus SuperTimeStepTaskList::DiffuseHydro_STS(MeshBlock *pmb, int stage) {
+  Hydro *ph = pmb->phydro;
+  Field *pf = pmb->pfield;
+
+  // return if there are no diffusion to be added
+  if (!(ph->hdif.hydro_diffusion_defined)
+      || pmb->pmy_mesh->fluid_setup != FluidFormulation::evolve) return TaskStatus::next;
+
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      // if using orbital advection, put modified conservative into the function
+      if (pmb->porb->orbital_advection_defined) {
+        pmb->porb->ConvertOrbitalSystem(ph->w, ph->u, OrbitalTransform::prim);
+        ph->hdif.CalcDiffusionFlux(ph->w, pmb->porb->w_orb, pf->bcc);
+      } else {
+        ph->hdif.CalcDiffusionFlux(ph->w, ph->w, pf->bcc);
+      }
+    }
+    return TaskStatus::next;
+  }
+  return TaskStatus::fail;
+}
+
+//----------------------------------------------------------------------------------------
+//! Functions to calculate diffusion EMF
+
+TaskStatus SuperTimeStepTaskList::DiffuseField_STS(MeshBlock *pmb, int stage) {
+  Field *pf = pmb->pfield;
+
+  // return if there are no diffusion to be added
+  if (!(pf->fdif.field_diffusion_defined)) return TaskStatus::next;
+
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      // TODO(pdmullen): DiffuseField is also called in SuperTimeStepTaskLsit.
+      // It must skip Hall effect (once implemented) diffusion process in STS
+      // and always calculate those terms in the main integrator.
+      pf->fdif.CalcDiffusionEMF(pf->b, pf->bcc, pf->e);
+    }
+    return TaskStatus::next;
+  }
+  return TaskStatus::fail;
+}
+
+TaskStatus SuperTimeStepTaskList::DiffuseScalars_STS(MeshBlock *pmb, int stage) {
+  if (pmb->pmy_mesh->fluid_setup == FluidFormulation::fixed) return TaskStatus::next;
+
+  PassiveScalars *ps = pmb->pscalars;
+  Hydro *ph = pmb->phydro;
+  // return if there are no diffusion to be added
+  if (!(ps->scalar_diffusion_defined))
+    return TaskStatus::next;
+
+  if (stage <= nstages) {
+    if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
+        pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
+      // TODO(felker): adapted directly from HydroDiffusion::ClearFlux. Deduplicate
+      ps->diffusion_flx[X1DIR].ZeroClear();
+      ps->diffusion_flx[X2DIR].ZeroClear();
+      ps->diffusion_flx[X3DIR].ZeroClear();
+
+      // unlike HydroDiffusion, only 1x passive scalar diffusive process is allowed, so
+      // there is no need for counterpart to wrapper fn HydroDiffusion::CalcDiffusionFlux
+      ps->DiffusiveFluxIso(ps->r, ph->w, ps->diffusion_flx);
+    }
+    return TaskStatus::next;
+  }
+  return TaskStatus::fail;
 }
