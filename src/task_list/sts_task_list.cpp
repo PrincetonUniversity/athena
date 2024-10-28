@@ -1029,7 +1029,8 @@ TaskStatus SuperTimeStepTaskList::SendEMF_STS(MeshBlock *pmb, int stage) {
 //----------------------------------------------------------------------------------------
 // Functions to receive fluxes between MeshBlocks
 
-TaskStatus SuperTimeStepTaskList::ReceiveAndCorrectHydroFlux_STS(MeshBlock *pmb, int stage) {
+TaskStatus SuperTimeStepTaskList::ReceiveAndCorrectHydroFlux_STS(MeshBlock *pmb,
+                                                                int stage) {
   if (stage <= nstages) {
     if (pmb->pmy_mesh->sts_loc == TaskType::op_split_before ||
         pmb->pmy_mesh->sts_loc == TaskType::op_split_after) {
