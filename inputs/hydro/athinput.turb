@@ -63,6 +63,7 @@ gamma           = 1.666666666667 # gamma = C_p/C_v
 iso_sound_speed = 1.00           # equivalent to sqrt(gamma*p/d) for p=0.1, d=1
 
 <turbulence>
+turb_flag  = 1    # 1 for decaying, 2 (impulsive) or 3 (continuous) for driven turbulence
 dedt       = 1.0  # Energy injection rate (for driven) or Total energy (for decaying)
 nlow       = 0    # cut-off wavenumber at low-k
 nhigh      = 16   # cut-off wavenumber at high-k
@@ -71,6 +72,3 @@ tcorr      = 0.1  # correlation time for OU process (both impulsive and continuo
 dtdrive    = 0.1  # time interval between perturbation (impulsive)
 f_shear    = 0.5  # the ratio of the shear component
 rseed      = -1   # if non-negative, seed will be set by hand (slow PS generation)
-
-<problem>
-turb_flag  = 1    # 1 for decaying, 2 (impulsive) or 3 (continuous) for driven turbulence
