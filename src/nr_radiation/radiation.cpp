@@ -95,6 +95,7 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   // total number of azimuthal angles covering 0 to pi
   npsi = pin->GetOrAddInteger("radiation","npsi",0);
   angle_flag = pin->GetOrAddInteger("radiation","angle_flag",0);
+  polar_angle = pin->GetOrAddInteger("radiation","polar_angle",0);
 
   rotate_theta=pin->GetOrAddInteger("radiation","rotate_theta",0);
   rotate_phi=pin->GetOrAddInteger("radiation","rotate_phi",0);
@@ -192,6 +193,10 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   }
 
   nang = n_ang * noct;
+
+  // need to add two angles along the polar direction
+  if(polar_angle)
+    nang += 2;
 
   // frequency grid
   //frequency grid covers -infty to infty, default nfreq=1, means gray
