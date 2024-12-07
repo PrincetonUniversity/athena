@@ -378,6 +378,8 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     int on = newtoold[n];
     if (newloc[n].level>current_level) // set the current max level
       current_level = newloc[n].level;
+    if (newloc[n].level > loclist[on].level) // refined
+      refined_.push_back(n);
     if (newloc[n].level >= loclist[on].level) { // same or refined
       newcost[n] = costlist[on];
     } else {
@@ -393,10 +395,6 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
 
   int nbs = nslist[Globals::my_rank];
   int nbe = nbs + nblist[Globals::my_rank] - 1;
-
-  int bnx1 = my_blocks(0)->block_size.nx1;
-  int bnx2 = my_blocks(0)->block_size.nx2;
-  int bnx3 = my_blocks(0)->block_size.nx3;
 
 #ifdef MPI_PARALLEL
   // Step 3. count the number of the blocks to be sent / received
@@ -426,45 +424,9 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
     }
   }
 
-  // Step 4. calculate buffer sizes
+  // Step 4. allocate and start receiving buffers
   Real **sendbuf, **recvbuf;
-  // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as a
-  // representative of all MeshBlocks for counting the "load-balancing registered" and
-  // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
-
-  //! \todo (felker):
-  //! * add explicit check to ensure that elements of pb->vars_cc/fc_ and
-  //!   pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
-
-  // int num_cc = my_blocks(0)->pmr->pvars_cc_.size();
-  int num_fc = my_blocks(0)->vars_fc_.size();
-  int nx4_tot = 0;
-  for (AthenaArray<Real> &var_cc : my_blocks(0)->vars_cc_) {
-    nx4_tot += var_cc.GetDim4();
-  }
-  // radiation variables are not included in vars_cc as they need different order
-  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
-    nx4_tot += my_blocks(0)->pnrrad->ir.GetDim1();
-  }
-
-  // cell-centered quantities enrolled in SMR/AMR
-  int bssame = bnx1*bnx2*bnx3*nx4_tot;
-  int bsf2c = (bnx1/2)*((bnx2 + 1)/2)*((bnx3 + 1)/2)*nx4_tot;
-  int bsc2f = (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)*nx4_tot;
-  // face-centered quantities enrolled in SMR/AMR
-  bssame += num_fc*((bnx1 + 1)*bnx2*bnx3 + bnx1*(bnx2 + f2)*bnx3
-                    + bnx1*bnx2*(bnx3 + f3));
-  bsf2c += num_fc*(((bnx1/2) + 1)*((bnx2 + 1)/2)*((bnx3 + 1)/2)
-                   + (bnx1/2)*(((bnx2 + 1)/2) + f2)*((bnx3 + 1)/2)
-                   + (bnx1/2)*((bnx2 + 1)/2)*(((bnx3 + 1)/2) + f3));
-  bsc2f += num_fc*(((bnx1/2) + 1 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
-                   + (bnx1/2 + 2)*(((bnx2 + 1)/2) + f2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
-                   + (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*(((bnx3 + 1)/2) + f3 + 2*f3));
-  // add one more element to buffer size for storing the derefinement counter
-  bssame++;
-
   MPI_Request *req_send, *req_recv;
-  // Step 5. allocate and start receiving buffers
   if (nrecv != 0) {
     recvbuf = new Real*[nrecv];
     req_recv = new MPI_Request[nrecv];
@@ -501,7 +463,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
       }
     }
   }
-  // Step 6. allocate, pack and start sending buffers
+  // Step 5. allocate, pack and start sending buffers
   if (nsend != 0) {
     sendbuf = new Real*[nsend];
     req_send = new MPI_Request[nsend];
@@ -545,7 +507,10 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   } // if (nsend !=0)
 #endif // MPI_PARALLEL
 
-  // Step 7. construct a new MeshBlock list (moving the data within the MPI rank)
+  if (my_blocks(0)->pmr->pvars_fc_.size() > 0)
+    PrepareAndSendFaceFieldCorrection(newloc, ranklist, newrank, nslist, nbtold);
+
+  // Step 6. construct a new MeshBlock list (moving the data within the MPI rank)
   AthenaArray<MeshBlock*> newlist;
   newlist.NewAthenaArray(nblist[Globals::my_rank]);
   RegionSize block_size = my_blocks(0)->block_size;
@@ -595,7 +560,7 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   gids_ = nbs;
   gide_ = nbe;
 
-  // Step 8. Receive the data and load into MeshBlocks
+  // Step 7. Receive the data and load into MeshBlocks
   // This is a test: try MPI_Waitall later.
 #ifdef MPI_PARALLEL
   if (nrecv != 0) {
@@ -620,12 +585,26 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
       } else { // c2f
         if (ranklist[on] == Globals::my_rank) continue;
         MPI_Wait(&(req_recv[rb_idx]), MPI_STATUS_IGNORE);
-        FinishRecvCoarseToFineAMR(pb, recvbuf[rb_idx]);
+        ReceiveCoarseToFineAMR(pb, recvbuf[rb_idx]);
         rb_idx++;
       }
     }
   }
 #endif
+
+  if (my_blocks(0)->pmr->pvars_fc_.size() > 0)
+    ReceiveAndSetFaceFieldCorrection(newrank);
+
+  // Step 7b. Prolongate MeshBlocks
+  for (int n=nbs; n<=nbe; n++) {
+    int on = newtoold[n];
+    LogicalLocation const &oloc = loclist[on];
+    LogicalLocation const &nloc = newloc[n];
+    if (oloc.level < nloc.level) { // c2f
+      MeshBlock *pb = FindMeshBlock(n);
+      ProlongateMeshBlock(pb);
+    }
+  }
 
   // deallocate arrays
   delete [] loclist;
@@ -633,6 +612,14 @@ void Mesh::RedistributeAndRefineMeshBlocks(ParameterInput *pin, int ntot) {
   delete [] costlist;
   delete [] newtoold;
   delete [] oldtonew;
+  if (my_blocks(0)->pmr->pvars_fc_.size() > 0) {
+    refined_.clear();
+    ffc_send_.clear();
+    ffc_recv_.clear();
+    for (int l = 0; l < max_level - root_level; ++l)
+      locmap_[l].clear();
+  }
+
 #ifdef MPI_PARALLEL
   if (nsend != 0) {
     MPI_Waitall(nsend, req_send, MPI_STATUSES_IGNORE);
@@ -949,8 +936,7 @@ void Mesh::FillSameRankFineToCoarseAMR(MeshBlock* pob, MeshBlock* pmb,
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
 //!                                            LogicalLocation &newloc)
-//! \brief step 7: c2f, same MPI rank, different level
-//!        (just copy+prolongate, no pack/send)
+//! \brief step 7: c2f, same MPI rank, different level (just copy, no pack/send)
 
 void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
                                        LogicalLocation &newloc) {
@@ -979,9 +965,6 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
         }
       }
     }
-    pmr->ProlongateCellCenteredValues(
-        dst, *var_cc, 0, nu,
-        pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
     pob_cc_it++;
   }
 
@@ -1003,9 +986,6 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
         }
       }
     }
-    pmr->ProlongateCellCenteredValues(
-        dst, var_cc, -1, 0, nu,
-        pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke);
   }
 
   auto pob_fc_it = pob->pmr->pvars_fc_.begin();
@@ -1034,18 +1014,6 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
           dst_b.x3f(k, j, i) = src_b.x3f(ck, cj, ci);
       }
     }
-    pmr->ProlongateSharedFieldX1(
-        dst_b.x1f, (*var_fc).x1f,
-        pob->cis, pob->cie+1, pob->cjs, pob->cje, pob->cks, pob->cke);
-    pmr->ProlongateSharedFieldX2(
-        dst_b.x2f, (*var_fc).x2f,
-        pob->cis, pob->cie, pob->cjs, pob->cje+f2, pob->cks, pob->cke);
-    pmr->ProlongateSharedFieldX3(
-        dst_b.x3f, (*var_fc).x3f,
-        pob->cis, pob->cie, pob->cjs, pob->cje, pob->cks, pob->cke+f3);
-    pmr->ProlongateInternalField(
-        *var_fc, pob->cis, pob->cie,
-        pob->cjs, pob->cje, pob->cks, pob->cke);
     pob_fc_it++;
   }
   return;
@@ -1055,6 +1023,7 @@ void Mesh::FillSameRankCoarseToFineAMR(MeshBlock* pob, MeshBlock* pmb,
 //! \fn void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf)
 //! \brief step 8 (receive and load), branch 1 (same2same: unpack)
 void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
+  MeshRefinement *pmr = pb->pmr;
   int p = 0;
   for (AthenaArray<Real> &var_cc : pb->vars_cc_) {
     int nu = var_cc.GetDim4() - 1;
@@ -1091,7 +1060,7 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
   //!   appended integer from received buffer is slightly unsafe
   if (adaptive) {
     int *dcp = reinterpret_cast<int *>(&(recvbuf[p]));
-    pb->pmr->deref_count_ = *dcp;
+    pmr->deref_count_ = *dcp;
   }
   return;
 }
@@ -1103,6 +1072,7 @@ void Mesh::FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf) {
 
 void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
                                      LogicalLocation &lloc) {
+  MeshRefinement *pmr = pb->pmr;
   int ox1 = ((lloc.lx1 & 1LL) == 1LL), ox2 = ((lloc.lx2 & 1LL) == 1LL),
       ox3 = ((lloc.lx3 & 1LL) == 1LL);
   int p = 0, il, iu, jl, ju, kl, ku;
@@ -1113,7 +1083,7 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
   if (ox3 == 0) kl = pb->ks,            ku = pb->ks + pb->block_size.nx3/2 - f3;
   else        kl = pb->ks + pb->block_size.nx3/2, ku = pb->ke;
 
-  for (auto cc_pair : pb->pmr->pvars_cc_) {
+  for (auto cc_pair : pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
     BufferUtility::UnpackData(recvbuf, *var_cc, 0, nu,
@@ -1126,7 +1096,7 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
                               il, iu, jl, ju, p);
   }
 
-  for (auto fc_pair : pb->pmr->pvars_fc_) {
+  for (auto fc_pair : pmr->pvars_fc_) {
     FaceField *var_fc = std::get<0>(fc_pair);
     FaceField &dst_b = *var_fc;
     BufferUtility::UnpackData(recvbuf, dst_b.x1f,
@@ -1150,41 +1120,31 @@ void Mesh::FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf,
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf)
-//! \brief step 8 (receive and load), branch 2 (c2f: unpack+prolongate)
+//! \fn void Mesh::ReceiveCoarseToFineAMR(MeshBlock *pb, Real *recvbuf)
+//! \brief step 8, branch 2 (c2f: receive and unpack)
 
-void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
+void Mesh::ReceiveCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
   MeshRefinement *pmr = pb->pmr;
   int p = 0;
   int il = pb->cis - 1, iu = pb->cie+1, jl = pb->cjs - f2,
       ju = pb->cje + f2, kl = pb->cks - f3, ku = pb->cke + f3;
-  for (auto cc_pair : pb->pmr->pvars_cc_) {
+  for (auto cc_pair : pmr->pvars_cc_) {
     AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
     AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
     int nu = var_cc->GetDim4() - 1;
     BufferUtility::UnpackData(recvbuf, *coarse_cc,
                               0, nu, il, iu, jl, ju, kl, ku, p);
-    pmr->ProlongateCellCenteredValues(
-        *coarse_cc, *var_cc, 0, nu,
-        pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
   }
 
-
   if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
-    // copy from pmb block
     AthenaArray<Real> &var_cc = pb->pnrrad->ir;
     AthenaArray<Real> &coarse_cc = pb->pnrrad->coarse_ir_;
     int nu = var_cc.GetDim1() - 1;
-
     BufferUtility::UnpackData(recvbuf, coarse_cc, kl, ku,
                               0, nu, il, iu, jl, ju, p);
-
-    pmr->ProlongateCellCenteredValues(
-        coarse_cc, var_cc, -1, 0, nu,
-        pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
   }
 
-  for (auto fc_pair : pb->pmr->pvars_fc_) {
+  for (auto fc_pair : pmr->pvars_fc_) {
     FaceField *var_fc = std::get<0>(fc_pair);
     FaceField *coarse_fc = std::get<1>(fc_pair);
 
@@ -1194,20 +1154,308 @@ void Mesh::FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf) {
                               il, iu, jl, ju+f2, kl, ku, p);
     BufferUtility::UnpackData(recvbuf, (*coarse_fc).x3f,
                               il, iu, jl, ju, kl, ku+f3, p);
-    pmr->ProlongateSharedFieldX1(
-        (*coarse_fc).x1f, (*var_fc).x1f,
-        pb->cis, pb->cie+1, pb->cjs, pb->cje, pb->cks, pb->cke);
-    pmr->ProlongateSharedFieldX2(
-        (*coarse_fc).x2f, (*var_fc).x2f,
-        pb->cis, pb->cie, pb->cjs, pb->cje+f2, pb->cks, pb->cke);
-    pmr->ProlongateSharedFieldX3(
-        (*coarse_fc).x3f, (*var_fc).x3f,
-        pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke+f3);
-    pmr->ProlongateInternalField(
-        *var_fc, pb->cis, pb->cie,
-        pb->cjs, pb->cje, pb->cks, pb->cke);
   }
   return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::ProlongateMeshBlock(MeshBlock *pb)
+//! \brief step 8, branch 2 (c2f: prolongate)
+
+void Mesh::ProlongateMeshBlock(MeshBlock *pb) {
+  MeshRefinement *pmr = pb->pmr;
+  for (auto cc_pair : pmr->pvars_cc_) {
+    AthenaArray<Real> *var_cc = std::get<0>(cc_pair);
+    AthenaArray<Real> *coarse_cc = std::get<1>(cc_pair);
+    int nu = var_cc->GetDim4() - 1;
+    pmr->ProlongateCellCenteredValues(*coarse_cc, *var_cc, 0, nu,
+                   pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
+  }
+
+
+  if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
+    // copy from pmb block
+    AthenaArray<Real> &var_cc = pb->pnrrad->ir;
+    AthenaArray<Real> &coarse_cc = pb->pnrrad->coarse_ir_;
+    int nu = var_cc.GetDim1() - 1;
+
+    pmr->ProlongateCellCenteredValues(coarse_cc, var_cc, -1, 0, nu,
+                   pb->cis, pb->cie, pb->cjs, pb->cje, pb->cks, pb->cke);
+  }
+
+  int il = pb->cis, iu = pb->cie+1, jl = pb->cjs, ju = pb->cje + f2,
+      kl = pb->cks, ku = pb->cke + f3;
+  // Step FFC8. skip the surface fields contacting previously refined MeshBlocks
+  if (pmr->flag_ffc_recv_[BoundaryFace::inner_x1]) il++;
+  if (pmr->flag_ffc_recv_[BoundaryFace::outer_x1]) iu--;
+  if (pmr->flag_ffc_recv_[BoundaryFace::inner_x2]) jl++;
+  if (pmr->flag_ffc_recv_[BoundaryFace::outer_x2]) ju--;
+  if (pmr->flag_ffc_recv_[BoundaryFace::inner_x3]) kl++;
+  if (pmr->flag_ffc_recv_[BoundaryFace::outer_x3]) ku--;
+
+  for (auto fc_pair : pmr->pvars_fc_) {
+    FaceField *var_fc = std::get<0>(fc_pair);
+    FaceField *coarse_fc = std::get<1>(fc_pair);
+
+    pmr->ProlongateSharedFieldX1((*coarse_fc).x1f, (*var_fc).x1f,
+                                 il, iu, pb->cjs, pb->cje, pb->cks, pb->cke);
+    pmr->ProlongateSharedFieldX2((*coarse_fc).x2f, (*var_fc).x2f,
+                                 pb->cis, pb->cie, jl, ju, pb->cks, pb->cke);
+    pmr->ProlongateSharedFieldX3((*coarse_fc).x3f, (*var_fc).x3f,
+                                 pb->cis, pb->cie, pb->cjs, pb->cje, kl, ku);
+    pmr->ProlongateInternalField(*var_fc, pb->cis, pb->cie,
+                                 pb->cjs, pb->cje, pb->cks, pb->cke);
+  }
+  return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
+//!                              int *ranklist, int *newrank, int *nslist, int nbtold)
+//! \brief the first part of the face field correction
+
+void Mesh::PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
+                                  int *ranklist, int *newrank, int *nslist, int nbtold) {
+  const int bnx1 = my_blocks(0)->block_size.nx1;
+  const int bnx2 = my_blocks(0)->block_size.nx2;
+  const int bnx3 = my_blocks(0)->block_size.nx3;
+  const int nf = static_cast<int>(my_blocks(0)->pmr->pvars_fc_.size());
+  const int sffc1 = nf*bnx2*bnx3, sffc2 = nf*bnx1*bnx3, sffc3 = nf*bnx2*bnx3;
+
+  // Step FFC1. Construct a hash map of MeshBlocks before refinement
+  for (int i = 0; i < nbtold; ++i) {
+    LogicalLocation const &loc = loclist[i];
+    if (loc.level > root_level) {
+      int lev = loc.level - root_level - 1;
+      locmap_[lev][loc] = i;
+    }
+  }
+
+  // Step FFC2. Find pairs that need face field correction
+  int s = 0;
+  for (int n : refined_) { // loop over refined MeshBlocks
+    LogicalLocation const &nloc = newloc[n];
+    int xf1 = static_cast<int>(nloc.lx1 & 1LL);
+    int xf2 = static_cast<int>(nloc.lx2 & 1LL);
+    int xf3 = static_cast<int>(nloc.lx3 & 1LL);
+    std::int64_t o1, o2, o3;
+    o1 = (xf1 << 1) - 1;
+    o2 = (xf2 << 1) - 1;
+    o3 = (xf3 << 1) - 1;
+    LogicalLocation floc = nloc;
+    int lev = floc.level - root_level - 1;
+    floc.lx1 += o1;
+    bool fskip = false;
+    if (floc.lx1 < 0) {
+      if (mesh_bcs[BoundaryFace::inner_x1] == BoundaryFlag::periodic)
+        floc.lx1 = (nrbx1 << (lev+1)) - 1;
+      else
+        fskip = true;
+    } else if (floc.lx1 >= (nrbx1 << (lev+1))) {
+      if (mesh_bcs[BoundaryFace::outer_x1] == BoundaryFlag::periodic)
+        floc.lx1 = 0;
+      else
+        fskip = true;
+    }
+    if (!fskip) {
+      auto itr = locmap_[lev].find(floc);
+      if (itr != locmap_[lev].end()) {
+        const auto& it = *itr;
+        int i = it.second;
+        if (ranklist[i] == Globals::my_rank) {
+          ffc_send_.emplace_back(i, n, xf1^1, sffc1, -1);
+          if (newrank[n] == Globals::my_rank)
+            ffc_recv_.emplace_back(i, n, xf1, 0, s);
+          s++;
+        } else if (newrank[n] == Globals::my_rank) {
+          ffc_recv_.emplace_back(i, n, xf1, sffc1, -1);
+        }
+      }
+    }
+    if (f2) {
+      floc.lx1 = nloc.lx1, floc.lx2 += o2;
+      fskip = false;
+      if (floc.lx2 < 0) {
+        if (mesh_bcs[BoundaryFace::inner_x2] == BoundaryFlag::periodic)
+          floc.lx2 = (nrbx2 << (lev+1)) - 1;
+        else
+          fskip = true;
+      } else if (floc.lx2 >= (nrbx2 << (lev+1))) {
+        if (mesh_bcs[BoundaryFace::outer_x2] == BoundaryFlag::periodic)
+          floc.lx2 = 0;
+        else
+          fskip = true;
+      }
+      if (!fskip) {
+        auto itr = locmap_[lev].find(floc);
+        if (itr != locmap_[lev].end()) {
+          const auto& it = *itr;
+          int i = it.second;
+          if (ranklist[i] == Globals::my_rank) {
+            ffc_send_.emplace_back(i, n, (xf2^1) + 2, sffc2, -1);
+            if (newrank[n] == Globals::my_rank)
+              ffc_recv_.emplace_back(i, n, xf2 + 2, 0, s);
+            s++;
+          } else if (newrank[n] == Globals::my_rank) {
+            ffc_recv_.emplace_back(i, n, xf2 + 2, sffc2, -1);
+          }
+        }
+      }
+    }
+    if (f3) {
+      floc.lx2 = nloc.lx2, floc.lx3 += o3;
+      fskip = false;
+      if (floc.lx3 < 0) {
+        if (mesh_bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic)
+          floc.lx3 = (nrbx3 << (lev+1)) - 1;
+        else
+          fskip = true;
+      } else if (floc.lx3 >= (nrbx3 << (lev+1))) {
+        if (mesh_bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic)
+          floc.lx3 = 0;
+        else
+          fskip = true;
+      }
+      if (!fskip) {
+        auto itr = locmap_[lev].find(floc);
+        if (itr != locmap_[lev].end()) {
+          const auto& it = *itr;
+          int i = it.second;
+          if (ranklist[i] == Globals::my_rank) {
+            ffc_send_.emplace_back(i, n, (xf3^1) + 4, sffc3, -1);
+            if (newrank[n] == Globals::my_rank)
+              ffc_recv_.emplace_back(i, n, xf3 + 4, 0, s);
+            s++;
+          } else if (newrank[n] == Globals::my_rank) {
+            ffc_recv_.emplace_back(i, n, xf3 + 4, sffc3, -1);
+          }
+        }
+      }
+    }
+  }
+
+  // Step FFC3. Initiate MPI receive
+#ifdef MPI_PARALLEL
+  for (FaceFieldCorrection &t : ffc_recv_) {
+    if (ranklist[t.from] != Globals::my_rank) {
+      int tag = CreateFaceFieldCorrectionMPITag(t.to-nslist[newrank[t.to]], t.face);
+      MPI_Irecv(t.buf, t.size, MPI_ATHENA_REAL, ranklist[t.from],
+                tag, MPI_COMM_WORLD, &(t.req));
+    }
+  }
+#endif
+
+  // Step FFC4. Pack and send shared face fields
+  for (FaceFieldCorrection &f : ffc_send_) {
+    MeshBlock *pmb = FindMeshBlock(f.from);
+    int p = 0;
+    for (FaceField &var_fc : pmb->vars_fc_) {
+      switch (f.face) {
+        case BoundaryFace::inner_x1:
+          BufferUtility::PackData(var_fc.x1f, f.buf, pmb->is, pmb->is,
+                                  pmb->js, pmb->je, pmb->ks, pmb->ke, p);
+          break;
+        case BoundaryFace::outer_x1:
+          BufferUtility::PackData(var_fc.x1f, f.buf, pmb->ie+1, pmb->ie+1,
+                                  pmb->js, pmb->je, pmb->ks, pmb->ke, p);
+          break;
+        case BoundaryFace::inner_x2:
+          BufferUtility::PackData(var_fc.x2f, f.buf, pmb->is, pmb->ie,
+                                  pmb->js, pmb->js, pmb->ks, pmb->ke, p);
+          break;
+        case BoundaryFace::outer_x2:
+          BufferUtility::PackData(var_fc.x2f, f.buf, pmb->is, pmb->ie,
+                                  pmb->je+f2, pmb->je+f2, pmb->ks, pmb->ke, p);
+          break;
+        case BoundaryFace::inner_x3:
+          BufferUtility::PackData(var_fc.x3f, f.buf, pmb->is, pmb->ie,
+                                  pmb->js, pmb->je, pmb->ks, pmb->ks, p);
+          break;
+        case BoundaryFace::outer_x3:
+          BufferUtility::PackData(var_fc.x3f, f.buf, pmb->is, pmb->ie,
+                                  pmb->js, pmb->je, pmb->ke+f3, pmb->ke+f3, p);
+          break;
+        default:
+          break;
+      }
+    }
+#ifdef MPI_PARALLEL
+    if (newrank[f.to] != Globals::my_rank) {
+      int face = f.face^1;
+      int tag = CreateFaceFieldCorrectionMPITag(f.to-nslist[newrank[f.to]], face);
+      MPI_Isend(f.buf, f.size, MPI_ATHENA_REAL, newrank[f.to],
+                tag, MPI_COMM_WORLD, &(f.req));
+    }
+#endif
+  }
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void Mesh::ReceiveAndSetFaceFieldCorrection(int *newrank)
+//! \brief the second part of the face field correction
+
+void Mesh::ReceiveAndSetFaceFieldCorrection(int *newrank) {
+  // Step FFC5. clear face field correction flags
+  for (int n = 0; n < nblocal; ++n) {
+    MeshRefinement *pmr = my_blocks(n)->pmr;
+    for (int i = 0; i < 6; ++i)
+      pmr->flag_ffc_recv_[i] = false;
+  }
+
+  // Step FFC6. wait and unpack/set
+  for (FaceFieldCorrection &t : ffc_recv_) {
+    MeshBlock *pmb = FindMeshBlock(t.to);
+    pmb->pmr->flag_ffc_recv_[t.face] = true;
+    Real *buf = t.buf;
+    if (ranklist[t.from] == Globals::my_rank) // local copy
+      buf = ffc_send_[t.src].buf;
+#ifdef MPI_PARALLEL
+    else // MPI
+      MPI_Wait(&(t.req), MPI_STATUS_IGNORE);
+#endif
+    int p = 0;
+    for (FaceField &var_fc : pmb->vars_fc_) {
+      switch (t.face) {
+        case BoundaryFace::inner_x1:
+          BufferUtility::UnpackData(buf, var_fc.x1f, pmb->is, pmb->is,
+                                    pmb->js, pmb->je, pmb->ks, pmb->ke, p);
+          break;
+        case BoundaryFace::outer_x1:
+          BufferUtility::UnpackData(buf, var_fc.x1f, pmb->ie+1, pmb->ie+1,
+                                    pmb->js, pmb->je, pmb->ks, pmb->ke, p);
+          break;
+        case BoundaryFace::inner_x2:
+          BufferUtility::UnpackData(buf, var_fc.x2f, pmb->is, pmb->ie,
+                                    pmb->js, pmb->js, pmb->ks, pmb->ke, p);
+          break;
+        case BoundaryFace::outer_x2:
+          BufferUtility::UnpackData(buf, var_fc.x2f, pmb->is, pmb->ie,
+                                    pmb->je+f2, pmb->je+f2, pmb->ks, pmb->ke, p);
+          break;
+        case BoundaryFace::inner_x3:
+          BufferUtility::UnpackData(buf, var_fc.x3f, pmb->is, pmb->ie,
+                                    pmb->js, pmb->je, pmb->ks, pmb->ks, p);
+          break;
+        case BoundaryFace::outer_x3:
+          BufferUtility::UnpackData(buf, var_fc.x3f, pmb->is, pmb->ie,
+                                    pmb->js, pmb->je, pmb->ke+f3, pmb->ke+f3, p);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  // Step FFC7. Finalize MPI send
+#ifdef MPI_PARALLEL
+  for (FaceFieldCorrection &f : ffc_send_) {
+    if (newrank[f.to] != Globals::my_rank) {
+      MPI_Wait(&(f.req), MPI_STATUS_IGNORE);
+    }
+  }
+#endif
 }
 
 //----------------------------------------------------------------------------------------
@@ -1223,3 +1471,19 @@ int Mesh::CreateAMRMPITag(int lid, int ox1, int ox2, int ox3) {
   // former "AthenaTagMPI" AthenaTagMPI::amr=8 redefined to 0
   return (lid<<8) | (ox1<<7)| (ox2<<6) | (ox3<<5);
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn int Mesh::CreateFaceFieldCorrectionMPITag(int lid, int face)
+//! \brief calculate an MPI tag for face field correction
+//!
+//! tag = local id of destination (remaining bits) + ox1(1 bit) + ox2(1 bit) + ox3(1 bit)
+//!       + physics(5 bits)
+//!
+
+int Mesh::CreateFaceFieldCorrectionMPITag(int lid, int face) {
+  // Set the bottom bit = 1
+  // It should be OK as this communication does not overlap with te main integrator,
+  // and all we need is to distinguish FFC communications from AMR communications.
+  return (lid<<8) | (face << 5) | 1;
+}
+
