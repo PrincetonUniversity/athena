@@ -11,19 +11,18 @@
 // C headers
 
 // C++ headers
+#include <sstream>    // stringstream
+#include <iostream>   // endl
 
 // Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../coordinates/coordinates.hpp"
+#include "../../../field/field.hpp"
 #include "../../../globals.hpp"
 #include "../../../hydro/hydro.hpp"
-#include "../../../field/field.hpp"
 #include "../../../mesh/mesh.hpp"
 #include "../../../nr_radiation/radiation.hpp"
 #include "bvals_rad.hpp"
-
-#include <sstream>    // stringstream
-#include <iostream>   // endl
 
 //----------------------------------------------------------------------------------------
 //! \class RadiationBoundaryFunctions
@@ -407,8 +406,7 @@ void RadBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
 //----------------------------------------------------------------------------------------
 //! \fn void RadBoundaryVariable::ApplyRadPhysicalBoundaries()
 // \brief Apply physical boundaries for specific intensities only
-void RadBoundaryVariable::ApplyRadPhysicalBoundaries(const Real time, const Real dt){
-
+void RadBoundaryVariable::ApplyRadPhysicalBoundaries(const Real time, const Real dt) {
   MeshBlock *pmb = pmy_block_;
   Coordinates *pco = pmb->pcoord;
   BoundaryValues *pbval = pmb->pbval;
@@ -450,7 +448,6 @@ void RadBoundaryVariable::ApplyRadPhysicalBoundaries(const Real time, const Real
     SetRadPhysicalFunctions(pmb, pco, time, dt,
                             pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
                             BoundaryFace::outer_x1, ph->w, pf->b, prad->ir);
-
   }
 
   if (pmb->block_size.nx2 > 1) { // 2D or 3D
@@ -466,7 +463,7 @@ void RadBoundaryVariable::ApplyRadPhysicalBoundaries(const Real time, const Real
       if (prad->rotate_theta == 1) {
         pradbvar->RotateHPi_InnerX2(time, dt, bis, bie, pmb->js, bks, bke, NGHOST);
       }
-    }// end radiation
+    } // end radiation
 
     // Apply boundary function on outer-x2 and update W,bcc (if not periodic)
     if (pbval->apply_bndry_fn_[BoundaryFace::outer_x2]) {
@@ -482,7 +479,6 @@ void RadBoundaryVariable::ApplyRadPhysicalBoundaries(const Real time, const Real
 
     // Apply boundary function on inner-x3 and update W,bcc (if not periodic)
     if (pbval->apply_bndry_fn_[BoundaryFace::inner_x3]) {
-
       SetRadPhysicalFunctions(pmb, pco, time, dt,
                             bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
                             BoundaryFace::inner_x3, ph->w, pf->b, prad->ir);
@@ -646,4 +642,3 @@ void RadBoundaryVariable::SetRadPhysicalFunctions(
       break;
   } // end switch (block_bcs[face])
 }
-
