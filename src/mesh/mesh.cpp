@@ -1769,6 +1769,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
             }
           }
           pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
+          if(IM_RADIATION_ENABLED)
+            pmb->pnrrad->rad_bvar.ApplyRadPhysicalBoundaries(time,0.0);
           // Perform 4th order W(U)
           pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
                                                      ph->w, pf->bcc, pmb->pcoord,
@@ -1792,6 +1794,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
 
         pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
+        if(IM_RADIATION_ENABLED)
+          pmb->pnrrad->rad_bvar.ApplyRadPhysicalBoundaries(time,0.0);
       }
       // for radiation, calculate opacity and moments
       if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {
