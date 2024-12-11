@@ -11,8 +11,8 @@
 // C headers
 
 // C++ headers
-#include <sstream>    // stringstream
 #include <iostream>   // endl
+#include <sstream>    // stringstream
 
 // Athena++ headers
 #include "../../../athena.hpp"
