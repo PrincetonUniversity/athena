@@ -1164,16 +1164,6 @@ void OutputType::LoadOutputData(MeshBlock *pmb) {
         num_vars_++;
       }
     }
-    if (ContainVariable(output_params.variable, "zeta") ||
-        ContainVariable(output_params.variable, "prim") ||
-        ContainVariable(output_params.variable, "cons")) {
-      pod = new OutputData;
-      pod->type = "SCALARS";
-      pod->name = "zeta";
-      pod->data.InitWithShallowSlice(pcrdiff->zeta,4,0,1);
-      AppendOutputDataNode(pod);
-      num_vars_++;
-    }
   }
 
   // note, the Bcc variables are stored in a separate HDF5 dataset from the above Output

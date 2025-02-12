@@ -109,6 +109,7 @@ MGCRDiffusionDriver::MGCRDiffusionDriver(Mesh *pm, ParameterInput *pin)
   mg_mesh_bcs_[outer_x3] =
               GetMGBoundaryFlag(pin->GetOrAddString("crdiffusion", "ox3_bc", "none"));
   CheckBoundaryFunctions();
+  fsubtract_average_ = false;
 
   mgtlist_ = new MultigridTaskList(this);
 
@@ -280,11 +281,21 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
          const AthenaArray<Real> &coeff, const AthenaArray<Real> &matrix, int rlev,
          int il, int iu, int jl, int ju, int kl, int ku, int color, bool th) {
   Real dx;
+  constexpr Real ec_floor = 1e-20;
   if (rlev <= 0) dx = rdx_*static_cast<Real>(1<<(-rlev));
   else           dx = rdx_/static_cast<Real>(1<<rlev);
   Real dx2 = SQR(dx);
   Real isix = omega_/6.0;
   color ^= pmy_driver_->coffset_;
+
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+#pragma omp simd
+      for (int i=il; i<=iu; i++)
+        u(k,j,i) = std::max(u(k,j,i), ec_floor);
+    }
+  }
+  
   if (fsmoother_ == 1) { // jacobi-rb
     if (th == true && (ku-kl) >=  minth_) {
       AthenaArray<Real> &work = temp[0];
@@ -414,6 +425,14 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
             u(k,j,i) += omega_ * (work(k,j,i) - u(k,j,i));
         }
       }
+    }
+  }
+
+  for (int k=kl; k<=ku; k++) {
+    for (int j=jl; j<=ju; j++) {
+#pragma omp simd
+      for (int i=il; i<=iu; i++)
+        u(k,j,i) = std::max(u(k,j,i), ec_floor);
     }
   }
 
