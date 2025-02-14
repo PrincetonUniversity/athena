@@ -9,6 +9,7 @@
 //========================================================================================
 
 // C headers
+#include <float.h>
 
 // C++ headers
 #include <algorithm>  // min
@@ -277,7 +278,12 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundaryCorrection() {
 void FaceCenteredBoundaryVariable::ClearEMFShearing(EdgeField &work) {
   AthenaArray<Real> &e2 = work.x2e;
   AthenaArray<Real> &e3 = work.x3e;
-  e2.ZeroClear();
-  e3.ZeroClear();
+  constexpr Real m = (sizeof(Real) == sizeof(float)) ? -FLT_MAX : -DBL_MAX;
+  int s = e2.GetSize();
+  for (int i = 0; i < s; ++i)
+    e2(i) = m;
+  s = e3.GetSize();
+  for (int i = 0; i < s; ++i)
+    e3(i) = m;
   return;
 }

@@ -710,27 +710,27 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
             // store e2 for shearing periodic bcs
             for (int k=pmb->ks; k<=pmb->ke+1; k++) {
               for (int j=pmb->js; j<=pmb->je; j++)
-                shear_var_emf_[0].x2e(k,j) =
-                  std::max(shear_var_emf_[0].x2e(k,j), buf[p++]);
+                shear_var_emf_[0].x2e(k,j)
+                  = std::max(shear_var_emf_[0].x2e(k,j), buf[p++]);
             }
             // store e3 for shearing periodic bcs
             for (int k=pmb->ks; k<=pmb->ke; k++) {
               for (int j=pmb->js; j<=pmb->je+1; j++)
-                shear_var_emf_[0].x3e(k,j) =
-                  std::max(shear_var_emf_[0].x3e(k,j), buf[p++]);
+                shear_var_emf_[0].x3e(k,j)
+                  = std::max(shear_var_emf_[0].x3e(k,j), buf[p++]);
             }
           } else if (nb.fid == BoundaryFace::outer_x1) {
             // store e2 for shearing periodic bcs
             for (int k=pmb->ks; k<=pmb->ke+1; k++) {
               for (int j=pmb->js; j<=pmb->je; j++)
-                shear_var_emf_[1].x2e(k,j) =
-                  std::max(shear_var_emf_[1].x2e(k,j), buf[p++]);
+                shear_var_emf_[1].x2e(k,j)
+                  = std::max(shear_var_emf_[1].x2e(k,j), buf[p++]);
             }
             // store e3 for shearing periodic bcs
             for (int k=pmb->ks; k<=pmb->ke; k++) {
               for (int j=pmb->js; j<=pmb->je+1; j++)
-                shear_var_emf_[1].x3e(k,j) =
-                  std::max(shear_var_emf_[1].x3e(k,j), buf[p++]);
+                shear_var_emf_[1].x3e(k,j)
+                  = std::max(shear_var_emf_[1].x3e(k,j), buf[p++]);
             }
           }
         } else {
@@ -817,10 +817,8 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
           }
         } else {
           // unpack e2
-          for (int j=pmb->js; j<=pmb->je; j++) {
-            e2(k,j,i) = std::max(e2(k,j,i), buf[p++]);
-            e2(k+1,j,i) = e2(k,j,i);
-          }
+          for (int j=pmb->js; j<=pmb->je; j++)
+            e2(k+1,j,i) = e2(k,j,i) = std::max(e2(k,j,i), buf[p++]);
           // unpack e3
           for (int j=pmb->js; j<=pmb->je+1; j++)
             e3(k,j,i) = std::max(e3(k,j,i), buf[p++]);
@@ -834,10 +832,8 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
           j = pmb->je + 1;
         }
         // unpack e1
-        for (int i=pmb->is; i<=pmb->ie; i++) {
-          e1(k,j,i) = std::max(e1(k,j,i), buf[p++]);
-          e1(k+1,j,i) = e1(k,j,i);
-        }
+        for (int i=pmb->is; i<=pmb->ie; i++)
+          e1(k+1,j,i) = e1(k,j,i) = std::max(e1(k,j,i), buf[p++]);
         // unpack e3
         for (int i=pmb->is; i<=pmb->ie+1; i++)
           e3(k,j,i) = std::max(e3(k,j,i), buf[p++]);
@@ -850,11 +846,9 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
         i = pmb->ie + 1;
       }
       // unpack e2
-      e2(k,j,i) = std::max(e2(k,j,i), buf[p++]);
-      e2(k+1,j,i) = e2(k,j,i);
+      e2(k+1,j,i) = e2(k,j,i) = std::max(e2(k,j,i), buf[p++]);
       // unpack e3
-      e3(k,j,i) = std::max(e3(k,j,i), buf[p++]);
-      e3(k,j+1,i) = e3(k,j,i);
+      e3(k,j+1,i) = e3(k,j,i) = std::max(e3(k,j,i), buf[p++]);
     }
   } else if (nb.ni.type == NeighborConnect::edge) {
     // x1x2 edge (2D and 3D)
@@ -1058,10 +1052,8 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
           jl = pmb->js + pmb->block_size.nx2/2;
         }
         // unpack e2
-        for (int j=jl; j<=ju; j++) {
-          e2(k,j,i) = std::max(e2(k,j,i), buf[p++]);
-          e2(k+1,j,i) = e2(k,j,i);
-        }
+        for (int j=jl; j<=ju; j++)
+          e2(k+1,j,i) = e2(k,j,i) = std::max(e2(k,j,i), buf[p++]);
         // unpack e3
         for (int j=jl; j<=ju+1; j++)
           e3(k,j,i) = std::max(e3(k,j,i), buf[p++]);
@@ -1079,10 +1071,8 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
           il = pmb->is + pmb->block_size.nx1/2;
         }
         // unpack e1
-        for (int i=il; i<=iu; i++) {
-          e1(k,j,i) = std::max(e1(k,j,i), buf[p++]);
-          e1(k+1,j,i) = e1(k,j,i);
-        }
+        for (int i=il; i<=iu; i++)
+          e1(k+1,j,i) = e1(k,j,i) = std::max(e1(k,j,i), buf[p++]);
         // unpack e3
         for (int i=il; i<=iu+1; i++)
           e3(k,j,i) = std::max(e3(k,j,i), buf[p++]);
@@ -1095,11 +1085,9 @@ void FaceCenteredBoundaryVariable::SetFluxBoundaryFromFiner(Real *buf,
         i = pmb->ie + 1;
       }
       // unpack e2
-      e2(k,j,i) = std::max(e2(k,j,i), buf[p++]);
-      e2(k+1,j,i) = e2(k,j,i);
+      e2(k+1,j,i) = e2(k,j,i) = std::max(e2(k,j,i), buf[p++]);
       // unpack e3
-      e3(k,j,i) = std::max(e3(k,j,i), buf[p++]);
-      e3(k,j+1,i) = e3(k,j,i);
+      e3(k,j+1,i) = e3(k,j,i) = std::max(e3(k,j,i), buf[p++]);
     }
   } else if (nb.ni.type == NeighborConnect::edge) {
     if (pmb->block_size.nx3 > 1) { // 3D
@@ -1547,7 +1535,6 @@ bool FaceCenteredBoundaryVariable::ReceiveFluxCorrection() {
   }
 
   if (flag) {
-//    AverageFluxBoundary();
     if (pbval_->num_north_polar_blocks_ > 0)
       SetFluxBoundaryFromPolar(flux_north_recv_, pbval_->num_north_polar_blocks_, true);
     for (int n = 0; n < pbval_->num_north_polar_blocks_; ++n)
