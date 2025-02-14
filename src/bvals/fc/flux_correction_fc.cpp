@@ -723,7 +723,7 @@ void FaceCenteredBoundaryVariable::SetFluxBoundarySameLevel(Real *buf,
             // store e2 for shearing periodic bcs
             for (int k=pmb->ks; k<=pmb->ke+1; k++) {
               for (int j=pmb->js; j<=pmb->je; j++)
-                shear_var_emf_[1].x2e(k,j) = 
+                shear_var_emf_[1].x2e(k,j) =
                   std::max(shear_var_emf_[1].x2e(k,j), buf[p++]);
             }
             // store e3 for shearing periodic bcs

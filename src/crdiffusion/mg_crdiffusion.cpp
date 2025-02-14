@@ -295,7 +295,7 @@ void MGCRDiffusion::Smooth(AthenaArray<Real> &u, const AthenaArray<Real> &src,
         u(k,j,i) = std::max(u(k,j,i), ec_floor);
     }
   }
-  
+
   if (fsmoother_ == 1) { // jacobi-rb
     if (th == true && (ku-kl) >=  minth_) {
       AthenaArray<Real> &work = temp[0];
