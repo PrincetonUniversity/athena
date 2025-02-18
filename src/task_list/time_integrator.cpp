@@ -1931,9 +1931,9 @@ TaskStatus TimeIntegratorTaskList::DiffuseHydro(MeshBlock *pmb, int stage) {
       // if using orbital advection, put modified conservative into the function
       if (pmb->porb->orbital_advection_defined) {
         pmb->porb->ConvertOrbitalSystem(ph->w, ph->u, OrbitalTransform::prim);
-        ph->hdif.CalcDiffusionFlux(ph->w, pmb->porb->w_orb, pf->bcc);
+        ph->hdif.CalcDiffusionFlux(pmb->porb->w_orb, pf->bcc);
       } else {
-        ph->hdif.CalcDiffusionFlux(ph->w, ph->w, pf->bcc);
+        ph->hdif.CalcDiffusionFlux(ph->w, pf->bcc);
       }
     }
     return TaskStatus::next;

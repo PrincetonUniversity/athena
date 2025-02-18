@@ -103,13 +103,12 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
 //!  diffusion fluxes (of various flavors) for overall hydro flux.
 
 void HydroDiffusion::CalcDiffusionFlux(const AthenaArray<Real> &prim,
-                                       const AthenaArray<Real> &iprim,
                                        const AthenaArray<Real> &bcc) {
   SetDiffusivity(prim, bcc);
 
   if (nu_iso > 0.0 || nu_aniso > 0.0) ClearFlux(visflx);
-  if (nu_iso > 0.0) ViscousFluxIso(prim, iprim, visflx);
-  if (nu_aniso > 0.0) ViscousFluxAniso(prim, iprim, visflx);
+  if (nu_iso > 0.0) ViscousFluxIso(prim, visflx);
+  if (nu_aniso > 0.0) ViscousFluxAniso(prim, visflx);
 
   if (kappa_iso > 0.0 || kappa_aniso > 0.0) ClearFlux(cndflx);
   if (kappa_iso > 0.0) ThermalFluxIso(prim, cndflx);

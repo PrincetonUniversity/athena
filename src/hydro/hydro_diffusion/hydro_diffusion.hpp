@@ -56,8 +56,7 @@ class HydroDiffusion {
 
   // functions
   // iprim is primitives in the inertial system
-  void CalcDiffusionFlux(const AthenaArray<Real> &prim, const AthenaArray<Real> &iprim,
-                         const AthenaArray<Real> &bcc);
+  void CalcDiffusionFlux(const AthenaArray<Real> &prim, const AthenaArray<Real> &bcc);
   // TODO(felker): Rename+move out of this class. Confusing w/ Hydro::AddDiffusionFluxes()
   // See note in hydro_diffusion.cpp.
   void AddDiffusionFlux(AthenaArray<Real> *flx_src, AthenaArray<Real> *flx_des);
@@ -67,10 +66,8 @@ class HydroDiffusion {
   void NewDiffusionDt(Real &dt_vis, Real &dt_cnd);
 
   // viscosity
-  void ViscousFluxIso(const AthenaArray<Real> &p, const AthenaArray<Real> &p_i,
-                      AthenaArray<Real> *flx);
-  void ViscousFluxAniso(const AthenaArray<Real> &p, const AthenaArray<Real> &p_i,
-                        AthenaArray<Real> *flx);
+  void ViscousFluxIso(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
+  void ViscousFluxAniso(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
 
   // thermal conduction
   void ThermalFluxIso(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
