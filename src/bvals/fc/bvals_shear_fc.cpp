@@ -52,7 +52,7 @@ void FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
   // Only differences are the calculation of psj, pej, and 3x PackData calls
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
-  int si, sj, sk, ei, ej, ek;
+  int si, sj, sk, ei, ej, ek, xsi, xei;
   int jo = pbval_->joverlap_;
   int *jmin1 = pbval_->sb_data_[0].jmin_send;
   int *jmin2 = pbval_->sb_data_[1].jmin_send;
@@ -64,11 +64,15 @@ void FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
   if (nb<4) { // inner boundary
     si = pmb->is-NGHOST;
     ei = pmb->is-1;
+    xsi = si;
+    xei = ei;
     sj = jmin1[nb]-jo-1;
     ej = jmax1[nb]-jo-1;
   } else if (nb<8) { //outer boundary
     si = pmb->ie+1;
     ei = pmb->ie+NGHOST;
+    xsi = si+1;
+    xei = ei+1;
     sj = jmin2[nb-4]+jo;
     ej = jmax2[nb-4]+jo;
   } else {
@@ -80,6 +84,15 @@ void FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
   }
 
   int p = 0;
+
+  // bx1
+  for (int k=sk; k<=ek; k++) {
+    for (int i=xsi; i<=xei; i++) {
+      for (int j=sj; j<=ej; j++)
+        buf[p++] = src.x1f(k,j,i);
+    }
+  }
+
   // bx2
   for (int k=sk; k<=ek; k++) {
     for (int i=si; i<=ei; i++) {
@@ -87,6 +100,7 @@ void FaceCenteredBoundaryVariable::LoadShearingBoxBoundarySameLevel(
         buf[p++] = src.x2f(k,j,i);
     }
   }
+
   // bx3
   for (int k=sk; k<=ek+1; k++) {
     for (int i=si; i<=ei; i++) {
@@ -155,9 +169,11 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
   int *jmax2 = pbval_->sb_data_[1].jmax_recv;
 
   if (nb<4) {
-    sj = jmin1[nb]+xgh;     ej = jmax1[nb]+xgh;
+    sj = jmin1[nb]+xgh;
+    ej = jmax1[nb]+xgh;
   } else if (nb<8) {
-    sj = jmin2[nb-4]+xgh;   ej = jmax2[nb-4]+xgh;
+    sj = jmin2[nb-4]+xgh;
+    ej = jmax2[nb-4]+xgh;
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in FaceCenteredBoundaryVariable::"
@@ -167,6 +183,17 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundarySameLevel(
   }
 
   int p = 0;
+
+  // bx1
+  for (int k=sk; k<=ek; k++) {
+    for (int i=si; i<=ei; i++) {
+#pragma omp simd
+      for (int j=sj; j<=ej; j++) {
+        dst.x1f(k,i,j) = buf[p++];
+      }
+    }
+  }
+
   // bx2
   for (int k=sk; k<=ek; k++) {
     for (int i=si; i<=ei; i++) {
@@ -259,11 +286,27 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
     if (pbval_->is_shear[upper]) { // check inner boundaries
       // calculating remapping flux and update var
       Real eps = (1.0-2*upper)*pbval_->eps_;
+      // bx1
+      AthenaArray<Real> &bf1 = shear_fc_[upper].x1f;
+      for (int k=kl; k<=ku; k++) {
+        for (int i=0; i<NGHOST; i++) {
+          int ii = ib[upper] + upper + i;
+          if (xorder<=2) {
+            porb->RemapFluxPlm(pflux, bf1, eps, 1-upper, k, i, jl, ju+1, xgh);
+          } else {
+            porb->RemapFluxPpm(pflux, bf1, eps, 1-upper, k, i, jl, ju+1, xgh);
+          }
+          const int shift = xgh+1-upper;
+          for (int j=jl; j<=ju; j++) {
+            var.x1f(k,j,ii) = bf1(k,i,j+shift) - (pflux(j+1) - pflux(j));
+          }
+        }
+      }
       // bx2
       AthenaArray<Real> &bf2 = shear_fc_[upper].x2f;
       for (int k=kl; k<=ku; k++) {
         for (int i=0; i<NGHOST; i++) {
-          int ii = ib[upper]+i;
+          int ii = ib[upper] + i;
           if (xorder<=2) {
             porb->RemapFluxPlm(pflux, bf2, eps, 1-upper, k, i, jl, ju+2, xgh);
           } else {
@@ -279,7 +322,7 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
       AthenaArray<Real> &bf3 = shear_fc_[upper].x3f;
       for (int k=kl; k<=ku+1; k++) {
         for (int i=0; i<NGHOST; i++) {
-          int ii = ib[upper]+i;
+          int ii = ib[upper] + i;
           if (xorder<=2) {
             porb->RemapFluxPlm(pflux, bf3, eps, 1-upper, k, i, jl, ju+1, xgh);
           } else {
@@ -288,40 +331,6 @@ void FaceCenteredBoundaryVariable::SetShearingBoxBoundaryBuffers() {
           const int shift = xgh+1-upper;
           for (int j=jl; j<=ju; j++) {
             var.x3f(k,j,ii) = bf3(k,i,j+shift) - (pflux(j+1) - pflux(j));
-          }
-        }
-      }
-      // bx1
-      // calculating bx1 using div B = 0
-      // present way is only for cartesian
-      if (upper==0) {
-        for (int k=kl; k<=ku; k++) {
-          const Real& dx3 = pco->dx3f(k);
-          for (int j=jl; j<=ju; j++) {
-            const Real& dx2 = pco->dx2f(j);
-            for (int i=0; i<NGHOST; i++) {
-              int ii = pmb->is-1-i;
-              const Real& dx1 = pco->dx1f(ii);
-              var.x1f(k,j,ii) =
-                 var.x1f(k,j,ii+1) +
-                 dx1/dx2*(var.x2f(k,j+1,ii)-var.x2f(k,j,ii)) +
-                 dx1/dx3*(var.x3f(k+1,j,ii)-var.x3f(k,j,ii));
-            }
-          }
-        }
-      } else {
-        for (int k=kl; k<=ku; k++) {
-          const Real& dx3 = pco->dx3f(k);
-          for (int j=jl; j<=ju; j++) {
-            const Real& dx2 = pco->dx2f(j);
-            for (int i=0; i<NGHOST; i++) {
-              int ii = pmb->ie+1+i;
-              const Real& dx1 = pco->dx1f(ii);
-              var.x1f(k,j,ii+1) =
-                 var.x1f(k,j,ii) -
-                 dx1/dx2*(var.x2f(k,j+1,ii)-var.x2f(k,j,ii)) -
-                 dx1/dx3*(var.x3f(k+1,j,ii)-var.x3f(k,j,ii));
-            }
           }
         }
       }

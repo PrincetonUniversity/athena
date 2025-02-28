@@ -130,6 +130,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(MeshBlock *pmb,
     const int& xgh = pbval_->xgh_;
     for (int upper=0; upper<2; upper++) {
       if (pbval_->is_shear[upper]) {
+        shear_fc_[upper].x1f.NewAthenaArray(nc3, NGHOST, nc2+2*xgh+1);
         shear_fc_[upper].x2f.NewAthenaArray(nc3, NGHOST, nc2+2*xgh+2);
         shear_fc_[upper].x3f.NewAthenaArray(nc3+1, NGHOST, nc2+2*xgh+1);
         shear_var_emf_[upper].x2e.NewAthenaArray(nc3+1, nc2);
@@ -141,7 +142,7 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(MeshBlock *pmb,
 
         // attach corner cells from L/R side
         // extra cell in azimuth/vertical
-        int bsize = NGHOST*(nc3*(nx2+1)+(nc3+1)*nx2);
+        int bsize = NGHOST*(nc3*nx2+nc3*(nx2+1)+(nc3+1)*nx2);
         int esize = nx3*(nx2+1)+(nx3+1)*nx2;
         for (int n=0; n<4; n++) {
           shear_bd_var_[upper].send[n] = new Real[bsize];
