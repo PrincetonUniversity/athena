@@ -53,10 +53,6 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmb->porb;
 
-  // KGF: shearing box:
-  AthenaArray<Real> &bx1 = pmb->pfield->b.x1f;
-  Real qomL = pbval_->qomL_;
-
   int p = 0;
   if (nb.ni.type == NeighborConnect::face) {
     if (pmb->block_size.nx3 > 1) { // 3D
@@ -75,32 +71,12 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
         }
         // pack e3
         // KGF: shearing box
-        // shift azmuthal velocity if shearing boundary blocks
-        if (nb.shear && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
-          if(porb->orbital_advection_defined) {
-            for (int k=pmb->ks; k<=pmb->ke; k++) {
-              for (int j=pmb->js; j<=pmb->je+1; j++)
-                buf[p++] = e3(k,j,i);
-            }
-          } else {
-            if (nb.fid == BoundaryFace::inner_x1) {
-              for (int k=pmb->ks; k<=pmb->ke; k++) {
-                for (int j=pmb->js; j<=pmb->je+1; j++)
-                  buf[p++] = e3(k,j,i) - 0.5*qomL*(bx1(k,j,i) + bx1(k,j-1,i));
-              }
-            } else if (nb.fid == BoundaryFace::outer_x1) {
-              for (int k=pmb->ks; k<=pmb->ke; k++) {
-                for (int j=pmb->js; j<=pmb->je+1; j++)
-                  buf[p++] = e3(k,j,i) + 0.5*qomL*(bx1(k,j,i) + bx1(k,j-1,i));
-              }
-            }
-          }
-        } else {
-          for (int k=pmb->ks; k<=pmb->ke; k++) {
-            for (int j=pmb->js; j<=pmb->je+1; j++)
-              buf[p++] = e3(k,j,i);
-          }
-        } // KGF: shearing box
+        // KT: now correction for EMF is skipped for SB without OA
+        //     just pack e3 without frame conversion
+        for (int k=pmb->ks; k<=pmb->ke; k++) {
+          for (int j=pmb->js; j<=pmb->je+1; j++)
+            buf[p++] = e3(k,j,i);
+        }
         // x2 direction
       } else if (nb.fid == BoundaryFace::inner_x2 || nb.fid == BoundaryFace::outer_x2) {
           int j;
@@ -149,40 +125,14 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
           i = pmb->ie + 1;
         }
         // pack e2
-        if (pbval_->shearing_box == 2 && nb.shear
-            && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
-          if (nb.fid == BoundaryFace::inner_x1) {
-            for (int j=pmb->js; j<=pmb->je; j++)
-              buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
-          } else if (nb.fid == BoundaryFace::outer_x1) {
-            for (int j=pmb->js; j<=pmb->je; j++)
-              buf[p++] = e2(k,j,i) - qomL*bx1(k,j,i);
-          }
-        } else {
-          for (int j=pmb->js; j<=pmb->je; j++)
-            buf[p++] = e2(k,j,i);
-        }
+        for (int j=pmb->js; j<=pmb->je; j++)
+          buf[p++] = e2(k,j,i);
         // pack e3
         // KGF: shearing box
         // shift azmuthal velocity if shearing boundary blocks
-        if (pbval_->shearing_box == 1 && nb.shear
-            && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
-          if(porb->orbital_advection_defined) {
-            for (int j=pmb->js; j<=pmb->je+1; j++)
-              buf[p++] = e3(k,j,i);
-          } else {
-            if (nb.fid == BoundaryFace::inner_x1) {
-              for (int j=pmb->js; j<=pmb->je+1; j++)
-                buf[p++] = e3(k,j,i) - 0.5*qomL*(bx1(k,j,i) + bx1(k,j-1,i));
-            } else if (nb.fid == BoundaryFace::outer_x1) {
-              for (int j=pmb->js; j<=pmb->je+1; j++)
-                buf[p++] = e3(k,j,i) + 0.5*qomL*(bx1(k,j,i) + bx1(k,j-1,i));
-            }
-          }
-        } else {
-          for (int j=pmb->js; j<=pmb->je+1; j++)
-            buf[p++] = e3(k,j,i);
-        } // KGF: shearing box
+        // KT: now correction for EMF is skipped for SB without OA
+        for (int j=pmb->js; j<=pmb->je+1; j++)
+          buf[p++] = e3(k,j,i);
         // x2 direction
       } else if (nb.fid == BoundaryFace::inner_x2 || nb.fid == BoundaryFace::outer_x2) {
         int j;
@@ -207,16 +157,7 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       }
 
       // pack e2
-      if (pbval_->shearing_box == 2 && nb.shear
-          && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
-        if (nb.fid == BoundaryFace::inner_x1) {
-          buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
-        } else if (nb.fid == BoundaryFace::outer_x1) {
-          buf[p++] = e2(k,j,i) - qomL*bx1(k,j,i);
-        }
-      } else {
-        buf[p++] = e2(k,j,i);
-      }
+      buf[p++] = e2(k,j,i);
 
       // pack e3
       buf[p++] = e3(k,j,i);
@@ -238,25 +179,9 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       // pack e3
       // KGF: shearing box
       // shift azmuthal velocity if shearing boundary blocks
-      if (pbval_->shearing_box == 1
-          && nb.shear && nb.ni.ox1 != 0
-          && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
-        if(porb->orbital_advection_defined) {
-          for (int k=pmb->ks; k<=pmb->ke; k++)
-            buf[p++] = e3(k,j,i);
-        } else {
-          if (nb.ni.ox1 == -1) {
-            for (int k=pmb->ks; k<=pmb->ke; k++)
-              buf[p++] = e3(k,j,i)  - 0.5*qomL*(bx1(k,j,i) + bx1(k,j-1,i));
-          } else if (nb.ni.ox1 == 1) {
-            for (int k=pmb->ks; k<=pmb->ke; k++)
-              buf[p++] = e3(k,j,i)  + 0.5*qomL*(bx1(k,j,i) + bx1(k,j-1,i));
-          }
-        }
-      } else {
-        for (int k=pmb->ks; k<=pmb->ke; k++)
-          buf[p++] = e3(k,j,i);
-      }         // KGF: shearing box
+      // KT: now correction for EMF is skipped for SB without OA
+      for (int k=pmb->ks; k<=pmb->ke; k++)
+        buf[p++] = e3(k,j,i);
       // x1x3 edge
     } else if (nb.eid >= 4 && nb.eid < 8) {
       int i, k;
@@ -271,20 +196,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
         k = pmb->ke + 1;
       }
       // pack e2
-      if (pbval_->shearing_box == 2
-          && nb.shear && nb.ni.ox1 != 0
-          && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
-        if (nb.ni.ox1 == -1) {
-          for (int j=pmb->js; j<=pmb->je; j++)
-            buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
-        } else if (nb.ni.ox1 == 1) {
-          for (int j=pmb->js; j<=pmb->je; j++)
-            buf[p++] = e2(k,j,i) - qomL*bx1(k,j,i);
-        }
-      } else {
-        for (int j=pmb->js; j<=pmb->je; j++)
-          buf[p++] = e2(k,j,i);
-      }
+      for (int j=pmb->js; j<=pmb->je; j++)
+        buf[p++] = e2(k,j,i);
       // x2x3 edge
     } else if (nb.eid >= 8 && nb.eid < 12) {
       int j, k;
@@ -1379,19 +1292,23 @@ void FaceCenteredBoundaryVariable::AverageFluxBoundary() {
       nl = pbval_->nblevel[1][1][2*n];
       if (nl == pmb->loc.level) { // same ; divide all the face EMFs by 2
         if (pmb->block_size.nx3 > 1) { // 3D
-          for (int k=pmb->ks+1; k<=pmb->ke; k++) {
-            for (int j=pmb->js; j<=pmb->je; j++)
-              e2(k,j,i) *= div;
-          }
-          for (int k=pmb->ks; k<=pmb->ke; k++) {
-            for (int j=pmb->js+1; j<=pmb->je; j++)
-              e3(k,j,i) *= div;
+          if (div != 1.0) {
+            for (int k=pmb->ks+1; k<=pmb->ke; k++) {
+              for (int j=pmb->js; j<=pmb->je; j++)
+                e2(k,j,i) *= div;
+            }
+            for (int k=pmb->ks; k<=pmb->ke; k++) {
+              for (int j=pmb->js+1; j<=pmb->je; j++)
+                e3(k,j,i) *= div;
+            }
           }
         } else if (pmb->block_size.nx2 > 1) { // 2D
-          for (int j=pmb->js; j<=pmb->je; j++)
-            e2(pmb->ks,j,i) *= div, e2(pmb->ks+1,j,i) *= div;
-          for (int j=pmb->js+1; j<=pmb->je; j++)
-            e3(pmb->ks,j,i) *= div;
+          if (div != 1.0) {
+            for (int j=pmb->js; j<=pmb->je; j++)
+              e2(pmb->ks,j,i) *= div, e2(pmb->ks+1,j,i) *= div;
+            for (int j=pmb->js+1; j<=pmb->je; j++)
+              e3(pmb->ks,j,i) *= div;
+          }
         } else { // 1D
           e2(pmb->ks,pmb->js,i) *= 0.5, e2(pmb->ks+1,pmb->js,i) *= 0.5;
           e3(pmb->ks,pmb->js,i) *= 0.5, e3(pmb->ks,pmb->js+1,i) *= 0.5;

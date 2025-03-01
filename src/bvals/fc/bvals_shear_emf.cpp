@@ -258,30 +258,34 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundaryCorrection() {
     if (pbval_->is_shear[upper]) {
       Real eps = (1.0-2*upper)*pbval_->eps_flux_;
       int ii = ib[upper];
-      // ex2
-      AthenaArray<Real> &pe2 = shear_map_emf_[upper].x2e;
-      for (int k=ks; k<=ke+1; k++) {
-        if (xorder<=2) {
-          porb->RemapFluxPlm(pflux, pe2, eps, 1-upper, k, 0, js, je+1, xgh);
-        } else {
-          porb->RemapFluxPpm(pflux, pe2, eps, 1-upper, k, 0, js, je+1, xgh);
-        }
-        const int shift = xgh+1-upper;
-        for (int j=js; j<=je; j++) {
-          e2(k,j,ii) = 0.5*(e2(k,j,ii)+pe2(k,0,j+shift) - (pflux(j+1) - pflux(j)));
+      if (pbval_->shearing_box == 1 || porb->orbital_advection_defined) {
+        // ex2
+        AthenaArray<Real> &pe2 = shear_map_emf_[upper].x2e;
+        for (int k=ks; k<=ke+1; k++) {
+          if (xorder<=2) {
+            porb->RemapFluxPlm(pflux, pe2, eps, 1-upper, k, 0, js, je+1, xgh);
+          } else {
+            porb->RemapFluxPpm(pflux, pe2, eps, 1-upper, k, 0, js, je+1, xgh);
+          }
+          const int shift = xgh+1-upper;
+          for (int j=js; j<=je; j++) {
+            e2(k,j,ii) = 0.5*(e2(k,j,ii)+pe2(k,0,j+shift) - (pflux(j+1) - pflux(j)));
+          }
         }
       }
-      //ex3
-      AthenaArray<Real> &pe3 = shear_map_emf_[upper].x3e;
-      for (int k=ks; k<=ke; k++) {
-        if (xorder<=2) {
-          porb->RemapFluxPlm(pflux, pe3, eps, 1-upper, k, 0, js, je+2, xgh);
-        } else {
-          porb->RemapFluxPpm(pflux, pe3, eps, 1-upper, k, 0, js, je+2, xgh);
-        }
-        const int shift = xgh+1-upper;
-        for (int j=js; j<=je+1; j++) {
-          e3(k,j,ii) = 0.5*(e3(k,j,ii)+pe3(k,0,j+shift) - (pflux(j+1) - pflux(j)));
+      if (pbval_->shearing_box == 2 || porb->orbital_advection_defined) {
+        //ex3
+        AthenaArray<Real> &pe3 = shear_map_emf_[upper].x3e;
+        for (int k=ks; k<=ke; k++) {
+          if (xorder<=2) {
+            porb->RemapFluxPlm(pflux, pe3, eps, 1-upper, k, 0, js, je+2, xgh);
+          } else {
+            porb->RemapFluxPpm(pflux, pe3, eps, 1-upper, k, 0, js, je+2, xgh);
+          }
+          const int shift = xgh+1-upper;
+          for (int j=js; j<=je+1; j++) {
+            e3(k,j,ii) = 0.5*(e3(k,j,ii)+pe3(k,0,j+shift) - (pflux(j+1) - pflux(j)));
+          }
         }
       }
       ClearEMFShearing(shear_var_emf_[upper]);
