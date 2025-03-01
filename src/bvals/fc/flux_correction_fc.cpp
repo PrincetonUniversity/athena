@@ -53,6 +53,10 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
   MeshBlock *pmb = pmy_block_;
   OrbitalAdvection *porb = pmb->porb;
 
+  // KGF: shearing box:
+  AthenaArray<Real> &bx1 = pmb->pfield->b.x1f;
+  Real qomL = pbval_->qomL_;
+
   int p = 0;
   if (nb.ni.type == NeighborConnect::face) {
     if (pmb->block_size.nx3 > 1) { // 3D
@@ -125,8 +129,19 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
           i = pmb->ie + 1;
         }
         // pack e2
-        for (int j=pmb->js; j<=pmb->je; j++)
-          buf[p++] = e2(k,j,i);
+        if (pbval_->shearing_box == 2 && nb.shear
+            && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
+          if (nb.fid == BoundaryFace::inner_x1) {
+            for (int j=pmb->js; j<=pmb->je; j++)
+              buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
+          } else if (nb.fid == BoundaryFace::outer_x1) {
+            for (int j=pmb->js; j<=pmb->je; j++)
+              buf[p++] = e2(k,j,i) - qomL*bx1(k,j,i);
+          }
+        } else {
+          for (int j=pmb->js; j<=pmb->je; j++)
+            buf[p++] = e2(k,j,i);
+        }
         // pack e3
         // KGF: shearing box
         // shift azmuthal velocity if shearing boundary blocks
@@ -157,7 +172,16 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       }
 
       // pack e2
-      buf[p++] = e2(k,j,i);
+      if (pbval_->shearing_box == 2 && nb.shear
+          && pmb->pmy_mesh->sts_loc == TaskType::main_int) {
+        if (nb.fid == BoundaryFace::inner_x1) {
+          buf[p++] = e2(k,j,i) + qomL*bx1(k,j,i);
+        } else if (nb.fid == BoundaryFace::outer_x1) {
+          buf[p++] = e2(k,j,i) - qomL*bx1(k,j,i);
+        }
+      } else {
+        buf[p++] = e2(k,j,i);
+      }
 
       // pack e3
       buf[p++] = e3(k,j,i);

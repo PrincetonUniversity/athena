@@ -1477,16 +1477,16 @@ void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
         int *counts2 = pbval_->sb_data_[upper].recv_count;
         for (int n=0; n<4; n++) {
           if (counts1[n]>0) {
-            shear_send_count_fc_[upper][n] = NGHOST*(counts1[n]*(nc3+1)
-                                             +(counts1[n]+1)*nc3);
+            shear_send_count_fc_[upper][n] = NGHOST*(counts1[n]*nc3
+                                           + counts1[n]*(nc3+1) + (counts1[n]+1)*nc3);
             shear_bd_var_[upper].sflag[n] = BoundaryStatus::waiting;
           } else {
             shear_send_count_fc_[upper][n] = 0;
             shear_bd_var_[upper].sflag[n] = BoundaryStatus::completed;
           }
           if (counts2[n]>0) {
-            shear_recv_count_fc_[upper][n] = NGHOST*(counts2[n]*(nc3+1)
-                                             +(counts2[n]+1)*nc3);
+            shear_recv_count_fc_[upper][n] = NGHOST*(counts2[n]*nc3
+                                           + counts2[n]*(nc3+1) + (counts2[n]+1)*nc3);
             shear_bd_var_[upper].flag[n] = BoundaryStatus::waiting;
           } else {
             shear_recv_count_fc_[upper][n] = 0;
