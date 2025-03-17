@@ -77,6 +77,7 @@ class NRRadiation {
 
   int nang, noct, n_fre_ang; // n_fre_ang=nang*nfreq
   int angle_flag;
+  int polar_angle;
   // variables related to the angular space transport
   int nzeta, npsi;
   AthenaArray<Real> coszeta_v, zeta_v_full, zeta_f_full, dzeta_v, dzeta_f,
