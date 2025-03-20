@@ -78,6 +78,26 @@ struct LogicalLocation { // aggregate and POD type
 //! prototype for overloading the comparison operator (defined in meshblock_tree.cpp)
 bool operator==(const LogicalLocation &l1, const LogicalLocation &l2);
 
+
+//! \fn inline std::int64_t rotl(std::int64_t i, int s)
+//  \brief left bit rotation function for 64bit integers (unsafe if s > 64)
+
+inline std::int64_t rotl(std::int64_t i, int s) {
+  return (i << s) | (i >> (64 - s));
+}
+
+
+//! \struct LogicalLocationHash
+//  \brief Hash function object for LogicalLocation
+
+struct LogicalLocationHash {
+ public:
+  std::size_t operator()(const LogicalLocation &l) const {
+    return static_cast<std::size_t>(l.lx1^rotl(l.lx2,21)^rotl(l.lx3,42));
+  }
+};
+
+
 //----------------------------------------------------------------------------------------
 //! \struct RegionSize
 //! \brief physical size and number of cells in a Mesh or a MeshBlock
