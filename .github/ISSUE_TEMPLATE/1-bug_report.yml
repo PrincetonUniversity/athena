@@ -1,0 +1,110 @@
+name: Bug Report
+description: Notify developers about a problem with Athena++
+#title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill out as many of the relevant sections of this form as possible to help us reproduce, track down, and fix the issue.
+
+        If you want support, please see the GitHub Wiki or ask questions in the Slack workspace.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisite Checklist
+      description: Please complete this checklist before submitting your issue.
+      options:
+        - label: I have checked that this issue hasn't already been reported
+          required: true
+        - label: I have checked the documentation in the Wiki for an answer
+          required: true
+        - label: I am running the latest version of Athena++
+          required: false
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary of Issue
+      description: Provide a succinct description of the issue in a few sentences
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: |
+        Please provide detailed steps to reproduce the issue, including:
+        - `configure.py` configuration script options
+        - `athinput.prob` file and/or command line options
+        - Any relevant code snippets
+      placeholder: |
+        1. Configure with '...'
+        2. Run with input file '...'
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Outcome
+      description: Describe what you expected to happen
+    validations:
+      required: false
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Outcome
+      description: Describe what actually happened. You can attach plots or screenshots here if relevant.
+    validations:
+      required: false
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Additional Comments and/or Proposed Solution
+      description: Not obligatory, but suggest a fix/reason for the bug, or ideas how to implement the addition or change
+
+  - type: input
+    id: version
+    attributes:
+      label: Athena++ Version
+      placeholder: e.g., 24.0
+    validations:
+      required: false
+
+  - type: input
+    id: compiler
+    attributes:
+      label: Compiler and Version
+      placeholder: e.g., gcc 9.3.0
+    validations:
+      required: false
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      placeholder: e.g., Ubuntu 24.10
+    validations:
+      required: false
+
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware and Cluster Name
+      description: If applicable
+      placeholder: e.g., Intel Xeon CPU Max 9470C ("Sapphire Rapids") on cluster xyz
+
+  - type: textarea
+    id: external-libs
+    attributes:
+      label: External Library Versions
+      description: If applicable, list any external libraries and their versions
+      placeholder: |
+        - HDF5: 1.14.5
+        - MPI: OpenMPI 5.0.7
