@@ -162,7 +162,6 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(MeshBlock *pmb,
 #endif
         }
       } // end "if is a shearing boundary"
-      ClearEMFShearing(shear_var_emf_[upper]);
     }  // end loop over inner, outer shearing boundaries
   } // end shearing box component of ctor
 }
