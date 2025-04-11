@@ -278,7 +278,7 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundaryCorrection() {
 void FaceCenteredBoundaryVariable::ClearEMFShearing(EdgeField &work) {
   AthenaArray<Real> &e2 = work.x2e;
   AthenaArray<Real> &e3 = work.x3e;
-  constexpr Real m = (sizeof(Real) == sizeof(float)) ? -FLT_MAX : -DBL_MAX;
+  constexpr Real m = -std::numeric_limits<Real>::max();
   int s = e2.GetSize();
   for (int i = 0; i < s; ++i)
     e2(i) = m;

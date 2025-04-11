@@ -1209,7 +1209,7 @@ void FaceCenteredBoundaryVariable::ClearCoarseFluxBoundary() {
   AthenaArray<Real> &e1 = pmb->pfield->e.x1e;
   AthenaArray<Real> &e2 = pmb->pfield->e.x2e;
   AthenaArray<Real> &e3 = pmb->pfield->e.x3e;
-  constexpr Real m = (sizeof(Real) == sizeof(float)) ? -FLT_MAX : -DBL_MAX;
+  constexpr Real m = -std::numeric_limits<Real>::max();
   int nl;
   // face
   for (int n=0; n<pbval_->nface_; n++) {
