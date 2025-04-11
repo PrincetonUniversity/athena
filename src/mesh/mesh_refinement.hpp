@@ -107,6 +107,27 @@ class MeshRefinement {
   // tuples of references to AMR-enrolled arrays (quantity, coarse_quantity)
   std::vector<std::tuple<AthenaArray<Real> *, AthenaArray<Real> *>> pvars_cc_;
   std::vector<std::tuple<FaceField *, FaceField *>> pvars_fc_;
+
+  bool flag_ffc_recv_[6];
+};
+
+
+//----------------------------------------------------------------------------------------
+//! \struct FaceFieldCorrection
+//! \brief
+
+struct FaceFieldCorrection {
+  int from, to, face, size, src;
+  Real *buf;
+#ifdef MPI_PARALLEL
+  MPI_Request req;
+#endif
+
+  FaceFieldCorrection(int ifrom, int ito, int iface, int isize, int isrc);
+  ~FaceFieldCorrection() { delete [] buf; }
+  FaceFieldCorrection(const FaceFieldCorrection& c);
+  FaceFieldCorrection(FaceFieldCorrection&& c);
+  FaceFieldCorrection& operator=(const FaceFieldCorrection &c);
 };
 
 #endif // MESH_MESH_REFINEMENT_HPP_
