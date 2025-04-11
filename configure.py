@@ -660,10 +660,11 @@ if args['cxx'] == 'icpc-phi':
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
     # New HPE Cray Compiling Environment based on clang (2019-)
+    # e.g. NAOJ's HPE Cray XD2000 with Sapphire Rapids
     definitions['COMPILER_CHOICE'] = 'cray'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'CC'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = '-Ofast -std=c++11 -flto'
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -flto' #-Ofast
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = '-lm'
 if args['cxx'] == 'clang++':
@@ -696,7 +697,7 @@ if args['cxx'] == 'aocc':
     definitions['COMPILER_CHOICE'] = 'aocc'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = '-Ofast -std=c++11 -flto -zopt'
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -flto -zopt'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 
