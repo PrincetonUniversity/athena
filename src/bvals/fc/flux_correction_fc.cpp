@@ -6,9 +6,6 @@
 //! \file flux_correction_fc.cpp
 //! \brief functions that perform flux correction for face-centered variables
 
-// C headers
-#include <float.h>
-
 // C++ headers
 #include <cmath>
 #include <cstdlib>

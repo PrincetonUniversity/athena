@@ -8,9 +8,6 @@
 //! calculations
 //========================================================================================
 
-// C headers
-#include <float.h>
-
 // C++ headers
 #include <algorithm>  // min
 #include <cmath>
