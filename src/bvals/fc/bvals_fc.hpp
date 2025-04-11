@@ -189,6 +189,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   void SetFluxBoundaryFromPolar(Real **buf_list, int num_bufs, bool is_north);
 
   void ClearCoarseFluxBoundary();
+  void AverageFluxBoundary();  //!> average flux from fine and equal lvls
   void PolarFluxBoundarySingleAzimuthalBlock();
   void CountFineEdges();   //!> called in SetupPersistentMPI()
 

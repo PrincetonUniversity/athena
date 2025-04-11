@@ -8,6 +8,8 @@
 //! calculations
 //========================================================================================
 
+// C headers
+
 // C++ headers
 #include <algorithm>  // min
 #include <cmath>
@@ -98,7 +100,28 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
   int offset[2]{0, 3};
   for (int upper=0; upper<2; upper++) {
     if (pbval_->is_shear[upper]) {
-      // load sendbuf; memcpy to recvbuf if on same rank, post MPI_Isend otherwise
+      // step 1. -- average edges of shboxvar_fc_flx_
+      // average e3 for x1x2 edge
+      for (int k=pmb->ks; k<=pmb->ke; k++) {
+        for (int j=pmb->js; j<=pmb->je+1; j+=pmb->block_size.nx2)
+          shear_var_emf_[upper].x3e(k,j) *= 0.5;
+      }
+      if(pmb->block_size.nx3 > 1) {
+        // average e2 for x1x3 edge
+        if (pbval_->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::block
+            || pbval_->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic) {
+          for (int j=pmb->js; j<=pmb->je; j++)
+            shear_var_emf_[upper].x2e(pmb->ks,j) *= 0.5;
+        }
+        if (pbval_->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::block
+            || pbval_->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic) {
+          for (int j=pmb->js; j<=pmb->je; j++)
+            shear_var_emf_[upper].x2e(pmb->ke+1,j) *= 0.5;
+        }
+      }
+
+      // step 2. -- load sendbuf; memcpy to recvbuf if on same rank, post
+      // MPI_Isend otherwise
       for (int n=0; n<3; n++) {
         SimpleNeighborBlock& snb = pbval_->sb_flux_data_[upper].send_neighbor[n];
         if (snb.rank != -1) {
@@ -275,12 +298,7 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundaryCorrection() {
 void FaceCenteredBoundaryVariable::ClearEMFShearing(EdgeField &work) {
   AthenaArray<Real> &e2 = work.x2e;
   AthenaArray<Real> &e3 = work.x3e;
-  constexpr Real m = -std::numeric_limits<Real>::max();
-  int s = e2.GetSize();
-  for (int i = 0; i < s; ++i)
-    e2(i) = m;
-  s = e3.GetSize();
-  for (int i = 0; i < s; ++i)
-    e3(i) = m;
+  e2.ZeroClear();
+  e3.ZeroClear();
   return;
 }
