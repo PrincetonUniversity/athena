@@ -664,7 +664,7 @@ if args['cxx'] == 'cray':
     definitions['COMPILER_CHOICE'] = 'cray'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'CC'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -flto' #-Ofast
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -flto'  # -Ofast
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = '-lm'
 if args['cxx'] == 'clang++':
