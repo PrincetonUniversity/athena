@@ -8,7 +8,6 @@
 
 // C/C++ headers
 #include <algorithm>  // min()
-#include <cfloat>     // FLT_MAX
 #include <cmath>      // abs
 #include <cstring>    // memcpy
 #include <iostream>   // cout, endl
