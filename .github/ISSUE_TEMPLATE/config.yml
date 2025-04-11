@@ -1,0 +1,17 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Wiki
+    url: https://github.com/PrincetonUniversity/athena/wiki
+    about: Main documentation and reference guide for the code, its algorithms, and physics capabilities. Includes a Tutorial and Quick Start guide.
+  - name: Community Discussions
+    url: https://github.com/PrincetonUniversity/athena/discussions
+    about: User community for discussion, collaboration, and assistance.
+  - name: Method Paper
+    url: https://ui.adsabs.harvard.edu/abs/2020ApJS..249....4S/abstract
+    about: Consider citing this paper if you used Athena++ in your research.
+  - name: AthenaK
+    url: https://github.com/IAS-Astrophysics/athenak
+    name: A successor project that uses the Kokkos performance portability ecosystem to run on GPUs.
+#  - name: Athena++ Slack workspace (inactive)
+#  - url: athena-pp.slack.com
+#  - about: if you dont have @princeton.edu email, you would need to request an account invite manually from us
