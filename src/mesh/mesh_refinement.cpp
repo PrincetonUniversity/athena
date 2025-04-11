@@ -1504,3 +1504,57 @@ void MeshRefinement::SetHydroRefinement(HydroBoundaryQuantity hydro_type) {
   }
   return;
 }
+
+
+// Constructor
+FaceFieldCorrection::FaceFieldCorrection(int ifrom, int ito, int iface, int isize,
+      int isrc) : from(ifrom), to(ito), face(iface), size(isize), src(isrc) {
+  if (size == 0)
+    buf = nullptr;
+  else
+    buf = new Real[size];
+#ifdef MPI_PARALLEL
+  req = MPI_REQUEST_NULL;
+#endif
+}
+
+
+// Copy constructor
+FaceFieldCorrection::FaceFieldCorrection(const FaceFieldCorrection& c) {
+  from = c.from, to = c.to, face = c.face, size = c.size, src = c.src;
+  if (size == 0)
+    buf = nullptr;
+  else
+    buf = new Real[size];
+  for (int i = 0; i < size; ++i)
+    buf[i] = c.buf[i];
+#ifdef MPI_PARALLEL
+  req = c.req;
+#endif
+}
+
+
+// Move constructor
+FaceFieldCorrection::FaceFieldCorrection(FaceFieldCorrection&& c) {
+  from = c.from, to = c.to, face = c.face, size = c.size, src = c.src;
+  buf = c.buf;
+  c.buf = nullptr;
+#ifdef MPI_PARALLEL
+  req = c.req;
+#endif
+}
+
+
+// Copy assignment operator
+FaceFieldCorrection& FaceFieldCorrection::operator=(const FaceFieldCorrection &c) {
+  if (this != &c) {
+    from = c.from, to = c.to, face = c.face, size = c.size, src = c.src;
+    for (int i = 0; i < size; ++i)
+      buf[i] = c.buf[i];
+  }
+#ifdef MPI_PARALLEL
+  req = c.req;
+#endif
+  return *this;
+}
+

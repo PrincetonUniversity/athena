@@ -108,7 +108,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     sts_loc(TaskType::main_int),
     muj(), nuj(), muj_tilde(), gammaj_tilde(),
     nbnew(), nbdel(),
-    step_since_lb(), turb_flag(), amr_updated(multilevel),
+    step_since_lb(),
+    turb_flag(pin->GetOrAddInteger("turbulence", "turb_flag", 0)),
+    amr_updated(multilevel),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
     gids_(), gide_(),
@@ -518,6 +520,9 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
     bnderef = new int[Globals::nranks];
     brdisp = new int[Globals::nranks];
     bddisp = new int[Globals::nranks];
+    int nlevel = pin->GetOrAddInteger("mesh", "numlevel", 1);
+    locmap_ = new std::unordered_map<LogicalLocation, int,
+                                     LogicalLocationHash>[nlevel - 1];
   }
 
   // initialize cost array with the simplest estimate; all the blocks are equal
@@ -565,6 +570,49 @@ Mesh::Mesh(ParameterInput *pin, int mesh_test) :
 
   if (turb_flag > 0) // TurbulenceDriver depends on the MeshBlock ctor
     ptrbd = new TurbulenceDriver(this, pin);
+
+#ifdef MPI_PARALLEL
+  if (adaptive) {
+    const int bnx1 = block_size.nx1;
+    const int bnx2 = block_size.nx2;
+    const int bnx3 = block_size.nx3;
+
+    // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as
+    // a representative of all MeshBlocks for counting the "load-balancing registered" and
+    // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
+
+    //! \todo (felker):
+    //! * add explicit check to ensure that elements of pb->vars_cc/fc_ and
+    //!   pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
+
+    // int num_cc = my_blocks(0)->pmr->pvars_cc_.size();
+    int num_fc = my_blocks(0)->vars_fc_.size();
+    int nx4_tot = 0;
+    for (AthenaArray<Real> &var_cc : my_blocks(0)->vars_cc_) {
+      nx4_tot += var_cc.GetDim4();
+    }
+    // radiation variables are not included in vars_cc as they need different order
+    if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
+      nx4_tot += my_blocks(0)->pnrrad->ir.GetDim1();
+    }
+
+    // cell-centered quantities enrolled in SMR/AMR
+    bssame = bnx1*bnx2*bnx3*nx4_tot;
+    bsf2c = (bnx1/2)*((bnx2 + 1)/2)*((bnx3 + 1)/2)*nx4_tot;
+    bsc2f = (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)*nx4_tot;
+    // face-centered quantities enrolled in SMR/AMR
+    bssame += num_fc*((bnx1 + 1)*bnx2*bnx3 + bnx1*(bnx2 + f2)*bnx3
+                      + bnx1*bnx2*(bnx3 + f3));
+    bsf2c += num_fc*(((bnx1/2) + 1)*((bnx2 + 1)/2)*((bnx3 + 1)/2)
+                     + (bnx1/2)*(((bnx2 + 1)/2) + f2)*((bnx3 + 1)/2)
+                     + (bnx1/2)*((bnx2 + 1)/2)*(((bnx3 + 1)/2) + f3));
+    bsc2f += num_fc*(((bnx1/2) + 1 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
+                     + (bnx1/2 + 2)*(((bnx2 + 1)/2) + f2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
+                     + (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*(((bnx3 + 1)/2) + f3 + 2*f3));
+    // add one more element to buffer size for storing the derefinement counter
+    bssame++;
+  }
+#endif
 }
 
 //----------------------------------------------------------------------------------------
@@ -610,7 +658,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     sts_loc(TaskType::main_int),
     muj(), nuj(), muj_tilde(), gammaj_tilde(),
     nbnew(), nbdel(),
-    step_since_lb(), turb_flag(), amr_updated(multilevel),
+    step_since_lb(),
+    turb_flag(pin->GetOrAddInteger("turbulence", "turb_flag", 0)),
+    amr_updated(multilevel),
     // private members:
     next_phys_id_(), num_mesh_threads_(pin->GetOrAddInteger("mesh", "num_threads", 1)),
     gids_(), gide_(),
@@ -857,6 +907,9 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
     bnderef = new int[Globals::nranks];
     brdisp = new int[Globals::nranks];
     bddisp = new int[Globals::nranks];
+    int nlevel = pin->GetOrAddInteger("mesh", "numlevel", 1);
+    locmap_ = new std::unordered_map<LogicalLocation, int,
+                                     LogicalLocationHash>[nlevel - 1];
   }
 
   CalculateLoadBalance(costlist, ranklist, nslist, nblist, nbtotal);
@@ -944,6 +997,49 @@ Mesh::Mesh(ParameterInput *pin, IOWrapper& resfile, int mesh_test) :
 
   if (turb_flag > 0) // TurbulenceDriver depends on the MeshBlock ctor
     ptrbd = new TurbulenceDriver(this, pin);
+
+#ifdef MPI_PARALLEL
+  if (adaptive) {
+    const int bnx1 = block_size.nx1;
+    const int bnx2 = block_size.nx2;
+    const int bnx3 = block_size.nx3;
+
+    // use the first MeshBlock in the linked list of blocks belonging to this MPI rank as
+    // a representative of all MeshBlocks for counting the "load-balancing registered" and
+    // "SMR/AMR-enrolled" quantities (loop over MeshBlock::vars_cc_, not MeshRefinement)
+
+    //! \todo (felker):
+    //! * add explicit check to ensure that elements of pb->vars_cc/fc_ and
+    //!   pb->pmr->pvars_cc/fc_ v point to the same objects, if adaptive
+
+    // int num_cc = my_blocks(0)->pmr->pvars_cc_.size();
+    int num_fc = my_blocks(0)->vars_fc_.size();
+    int nx4_tot = 0;
+    for (AthenaArray<Real> &var_cc : my_blocks(0)->vars_cc_) {
+      nx4_tot += var_cc.GetDim4();
+    }
+    // radiation variables are not included in vars_cc as they need different order
+    if ((NR_RADIATION_ENABLED|| IM_RADIATION_ENABLED)) {
+      nx4_tot += my_blocks(0)->pnrrad->ir.GetDim1();
+    }
+
+    // cell-centered quantities enrolled in SMR/AMR
+    bssame = bnx1*bnx2*bnx3*nx4_tot;
+    bsf2c = (bnx1/2)*((bnx2 + 1)/2)*((bnx3 + 1)/2)*nx4_tot;
+    bsc2f = (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)*nx4_tot;
+    // face-centered quantities enrolled in SMR/AMR
+    bssame += num_fc*((bnx1 + 1)*bnx2*bnx3 + bnx1*(bnx2 + f2)*bnx3
+                      + bnx1*bnx2*(bnx3 + f3));
+    bsf2c += num_fc*(((bnx1/2) + 1)*((bnx2 + 1)/2)*((bnx3 + 1)/2)
+                     + (bnx1/2)*(((bnx2 + 1)/2) + f2)*((bnx3 + 1)/2)
+                     + (bnx1/2)*((bnx2 + 1)/2)*(((bnx3 + 1)/2) + f3));
+    bsc2f += num_fc*(((bnx1/2) + 1 + 2)*((bnx2 + 1)/2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
+                     + (bnx1/2 + 2)*(((bnx2 + 1)/2) + f2 + 2*f2)*((bnx3 + 1)/2 + 2*f3)
+                     + (bnx1/2 + 2)*((bnx2 + 1)/2 + 2*f2)*(((bnx3 + 1)/2) + f3 + 2*f3));
+    // add one more element to buffer size for storing the derefinement counter
+    bssame++;
+  }
+#endif
 }
 
 //----------------------------------------------------------------------------------------
@@ -971,6 +1067,7 @@ Mesh::~Mesh() {
     delete [] bnderef;
     delete [] brdisp;
     delete [] bddisp;
+    delete [] locmap_;
   }
   // delete user Mesh data
   if (nreal_user_mesh_data_>0) delete [] ruser_mesh_data;
@@ -1765,6 +1862,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
             }
           }
           pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
+          if(IM_RADIATION_ENABLED)
+            pmb->pnrrad->rad_bvar.ApplyRadPhysicalBoundaries(time,0.0);
           // Perform 4th order W(U)
           pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
                                                      ph->w, pf->bcc, pmb->pcoord,
@@ -1788,6 +1887,8 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         }
 
         pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
+        if(IM_RADIATION_ENABLED)
+          pmb->pnrrad->rad_bvar.ApplyRadPhysicalBoundaries(time,0.0);
       }
       // for radiation, calculate opacity and moments
       if (NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) {

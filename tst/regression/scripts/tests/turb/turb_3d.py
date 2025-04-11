@@ -42,7 +42,7 @@ def run(**kwargs):
                  'meshblock/nx1=16',
                  'meshblock/nx2=16',
                  'meshblock/nx3=16',
-                 'problem/turb_flag=3',
+                 'turbulence/turb_flag=3',
                  'turbulence/rseed=1',
                  'output2/dt=-1', 'time/tlim=0.3']
     athena.run('hydro/athinput.turb', arguments + ['job/problem_id=turb_serial'],

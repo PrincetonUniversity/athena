@@ -42,7 +42,7 @@ def prepare(**kwargs):
 def run(**kwargs):
     wavespeeds = wavespeeds_mhd()
     for wave_flag in wave_flags:
-        time = 1.0 / abs(wavespeeds[wave_flag])
+        time = float(1.0 / abs(wavespeeds[wave_flag]))
         arguments = [
           'job/problem_id=sr_mhd_wave_{0}_low'.format(wave_flag),
           'mesh/nx1=' + repr(res_low),

@@ -282,14 +282,15 @@ cxx_choices = [
     'g++',
     'g++-simd',
     'icpx',
+    'icpx-old',
     'icpc',
     'icpc-debug',
     'icpc-phi',
     'cray',
-    'bgxlc++',
     'clang++',
     'clang++-simd',
     'clang++-apple',
+    'aocc',
 ]
 
 
@@ -297,9 +298,6 @@ def c_to_cpp(arg):
     arg = arg.replace('gcc', 'g++', 1)
     arg = arg.replace('icc', 'icpc', 1)
     arg = arg.replace('icx', 'icpx', 1)
-    if arg == 'bgxl' or arg == 'bgxlc':
-        arg = 'bgxlc++'
-
     if arg == 'clang':
         arg = 'clang++'
     else:
@@ -596,7 +594,7 @@ if args['cxx'] == 'g++-simd':
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icpx':
-    # Next-gen LLVM-based Intel oneAPI DPC++/C++ Compiler
+    # New Versions of LLVM-based Intel oneAPI DPC++/C++ Compiler
     definitions['COMPILER_CHOICE'] = 'icpx'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpx'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
@@ -607,7 +605,19 @@ if args['cxx'] == 'icpx':
       '-Wno-tautological-constant-compare -Wno-array-bounds'
     )
     # Currently unsupported, but "options to be supported" according to icpx
-    # -qnextgen-diag: '-inline-forceinline -qopt-prefetch=4 '
+    # -qnextgen-diag: '-inline-forceinline'
+    # -qopt-prefetch=4 is supported but it crashes with version 2024.0 (2024.2 is OK)
+    makefile_options['LINKER_FLAGS'] = ''
+    makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'icpx-old':
+    # Old versions of LLVM-based Intel oneAPI DPC++/C++ Compiler (backward compatibility)
+    definitions['COMPILER_CHOICE'] = 'icpx'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'icpx'
+    makefile_options['PREPROCESSOR_FLAGS'] = ''
+    makefile_options['COMPILER_FLAGS'] = (
+      '-O3 -std=c++11 -ipo -xhost -qopenmp-simd '
+      '-Wno-tautological-constant-compare -Wno-array-bounds'
+    )
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'icpc':
@@ -649,40 +659,20 @@ if args['cxx'] == 'icpc-phi':
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'cray':
-    # Cray Compiling Environment 8.4 (2015-09-24) introduces C++11 feature completeness
-    # (except "alignas"). v8.6 is C++14 feature-complete
+    # New HPE Cray Compiling Environment based on clang (2019-)
+    # e.g. NAOJ's HPE Cray XD2000 with Sapphire Rapids
     definitions['COMPILER_CHOICE'] = 'cray'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'CC'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = '-O3 -h std=c++11 -h aggress -h vector3 -hfp3'
-    makefile_options['LINKER_FLAGS'] = '-hwp -hpl=obj/lib'
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -flto'  # -Ofast
+    makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = '-lm'
-if args['cxx'] == 'bgxlc++':
-    # IBM XL C/C++ for BG/Q is NOT C++11 feature-complete as of v12.1.0.15 (2017-12-22)
-    # suppressed messages:
-    #   1500-036:  The NOSTRICT option has the potential to alter the program's semantics
-    #   1540-1401: An unknown "pragma simd" is specified
-    #   1586-083:  ld option ignored by IPA
-    #   1586-233:  Duplicate definition of symbol ignored
-    #   1586-267:  Inlining of specified subprogram failed due to the presence of a C++
-    #                exception handler
-    definitions['COMPILER_CHOICE'] = 'bgxlc++'
-    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'bgxlc++'
-    makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = (
-      '-O3 -qhot=level=1:vector -qinline=level=5:auto -qipa=level=1:noobject'
-      ' -qstrict=subnormals -qmaxmem=150000 -qlanglvl=extended0x -qsuppress=1500-036'
-      ' -qsuppress=1540-1401 -qsuppress=1586-083 -qsuppress=1586-233'
-      ' -qsuppress=1586-267'
-    )
-    makefile_options['LINKER_FLAGS'] = makefile_options['COMPILER_FLAGS']
-    makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'clang++':
     # Clang is C++11 feature-complete since v3.3 (2013-06-17)
     definitions['COMPILER_CHOICE'] = 'clang++'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -flto'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'clang++-simd':
@@ -691,7 +681,7 @@ if args['cxx'] == 'clang++-simd':
     definitions['COMPILER_CHOICE'] = 'clang++-simd'
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
-    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -fopenmp-simd'
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -flto -fopenmp-simd'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 if args['cxx'] == 'clang++-apple':
@@ -700,6 +690,14 @@ if args['cxx'] == 'clang++-apple':
     definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
     makefile_options['PREPROCESSOR_FLAGS'] = ''
     makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
+    makefile_options['LINKER_FLAGS'] = ''
+    makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'aocc':
+    # AMD Optimizing C++ Compiler based on clang
+    definitions['COMPILER_CHOICE'] = 'aocc'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'clang++'
+    makefile_options['PREPROCESSOR_FLAGS'] = ''
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -flto -zopt'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
 
@@ -785,17 +783,14 @@ if args['debug']:
     # Completely replace the --cxx= sets of default compiler flags, disable optimization,
     # and emit debug symbols in the compiled binaries
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
-            or args['cxx'] == 'icpx'
+            or args['cxx'] == 'icpx' or args['cxx'] == 'icpx-old'
             or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
-            or args['cxx'] == 'clang++-apple'):
-        makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g'  # -Og
-    if args['cxx'] == 'cray':
-        makefile_options['COMPILER_FLAGS'] = '-O0 -h std=c++11'
-    if args['cxx'] == 'bgxlc++':
-        makefile_options['COMPILER_FLAGS'] = '-O0 -g -qlanglvl=extended0x'
+            or args['cxx'] == 'clang++-apple' or args['cxx'] == 'cray'
+            or args['cxx'] == 'aocc'):
+        makefile_options['COMPILER_FLAGS'] = '-O0 -std=c++11 -g'  # -Og
     if args['cxx'] == 'icpc-phi':
-        makefile_options['COMPILER_FLAGS'] = '-O0 --std=c++11 -g -xMIC-AVX512'
+        makefile_options['COMPILER_FLAGS'] = '-O0 -std=c++11 -g -xMIC-AVX512'
 else:
     definitions['DEBUG_OPTION'] = '0'
 
@@ -811,7 +806,6 @@ if args['coverage']:
             ' -fno-inline -fno-exceptions -fno-elide-constructors'
             )
     if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
-            or args['cxx'] == 'icpx'
             or args['cxx'] == 'icpc-phi'):
         makefile_options['COMPILER_FLAGS'] += ' -O0 -prof-gen=srcpos'
     if (args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
@@ -820,7 +814,8 @@ if args['coverage']:
         makefile_options['COMPILER_FLAGS'] += (
             ' -O0 -fprofile-instr-generate -fcoverage-mapping'
             )  # use --coverage to produce GCC-compatible .gcno, .gcda output for gcov
-    if (args['cxx'] == 'cray' or args['cxx'] == 'bgxlc++'):
+    if (args['cxx'] == 'icpx' or args['cxx'] == 'icpx-old'
+            or args['cxx'] == 'cray' or args['cxx'] == 'aocc'):
         raise SystemExit(
             '### CONFIGURE ERROR: No code coverage avaialbe for selected compiler!')
 else:
@@ -843,16 +838,13 @@ else:
 if args['mpi']:
     definitions['MPI_OPTION'] = 'MPI_PARALLEL'
     if (args['cxx'] == 'g++' or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
-            or args['cxx'] == 'icpx'
+            or args['cxx'] == 'icpx' or args['cxx'] == 'icpx-old'
             or args['cxx'] == 'icpc-phi' or args['cxx'] == 'g++-simd'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
-            or args['cxx'] == 'clang++-apple'):
+            or args['cxx'] == 'clang++-apple' or args['cxx'] == 'aocc'):
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
     if args['cxx'] == 'cray':
-        makefile_options['COMPILER_FLAGS'] += ' -h mpi1'
-    if args['cxx'] == 'bgxlc++':
-        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpixlcxx'  # noqa
-    # --mpiccmd=[name] argument
+        definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'CC'
     if args['mpiccmd'] is not None:
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = args['mpiccmd']  # noqa
 else:
@@ -862,7 +854,8 @@ else:
 if args['omp']:
     definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++'
-            or args['cxx'] == 'clang++-simd'):
+            or args['cxx'] == 'clang++-simd' or args['cxx'] == 'cray'
+            or args['cxx'] == 'aocc'):
         makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
     if (args['cxx'] == 'clang++-apple'):
         # Apple Clang disables the front end OpenMP driver interface; enable it via the
@@ -870,19 +863,10 @@ if args['omp']:
         makefile_options['COMPILER_FLAGS'] += ' -Xpreprocessor -fopenmp'
         makefile_options['LIBRARY_FLAGS'] += ' -lomp'
     if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi'
-            or args['cxx'] == 'icpx'):
+            or args['cxx'] == 'icpx' or args['cxx'] == 'icpx-old'):
         makefile_options['COMPILER_FLAGS'] += ' -qopenmp'
-    if args['cxx'] == 'cray':
-        makefile_options['COMPILER_FLAGS'] += ' -homp'
-    if args['cxx'] == 'bgxlc++':
-        # use thread-safe version of compiler
-        definitions['COMPILER_COMMAND'] += '_r'
-        makefile_options['COMPILER_COMMAND'] += '_r'
-        makefile_options['COMPILER_FLAGS'] += ' -qsmp'
 else:
     definitions['OPENMP_OPTION'] = 'NOT_OPENMP_PARALLEL'
-    if args['cxx'] == 'cray':
-        makefile_options['COMPILER_FLAGS'] += ' -hnoomp'
     if (args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
             or args['cxx'] == 'icpc-phi'):
         # suppressed messages:
@@ -927,20 +911,11 @@ if args['hdf5']:
         makefile_options['LINKER_FLAGS'] += ' -L{0}/lib'.format(args['hdf5_path'])
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd'
             or args['cxx'] == 'cray' or args['cxx'] == 'icpc'
-            or args['cxx'] == 'icpx'
+            or args['cxx'] == 'icpx' or args['cxx'] == 'icpx-old'
             or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
-            or args['cxx'] == 'clang++-apple'):
+            or args['cxx'] == 'clang++-apple' or args['cxx'] == 'aocc'):
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
-    if args['cxx'] == 'bgxlc++':
-        makefile_options['PREPROCESSOR_FLAGS'] += (
-            ' -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_BSD_SOURCE'
-            ' -I/soft/libraries/hdf5/1.10.0/cnk-xl/current/include'
-            ' -I/bgsys/drivers/ppcfloor/comm/include')
-        makefile_options['LINKER_FLAGS'] += (
-            ' -L/soft/libraries/hdf5/1.10.0/cnk-xl/current/lib'
-            ' -L/soft/libraries/alcf/current/xl/ZLIB/lib')
-        makefile_options['LIBRARY_FLAGS'] += ' -lhdf5 -lz -lm'
 else:
     definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
 

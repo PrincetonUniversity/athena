@@ -51,6 +51,23 @@ void Coordinates::Initialize(ParameterInput *pin) {
     ATHENA_ERROR(msg);
   }
 
+  // x2 limits must be symmetric about PI/2 in 1D
+  if (pm->ndim == 1) {
+    Real dmax = pm->mesh_size.x2max - PI/2.0;
+    Real dmin = PI/2.0 - pm->mesh_size.x2min;
+    if (std::abs(dmax - dmin) > std::numeric_limits<Real>::epsilon()) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in BoundaryValues constructor" << std::endl
+          << "1D spherical-like coordinates requires x2-limits to be symmetric about "
+          << std::setprecision(std::numeric_limits<Real>::max_digits10 -1)
+          << std::scientific << PI/2.0 << "\n"
+          << "Current x2 domsin limits are: \n"
+          << "x2min=" << pm->mesh_size.x2min << "\n"
+          << "x2max=" << pm->mesh_size.x2max << std::endl;
+      ATHENA_ERROR(msg);
+    }
+  }
+
   // initialize volume-averaged coordinates and spacing
   // x1-direction: x1v = (\int r dV / \int dV) = d(r^4/4)/d(r^3/3)
   for (int i=il-ng; i<=iu+ng; ++i) {

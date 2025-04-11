@@ -11,10 +11,13 @@
 // C headers
 
 // C++ headers
+#include <iostream>   // endl
+#include <sstream>    // stringstream
 
 // Athena++ headers
 #include "../../../athena.hpp"
 #include "../../../coordinates/coordinates.hpp"
+#include "../../../field/field.hpp"
 #include "../../../globals.hpp"
 #include "../../../hydro/hydro.hpp"
 #include "../../../mesh/mesh.hpp"
@@ -397,4 +400,245 @@ void RadBoundaryVariable::PolarBoundarySingleAzimuthalBlock() {
     }
   }
   return;
+}
+
+
+//----------------------------------------------------------------------------------------
+//! \fn void RadBoundaryVariable::ApplyRadPhysicalBoundaries()
+// \brief Apply physical boundaries for specific intensities only
+void RadBoundaryVariable::ApplyRadPhysicalBoundaries(const Real time, const Real dt) {
+  MeshBlock *pmb = pmy_block_;
+  Coordinates *pco = pmb->pcoord;
+  BoundaryValues *pbval = pmb->pbval;
+  int bis = pmb->is - NGHOST, bie = pmb->ie + NGHOST,
+      bjs = pmb->js, bje = pmb->je,
+      bks = pmb->ks, bke = pmb->ke;
+
+  // Extend the transverse limits that correspond to periodic boundaries as they are
+  // updated: x1, then x2, then x3
+  if (!pbval->apply_bndry_fn_[BoundaryFace::inner_x2] && pmb->block_size.nx2 > 1)
+    bjs = pmb->js - NGHOST;
+  if (!pbval->apply_bndry_fn_[BoundaryFace::outer_x2] && pmb->block_size.nx2 > 1)
+    bje = pmb->je + NGHOST;
+  if (!pbval->apply_bndry_fn_[BoundaryFace::inner_x3] && pmb->block_size.nx3 > 1)
+    bks = pmb->ks - NGHOST;
+  if (!pbval->apply_bndry_fn_[BoundaryFace::outer_x3] && pmb->block_size.nx3 > 1)
+    bke = pmb->ke + NGHOST;
+
+  Hydro *ph = pmb->phydro;
+
+  Field *pf = nullptr;
+  if (MAGNETIC_FIELDS_ENABLED) {
+    pf = pmb->pfield;
+  }
+
+  NRRadiation *prad = pmb->pnrrad;
+  RadBoundaryVariable *pradbvar = &(prad->rad_bvar);
+
+
+  // Apply boundary function on inner-x1
+  if (pbval->apply_bndry_fn_[BoundaryFace::inner_x1]) {
+    SetRadPhysicalFunctions(pmb, pco, time, dt,
+                            pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
+                            BoundaryFace::inner_x1, ph->w, pf->b, prad->ir);
+  }
+
+  // Apply boundary function on outer-x1
+  if (pbval->apply_bndry_fn_[BoundaryFace::outer_x1]) {
+    SetRadPhysicalFunctions(pmb, pco, time, dt,
+                            pmb->is, pmb->ie, bjs, bje, bks, bke, NGHOST,
+                            BoundaryFace::outer_x1, ph->w, pf->b, prad->ir);
+  }
+
+  if (pmb->block_size.nx2 > 1) { // 2D or 3D
+    // Apply boundary function on inner-x2 and update W,bcc (if not periodic)
+    if (pbval->apply_bndry_fn_[BoundaryFace::inner_x2]) {
+      SetRadPhysicalFunctions(pmb, pco, time, dt,
+                            bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
+                            BoundaryFace::inner_x2, ph->w, pf->b, prad->ir);
+    }
+
+    if ((NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) &&
+           (pbval->block_bcs[BoundaryFace::inner_x2] != BoundaryFlag::block)) {
+      if (prad->rotate_theta == 1) {
+        pradbvar->RotateHPi_InnerX2(time, dt, bis, bie, pmb->js, bks, bke, NGHOST);
+      }
+    } // end radiation
+
+    // Apply boundary function on outer-x2 and update W,bcc (if not periodic)
+    if (pbval->apply_bndry_fn_[BoundaryFace::outer_x2]) {
+      SetRadPhysicalFunctions(pmb, pco, time, dt,
+                            bis, bie, pmb->js, pmb->je, bks, bke, NGHOST,
+                            BoundaryFace::outer_x2, ph->w, pf->b, prad->ir);
+    }
+  }
+
+  if (pmb->block_size.nx3 > 1) { // 3D
+    bjs = pmb->js - NGHOST;
+    bje = pmb->je + NGHOST;
+
+    // Apply boundary function on inner-x3 and update W,bcc (if not periodic)
+    if (pbval->apply_bndry_fn_[BoundaryFace::inner_x3]) {
+      SetRadPhysicalFunctions(pmb, pco, time, dt,
+                            bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
+                            BoundaryFace::inner_x3, ph->w, pf->b, prad->ir);
+    }
+
+    if ((NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) &&
+           (pbval->block_bcs[BoundaryFace::inner_x3] != BoundaryFlag::block)) {
+      if (prad->rotate_phi == 1) {
+        pradbvar->RotateHPi_InnerX3(time, dt, bis, bie, bjs, bje, pmb->ks, NGHOST);
+      } else if (prad->rotate_phi == 2) {
+        pradbvar->RotatePi_InnerX3(time, dt, bis, bie, bjs, bje, pmb->ks,NGHOST);
+      }
+    }
+
+    // Apply boundary function on outer-x3 and update W,bcc (if not periodic)
+    if (pbval->apply_bndry_fn_[BoundaryFace::outer_x3]) {
+      SetRadPhysicalFunctions(pmb, pco, time, dt,
+                            bis, bie, bjs, bje, pmb->ks, pmb->ke, NGHOST,
+                            BoundaryFace::outer_x3, ph->w, pf->b, prad->ir);
+    }
+    if ((NR_RADIATION_ENABLED || IM_RADIATION_ENABLED) &&
+           (pbval->block_bcs[BoundaryFace::outer_x3] != BoundaryFlag::block)) {
+      if (prad->rotate_phi == 1) {
+        pradbvar->RotateHPi_OuterX3(time, dt, bis, bie, bjs, bje, pmb->ke, NGHOST);
+      } else if (prad->rotate_phi == 2) {
+        pradbvar->RotatePi_OuterX3(time, dt, bis, bie, bjs, bje, pmb->ke, NGHOST);
+      }
+    }
+  }
+  return;
+}
+
+
+
+
+void RadBoundaryVariable::SetRadPhysicalFunctions(
+    MeshBlock *pmb, Coordinates *pco, Real time, Real dt,
+    int il, int iu, int jl, int ju, int kl, int ku, int ngh,
+    BoundaryFace face, AthenaArray<Real> &prim,
+    FaceField &b, AthenaArray<Real> &ir) {
+
+  NRRadiation *prad = pmb->pnrrad;
+  RadBoundaryVariable *pradbvar = &(prad->rad_bvar);
+  BoundaryValues *pbval = pmb->pbval;
+
+
+  if (pbval->block_bcs[face] ==  BoundaryFlag::user) {  // user-enrolled BCs
+      pmy_mesh_->RadBoundaryFunc_[face](pmb,pco,prad,prim,b, ir,time,dt,
+                                             il,iu,jl,ju,kl,ku,NGHOST);
+  }
+  // KGF: this is only to silence the compiler -Wswitch warnings about not handling the
+  // "undef" case when considering all possible BoundaryFace enumerator values. If "undef"
+  // is actually passed to this function, it will likely die before that ATHENA_ERROR()
+  // call, as it tries to access block_bcs[-1]
+  std::stringstream msg;
+  msg << "### FATAL ERROR in SetRadPhysicalFunctions" << std::endl
+      << "face = BoundaryFace::undef passed to this function" << std::endl;
+
+
+  switch (pbval->block_bcs[face]) {
+    case BoundaryFlag::user: // handled above, outside loop over BoundaryVariable objs
+      break;
+    case BoundaryFlag::reflect:
+      switch (face) {
+        case BoundaryFace::undef:
+          ATHENA_ERROR(msg);
+        case BoundaryFace::inner_x1:
+          pradbvar->ReflectInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::outer_x1:
+          pradbvar->ReflectOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::inner_x2:
+          pradbvar->ReflectInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::outer_x2:
+          pradbvar->ReflectOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::inner_x3:
+          pradbvar->ReflectInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+          break;
+        case BoundaryFace::outer_x3:
+          pradbvar->ReflectOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+          break;
+      }
+      break;
+    case BoundaryFlag::outflow:
+      switch (face) {
+        case BoundaryFace::undef:
+          ATHENA_ERROR(msg);
+        case BoundaryFace::inner_x1:
+          pradbvar->OutflowInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::outer_x1:
+          pradbvar->OutflowOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::inner_x2:
+          pradbvar->OutflowInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::outer_x2:
+          pradbvar->OutflowOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::inner_x3:
+          pradbvar->OutflowInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+          break;
+        case BoundaryFace::outer_x3:
+          pradbvar->OutflowOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+          break;
+      }
+      break;
+    case BoundaryFlag::vacuum: // special boundary condition type for radiation
+      switch (face) {
+        case BoundaryFace::undef:
+          ATHENA_ERROR(msg);
+        case BoundaryFace::inner_x1:
+          pradbvar->VacuumInnerX1(time, dt, il, jl, ju, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::outer_x1:
+          pradbvar->VacuumOuterX1(time, dt, iu, jl, ju, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::inner_x2:
+          pradbvar->VacuumInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::outer_x2:
+          pradbvar->VacuumOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::inner_x3:
+          pradbvar->VacuumInnerX3(time, dt, il, iu, jl, ju, kl, NGHOST);
+          break;
+        case BoundaryFace::outer_x3:
+          pradbvar->VacuumOuterX3(time, dt, il, iu, jl, ju, ku, NGHOST);
+          break;
+      }
+      break;
+    case BoundaryFlag::polar_wedge:
+      switch (face) {
+        case BoundaryFace::undef:
+          ATHENA_ERROR(msg);
+        case BoundaryFace::inner_x2:
+          pradbvar->PolarWedgeInnerX2(time, dt, il, iu, jl, kl, ku, NGHOST);
+          break;
+        case BoundaryFace::outer_x2:
+          pradbvar->PolarWedgeOuterX2(time, dt, il, iu, ju, kl, ku, NGHOST);
+          break;
+        default:
+          std::stringstream msg_polar;
+          msg_polar << "### FATAL ERROR in SetRadPhysicalBoundary" << std::endl
+                    << "Attempting to call polar wedge boundary function on \n"
+                    << "MeshBlock boundary other than inner x2 or outer x2"
+                    << std::endl;
+          ATHENA_ERROR(msg_polar);
+      }
+      break;
+    default:
+      std::stringstream msg_flag;
+      msg_flag << "### FATAL ERROR in SetRadPhysicalBoundary" << std::endl
+               << "No BoundaryPhysics function associated with provided\n"
+               << "block_bcs[" << face << "] = BoundaryFlag::"
+               << GetBoundaryString(pbval->block_bcs[face]) << std::endl;
+      ATHENA_ERROR(msg);
+      break;
+  } // end switch (block_bcs[face])
 }
