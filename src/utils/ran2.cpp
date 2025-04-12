@@ -8,8 +8,8 @@
 // C headers
 
 // C++ headers
-#include <limits>
 #include <iostream>
+#include <limits>
 
 // Athena++ headers
 #include "../athena.hpp"
