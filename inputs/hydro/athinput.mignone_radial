@@ -34,9 +34,9 @@ ix1_bc     = reflecting   # inner-X1 boundary flag
 ox1_bc     = outflow   # outer-X1 boundary flag
 x1rat      = 1.0       # non-uniform grid ratio
 
-nx2        =  1        # Number of zones in X2-direction
-x2min      = 0.0       # minimum value of X2
-x2max      = 1.0       # maximum value of X2
+nx2        =  1       # Number of zones in X2-direction
+x2min       = 1.0707963267948966   # minimum value of X2
+x2max       = 2.0707963267948966   # maximum value of X2
 ix2_bc     = periodic  # inner-X2 boundary flag
 ox2_bc     = periodic  # outer-X2 boundary flag
 

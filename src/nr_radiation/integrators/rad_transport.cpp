@@ -131,7 +131,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
                             + smin[n] * (smax[n] - vl) * irrn[n] * sm_diff[n];
         }
         if (adv_flag_ > 0) {
-          Real &advv = adv_vel(0,k,j,i);
+          const Real &advv = adv_vel(0,k,j,i);
           if (advv >0) {
             for (int n=0; n<prad->n_fre_ang; ++n) {
               x1flux(k,j,i,n) += advv * irln[n];
@@ -225,7 +225,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
             // + smax[n] * smin[n] * (irrn[n] - irln[n]))/(smax[n] - smin[n]);
           }
           if (adv_flag_ > 0) {
-            Real &advv = adv_vel(1,k,j,i);
+            const Real &advv = adv_vel(1,k,j,i);
             if (advv >0) {
               for (int n=0; n<prad->n_fre_ang; ++n) {
                 x2flux(k,j,i,n) += advv * irln[n];
@@ -323,7 +323,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
             // + smax[n] * smin[n] * (irrn[n] - irln[n]))/(smax[n] - smin[n]);
           }// end n
           if (adv_flag_ > 0) {
-            Real &advv = adv_vel(2,k,j,i);
+            const Real &advv = adv_vel(2,k,j,i);
             if (advv >0) {
               for (int n=0; n<prad->n_fre_ang; ++n) {
                 x3flux(k,j,i,n) += advv * irln[n];
@@ -348,8 +348,8 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
         for (int i=is; i<=ie; ++i) {
           // going through all frequency groups
           for (int ifr=0; ifr<nfreq; ++ifr) {
-            int &nzeta = prad->nzeta;
-            int &npsi = prad->npsi;
+            const int& nzeta = prad->nzeta;
+            const int& npsi = prad->npsi;
             int psi_limit=2*npsi;
             if (npsi == 0) psi_limit=1;
 
@@ -406,8 +406,8 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &w,
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           for (int ifr=0; ifr<nfreq; ++ifr) {
-            int &nzeta = prad->nzeta;
-            int &npsi = prad->npsi;
+            const int& nzeta = prad->nzeta;
+            const int& npsi = prad->npsi;
             int zeta_limit=2*nzeta;
             if (nzeta == 0) zeta_limit=1;
 
@@ -503,7 +503,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order) {
 
       // calculate flux with velocity times the interface state
       for (int i=is; i<=ie+1; ++i) {
-        Real &vel = adv_vel(0,k,j,i);
+        const Real &vel = adv_vel(0,k,j,i);
         if (vel >0) {
           for (int n=0; n<prad->n_fre_ang; ++n) {
             x1flux(k,j,i,n) = vel * il_(i,n);
@@ -547,7 +547,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order) {
 
         // calculate flux with velocity times the interface state
         for (int i=il; i<=iu; ++i) {
-          Real &vel = adv_vel(1,k,j,i);
+          const Real &vel = adv_vel(1,k,j,i);
           if (vel > 0) {
             for (int n=0; n<prad->n_fre_ang; ++n) {
               x2flux(k,j,i,n) = vel * il_(i,n);
@@ -592,7 +592,7 @@ void RadIntegrator::CalculateFluxes(AthenaArray<Real> &ir, const int order) {
 
         // calculate flux with velocity times the interface state
         for (int i=il; i<=iu; ++i) {
-          Real &vel = adv_vel(2,k,j,i);
+          const Real &vel = adv_vel(2,k,j,i);
           if (vel > 0) {
             for (int n=0; n<prad->n_fre_ang; ++n) {
               x3flux(k,j,i,n) = vel * il_(i,n);
@@ -707,7 +707,8 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
 
   AthenaArray<Real> &area_zeta = zeta_area_, &area_psi = psi_area_,
                       &ang_vol = ang_vol_, &dflx_ang = dflx_ang_;
-  int &nzeta = prad->nzeta, &npsi = prad->npsi;
+  const int& nzeta = prad->nzeta;
+  const int& npsi = prad->npsi;
 
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je; ++j) {

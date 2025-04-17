@@ -268,7 +268,8 @@ if __name__ == '__main__':
     parser.add_argument('--mpirun',
                         default='mpirun',
                         # 2x MPI, Slurm, PBS/Torque, LSF, Cray ALPS
-                        choices=['mpirun', 'mpiexec', 'srun', 'qsub', 'lsrun', 'aprun'],
+                        choices=['mpirun', 'mpiexec', 'srun', 'qsub', 'lsrun', 'aprun',
+                                 'ibrun'],
                         help='change MPI run wrapper command (e.g. for job schedulers)')
 
     parser.add_argument('--mpirun_opts',

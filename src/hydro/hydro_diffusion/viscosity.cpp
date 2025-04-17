@@ -25,7 +25,6 @@
 
 void HydroDiffusion::ViscousFluxIso(const AthenaArray<Real> &p,
                      const AthenaArray<Real> &p_i, AthenaArray<Real> *flx) {
-  Hydro *ph = pmb_->phydro;
   const bool f2 = pmb_->pmy_mesh->f2;
   const bool f3 = pmb_->pmy_mesh->f3;
   AthenaArray<Real> &x1flux = flx[X1DIR];
@@ -396,7 +395,9 @@ void HydroDiffusion::FaceYdz(const int k, const int j, const int il, const int i
                + 0.5*(    (prim(IM2,k+1,j,i) + prim(IM2,k+1,j-1,i))
                           - (prim(IM2,k-1,j,i) + prim(IM2,k-1,j-1,i)) )
                / pco_->h31v(i)
-               / pco_->h32f(j) / (pco_->dx3v(k-1) + pco_->dx3v(k));
+               / (pco_->dx3v(k-1) + pco_->dx3v(k))
+               // edge case for polar boundary
+               / ( pco_->IsPole(j) ? 1.0 : pco_->h32f(j) );
     }
   } else if (pmb_->pmy_mesh->f2) {
 #pragma omp simd

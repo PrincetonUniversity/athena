@@ -17,6 +17,7 @@
 #include <cstdint>     // int64_t
 #include <functional>  // reference_wrapper
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // Athena++ headers
@@ -46,20 +47,24 @@ struct TaskStates;
 class Coordinates;
 class Reconstruction;
 class Hydro;
-class NRRadiation;
-class IMRadiation;
+
 class CosmicRay;
+class CRDiffusion;
+class MGCRDiffusionDriver;
+class EquationOfState;
 class Field;
-class Particles;
-class PassiveScalars;
 class Gravity;
 class MGGravityDriver;
-class EquationOfState;
 class FFTDriver;
 class FFTGravityDriver;
 class TurbulenceDriver;
 class ChemRadiation;
 class OrbitalAdvection;
+class Particles;
+class PassiveScalars;
+class NRRadiation;
+class IMRadiation;
+class TurbulenceDriver;
 
 FluidFormulation GetFluidFormulation(const std::string& input_string);
 
@@ -124,6 +129,7 @@ class MeshBlock {
   Hydro *phydro;
   NRRadiation *pnrrad;
   CosmicRay *pcr;
+  CRDiffusion *pcrdiff;
   Field *pfield;
   Gravity *pgrav;
   PassiveScalars *pscalars;
@@ -220,6 +226,7 @@ class Mesh {
   friend class TurbulenceDriver;
   friend class MultigridDriver;
   friend class MGGravityDriver;
+  friend class MGCRDiffusionDriver;
   friend class Gravity;
   friend class HydroDiffusion;
   friend class FieldDiffusion;
@@ -267,6 +274,7 @@ class Mesh {
   TurbulenceDriver *ptrbd;
   FFTGravityDriver *pfgrd;
   MGGravityDriver *pmgrd;
+  MGCRDiffusionDriver *pmcrd;
   Units *punit;
 
   // implicit radiation iteration
@@ -333,6 +341,12 @@ class Mesh {
   bool lb_flag_, lb_automatic_, lb_manual_;
   double lb_tolerance_;
   int lb_interval_;
+  int bssame, bsf2c, bsc2f;
+
+  // for AMR face field correction
+  std::unordered_map<LogicalLocation, int, LogicalLocationHash> *locmap_;
+  std::vector<int> refined_;
+  std::vector<FaceFieldCorrection> ffc_send_, ffc_recv_;
 
   // functions
   MeshGenFunc MeshGenerator_[3];
@@ -351,7 +365,11 @@ class Mesh {
   FieldDiffusionCoeffFunc FieldDiffusivity_;
   OrbitalVelocityFunc OrbitalVelocity_, OrbitalVelocityDerivative_[2];
   MGBoundaryFunc MGGravityBoundaryFunction_[6];
-  MGSourceMaskFunc MGGravitySourceMaskFunction_;
+  MGBoundaryFunc MGCRDiffusionBoundaryFunction_[6];
+  MGBoundaryFunc MGCRDiffusionCoeffBoundaryFunction_[6];
+  MGMaskFunc MGGravitySourceMaskFunction_;
+  MGMaskFunc MGCRDiffusionSourceMaskFunction_;
+  MGMaskFunc MGCRDiffusionCoeffMaskFunction_;
 
   void AllocateRealUserMeshDataField(int n);
   void AllocateIntUserMeshDataField(int n);
@@ -381,7 +399,14 @@ class Mesh {
   // step 8: receive
   void FinishRecvSameLevel(MeshBlock *pb, Real *recvbuf);
   void FinishRecvFineToCoarseAMR(MeshBlock *pb, Real *recvbuf, LogicalLocation &lloc);
-  void FinishRecvCoarseToFineAMR(MeshBlock *pb, Real *recvbuf);
+  void ReceiveCoarseToFineAMR(MeshBlock *pb, Real *recvbuf);
+  void ProlongateMeshBlock(MeshBlock *pb);
+
+  // Face field correction
+  void PrepareAndSendFaceFieldCorrection(LogicalLocation *newloc,
+                              int *ranklist, int *newrank, int *nslist, int nbtold);
+  void ReceiveAndSetFaceFieldCorrection(int *newrank);
+  int CreateFaceFieldCorrectionMPITag(int lid, int face);
 
   //! defined in either the prob file or default_pgen.cpp in ../pgen/
   void InitUserMeshData(ParameterInput *pin);
@@ -389,10 +414,14 @@ class Mesh {
   // often used (not defined) in prob file in ../pgen/
   void EnrollUserBoundaryFunction(BoundaryFace face, BValFunc my_func);
   void EnrollUserMGGravityBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
-  void EnrollUserMGGravitySourceMaskFunction(MGSourceMaskFunc srcmask);
+  void EnrollUserMGGravitySourceMaskFunction(MGMaskFunc srcmask);
+  void EnrollUserMGCRDiffusionSourceMaskFunction(MGMaskFunc srcmask);
+  void EnrollUserMGCRDiffusionCoefficientMaskFunction(MGMaskFunc coeffmask);
 
   void EnrollUserRadBoundaryFunction(BoundaryFace face, RadBoundaryFunc my_func);
   void EnrollUserCRBoundaryFunction(BoundaryFace face, CRBoundaryFunc my_func);
+
+  void EnrollUserMGCRDiffusionBoundaryFunction(BoundaryFace dir, MGBoundaryFunc my_bc);
 
   //! \deprecated (felker):
   //! * provide trivial overload for old-style BoundaryFace enum argument

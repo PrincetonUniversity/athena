@@ -47,9 +47,9 @@ void RadBoundaryVariable::ReflectInnerX1(Real time, Real dt, int il, int jl, int
                                          int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones,
   // reflect rays along angles with opposite nx
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -83,9 +83,9 @@ void RadBoundaryVariable::ReflectOuterX1(
     Real time, Real dt, int iu, int jl, int ju, int kl, int ku, int ngh) {
   // copy radiation variables into ghost zones,
   // reflect rays along angles with opposite nx
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -119,9 +119,9 @@ void RadBoundaryVariable::ReflectInnerX2(Real time, Real dt, int il, int iu, int
   // copy radiation variables into ghost zones,
   // reflect rays along angles with opposite nx
 
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -156,9 +156,9 @@ void RadBoundaryVariable::ReflectOuterX2(Real time, Real dt, int il, int iu, int
   // copy radiation variables into ghost zones,
   // reflect rays along angles with opposite nx
 
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=1; j<=ngh; ++j) {
@@ -194,9 +194,9 @@ void RadBoundaryVariable::ReflectInnerX3(Real time, Real dt, int il, int iu, int
   // copy radiation variables into ghost zones,
   // reflect rays along angles with opposite nx
 
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {
@@ -225,9 +225,9 @@ void RadBoundaryVariable::ReflectOuterX3(Real time, Real dt, int il, int iu, int
                                          int ju, int ku, int ngh) {
   // copy radiation variables into ghost zones,
   // reflect rays along angles with opposite nx
-  int &noct = pmy_block_->pnrrad->noct;
+  const int& noct = pmy_block_->pnrrad->noct;
   int n_ang = pmy_block_->pnrrad->nang/noct; // angles per octant
-  int &nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
+  const int& nfreq = pmy_block_->pnrrad->nfreq; // number of frequency bands
 
   for (int k=1; k<=ngh; ++k) {
     for (int j=jl; j<=ju; ++j) {

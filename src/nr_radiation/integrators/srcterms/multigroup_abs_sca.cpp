@@ -52,11 +52,11 @@ Real RadIntegrator::MultiGroupAbsScat(
     AthenaArray<Real> &wmu_cm, AthenaArray<Real> &tran_coef, Real *sigma_a, Real *sigma_p,
     Real *sigma_pe, Real *sigma_s, Real dt, Real lorz, Real rho, Real &tgas,
     AthenaArray<Real> &implicit_coef, AthenaArray<Real> &ir_cm) {
-  Real& prat = pmy_rad->prat;
+  const Real& prat = pmy_rad->prat;
   Real ct = dt * pmy_rad->crat;
   Real redfactor=pmy_rad->reduced_c/pmy_rad->crat;
-  int& nang=pmy_rad->nang;
-  int& nfreq=pmy_rad->nfreq;
+  const int& nang=pmy_rad->nang;
+  const int& nfreq=pmy_rad->nfreq;
   Real gamma = pmy_rad->pmy_block->peos->GetGamma();
 
   // Temporary array

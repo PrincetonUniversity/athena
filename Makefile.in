@@ -39,7 +39,8 @@ SRC_FILES := $(wildcard src/*.cpp) \
 	     $(wildcard src/bvals/orbital/*.cpp) \
 	     $(wildcard src/bvals/sixray/*.cpp) \
 	     $(wildcard src/bvals/utils/*.cpp) \
-	     $(wildcard src/coordinates/*.cpp) \
+	     src/coordinates/coordinates.cpp \
+	     src/coordinates/$(COORDINATES_FILE) \
 	     src/eos/general/$(GENERAL_EOS_FILE) \
 	     src/eos/$(EOS_FILE) \
 	     src/eos/eos_high_order.cpp \
@@ -62,6 +63,7 @@ SRC_FILES := $(wildcard src/*.cpp) \
              $(wildcard src/nr_radiation/implicit/*.cpp) \
              $(wildcard src/cr/*.cpp) \
              $(wildcard src/cr/integrators/*.cpp) \
+             $(wildcard src/crdiffusion/*.cpp) \
 	     src/hydro/rsolvers/$(RSOLVER_DIR)$(RSOLVER_FILE) \
 	     $(wildcard src/inputs/*.cpp) \
 	     $(wildcard src/mesh/*.cpp) \

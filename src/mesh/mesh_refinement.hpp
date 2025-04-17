@@ -97,7 +97,9 @@ class MeshRefinement {
   Coordinates *pcoarsec;
 
   AthenaArray<Real> fvol_[2][2], sarea_x1_[2][2], sarea_x2_[2][3], sarea_x3_[3][2];
+  AthenaArray<Real> csarea_x1_, csarea_x2_, csarea_x3_;
   int refine_flag_, neighbor_rflag_, deref_count_, deref_threshold_;
+  bool fluxinterp_;
 
   // functions
   AMRFlagFunc AMRFlag_; // duplicate of Mesh class member
@@ -105,6 +107,27 @@ class MeshRefinement {
   // tuples of references to AMR-enrolled arrays (quantity, coarse_quantity)
   std::vector<std::tuple<AthenaArray<Real> *, AthenaArray<Real> *>> pvars_cc_;
   std::vector<std::tuple<FaceField *, FaceField *>> pvars_fc_;
+
+  bool flag_ffc_recv_[6];
+};
+
+
+//----------------------------------------------------------------------------------------
+//! \struct FaceFieldCorrection
+//! \brief
+
+struct FaceFieldCorrection {
+  int from, to, face, size, src;
+  Real *buf;
+#ifdef MPI_PARALLEL
+  MPI_Request req;
+#endif
+
+  FaceFieldCorrection(int ifrom, int ito, int iface, int isize, int isrc);
+  ~FaceFieldCorrection() { delete [] buf; }
+  FaceFieldCorrection(const FaceFieldCorrection& c);
+  FaceFieldCorrection(FaceFieldCorrection&& c);
+  FaceFieldCorrection& operator=(const FaceFieldCorrection &c);
 };
 
 #endif // MESH_MESH_REFINEMENT_HPP_

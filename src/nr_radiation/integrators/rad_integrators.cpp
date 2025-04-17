@@ -247,8 +247,8 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin) {
   imp_ang_psi_l_.NewAthenaArray(ncells3,ncells2,ncells1,prad->n_fre_ang);
 
   if (prad->angle_flag == 1) {
-    int &nzeta = prad->nzeta;
-    int &npsi = prad->npsi;
+    const int& nzeta = prad->nzeta;
+    const int& npsi = prad->npsi;
     if (nzeta > 0) {
       g_zeta_.NewAthenaArray(2*nzeta+1);
       q_zeta_.NewAthenaArray(2*nzeta+2*NGHOST);
@@ -379,165 +379,6 @@ RadIntegrator::RadIntegrator(NRRadiation *prad, ParameterInput *pin) {
     }
   }
 }
-// destructor
-
-RadIntegrator::~RadIntegrator() {
-  x1face_area_.DeleteAthenaArray();
-  if (pmy_rad->pmy_block->ncells2 > 1) {
-    x2face_area_.DeleteAthenaArray();
-    x2face_area_p1_.DeleteAthenaArray();
-  }
-  if (pmy_rad->pmy_block->ncells3 > 1) {
-    x3face_area_.DeleteAthenaArray();
-    x3face_area_p1_.DeleteAthenaArray();
-  }
-  cell_volume_.DeleteAthenaArray();
-
-  cwidth2_.DeleteAthenaArray();
-  cwidth3_.DeleteAthenaArray();
-
-  dflx_.DeleteAthenaArray();
-
-
-  il_.DeleteAthenaArray();
-  ilb_.DeleteAthenaArray();
-
-  ir_.DeleteAthenaArray();
-
-  vel_.DeleteAthenaArray();
-  velx_.DeleteAthenaArray();
-  vely_.DeleteAthenaArray();
-  velz_.DeleteAthenaArray();
-
-
-  vncsigma_.DeleteAthenaArray();
-  vncsigma2_.DeleteAthenaArray();
-  wmu_cm_.DeleteAthenaArray();
-  tran_coef_.DeleteAthenaArray();
-  cm_to_lab_.DeleteAthenaArray();
-  ir_cm_.DeleteAthenaArray();
-
-  sfac1_x_.DeleteAthenaArray();
-  sfac2_x_.DeleteAthenaArray();
-  if (pmy_rad->pmy_block->ncells2 > 1) {
-    sfac1_y_.DeleteAthenaArray();
-    sfac2_y_.DeleteAthenaArray();
-  }
-  if (pmy_rad->pmy_block->ncells3 > 1) {
-    sfac1_z_.DeleteAthenaArray();
-    sfac2_z_.DeleteAthenaArray();
-  }
-
-  sm_diff1_.DeleteAthenaArray();
-  sm_diff2_.DeleteAthenaArray();
-  vel_ex_l_.DeleteAthenaArray();
-  vel_ex_r_.DeleteAthenaArray();
-  vel_im_l_.DeleteAthenaArray();
-  vel_im_r_.DeleteAthenaArray();
-
-  adv_vel.DeleteAthenaArray();
-
-  if (IM_RADIATION_ENABLED) {
-    const_coef_.DeleteAthenaArray();
-    exp_coef_.DeleteAthenaArray();
-    const_coef1_l_.DeleteAthenaArray();
-    const_coef1_r_.DeleteAthenaArray();
-    limiter_.DeleteAthenaArray();
-
-    if (pmy_rad->pmy_block->ncells2 > 1) {
-      const_coef2_l_.DeleteAthenaArray();
-      const_coef2_r_.DeleteAthenaArray();
-      limiterj_.DeleteAthenaArray();
-    }
-    if (pmy_rad->pmy_block->ncells3 > 1) {
-      const_coef3_l_.DeleteAthenaArray();
-      const_coef3_r_.DeleteAthenaArray();
-      limiterk_.DeleteAthenaArray();
-    }
-    divflx_.DeleteAthenaArray();
-    dql_.DeleteAthenaArray();
-    dqr_.DeleteAthenaArray();
-
-    left_coef1_.DeleteAthenaArray();
-    left_coef2_.DeleteAthenaArray();
-    left_coef3_.DeleteAthenaArray();
-
-
-    ang_flx_.DeleteAthenaArray();
-    imp_ang_coef_.DeleteAthenaArray();
-    imp_ang_coef_r_.DeleteAthenaArray();
-    imp_ang_psi_l_.DeleteAthenaArray();
-    imp_ang_psi_r_.DeleteAthenaArray();
-    adv_flx_.DeleteAthenaArray();
-  }
-  implicit_coef_.DeleteAthenaArray();
-
-
-  taufact.DeleteAthenaArray();
-  tgas_.DeleteAthenaArray();
-  tgas_new_.DeleteAthenaArray();
-  vel_source_.DeleteAthenaArray();
-  dxw1_.DeleteAthenaArray();
-  dxw2_.DeleteAthenaArray();
-  rad_source.DeleteAthenaArray();
-  delta_source.DeleteAthenaArray();
-
-
-  if (pmy_rad->angle_flag == 1) {
-    int &nzeta = pmy_rad->nzeta;
-    int &npsi = pmy_rad->npsi;
-    if (nzeta > 0) {
-      g_zeta_.DeleteAthenaArray();
-      q_zeta_.DeleteAthenaArray();
-      ql_zeta_.DeleteAthenaArray();
-      qr_zeta_.DeleteAthenaArray();
-      zeta_flux_.DeleteAthenaArray();
-      zeta_area_.DeleteAthenaArray();
-    }
-    if (npsi > 0) {
-      g_psi_.DeleteAthenaArray();
-      q_psi_.DeleteAthenaArray();
-      ql_psi_.DeleteAthenaArray();
-      qr_psi_.DeleteAthenaArray();
-      psi_flux_.DeleteAthenaArray();
-      psi_area_.DeleteAthenaArray();
-    }
-    dflx_ang_.DeleteAthenaArray();
-    ang_vol_.DeleteAthenaArray();
-  }
-
-  // multi-group array
-
-  if (pmy_rad->nfreq > 1) {
-    split_ratio_.DeleteAthenaArray();
-    fre_map_matrix_.DeleteAthenaArray();
-    delta_nu_n_.DeleteAthenaArray();
-    ir_buff_.DeleteAthenaArray();
-    ir_face_.DeleteAthenaArray();
-    map_bin_start_.DeleteAthenaArray();
-    map_bin_end_.DeleteAthenaArray();
-    map_count_.DeleteAthenaArray();
-    nu_shift_.DeleteAthenaArray();
-    ir_ori_.DeleteAthenaArray();
-    ir_done_.DeleteAthenaArray();
-
-    com_b_face_coef_.DeleteAthenaArray();
-    com_d_face_coef_.DeleteAthenaArray();
-    com_b_coef_l_.DeleteAthenaArray();
-    com_b_coef_r_.DeleteAthenaArray();
-    com_d_coef_l_.DeleteAthenaArray();
-    com_d_coef_r_.DeleteAthenaArray();
-
-    nf_rhs_.DeleteAthenaArray();
-    nf_n0_.DeleteAthenaArray();
-    new_j_nu_.DeleteAthenaArray();
-  }
-  sum_nu3_.DeleteAthenaArray();
-  sum_nu2_.DeleteAthenaArray();
-  sum_nu1_.DeleteAthenaArray();
-  eq_sol_.DeleteAthenaArray();
-}
-
 
 void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
                                AthenaArray<Real> &u, AthenaArray<Real> &w,
@@ -549,12 +390,11 @@ void RadIntegrator::GetTgasVel(MeshBlock *pmb, const Real dt,
   NRRadiation *prad=pmb->pnrrad;
   Coordinates *pco=pmb->pcoord;
 
-  Real& prat = prad->prat;
+  const Real& prat = prad->prat;
   Real invcrat = 1.0/prad->crat;
 
-  int &nang =prad->nang;
-  int &nfreq=prad->nfreq;
-
+  const int &nang =prad->nang;
+  const int &nfreq=prad->nfreq;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
@@ -832,11 +672,11 @@ void RadIntegrator::PredictVel(AthenaArray<Real> &ir, int k, int j, int i,
                                Real dt, Real rho, Real *vx, Real *vy, Real *vz) {
   NRRadiation *prad = pmy_rad;
 
-  Real &prat = prad->prat;
+  const Real &prat = prad->prat;
   Real invcrat = 1.0/prad->crat;
   Real ct = dt * prad->reduced_c;
-  int& nang =prad->nang;
-  int& nfreq=prad->nfreq;
+  const int& nang =prad->nang;
+  const int& nfreq=prad->nfreq;
   // first, calculate the moments
   Real er =0.0, fr1=0.0, fr2=0.0, fr3=0.0,
       pr11=0.0,pr12=0.0,pr13=0.0,pr22=0.0,
