@@ -765,7 +765,10 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
       if ((prad->angle_flag == 1) && (imp_ang_flx_ == 0)) {
         for (int i=is; i<=ie; ++i) {
           for (int ifr=0; ifr<nfreq; ++ifr) {
-            for (int n=0; n<prad->nang; ++n)
+            int nlimit = prad->nang;
+            if(prad->polar_angle)
+              nlimit=prad->nang-2;
+            for (int n=0; n<nlimit; ++n)
               dflx_ang(n) = 0.0;
             if (nzeta * npsi > 0) {
               for (int m=0; m<2*npsi; ++m) {
@@ -809,7 +812,7 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
             Real *iro = &(ir_out(k,j,i,ifr*nang));
             Real *flxn = &(dflx_ang(0));
             Real *angv = &(ang_vol(0));
-            for (int n=0; n<prad->nang; ++n) {
+            for (int n=0; n<nlimit; ++n) {
               iro[n] = std::max(iro[n]-wght*flxn[n]/angv[n],
                                 static_cast<Real>(TINY_NUMBER));
             }
@@ -829,7 +832,10 @@ void RadIntegrator::FluxDivergence(const Real wght, AthenaArray<Real> &ir_in,
             Real *p_angflx  = &(ang_flx_(k,j,i,ifr*nang));
             Real *iro = &(ir_out(k,j,i,ifr*nang));
             Real *ang_coef = &(imp_ang_coef_(k,j,i,0));
-            for (int n=0; n<nang; ++n) {
+            int nlimit=nang;
+            if(prad->polar_angle)
+              nlimit=nang-2;
+            for (int n=0; n<nlimit; ++n) {
               iro[n] += p_angflx[n];
               iro[n] /= (1.0 + ang_coef[n]);
             }
