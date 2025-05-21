@@ -698,7 +698,7 @@ Real ChemNetwork::Edot(const Real t, const Real *y, const Real ED) {
     if (ispec_map_.find("CO") != ispec_map_.end()) {
       // Calculate effective CO column density
       Real y_CO = y0[ispec_map_["CO"]];
-      vth = std::sqrt(2. * Constants::k_boltzmann_cgs * Tcool_nm / ChemistryUtility::mCO);
+      vth = std::sqrt(2. * Constants::k_B_cgs * Tcool_nm / ChemistryUtility::mCO);
       nCO = nH_ * y_CO;
       grad_small = vth/Leff_CO_max_;
       gradeff = std::max(gradv_, grad_small);
@@ -1291,7 +1291,7 @@ void ChemNetwork::InitializeReactions() {
         frml_gr_(igr) = pr->formula_;
         kgr_(igr) = 0.;
         TDgr_(igr) = pr->gamma_;
-        nu0gr_(igr) = std::sqrt( 3.0e15*pr->gamma_*Constants::k_boltzmann_cgs
+        nu0gr_(igr) = std::sqrt( 3.0e15*pr->gamma_*Constants::k_B_cgs
                                  /(M_PI*M_PI*mi) );
         igr++;
       } else {
@@ -1357,8 +1357,8 @@ void ChemNetwork::InitializeReactions() {
         }
         nu_gc_(igc) = species_[ispec_map_[pr->reactants_[0]]].charge_ / q_charge;
         r1_gc_(igc) = br*se* M_PI *ag*ag
-                      * std::sqrt(8.*Constants::k_boltzmann_cgs/(M_PI*mi));
-        t1_gc_(igc) = ag * Constants::k_boltzmann_cgs / (qi*qi);
+                      * std::sqrt(8.*Constants::k_B_cgs/(M_PI*mi));
+        t1_gc_(igc) = ag * Constants::k_B_cgs / (qi*qi);
         igc++;
       } else if (pr->formula_ == 9) { // neutral freeze-out
         const Real ag = pr->gamma_;
@@ -1379,7 +1379,7 @@ void ChemNetwork::InitializeReactions() {
         }
         kgc_(igc) = 0.;
         nu_gc_(igc) = 9; // flag for freeze-out reaction
-        r1_gc_(igc) = M_PI*ag*ag*std::sqrt( 8.*Constants::k_boltzmann_cgs/(M_PI*mi) );
+        r1_gc_(igc) = M_PI*ag*ag*std::sqrt( 8.*Constants::k_B_cgs/(M_PI*mi) );
         t1_gc_(igc) = 0.;
         igc++;
       } else {
