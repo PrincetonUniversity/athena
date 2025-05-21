@@ -12,7 +12,6 @@
 
 // C++ headers
 #include <string>
-//#include <vector>
 #include <tuple>
 #include <iomanip>
 
@@ -38,8 +37,8 @@ static const Real echarge_cgs    = 4.80320427e-10;
 static const Real kelvin_cgs     = 1;
 static const Real yrinmyr        = 1e6;
 static const Real cminkm         = 100000;
-static const Real thomson        = 6.6524e-25;    // Thompson cross section (cm^2)
-static const Real mp             = 1.6726231e-24; // Mass of a proton (g)
+static const Real thomson        = 6.6524e-25;       // Thompson cross section (cm^2)
+static const Real mp             = 1.6726231e-24;    // Mass of a proton (g)
 } // namespace Constants
 
 //! \brief Class for units
@@ -62,17 +61,17 @@ class Units {
   std::string unit_system;
 
   // Code to physical units conversion basis
-  // Value and unit stored in a tuple (value,unit)
+  // Value and unit stored in a tuple (val,unit)
   // To access basis value use: std::get<0>(basis_X)
-  // To access basis unit use:  std::get<1>(basis_X)
+  // To access basis unit use : std::get<1>(basis_X)
   //
   // User chooses a 'length' basis (with possible units):  
   //   length (pc, kpc, cm, m, km)
   // Then either 'time' or 'velocity' (with possible units):
   //   time (yr, Myr, s)
-  //   velocity (km/s, cm/s)
+  //   velocity (km/s, cm/s, m/s)
   // Then either 'ndensity' or 'mass' (with possible units):
-  //   ndensity (n/cm^3)
+  //   ndensity (n/cm^3, n/m^3)
   //   mass (Msun, g, kg)
 
   std::tuple<Real, std::string> basis_length;

@@ -39,7 +39,7 @@ Units::Units(ParameterInput *pin) :
   //     [mass]   = mean_weight*m_h*(pc/cm)^3
   //     [length] = pc
   //     [time]   = (pc/km)*s
-  // 2) galaxy unit system (example)
+  // 2) galaxy unit system
   //     basis_length   = 1.0 kpc
   //     basis_time     = 1.0 Myr
   //     basis_ndensity = 1.0 n/cm^3
@@ -47,7 +47,7 @@ Units::Units(ParameterInput *pin) :
   //     [mass]   = n*mean_weight*m_h*(pc/cm)^3
   //     [length] = kpc
   //     [time]   = Myr
-  // 3) ism_pnM (pc, ndensity, Myr) unit system
+  // 3) galaxypc unit system
   //     basis_length   = 1.0 pc
   //     basis_time     = 1.0 Myr
   //     basis_ndensity = 1.0 n/cm^3
@@ -55,15 +55,31 @@ Units::Units(ParameterInput *pin) :
   //     [mass]   = n*mean_weight*m_h*(pc/cm)^3
   //     [length] = pc
   //     [time]   = Myr
-  // 4) custom_basis
+  // 4) ism_SR unit system (for special relativity)
+  //     basis_length   = 1.0 pc
+  //     basis_velocity = 2.99792458e5 km/s (speed of light)
+  //     basis_ndensity = 1.0 n/cm^3
+  // 5) cgs unit system
+  //     basis_length   = 1.0 cm
+  //     basis_mass     = 1.0 g
+  //     basis_time     = 1.0 s
+  //     basis_velocity = 1.0 cm/s
+  //     basis_ndensity = 1.0 n/cm^3
+  // 6) SI unit system
+  //     basis_length   = 1.0 m
+  //     basis_mass     = 1.0 kg
+  //     basis_time     = 1.0 s
+  //     basis_velocity = 1.0 m/s
+  //     basis_ndensity = 1.0 n/m^3
+  // 7) custom_basis
   //    User chooses a 'length' basis (with possible units):  
-  //      length (pc, kpc)
+  //      length (pc, kpc, cm, m, km)
   //    Then either 'time' or 'velocity' (with possible units):
-  //      time (yr, Myr)
-  //      velocity (km/s)
+  //      time (yr, Myr, s)
+  //      velocity (km/s, cm/s, m/s)
   //    Then either 'ndensity' or 'mass' (with possible units):
-  //      ndensity (n/cm^3)
-  //      mass (Msun)
+  //      ndensity (n/cm^3, n/m^3)
+  //      mass (Msun, g, kg)
   //
   // add other default units system here
   // set private MLT unit variables here
@@ -108,7 +124,32 @@ Units::Units(ParameterInput *pin) :
 
     velocity_basis = true;
 
-  } else if (unit_system.compare("custom_basis") == 0) {
+  } else if (unit_system.compare("cgs") == 0) {
+    // ism unit system, but for special relativity
+    basis_length = std::make_tuple(1.0,"cm");
+    basis_time   = std::make_tuple(1.0,"s");
+    basis_mass   = std::make_tuple(1.0,"g");
+    
+    // Complete the basis set with dummy values and default units
+    basis_velocity = std::make_tuple(1.0,"cm/s");
+    basis_ndensity = std::make_tuple(1.0,"n/cm^3");
+
+    mass_basis = true;
+
+  } else if (unit_system.compare("SI") == 0) {
+    // ism unit system, but for special relativity
+    basis_length = std::make_tuple(1.0,"m");
+    basis_time   = std::make_tuple(1.0,"s");
+    basis_mass   = std::make_tuple(1.0,"kg");
+    
+    // Complete the basis set with dummy values and default units
+    basis_velocity = std::make_tuple(1.0,"m/s");
+    basis_ndensity = std::make_tuple(1.0,"n/m^3");
+
+    mass_basis = true;
+
+  } // New unit basis systems should be added here
+  else if (unit_system.compare("custom_basis") == 0) {
     int basis_count = 0;
 
     // Create the tuples with dummy values and default units if not given
@@ -478,9 +519,11 @@ Real Units::Returncgs(std::string parameter,Real value,std::string unit) {
   } else if (parameter == "basis_ndensity") {
     if (unit == "n/cm^3") {
       code_cgs_ = value;
+    } else if (unit == "n/m^3") {
+      code_cgs_ = value/CUBE(100.0);
     } // If more ndensity units are added, they should be added here
     else {
-      msg << "  Allowed units are: n/cm^3" << std::endl;
+      msg << "  Allowed units are: n/cm^3, or n/m^3" << std::endl;
       ATHENA_ERROR(msg);
     }
   } else if (parameter == "basis_mass") {

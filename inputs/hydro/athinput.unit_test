@@ -1,0 +1,124 @@
+<comment>
+problem    = unit test
+configure  = --prob=unit_test
+
+<job>
+problem_id = unit_test      # problem ID: basename of output filenames
+
+<output1>
+file_type  = hdf5      # Binary data dump
+variable   = prim      # variables to be output
+dt         = 1.0       # time increment between outputs
+
+<time>
+cfl_number = 0.4        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = 0          # cycle limit
+tlim       = 4.0        # time limit
+
+<mesh>
+nx1        = 64         # Number of zones in X1-direction
+x1min      = -15.0      # minimum value of X1
+x1max      = 15.0       # maximum value of X1
+ix1_bc     = periodic   # inner-X1 boundary flag
+ox1_bc     = periodic   # outer-X1 boundary flag
+
+nx2        = 64         # Number of zones in X2-direction
+x2min      = -12.5      # minimum value of X2
+x2max      = 12.5       # maximum value of X2
+ix2_bc     = periodic   # inner-X2 boundary flag
+ox2_bc     = periodic   # outer-X2 boundary flag
+
+nx3        = 64         # Number of zones in X3-direction
+x3min      = -10.0      # minimum value of X3
+x3max      = 10.0       # maximum value of X3
+ix3_bc     = periodic   # inner-X3 boundary flag
+ox3_bc     = periodic   # outer-X3 boundary flag
+
+<hydro>
+gamma      = 1.666666666667 # gamma = C_p/C_v
+
+<problem>
+# Values of length, time, mass, ndensity, and velocity can be in
+# the units of the basis unit system.
+# All other values (e.g. energy, pressure, etc.) will have to be
+# in cgs units.
+pamb       = 1.1   # ambient pressure in **cgs** units
+energy     = 2.2   # energy value in **cgs** units
+ndamb      = 3.3   # ambient number density (ndensity) in physical units
+ndin       = 4.4   # number density (ndensity) inside radius in physical units
+radius     = 5.5   # radius of high density in physical units
+mass_val   = 6.6   # mass value in physical units
+vel        = 7.7   # velocity value in physical units
+
+<units>
+#Default value for the mean atomic weight is 1.4 
+mean_weight = 1.4
+
+#Preset unit systems
+unit_system = ism
+#unit_system = galaxy
+#unit_system = galaxypc
+#unit_system = ism_SR
+#unit_system = cgs
+#unit_system = SI
+
+#Examples of custom_basis unit systems
+#Default units are:
+#  length_unit   = pc
+#  time_unit     = Myr
+#  velocity_unit = km/s
+#  ndensity_unit = n/cm^3
+#  mass_unit     = Msun
+
+#Recreates "ism" unit system
+#unit_system = custom_basis
+#length      = 1.0    # pc
+#velocity    = 1.0    # km/s
+#ndensity    = 1.0    # n/cm^3
+
+#Recreates "galaxy" unit system
+#unit_system = custom_basis
+#length      = 1.0    # kpc
+#length_unit = kpc
+#time        = 1.0    # Myr
+#ndensity    = 1.0    # n/cm^3
+
+#Recreates "galaxypc" unit system
+#unit_system = custom_basis
+#length      = 1.0    # pc
+#time        = 1.0    # Myr
+#ndensity    = 1.0    # n/cm^3
+
+#Recreates "ism_SR" unit system
+#unit_system = custom_basis
+#length      = 1.0          # pc
+#velocity    = 2.99792458e5 # km/s
+#ndensity    = 1.0          # n/cm^3
+
+#Recreates cgs unit system
+#unit_system = custom_basis
+#length      = 1.0
+#length_unit = cm
+#time        = 1.0
+#time_unit   = s 
+#mass        = 1.0
+#mass_unit   = g
+#velocity_unit = cm/s
+
+#Recreates SI unit system
+#unit_system = custom_basis
+#length      = 1.0
+#length_unit = m
+#time        = 1.0
+#time_unit   = s 
+#mass        = 1.0
+#mass_unit   = kg
+#velocity_unit = m/s
+#ndensity_unit = n/m^3
+
+#Example of a "custom" unit system
+#Recreates "ism" unit system
+#unit_system = custom
+#mass_cgs    = 6.882618e+31   # 1 n/cm^3*pc^3
+#length_cgs  = 3.08567758e+18 # 1 pc 
+#time_cgs    = 3.085678e+13   # 1 pc/1 km/s
