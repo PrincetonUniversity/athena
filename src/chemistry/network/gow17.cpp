@@ -653,7 +653,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
     //Thermo::CoolingHotGas(nH_,  T, zdg_);
     // CO rotational lines
     // Calculate effective CO column density
-    vth = std::sqrt(2. * Constants::k_boltzmann_cgs * Tcool_nm / ChemistryUtility::mCO);
+    vth = std::sqrt(2. * Constants::k_B_cgs * Tcool_nm / ChemistryUtility::mCO);
     nCO = nH_ * yprev[iCO_];
     grad_small_ = vth/Leff_CO_max_;
     gradeff = std::max(gradv_, grad_small_);
