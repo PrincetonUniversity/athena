@@ -28,6 +28,7 @@ static const Real yr_cgs         = 3.15576e7;    // Changed from 3.155815e7 to a
 static const Real Myr_cgs        = 3.15576e13;
 static const Real pc_cgs         = 3.08567758e18;// Changed from 3.085678e+18 to agree with Astropy
 static const Real kpc_cgs        = 3.08567758e21;
+static const Real au_cgs         = 1.495978707e13;
 static const Real km_s_cgs       = 1.0e5;
 static const Real H_mass_cgs     = 1.6733e-24;
 static const Real rad_aconst_cgs = 7.5646e-15;
@@ -66,7 +67,7 @@ class Units {
   // To access basis unit use : std::get<1>(basis_X)
   //
   // User chooses a 'length' basis (with possible units):  
-  //   length (pc, kpc, cm, m, km)
+  //   length (pc, kpc, au, cm, m, km)
   // Then either 'time' or 'velocity' (with possible units):
   //   time (yr, Myr, s)
   //   velocity (km/s, cm/s, m/s)

@@ -73,7 +73,7 @@ Units::Units(ParameterInput *pin) :
   //     basis_ndensity = 1.0 n/m^3
   // 7) custom_basis
   //    User chooses a 'length' basis (with possible units):  
-  //      length (pc, kpc, cm, m, km)
+  //      length (pc, kpc, au, cm, m, km)
   //    Then either 'time' or 'velocity' (with possible units):
   //      time (yr, Myr, s)
   //      velocity (km/s, cm/s, m/s)
@@ -481,6 +481,8 @@ Real Units::Returncgs(std::string parameter,Real value,std::string unit) {
       code_cgs_ = Constants::pc_cgs*value;
     } else if (unit == "kpc") {
       code_cgs_ = Constants::kpc_cgs*value;
+    } else if (unit == "au") {
+      code_cgs_ = Constants::au_cgs*value;
     } else if (unit == "cm") {
       code_cgs_ = value;
     } else if (unit == "m") {
@@ -489,7 +491,7 @@ Real Units::Returncgs(std::string parameter,Real value,std::string unit) {
       code_cgs_ = 1000*value;
     } // If more length units are added, they should be added here
     else {
-      msg << "  Allowed units are: pc, kpc, cm, m, or km" << std::endl;
+      msg << "  Allowed units are: pc, kpc, au, cm, m, or km" << std::endl;
       ATHENA_ERROR(msg);
     }
   } else if (parameter == "basis_time") {
