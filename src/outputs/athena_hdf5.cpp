@@ -61,8 +61,8 @@ using H5Real = float;
 //! \fn void ATHDF5Output:::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 //! \brief Cycles over all MeshBlocks and writes OutputData in the Athena++ HDF5 format,
 //!        one file per output using parallel IO.
-
-void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
+template<typename T>
+void ATHDF5Output<T>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // HDF5 structures
   hid_t file;                                  // file to be written to
   hsize_t dims_start[5], dims_count[5];        // array sizes
@@ -86,13 +86,13 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   int num_blocks_local;                        // number of MeshBlocks on this Mesh
   int *levels_mesh;                            // array of refinement levels on Mesh
   std::int64_t *locations_mesh;                // array of logical locations on Mesh
-  H5Real *x1f_mesh;                            // array of x1 values on Mesh
-  H5Real *x2f_mesh;                            // array of x2 values on Mesh
-  H5Real *x3f_mesh;                            // array of x3 values on Mesh
-  H5Real *x1v_mesh;                            // array of x1 values on Mesh
-  H5Real *x2v_mesh;                            // array of x2 values on Mesh
-  H5Real *x3v_mesh;                            // array of x3 values on Mesh
-  H5Real **data_buffers;                       // array of data buffers
+  T *x1f_mesh;                            // array of x1 values on Mesh
+  T *x2f_mesh;                            // array of x2 values on Mesh
+  T *x3f_mesh;                            // array of x3 values on Mesh
+  T *x1v_mesh;                            // array of x1 values on Mesh
+  T *x2v_mesh;                            // array of x2 values on Mesh
+  T *x3v_mesh;                            // array of x3 values on Mesh
+  T **data_buffers;                       // array of data buffers
 
   MeshBlock *pmb = pm->my_blocks(0);
   OutputData* pod;
@@ -316,15 +316,15 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // Allocate contiguous buffers for data in memory
   levels_mesh = new int[num_blocks_local];
   locations_mesh = new std::int64_t[num_blocks_local * 3];
-  x1f_mesh = new H5Real[num_blocks_local * (nx1+1)];
-  x2f_mesh = new H5Real[num_blocks_local * (nx2+1)];
-  x3f_mesh = new H5Real[num_blocks_local * (nx3+1)];
-  x1v_mesh = new H5Real[num_blocks_local * nx1];
-  x2v_mesh = new H5Real[num_blocks_local * nx2];
-  x3v_mesh = new H5Real[num_blocks_local * nx3];
-  data_buffers = new H5Real *[num_datasets];
+  x1f_mesh = new T[num_blocks_local * (nx1+1)];
+  x2f_mesh = new T[num_blocks_local * (nx2+1)];
+  x3f_mesh = new T[num_blocks_local * (nx3+1)];
+  x1v_mesh = new T[num_blocks_local * nx1];
+  x2v_mesh = new T[num_blocks_local * nx2];
+  x3v_mesh = new T[num_blocks_local * nx3];
+  data_buffers = new T *[num_datasets];
   for (int n = 0; n < num_datasets; ++n)
-    data_buffers[n] = new H5Real[num_variables[n]*num_blocks_local*nx3*nx2*nx1];
+    data_buffers[n] = new T[num_variables[n]*num_blocks_local*nx3*nx2*nx1];
 
   int nb = 0, nba = 0;
   for (int b=0; b<pm->nblocal; ++b) {
@@ -361,10 +361,10 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
       // Load coordinates
       if (output_params.output_slicex1) {
         x1f_mesh[nba*(nx1+1)] =
-            static_cast<H5Real>(pmb->pcoord->x1f(output_params.islice));
-        x1f_mesh[nba*(nx1+1)+1] = static_cast<H5Real>(
+            static_cast<T>(pmb->pcoord->x1f(output_params.islice));
+        x1f_mesh[nba*(nx1+1)+1] = static_cast<T>(
             pmb->pcoord->x1f(output_params.islice+1));
-        x1v_mesh[nba*nx1] = static_cast<H5Real>(pmb->pcoord->x1v(output_params.islice));
+        x1v_mesh[nba*nx1] = static_cast<T>(pmb->pcoord->x1v(output_params.islice));
       } else if (output_params.output_sumx1) {
         x1f_mesh[nba*(nx1+1)] = pmb->pcoord->x1f(pmb->is);
         x1f_mesh[nba*(nx1+1)+1] = pmb->pcoord->x1f(pmb->ie+1);
@@ -375,17 +375,17 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         }
       } else {
         for (int i=out_is, index=0; i <= out_ie+1; ++i, ++index)
-          x1f_mesh[nba*(nx1+1) + index] = static_cast<H5Real>(pmb->pcoord->x1f(i));
+          x1f_mesh[nba*(nx1+1) + index] = static_cast<T>(pmb->pcoord->x1f(i));
         for (int i=out_is, index=0; i <= out_ie; ++i, ++index)
-          x1v_mesh[nba*nx1 + index] = static_cast<H5Real>(pmb->pcoord->x1v(i));
+          x1v_mesh[nba*nx1 + index] = static_cast<T>(pmb->pcoord->x1v(i));
       }
       if (output_params.output_slicex2) {
         x2f_mesh[nba*(nx2+1)]
-            = static_cast<H5Real>(pmb->pcoord->x2f(output_params.jslice));
+            = static_cast<T>(pmb->pcoord->x2f(output_params.jslice));
         x2f_mesh[nba*(nx2+1)+1]
-            = static_cast<H5Real>(pmb->pcoord->x2f(output_params.jslice+1));
+            = static_cast<T>(pmb->pcoord->x2f(output_params.jslice+1));
         x2v_mesh[nba*nx2]
-            = static_cast<H5Real>(pmb->pcoord->x2v(output_params.jslice));
+            = static_cast<T>(pmb->pcoord->x2v(output_params.jslice));
       } else if (output_params.output_sumx2) {
         x2f_mesh[nba*(nx2+1)] = pmb->pcoord->x2f(pmb->js);
         x2f_mesh[nba*(nx2+1)+1] = pmb->pcoord->x2f(pmb->je+1);
@@ -396,17 +396,17 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         }
       } else {
         for (int j=out_js, index=0; j <= out_je+1; ++j, ++index)
-          x2f_mesh[nba*(nx2+1) + index] = static_cast<H5Real>(pmb->pcoord->x2f(j));
+          x2f_mesh[nba*(nx2+1) + index] = static_cast<T>(pmb->pcoord->x2f(j));
         for (int j=out_js, index=0; j <= out_je; ++j, ++index)
-          x2v_mesh[nba*nx2 + index] = static_cast<H5Real>(pmb->pcoord->x2v(j));
+          x2v_mesh[nba*nx2 + index] = static_cast<T>(pmb->pcoord->x2v(j));
       }
       if (output_params.output_slicex3) {
         x3f_mesh[nba*(nx3+1)]
-            = static_cast<H5Real>(pmb->pcoord->x3f(output_params.kslice));
+            = static_cast<T>(pmb->pcoord->x3f(output_params.kslice));
         x3f_mesh[nba*(nx3+1)+1]
-            = static_cast<H5Real>(pmb->pcoord->x3f(output_params.kslice+1));
+            = static_cast<T>(pmb->pcoord->x3f(output_params.kslice+1));
         x3v_mesh[nba*nx3]
-            = static_cast<H5Real>(pmb->pcoord->x3v(output_params.kslice));
+            = static_cast<T>(pmb->pcoord->x3v(output_params.kslice));
       } else if (output_params.output_sumx3) {
         x3f_mesh[nba*(nx3+1)] = pmb->pcoord->x3f(pmb->ks);
         x3f_mesh[nba*(nx3+1)+1] = pmb->pcoord->x3f(pmb->ke+1);
@@ -417,12 +417,13 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
         }
       } else {
         for (int k=out_ks, index=0; k <= out_ke+1; ++k, ++index)
-          x3f_mesh[nba*(nx3+1) + index] = static_cast<H5Real>(pmb->pcoord->x3f(k));
+          x3f_mesh[nba*(nx3+1) + index] = static_cast<T>(pmb->pcoord->x3f(k));
         for (int k=out_ks, index=0; k <= out_ke; ++k, ++index)
-          x3v_mesh[nba*nx3 + index] = static_cast<H5Real>(pmb->pcoord->x3v(k));
+          x3v_mesh[nba*nx3 + index] = static_cast<T>(pmb->pcoord->x3v(k));
       }
 
       // store the data into the data_buffers
+      // TODO(msbc): use vmin/vmax for int conversion
       if (variable.compare("prim") == 0 || variable.compare("cons") == 0) {
         int n_dataset = 0;
         int ndv = 0;
@@ -524,7 +525,7 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
                          H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, &time);
   H5Aclose(attribute);
-  code_time = static_cast<H5Real>(time); // output time for xdmf
+  code_time = static_cast<T>(time); // output time for xdmf
 
   // Write coordinate system
   if (std::strlen(COORDINATE_SYSTEM) > max_name_length) {
@@ -863,7 +864,8 @@ void ATHDF5Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 //!   file size scales proportional to total number of MeshBlocks
 //!   for many small MeshBlocks, this can take most of the output writing time
 
-void ATHDF5Output::MakeXDMF() {
+template<typename T>
+void ATHDF5Output<T>::MakeXDMF() {
   std::string filename_aux(filename);
   filename_aux.append(".xdmf");
   std::ofstream xdmf(filename_aux.c_str());
@@ -959,5 +961,16 @@ void ATHDF5Output::MakeXDMF() {
   xdmf.close();
   return;
 }
+
+// Explicit template instantiations for all types used in outputs.cpp
+#ifdef fp16_t
+template class ATHDF5Output<fp16_t>;
+#endif
+template class ATHDF5Output<float>;
+template class ATHDF5Output<double>;
+template class ATHDF5Output<long double>;
+template class ATHDF5Output<std::uint8_t>;
+template class ATHDF5Output<std::uint16_t>;
+template class ATHDF5Output<std::uint32_t>;
 
 #endif  // HDF5OUTPUT

@@ -18,6 +18,13 @@
 #include "athena_arrays.hpp"
 #include "defs.hpp"
 
+// See if we have FP16 support
+#if defined(__fp16) || defined(__FLT16_MAX__) || defined(__ARM_FP16_FORMAT_IEEE)
+#define fp16_t __fp16
+#elif defined(_Float16)
+#define fp16_t _Float16
+#endif
+
 // primitive type alias that allows code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
 using Real = float;

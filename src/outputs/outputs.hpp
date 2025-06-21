@@ -16,6 +16,7 @@
 
 // Athena++ headers
 #include "../athena.hpp"
+#include "H5Tpublic.h"
 #include "io_wrapper.hpp"
 
 #ifdef HDF5OUTPUT
@@ -47,13 +48,16 @@ struct OutputParameters {
   bool include_ghost_zones, cartesian_vector;
   bool orbital_system_output;
   int islice, jslice, kslice;
+  Real vmin, vmax; // used for casting to integer for HDF5 output
   Real x1_slice, x2_slice, x3_slice;
   // TODO(felker): some of the parameters in this class are not initialized in constructor
   OutputParameters() : block_number(0), next_time(0.0), dt(0.0), file_number(0),
                        output_slicex1(false),output_slicex2(false),output_slicex3(false),
                        output_sumx1(false), output_sumx2(false), output_sumx3(false),
                        include_ghost_zones(false), cartesian_vector(false),
-                       islice(0), jslice(0), kslice(0) {}
+                       islice(0), jslice(0), kslice(0),
+                       vmin(std::numeric_limits<Real>::quiet_NaN()),
+                       vmax(std::numeric_limits<Real>::quiet_NaN()) {}
 };
 
 //----------------------------------------------------------------------------------------
@@ -161,10 +165,12 @@ class RestartOutput : public OutputType {
 //! \class ATHDF5Output
 //! \brief derived OutputType class for Athena HDF5 files
 
+template <typename T>
 class ATHDF5Output : public OutputType {
  public:
   // Function declarations
-  explicit ATHDF5Output(OutputParameters oparams) : OutputType(oparams) {}
+  explicit ATHDF5Output(OutputParameters oparams) :
+           OutputType(oparams), H5Type(get_hdf5_type<T>()) {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
   void MakeXDMF();
 
@@ -181,6 +187,27 @@ class ATHDF5Output : public OutputType {
   int *num_variables;                         // list of counts of variables per dataset
   char (*dataset_names)[max_name_length+1];   // array of C-string names of datasets
   char (*variable_names)[max_name_length+1];  // array of C-string names of variables
+  hid_t H5Type;                               // HDF5 type of data (float, double, etc.)
+
+  template<typename U = T>
+  inline hid_t get_hdf5_type();
+
+#ifdef fp16_t
+  template<>
+  inline hid_t get_hdf5_type<fp16_t>()  { return H5T_NATIVE_FLOAT16; }
+#endif
+  template<>
+  inline hid_t get_hdf5_type<float>()  { return H5T_NATIVE_FLOAT; }
+  template<>
+  inline hid_t get_hdf5_type<double>() { return H5T_NATIVE_DOUBLE; }
+  template<>
+  inline hid_t get_hdf5_type<long double>() { return H5T_NATIVE_LDOUBLE; }
+  template<>
+  inline hid_t get_hdf5_type<std::uint8_t>() { return H5T_NATIVE_UINT8; }
+  template<>
+  inline hid_t get_hdf5_type<std::uint16_t>() { return H5T_NATIVE_UINT16; }
+  template<>
+  inline hid_t get_hdf5_type<unsigned int>()    { return H5T_NATIVE_UINT; }
 };
 #endif
 

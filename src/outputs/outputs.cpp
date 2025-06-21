@@ -104,6 +104,11 @@
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
+#ifdef HDF5OUTPUT
+// External library headers
+#include <hdf5.h>  // H5[F|P|S|T]_*, H5[A|D|F|P|S|T]*(), hid_t
+#endif
+
 //----------------------------------------------------------------------------------------
 //! OutputType constructor
 
@@ -114,6 +119,34 @@ OutputType::OutputType(OutputParameters oparams) :
     // nested doubly linked list of OutputData:
     pfirst_data_(),  // Initialize head node to nullptr
     plast_data_() { // Initialize tail node to nullptr
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn bool vmin_vmax_check(const OutputParameters &op) {
+//! \brief helper function to check vmin and vmax values in OutputParameters
+
+inline bool vmin_vmax_check(OutputParameters &op, ParameterInput *pin) {
+  std::stringstream msg;
+  op.vmin = pin->GetReal(op.block_name, "vmin");
+  op.vmax = pin->GetReal(op.block_name, "vmax");
+  if (~std::isfinite(op.vmin)) {
+    msg << "### FATAL ERROR in Outputs constructor" << std::endl
+        << "vmin is not a finite number in output block '" << op.block_name << "'"
+        << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  if (~std::isfinite(op.vmax)) {
+    msg << "### FATAL ERROR in Outputs constructor" << std::endl
+        << "vmax is not a finite number in output block '" << op.block_name << "'"
+        << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  if (op.vmin >= op.vmax) {
+    msg << "### FATAL ERROR in Outputs constructor" << std::endl
+        << "vmin >= vmax in output block '" << op.block_name << "'" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  return true;
 }
 
 //----------------------------------------------------------------------------------------
@@ -266,7 +299,55 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         } else if (op.file_type.compare("ath5") == 0
                    || op.file_type.compare("hdf5") == 0) {
 #ifdef HDF5OUTPUT
-          pnew_type = new ATHDF5Output(op);
+          // HDF5 file format requested
+          //
+          // Check if data format is specified, and if not fall back to default
+          if (op.data_format.empty()) {
+            if (H5_DOUBLE_PRECISION_ENABLED) {
+              pnew_type = new ATHDF5Output<double>(op);
+            } else {
+              pnew_type = new ATHDF5Output<float>(op);
+            }
+          // Check float options
+          } else if (op.data_format.compare("half") == 0 ||
+            op.data_format.compare("f16") == 0) {
+#ifdef fp16_t
+            pnew_type = new ATHDF5Output<fp16_t>(op);
+#else
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "Compiler/hardware does not support half precision floating point"
+                << " in output block '" << op.block_name << "'" << std::endl;
+            ATHENA_ERROR(msg);
+#endif
+          } else if (op.data_format.compare("float") == 0 ||
+                     op.data_format.compare("f32") == 0) {
+            pnew_type = new ATHDF5Output<float>(op);
+          } else if (op.data_format.compare("double") == 0 ||
+                     op.data_format.compare("f64") == 0) {
+            pnew_type = new ATHDF5Output<double>(op);
+          } else if (op.data_format.compare("quad") == 0 ||
+            op.data_format.compare("f128") == 0) {
+            pnew_type = new ATHDF5Output<long double>(op);
+          // Check integer options
+          // vmin/vmax must be specified for these to convert to integers
+          } else if (op.data_format.compare("uint8") == 0 ||
+                     op.data_format.compare("u8") == 0) {
+            vmin_vmax_check(op, pin); // can throw errors
+            pnew_type = new ATHDF5Output<std::uint8_t>(op);
+          } else if (op.data_format.compare("uint16") == 0 ||
+                     op.data_format.compare("u16") == 0) {
+            vmin_vmax_check(op, pin); // can throw errors
+            pnew_type = new ATHDF5Output<std::uint16_t>(op);
+          } else if (op.data_format.compare("uint32") == 0 ||
+                     op.data_format.compare("u32") == 0) {
+            vmin_vmax_check(op, pin); // can throw errors
+            pnew_type = new ATHDF5Output<std::uint32_t>(op);
+          } else {
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "Unrecognized HDF5 data format = '" << op.data_format
+                << "' in output block '" << op.block_name << "'" << std::endl;
+            ATHENA_ERROR(msg);
+          }
 #else
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Executable not configured for HDF5 outputs, but HDF5 file format "
