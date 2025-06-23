@@ -21,20 +21,20 @@ ncycle_out = 1         # interval for stdout summary info
 nx1        = 16        # Number of zones in X1-direction
 x1min      = -512      # minimum value of X1
 x1max      = 0         # maximum value of X1
-ix1_bc     = user      # inner-X1 boundary flag
-ox1_bc     = user      # outer-X1 boundary flag
+ix1_bc     = periodic  # inner-X1 boundary flag
+ox1_bc     = periodic  # outer-X1 boundary flag
 
 nx2        = 16        # Number of zones in X2-direction
 x2min      = -512      # minimum value of X2
 x2max      = 0         # maximum value of X2
-ix2_bc     = user      # inner-X2 boundary flag
-ox2_bc     = user      # outer-X2 boundary flag
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
 
 nx3        = 32        # Number of zones in X3-direction
 x3min      = 0         # minimum value of X3
 x3max      = 1024      # maximum value of X3
-ix3_bc     = user      # inner-X3 boundary flag
-ox3_bc     = user      # outer-X3 boundary flag
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # outer-X3 boundary flag
 
 <meshblock>
 nx1        =    16

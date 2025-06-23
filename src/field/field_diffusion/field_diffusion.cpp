@@ -97,7 +97,6 @@ void FieldDiffusion::CalcDiffusionEMF(FaceField &bi, const AthenaArray<Real> &bc
                                       EdgeField &e) {
   Field *pf = pmy_block->pfield;
   Hydro *ph = pmy_block->phydro;
-  // Mesh  *pm = pmy_block->pmy_mesh; // unused variable
 
   if ((eta_ohm == 0.0) && (eta_ad == 0.0)) return;
 
@@ -273,7 +272,7 @@ void FieldDiffusion::NewDiffusionDt(Real &dt_oa, Real &dt_h) {
       if (eta_ohm > 0.0) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          eta_t(i) += etaB(ohmic,k,j,i);
+          eta_t(i) += etaB(DiffProcess::ohmic,k,j,i);
         }
       }
       if (eta_ad > 0.0) {
@@ -298,7 +297,8 @@ void FieldDiffusion::NewDiffusionDt(Real &dt_oa, Real &dt_h) {
       if (eta_hall > 0.0) {
         for (int i=is; i<=ie; ++i)
           dt_h = std::min(dt_h, static_cast<Real>(
-              fac_h*SQR(len(i)) / (std::abs(etaB(hall,k,j,i)) + TINY_NUMBER)));
+              fac_h*SQR(len(i)) / (std::abs(etaB(DiffProcess::hall,k,j,i))
+                                   + TINY_NUMBER)));
       }
     }
   }

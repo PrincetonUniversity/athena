@@ -46,7 +46,7 @@ inline void DefaultFrequency(NRRadiation *prad) {
 // The default opacity function.
 // Do nothing. Keep the opacity as the initial value
 inline void DefaultEmission(NRRadiation *prad, Real tgas) {
-  int &nfreq = prad->nfreq;
+  const int &nfreq = prad->nfreq;
   if (nfreq > 1) {
     for(int ifr=0; ifr<nfreq-1; ++ifr) {
       prad->emission_spec(ifr) =
@@ -95,6 +95,7 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   // total number of azimuthal angles covering 0 to pi
   npsi = pin->GetOrAddInteger("radiation","npsi",0);
   angle_flag = pin->GetOrAddInteger("radiation","angle_flag",0);
+  polar_angle = pin->GetOrAddInteger("radiation","polar_angle",0);
 
   rotate_theta=pin->GetOrAddInteger("radiation","rotate_theta",0);
   rotate_phi=pin->GetOrAddInteger("radiation","rotate_phi",0);
@@ -193,6 +194,9 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
 
   nang = n_ang * noct;
 
+  // need to add two angles along the polar direction
+  if(polar_angle)
+    nang += 2;
 
   // frequency grid
   //frequency grid covers -infty to infty, default nfreq=1, means gray
@@ -219,10 +223,8 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   // setup the frequency grid
   FrequencyGrid();
 
-
   UserFrequency = DefaultFrequency;
   UserEmissionSpec = DefaultEmission;
-
 
   n_fre_ang = nang * nfreq;
   //co-moving frame frequency grid depends on angels
@@ -237,7 +239,6 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     // future extension may add "int nregister" to Hydro class
     ir2.NewAthenaArray(nc3, nc2, nc1, n_fre_ang);
   }
-
 
   ir_old.NewAthenaArray(nc3,nc2,nc1,n_fre_ang);
 
@@ -274,12 +275,8 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
 
   output_sigma.NewAthenaArray(3*nfreq,nc3,nc2,nc1);
 
-
   mu.NewAthenaArray(3,nc3,nc2,nc1,nang);
   wmu.NewAthenaArray(nang);
-
-
-
 
   if (angle_flag == 1) {
     AngularGrid(angle_flag, nzeta, npsi);
@@ -295,7 +292,6 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   // set a default opacity function
   UpdateOpacity = DefaultOpacity;
 
-
   pradintegrator = new RadIntegrator(this, pin);
 
   rad_bvar.bvar_index = pmb->pbval->bvars.size();
@@ -305,16 +301,11 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     pmb->pbval->bvars_main_int.push_back(&rad_bvar);
   }
 
-
-  //------------------------------------------
+  //-----------------------------------------
   // temporary arrays for multi-group moments
   cosx_cm_.NewAthenaArray(nang);
   cosy_cm_.NewAthenaArray(nang);
   cosz_cm_.NewAthenaArray(nang);
-
-
-
-
   //------------------------------------------
 
   // set the default t_floor and t_ceiling
@@ -375,35 +366,7 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
   }
 }
 
-// destructor
-// destructor not used
 NRRadiation::~NRRadiation() {
-  ir_old.DeleteAthenaArray();
-  rad_mom.DeleteAthenaArray();
-  rad_mom_cm.DeleteAthenaArray();
-
-  if (restart_from_gray) {
-    ir_gray.DeleteAthenaArray();
-  }
-
-  sigma_s.DeleteAthenaArray();
-  sigma_a.DeleteAthenaArray();
-  sigma_p.DeleteAthenaArray();
-  sigma_pe.DeleteAthenaArray();
-  t_floor_.DeleteAthenaArray();
-  t_ceiling_.DeleteAthenaArray();
-  output_sigma.DeleteAthenaArray();
-
-  mu.DeleteAthenaArray();
-  wmu.DeleteAthenaArray();
-  cosx_cm_.DeleteAthenaArray();
-  cosy_cm_.DeleteAthenaArray();
-  cosz_cm_.DeleteAthenaArray();
-
-  if (nfreq  > 1) {
-    rad_mom_nu.DeleteAthenaArray();
-    rad_mom_cm_nu.DeleteAthenaArray();
-  }
   delete pradintegrator;
 }
 

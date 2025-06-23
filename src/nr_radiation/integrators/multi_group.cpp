@@ -56,7 +56,7 @@ void RadIntegrator::MapLabToCmFrequency(Real &tran_coef,
                    AthenaArray<Real> &split_ratio,
                    AthenaArray<int> &map_start, AthenaArray<int> &map_end,
                    AthenaArray<Real> &ir_cm, AthenaArray<Real> &ir_shift) {
-  int &nfreq=pmy_rad->nfreq;
+  const int& nfreq=pmy_rad->nfreq;
 
   // prepare the frequency bin width
   for (int ifr=0; ifr<nfreq-1; ++ifr) {
@@ -72,7 +72,7 @@ void RadIntegrator::MapLabToCmFrequency(Real &tran_coef,
 
 void RadIntegrator::GetCmMCIntensity(AthenaArray<Real> &ir_cm,
                           AthenaArray<Real> &delta_nu_n, AthenaArray<Real> &ir_face) {
-  int &nfreq = pmy_rad->nfreq;
+  const int& nfreq = pmy_rad->nfreq;
   if (nfreq > 1) {
     ir_face(0) = 0.0;
     for (int ifr=1; ifr<nfreq; ++ifr) {
@@ -92,7 +92,7 @@ void RadIntegrator::ForwardSplitting(
     Real &tran_coef, AthenaArray<Real> &ir_cm, AthenaArray<Real> &ir_face,
     AthenaArray<Real> &split_ratio, AthenaArray<int> &map_start,
     AthenaArray<int> &map_end) {
-  int &nfreq = pmy_rad->nfreq;
+  const int& nfreq = pmy_rad->nfreq;
   Real *nu_lab = &(pmy_rad->nu_grid(0));
   // check to make sure nfreq > 2
   if (nfreq < 2) {
@@ -203,7 +203,7 @@ void RadIntegrator::ForwardSplitting(
 void RadIntegrator::MapIrcmFrequency( AthenaArray<Real> &split_ratio,
       AthenaArray<int> &map_start, AthenaArray<int> &map_end,
       AthenaArray<Real> &input_array, AthenaArray<Real> &shift_array) {
-  int &nfreq = pmy_rad->nfreq;
+  const int& nfreq = pmy_rad->nfreq;
 
   // initialize ir_shift to be 0
   shift_array.ZeroClear();
@@ -220,8 +220,8 @@ void RadIntegrator::MapIrcmFrequency( AthenaArray<Real> &split_ratio,
   // map intensity to the desired bin
   for (int ifr=0; ifr<nfreq; ++ifr) {
     // map shifted intensity to the nu_grid
-    int &fre_start=map_start(ifr);
-    int &fre_end = map_end(ifr);
+    const int& fre_start=map_start(ifr);
+    const int& fre_end = map_end(ifr);
     for (int m=fre_start; m<=fre_end; ++m) {
       shift_array(m) += input_array(ifr) * split_ratio(ifr,m-fre_start);
     }
@@ -236,7 +236,7 @@ bool RadIntegrator::FreMapMatrix(AthenaArray<Real> &split_ratio,
           Real &tran_coef, AthenaArray<int> &map_bin_start,
           AthenaArray<int> &map_bin_end, AthenaArray<int> &map_count,
                                       AthenaArray<Real> &map_matrix) {
-  int &nfreq = pmy_rad->nfreq;
+  const int& nfreq = pmy_rad->nfreq;
 
   map_matrix.ZeroClear();
   map_count.ZeroClear();
@@ -255,8 +255,8 @@ bool RadIntegrator::FreMapMatrix(AthenaArray<Real> &split_ratio,
     // fre_map_matrix is lower triangle
     // make sure fre_map_matrix(ifr,0) is always the diagonal
     for (int ifr=0; ifr<nfreq; ++ifr) {
-      int &fre_start=map_bin_start(ifr);
-      int &fre_end = map_bin_end(ifr);
+      const int& fre_start=map_bin_start(ifr);
+      const int& fre_end = map_bin_end(ifr);
       // m is always larger than ifr
       // lower triangle, when store the matrix, we always start from diagonal
       for (int m=fre_start; m<=fre_end; ++m) {
@@ -268,8 +268,8 @@ bool RadIntegrator::FreMapMatrix(AthenaArray<Real> &split_ratio,
     // fre_map_matrix is upper triangle
     // make sure fre_map_matrix(ifr,0) is always the diagonal
     for (int ifr=0; ifr<nfreq; ++ifr) {
-      int &fre_start=map_bin_start(ifr);
-      int &fre_end = map_bin_end(ifr);
+      const int& fre_start=map_bin_start(ifr);
+      const int& fre_end = map_bin_end(ifr);
       // m is always smaller than ifr
       // upper triangle, when store the matrix, we always start from diagonal
       for (int m=fre_start; m<=fre_end; ++m) {
@@ -289,7 +289,7 @@ bool RadIntegrator::InverseMapFrequency(
     Real &tran_coef,
     AthenaArray<int> &map_count, AthenaArray<Real> &map_matrix,
     AthenaArray<Real> &input_array, AthenaArray<Real> &shift_array) {
-  int &nfreq = pmy_rad->nfreq;
+  const int& nfreq = pmy_rad->nfreq;
   // clear zero
   shift_array.ZeroClear();
   // Now invert the matrix split_ratio
@@ -398,7 +398,7 @@ void RadIntegrator::BackwardSplitting(Real &tran_coef,
                       AthenaArray<Real> &ir_cm, AthenaArray<Real> &ir_face,
                       AthenaArray<Real> &split_ratio,
                       AthenaArray<int> &map_start,AthenaArray<int> &map_end) {
-  int &nfreq = pmy_rad->nfreq;
+  const int& nfreq = pmy_rad->nfreq;
   Real *nu_lab = &(pmy_rad->nu_grid(0));
   Real *nu_shift = &(nu_shift_(0));
   // check to make sure nfreq > 2

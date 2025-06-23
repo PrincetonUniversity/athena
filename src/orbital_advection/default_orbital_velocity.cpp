@@ -7,9 +7,9 @@
 //! \brief define default orbital velocity functions
 
 // C/C++ headers
-#include <algorithm>  // max(), min()
-#include <cfloat>     // FLT_MAX, FLT_MIN
+#include <algorithm>
 #include <iostream>   // cout, endl
+// #include <limits>
 #include <sstream>    //
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()

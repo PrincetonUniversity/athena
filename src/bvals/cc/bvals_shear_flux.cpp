@@ -122,7 +122,7 @@ void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundarySameLevel(
                        AthenaArray<Real> &src, Real *buf, const int nb) {
   MeshBlock *pmb = pmy_block_;
   int sj, sk, ej, ek;
-  int &xgh = pbval_->xgh_;
+  const int& xgh = pbval_->xgh_;
   sk = pmb->ks;        ek = pmb->ke;
 
   int *jmin1 = pbval_->sb_flux_data_[0].jmin_recv;
@@ -201,11 +201,10 @@ bool CellCenteredBoundaryVariable::ReceiveFluxShearingBoxBoundaryBuffers() {
 
 void CellCenteredBoundaryVariable::SetFluxShearingBoxBoundaryBuffers() {
   MeshBlock *pmb = pmy_block_;
-  Mesh *pmesh = pmb->pmy_mesh;
   OrbitalAdvection *porb = pmb->porb;
   AthenaArray<Real> &pflux = pbval_->pflux_;
-  int &xgh = pbval_->xgh_;
-  int &xorder = pbval_->xorder_;
+  const int& xgh = pbval_->xgh_;
+  const int& xorder = pbval_->xorder_;
   int is = pmb->is, ie = pmb->ie;
   int js = pmb->js, je = pmb->je;
   int ks = pmb->ks, ke = pmb->ke;

@@ -93,52 +93,52 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     }
 
     // Extract left primitives
-    const Real &rho_l = prim_l(IDN,k,j,i);
-    const Real &pgas_l = prim_l(IPR,k,j,i);
-    const Real &uu1_l = prim_l(IVX,k,j,i);
-    const Real &uu2_l = prim_l(IVY,k,j,i);
-    const Real &uu3_l = prim_l(IVZ,k,j,i);
+    const Real &rho_l = prim_l(IDN,i);
+    const Real &pgas_l = prim_l(IPR,i);
+    const Real &uu1_l = prim_l(IVX,i);
+    const Real &uu2_l = prim_l(IVY,i);
+    const Real &uu3_l = prim_l(IVZ,i);
     Real bb1_l, bb2_l, bb3_l;
     switch (ivx) {
       case IVX:
         bb1_l = bb(k,j,i);
-        bb2_l = prim_l(IBY,k,j,i);
-        bb3_l = prim_l(IBZ,k,j,i);
+        bb2_l = prim_l(IBY,i);
+        bb3_l = prim_l(IBZ,i);
         break;
       case IVY:
         bb2_l = bb(k,j,i);
-        bb3_l = prim_l(IBY,k,j,i);
-        bb1_l = prim_l(IBZ,k,j,i);
+        bb3_l = prim_l(IBY,i);
+        bb1_l = prim_l(IBZ,i);
         break;
       case IVZ:
         bb3_l = bb(k,j,i);
-        bb1_l = prim_l(IBY,k,j,i);
-        bb2_l = prim_l(IBZ,k,j,i);
+        bb1_l = prim_l(IBY,i);
+        bb2_l = prim_l(IBZ,i);
         break;
     }
 
     // Extract right primitives
-    const Real &rho_r = prim_r(IDN,k,j,i);
-    const Real &pgas_r = prim_r(IPR,k,j,i);
-    const Real &uu1_r = prim_r(IVX,k,j,i);
-    const Real &uu2_r = prim_r(IVY,k,j,i);
-    const Real &uu3_r = prim_r(IVZ,k,j,i);
+    const Real &rho_r = prim_r(IDN,i);
+    const Real &pgas_r = prim_r(IPR,i);
+    const Real &uu1_r = prim_r(IVX,i);
+    const Real &uu2_r = prim_r(IVY,i);
+    const Real &uu3_r = prim_r(IVZ,i);
     Real bb1_r, bb2_r, bb3_r;
     switch (ivx) {
       case IVX:
         bb1_r = bb(k,j,i);
-        bb2_r = prim_r(IBY,k,j,i);
-        bb3_r = prim_r(IBZ,k,j,i);
+        bb2_r = prim_r(IBY,i);
+        bb3_r = prim_r(IBZ,i);
         break;
       case IVY:
         bb2_r = bb(k,j,i);
-        bb3_r = prim_r(IBY,k,j,i);
-        bb1_r = prim_r(IBZ,k,j,i);
+        bb3_r = prim_r(IBY,i);
+        bb1_r = prim_r(IBZ,i);
         break;
       case IVZ:
         bb3_r = bb(k,j,i);
-        bb1_r = prim_r(IBY,k,j,i);
-        bb2_r = prim_r(IBZ,k,j,i);
+        bb1_r = prim_r(IBY,i);
+        bb2_r = prim_r(IBZ,i);
         break;
     }
 

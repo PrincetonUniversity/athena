@@ -312,7 +312,7 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
         intJz = J3(ks,j,i);
 
         intBx = 0.5*(b.x1f(ks,j,i) + b.x1f(ks,j-1,i));
-        intBy = 0.5*(b.x2f(ks,j,i) + b.x2f(ks,j,i+1));
+        intBy = 0.5*(b.x2f(ks,j,i) + b.x2f(ks,j,i-1));
         intBz = 0.25*(b.x3f(ks,j  ,i) + b.x3f(ks,j  ,i-1)
                       +b.x3f(ks,j-1,i) + b.x3f(ks,j-1,i-1));
 

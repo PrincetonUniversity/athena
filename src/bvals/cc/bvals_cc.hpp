@@ -92,6 +92,9 @@ class CellCenteredBoundaryVariable : public BoundaryVariable {
   void SetFluxShearingBoxBoundaryBuffers();
   //!@}
 
+  // for Multigrid
+  void ExpandPhysicalBoundaries();
+
   //!@{
   //! BoundaryPhysics:
   void ReflectInnerX1(Real time, Real dt,

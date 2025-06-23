@@ -45,21 +45,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     SetFourPiG(four_pi_G);
   }
 
-  // turb_flag is initialzed in the Mesh constructor to 0 by default;
-  // turb_flag = 1 for decaying turbulence
-  // turb_flag = 2 for impulsively driven turbulence
-  // turb_flag = 3 for continuously driven turbulence
-  turb_flag = pin->GetInteger("problem","turb_flag");
-  if (turb_flag != 0) {
-#ifndef FFT
-    std::stringstream msg;
-    msg << "### FATAL ERROR in TurbulenceDriver::TurbulenceDriver" << std::endl
-        << "non zero Turbulence flag is set without FFT!" << std::endl;
-    ATHENA_ERROR(msg);
-    return;
-#endif
-  }
-
   return;
 }
 
@@ -191,9 +176,9 @@ void MeshBlock::UserWorkInLoop() {
           Real gam = peos->GetGamma();
           Real& w_p  = phydro->w(IPR,k,j,i);
           Real& u_e  = phydro->u(IEN,k,j,i);
-          Real& u_m1 = phydro->u(IM1,k,j,i);
-          Real& u_m2 = phydro->u(IM2,k,j,i);
-          Real& u_m3 = phydro->u(IM3,k,j,i);
+          const Real& u_m1 = phydro->u(IM1,k,j,i);
+          const Real& u_m2 = phydro->u(IM2,k,j,i);
+          const Real& u_m3 = phydro->u(IM3,k,j,i);
           w_p = (w_p > pfloor) ?  w_p : pfloor;
           Real di = 1.0/u_d;
           Real ke = 0.5*di*(SQR(u_m1) + SQR(u_m2) + SQR(u_m3));

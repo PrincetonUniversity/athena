@@ -24,15 +24,16 @@
 #include "bvals.hpp"
 
 
-class CellCenteredBoundaryVariable;
+class CellCenteredCellCenteredBoundaryVariable;
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ProlongateGravityBoundaries(const Real time, const Real dt)
-//! \brief Prolongate boundaries
+//! \fn void BoundaryValues::ProlongateBoundariesPostMG(
+//!                                              CellCenteredBoundaryVariable* pbvar)
+//! \brief Prolongate boundaries after Multigrid assuming physical boundaries are filled
 
-void BoundaryValues::ProlongateGravityBoundaries(const Real time, const Real dt) {
+void BoundaryValues::ProlongateBoundariesPostMG(CellCenteredBoundaryVariable* pbvar) {
   MeshBlock *pmb = pmy_block_;
-  int &mylevel = loc.level;
+  const int &mylevel = loc.level;
 
   // For each finer neighbor, to prolongate a boundary we need to fill one more cell
   // surrounding the boundary zone to calculate the slopes ("ghost-ghost zone"). 3x steps:
@@ -69,7 +70,7 @@ void BoundaryValues::ProlongateGravityBoundaries(const Real time, const Real dt)
 
           // this neighbor block is on the same level
           // and needs to be restricted for prolongation
-          RestrictGravityGhostCellsOnSameLevel(nb, nk, nj, ni);
+          RestrictGhostCellsOnSameLevelPostMG(pbvar, nb, nk, nj, ni);
         }
       }
     }
@@ -108,18 +109,20 @@ void BoundaryValues::ProlongateGravityBoundaries(const Real time, const Real dt)
 
 
     // Step 3. Finally, the ghost-ghost zones are ready for prolongation:
-    ProlongateGravityGhostCells(si, ei, sj, ej, sk, ek);
+    ProlongateGhostCellsPostMG(pbvar, si, ei, sj, ej, sk, ek);
   } // end loop over nneighbor
   return;
 }
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::RestrictGravityGhostCellsOnSameLevel(const NeighborBlock& nb,
-//!                                                        int nk, int nj, int ni)
-//! \brief Restrict ghost cells on same level
-void BoundaryValues::RestrictGravityGhostCellsOnSameLevel(const NeighborBlock& nb,
-                                                          int nk, int nj, int ni) {
+//! \fn void BoundaryValues::RestrictGhostCellsOnSameLevelPostMG(
+//!                          CellCenteredBoundaryVariable* pbvar, const NeighborBlock& nb,
+//!                          int nk, int nj, int ni)
+//! \brief Restrict ghost cells on same level after Multigrid
+void BoundaryValues::RestrictGhostCellsOnSameLevelPostMG(
+                             CellCenteredBoundaryVariable* pbvar, const NeighborBlock& nb,
+                             int nk, int nj, int ni) {
   MeshBlock *pmb = pmy_block_;
   MeshRefinement *pmr = pmb->pmr;
 
@@ -152,7 +155,7 @@ void BoundaryValues::RestrictGravityGhostCellsOnSameLevel(const NeighborBlock& n
     rks = pmb->cks - 1, rke = pmb->cks - 1;
   }
 
-  pmb->pmr->RestrictCellCenteredValues(*(pgbvar->var_cc), *(pgbvar->coarse_buf), 0, 0,
+  pmb->pmr->RestrictCellCenteredValues(*(pbvar->var_cc), *(pbvar->coarse_buf), 0, 0,
                                        ris, rie, rjs, rje, rks, rke);
 
   return;
@@ -160,14 +163,15 @@ void BoundaryValues::RestrictGravityGhostCellsOnSameLevel(const NeighborBlock& n
 
 
 //----------------------------------------------------------------------------------------
-//! \fn void BoundaryValues::ProlongateGravityGhostCells(int si, int ei, int sj, int ej,
-//!                                                      int sk, int ek)
-//! \brief Prolongate gravity ghost cells
+//! \fn void BoundaryValues::ProlongateGhostCellsPostMG(
+//!                                    CellCenteredBoundaryVariable* pbvar,
+//!                                    int si, int ei, int sj, int ej, int sk, int ek)
+//! \brief Prolongate ghost cells after Multigrid
 
-void BoundaryValues::ProlongateGravityGhostCells(int si, int ei, int sj, int ej,
-                                                 int sk, int ek) {
+void BoundaryValues::ProlongateGhostCellsPostMG(CellCenteredBoundaryVariable* pbvar,
+                               int si, int ei, int sj, int ej, int sk, int ek) {
   MeshRefinement *pmr = pmy_block_->pmr;
-  pmr->ProlongateCellCenteredValues(*(pgbvar->coarse_buf), *(pgbvar->var_cc), 0, 0,
+  pmr->ProlongateCellCenteredValues(*(pbvar->coarse_buf), *(pbvar->var_cc), 0, 0,
                                     si, ei, sj, ej, sk, ek);
   return;
 }

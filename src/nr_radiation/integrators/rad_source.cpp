@@ -61,8 +61,8 @@ void RadIntegrator::CalSourceTerms(MeshBlock *pmb, const Real dt,
   Real *sigma_at, *sigma_s, *sigma_p, *sigma_pe;
   Real *lab_ir;
 
-  int &nang =prad->nang;
-  int &nfreq=prad->nfreq;
+  const int &nang =prad->nang;
+  const int &nfreq=prad->nfreq;
 
   // Get the temporary arrays
   AthenaArray<Real> &wmu_cm = wmu_cm_;
@@ -264,7 +264,7 @@ void RadIntegrator::AddMultiGroupCompt(MeshBlock *pmb, const Real dt,
   // need to transform lab frame ir to co-moving frame
   NRRadiation *prad=pmb->pnrrad;
 
-  Real& prat = prad->prat;
+  const Real& prat = prad->prat;
   Real invcrat = 1.0/prad->crat;
   Real invredfactor = prad->crat/prad->reduced_c;
 
@@ -273,8 +273,8 @@ void RadIntegrator::AddMultiGroupCompt(MeshBlock *pmb, const Real dt,
 
   Real *lab_ir;
 
-  int &nang =prad->nang;
-  int &nfreq=prad->nfreq;
+  const int& nang =prad->nang;
+  const int& nfreq=prad->nfreq;
 
   // only apply for multi-grou case
   if ((nfreq > 1) && (compton_flag_ > 0) && (split_compton_ > 0)) {
@@ -422,13 +422,13 @@ void RadIntegrator::AddMultiGroupCompt(MeshBlock *pmb, const Real dt,
 void RadIntegrator::GetHydroSourceTerms(MeshBlock *pmb,
                        AthenaArray<Real> &ir_ini, AthenaArray<Real> &ir) {
   NRRadiation *prad=pmb->pnrrad;
-  Real& prat = prad->prat;
+  const Real& prat = prad->prat;
   Real invcrat = 1.0/prad->crat;
   Real invredc = 1.0/prad->reduced_c;
   Real invredfactor = invredc/invcrat;
 
-  int &nang =prad->nang;
-  int &nfreq=prad->nfreq;
+  const int& nang =prad->nang;
+  const int& nfreq=prad->nfreq;
 
   int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
   int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;

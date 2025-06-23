@@ -1,0 +1,75 @@
+<comment>
+problem   = field loop advection test through poles in spherical polar coords
+reference = 
+configure = -b --prob=field_loop_poles --coord=spherical_polar
+
+<job>
+problem_id  = Loop     # problem ID: basename of output filenames
+
+<output1>
+file_type   = hst      # history data dump
+dt          = 5.0e-4      # time increment between outputs
+
+<time>
+cfl_number  = 0.3      # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = 60      # cycle limit
+tlim        = 100.     # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
+
+<mesh>
+nx1         = 32             # Number of zones in X1-direction
+x1min       = 0.1            # minimum value of X1
+x1max       = 2.0            # maximum value of X1
+ix1_bc      = user           # Inner-X1 boundary condition flag
+ox1_bc      = user           # Outer-X1 boundary condition flag
+x1rat       = 1.0981
+
+nx2         = 16             # Number of zones in X2-direction
+x2min       = 0.0            # minimum value of X2
+x2max       = 1.5708         # maximum value of X2
+ix2_bc      = polar          # Inner-X2 boundary condition flag
+ox2_bc      = user          # Outer-X2 boundary condition flag 
+
+nx3         = 64             # Number of zones in X3-direction
+x3min       = 0.0            # minimum value of X3
+x3max       = 6.2831853071795862  # maximum value of X3
+ix3_bc      = periodic       # Inner-X3 boundary condition flag
+ox3_bc      = periodic       # Outer-X3 boundary condition flag
+
+refinement  = adaptive
+derefine_count = 5
+numlevel = 2
+
+# The following refinement regions are used in tests.  By default,
+# they are ignored.  To use, set MeshBlock size to 4^3.
+
+#<refinement1>
+#x1min = 1.0
+#x1max = 1.5
+#x2min = 0.0
+#x2max = 1.5708
+#x3min = 0.0
+#x3max = 6.2831853071795862
+#level=1
+
+<meshblock>
+nx1         = 8             # block size in X1-direction
+nx2         = 4             # block size in X2-direction
+nx3         = 8             # block size in X3-direction
+
+<hydro>
+gamma           = 1.66666667 # gamma = C_p/C_v
+iso_sound_speed = 0.1        # isothermal sound speed
+dfloor          = 1.e-9
+pfloor          = 1.e-12
+
+<problem>
+rho0            = 1.0
+xc              = 0.0
+yc              = 1.0
+zc              = 0.5
+beta            = 1.e5
+vy0             = -1.0
+divb            = true     # check divergence of magnetic field

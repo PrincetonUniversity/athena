@@ -42,7 +42,7 @@ Real A2(const Real x1, const Real x2, const Real x3);
 Real A1(const Real x1, const Real x2, const Real x3);
 
 // problem parameters which are global variables with internal linkage
-Real vy0, rho0, isocs2, gamma_gas;
+Real vy0, rho0, isocs2, gamma_gas, divb;
 Real xc, yc, zc, beta, b0;
 } // namespace
 
@@ -61,6 +61,12 @@ void LoopOuterX2(MeshBlock *pmb, Coordinates *pco, AthenaArray<Real> &prim, Face
                  int il, int iu, int jl, int ju, int kl, int ku, int ngh);
 
 int RefinementCondition(MeshBlock *pmb);
+int RefinementCondition2(MeshBlock *pmb);
+
+// Check divergence of the magnetic field
+Real WAbsDivergenceB(MeshBlock *pmb, int out);
+Real ncells(MeshBlock *pmb, int out);
+Real totcells(MeshBlock *pmb, int out);
 
 
 //========================================================================================
@@ -74,6 +80,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   // Get parameters for initial density and velocity
   rho0 = pin->GetReal("problem","rho0");
   vy0 = pin->GetOrAddReal("problem","vy0",0.0);
+  divb = pin->GetOrAddBoolean("problem","divb",false);
 
   // Get parameters of initial pressure and cooling parameters
   isocs2=SQR(pin->GetReal("hydro","iso_sound_speed"));
@@ -90,8 +97,11 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     b0=std::sqrt(2.*isocs2*rho0/beta);
   }
 
-  if (adaptive)
+  if (adaptive && divb) {
+    EnrollUserRefinementCondition(RefinementCondition2);
+  } else if (adaptive) {
     EnrollUserRefinementCondition(RefinementCondition);
+  }
 
   // setup boundary condition
   if (mesh_bcs[BoundaryFace::inner_x1] == GetBoundaryFlag("user")) {
@@ -107,8 +117,15 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
     EnrollUserBoundaryFunction(BoundaryFace::outer_x2, LoopOuterX2);
   }
 
+  if (MAGNETIC_FIELDS_ENABLED && divb) {
+    AllocateUserHistoryOutput(3);
+    EnrollUserHistoryOutput(0, WAbsDivergenceB, "wabsdivB");
+    EnrollUserHistoryOutput(1, ncells, "ncells");
+    EnrollUserHistoryOutput(2, totcells, "totcells");
+  }
   return;
 }
+
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
@@ -130,55 +147,62 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     a3.NewAthenaArray(nx3, nx2, nx1);
 
     int level = loc.level;
+
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie+1; i++) {
-          if ((pbval->nblevel[1][0][1]>level && j==js)
-              || (pbval->nblevel[1][2][1]>level && j==je+1)
-              || (pbval->nblevel[0][1][1]>level && k==ks)
-              || (pbval->nblevel[2][1][1]>level && k==ke+1)
-              || (pbval->nblevel[0][0][1]>level && j==js   && k==ks)
-              || (pbval->nblevel[0][2][1]>level && j==je+1 && k==ks)
-              || (pbval->nblevel[2][0][1]>level && j==js   && k==ke+1)
-              || (pbval->nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
-            Real x1l = pcoord->x1f(i)+0.25*pcoord->dx1f(i);
-            Real x1r = pcoord->x1f(i)+0.75*pcoord->dx1f(i);
-            a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
-                             A1(x1r, pcoord->x2f(j), pcoord->x3f(k)));
-          } else {
+          if (divb) {
             a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
-          }
-
-          if ((pbval->nblevel[1][1][0]>level && i==is)
-              || (pbval->nblevel[1][1][2]>level && i==ie+1)
-              || (pbval->nblevel[0][1][1]>level && k==ks)
-              || (pbval->nblevel[2][1][1]>level && k==ke+1)
-              || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
-              || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
-              || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
-              || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
-            Real x2l = pcoord->x2f(j)+0.25*pcoord->dx2f(j);
-            Real x2r = pcoord->x2f(j)+0.75*pcoord->dx2f(j);
-            a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
-                             A2(pcoord->x1f(i), x2r, pcoord->x3f(k)));
-          } else {
             a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
-          }
-
-          if ((pbval->nblevel[1][1][0]>level && i==is)
-              || (pbval->nblevel[1][1][2]>level && i==ie+1)
-              || (pbval->nblevel[1][0][1]>level && j==js)
-              || (pbval->nblevel[1][2][1]>level && j==je+1)
-              || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
-              || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
-              || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
-              || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
-            Real x3l = pcoord->x3f(k)+0.25*pcoord->dx3f(k);
-            Real x3r = pcoord->x3f(k)+0.75*pcoord->dx3f(k);
-            a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
-                             A3(pcoord->x1f(i), pcoord->x2f(j), x3r));
-          } else {
             a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+          } else {
+            if ((pbval->nblevel[1][0][1]>level && j==js)
+                || (pbval->nblevel[1][2][1]>level && j==je+1)
+                || (pbval->nblevel[0][1][1]>level && k==ks)
+                || (pbval->nblevel[2][1][1]>level && k==ke+1)
+                || (pbval->nblevel[0][0][1]>level && j==js   && k==ks)
+                || (pbval->nblevel[0][2][1]>level && j==je+1 && k==ks)
+                || (pbval->nblevel[2][0][1]>level && j==js   && k==ke+1)
+                || (pbval->nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
+              Real x1l = pcoord->x1f(i)+0.25*pcoord->dx1f(i);
+              Real x1r = pcoord->x1f(i)+0.75*pcoord->dx1f(i);
+              a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
+                               A1(x1r, pcoord->x2f(j), pcoord->x3f(k)));
+            } else {
+              a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+            }
+
+            if ((pbval->nblevel[1][1][0]>level && i==is)
+                || (pbval->nblevel[1][1][2]>level && i==ie+1)
+                || (pbval->nblevel[0][1][1]>level && k==ks)
+                || (pbval->nblevel[2][1][1]>level && k==ke+1)
+                || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
+                || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
+                || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
+                || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
+              Real x2l = pcoord->x2f(j)+0.25*pcoord->dx2f(j);
+              Real x2r = pcoord->x2f(j)+0.75*pcoord->dx2f(j);
+              a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
+                               A2(pcoord->x1f(i), x2r, pcoord->x3f(k)));
+            } else {
+              a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+            }
+
+            if ((pbval->nblevel[1][1][0]>level && i==is)
+                || (pbval->nblevel[1][1][2]>level && i==ie+1)
+                || (pbval->nblevel[1][0][1]>level && j==js)
+                || (pbval->nblevel[1][2][1]>level && j==je+1)
+                || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
+                || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
+                || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
+                || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
+              Real x3l = pcoord->x3f(k)+0.25*pcoord->dx3f(k);
+              Real x3r = pcoord->x3f(k)+0.75*pcoord->dx3f(k);
+              a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
+                               A3(pcoord->x1f(i), pcoord->x2f(j), x3r));
+            } else {
+              a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+            }
           }
         }
       }
@@ -580,4 +604,99 @@ int RefinementCondition(MeshBlock *pmb) {
   if (maxb > 0.2*b0) return 1;
   if (maxb < 0.1*b0) return -1;
   return 0;
+}
+
+// force refinement to check divB growth
+int RefinementCondition2(MeshBlock *pmb) {
+  AthenaArray<Real> &bc = pmb->pfield->bcc;
+  int refflag=0;
+  for (int k=pmb->ks; k<=pmb->ke; k++) {
+    for (int j=pmb->js; j<=pmb->je; j++) {
+      for (int i=pmb->is; i<=pmb->ie; i++) {
+        if (pmb->pmy_mesh->ncycle == 30) {
+          Real bmag = std::sqrt(SQR(bc(IB1,k,j,i)) + SQR(bc(IB2,k,j,i))
+                             + SQR(bc(IB3,k,j,i)));
+          if (bmag >= 1.0e-3*b0) {
+            refflag += 1;
+          }
+        }
+      }
+    }
+  }
+  if (refflag > 4) {
+    return 1;
+  }
+  return 0;
+}
+
+// Absolute value of the divergence of the magnetic field weighted by its magnitude and
+// smallest cell size. This can be scaled with the hst output "ncells".
+Real WAbsDivergenceB(MeshBlock *pmb, int iout) {
+  Real div = 0;
+  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  AthenaArray<Real> face1, face2p, face2m, face3p, face3m;
+  Field *pfield = pmb->pfield;
+
+  face1.NewAthenaArray((ie-is)+2*NGHOST+1);
+  face2p.NewAthenaArray((ie-is)+2*NGHOST+1);
+  face2m.NewAthenaArray((ie-is)+2*NGHOST+1);
+  face3p.NewAthenaArray((ie-is)+2*NGHOST+1);
+  face3m.NewAthenaArray((ie-is)+2*NGHOST+1);
+
+  pfield->CalculateCellCenteredField(pfield->b,pfield->bcc,pmb->pcoord,is,ie,js,je,ks,ke);
+
+  for(int k=ks; k<=ke; k++) {
+    for(int j=js; j<=je; j++) {
+      pmb->pcoord->Face1Area(k,   j,   is, ie+1, face1);
+      pmb->pcoord->Face2Area(k,   j+1, is, ie,   face2p);
+      pmb->pcoord->Face2Area(k,   j,   is, ie,   face2m);
+      pmb->pcoord->Face3Area(k+1, j,   is, ie,   face3p);
+      pmb->pcoord->Face3Area(k,   j,   is, ie,   face3m);
+      for(int i=is; i<=ie; i++) {
+        Real bmag = std::sqrt(SQR(pfield->bcc(IB1,k,j,i)) + SQR(pfield->bcc(IB2,k,j,i))
+                             + SQR(pfield->bcc(IB3,k,j,i)));
+        if (bmag != 0.0) {
+          Real dl = std::min(std::min(pmb->pcoord->GetEdge1Length(k,j,i),
+                            pmb->pcoord->GetEdge2Length(k,j,i)),
+                            pmb->pcoord->GetEdge3Length(k,j,i));
+          Real cellvol = pmb->pcoord->GetCellVolume(k,j,i);
+          div += std::abs(((face1(i+1)*pfield->b.x1f(k,j,i+1)
+                             - face1(i)*pfield->b.x1f(k,j,i)
+                             + face2p(i)*pfield->b.x2f(k,j+1,i)
+                             - face2m(i)*pfield->b.x2f(k,j,i)
+                             + face3p(i)*pfield->b.x3f(k+1,j,i)
+                             -face3m(i)*pfield->b.x3f(k,j,i)))/cellvol)/(bmag/dl);
+        }
+      }
+    }
+  }
+  return div;
+}
+
+// Number of cells used in computation of the divergence of the magnetic field
+Real ncells(MeshBlock *pmb, int iout) {
+  int ncell = 0;
+  int is=pmb->is, ie=pmb->ie, js=pmb->js, je=pmb->je, ks=pmb->ks, ke=pmb->ke;
+  Field *pfield = pmb->pfield;
+
+  pfield->CalculateCellCenteredField(pfield->b,pfield->bcc,pmb->pcoord,is,ie,js,je,ks,ke);
+
+  for(int k=ks; k<=ke; k++) {
+    for(int j=js; j<=je; j++) {
+      for(int i=is; i<=ie; i++) {
+        Real bmag = std::sqrt(SQR(pfield->bcc(IB1,k,j,i)) + SQR(pfield->bcc(IB2,k,j,i))
+                           + SQR(pfield->bcc(IB3,k,j,i)));
+        if (bmag != 0.0) {
+          ncell += 1;
+        }
+      }
+    }
+  }
+  return ncell;
+}
+
+// Total number of cells in the simulation
+Real totcells(MeshBlock *pmb, int iout) {
+  int tcell = pmb->GetNumberOfMeshBlockCells();
+  return tcell;
 }

@@ -26,8 +26,8 @@ void MatrixMult(int m, int n, AthenaArray<Real> &a,
   for (int i=0; i<m; ++i) {
     c(i) = 0.0;
     for (int j=0; j<n; ++j) {
-      Real& ap = a(i,j);
-      Real& bp = b(j);
+      const Real& ap = a(i,j);
+      const Real& bp = b(j);
       c(i) += ap * bp;
     }
   }
@@ -58,8 +58,6 @@ void InverseMatrix(int n, AthenaArray<Real> &a, AthenaArray<Real> &b) {
       b(i,j) = col(i);
     }
   }
-  indx.DeleteAthenaArray();
-  col.DeleteAthenaArray();
   return;
 }
 
@@ -106,8 +104,8 @@ void Ludcmp_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
     for (int i=0; i<j; ++i) {
       sum=a(i,j);
       for (int k=0; k<i; ++k) {
-        Real& aik = a(i,k);
-        Real& akj = a(k,j);
+        const Real& aik = a(i,k);
+        const Real& akj = a(k,j);
         sum -= aik * akj;
       }
       a(i,j)=sum;
@@ -117,8 +115,8 @@ void Ludcmp_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
     for (int i=j; i<n; ++i) {
       sum=a(i,j);
       for (int k=0; k<j; ++k) {
-        Real& aik = a(i,k);
-        Real& akj = a(k,j);
+        const Real& aik = a(i,k);
+        const Real& akj = a(k,j);
         sum -= aik * akj;
       }
       a(i,j)=sum;
@@ -131,28 +129,25 @@ void Ludcmp_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
     // row interchange
     if (j != imax) {
       for (int k=0; k<n; ++k) {
-        dum=a(imax,k);
-        a(imax,k)=a(j,k);
-        a(j,k)=dum;
+        dum = a(imax,k);
+        a(imax,k) = a(j,k);
+        a(j,k) = dum;
       }
       *d = -(*d);
-      rowscale(imax)=rowscale(j);
+      rowscale(imax) = rowscale(j);
     }
-    indx(j)=imax; // record row interchange history
+    indx(j) = imax; // record row interchange history
     // Calculate the lower block (second step)
-    if (a(j,j) == 0.0) a(j,j)=TINY_NUMBER;
-    dum=1.0/(a(j,j));
+    if (a(j,j) == 0.0) a(j,j) = TINY_NUMBER;
+    dum = 1.0/(a(j,j));
     for (int i=j+1; i<n; ++i)
       a(i,j) *= dum;
   }
-  // free the memory
-  rowscale.DeleteAthenaArray();
 }
 
 //======================================================================================
 //! \file lubksb.cpp
 //======================================================================================
-
 
 
 //--------------------------------------------------------------------------------------
@@ -182,11 +177,10 @@ void Lubksb_nr(int n, AthenaArray<Real> &a, AthenaArray<int> &indx,
   for (int i=n-1; i>=0; --i) {
     sum=b(i);
     for (int j=i+1; j<n; ++j) {
-      Real& ap = a(i,j);
-      Real& bp = b(j);
+      const Real& ap = a(i,j);
+      const Real& bp = b(j);
       sum -= ap * bp;
     }
     b(i)=sum/a(i,i);
   }
 }
-

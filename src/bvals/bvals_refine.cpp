@@ -95,7 +95,7 @@
 void BoundaryValues::ProlongateBoundaries(const Real time, const Real dt,
                                           std::vector<BoundaryVariable *> bvars_subset) {
   MeshBlock *pmb = pmy_block_;
-  int &mylevel = loc.level;
+  const int& mylevel = loc.level;
 
   // TODO(KGF): temporarily hardcode Hydro and Field array access for the below switch
   // around ApplyPhysicalBoundariesOnCoarseLevel()
@@ -318,7 +318,7 @@ void BoundaryValues::RestrictGhostCellsOnSameLevel(const NeighborBlock& nb, int 
   for (auto fc_pair : pmr->pvars_fc_) {
     FaceField *var_fc = std::get<0>(fc_pair);
     FaceField *coarse_fc = std::get<1>(fc_pair);
-    int &mylevel = loc.level;
+    const int& mylevel = loc.level;
     int rs = ris, re = rie + 1;
     if (rs == pmb->cis   && nblevel[nk+1][nj+1][ni  ] < mylevel) rs++;
     if (re == pmb->cie+1 && nblevel[nk+1][nj+1][ni+2] < mylevel) re--;
@@ -582,7 +582,7 @@ void BoundaryValues::ProlongateGhostCells(const NeighborBlock& nb,
   }
 
   // prolongate face-centered S/AMR-enrolled quantities (magnetic fields)
-  int &mylevel = pmb->loc.level;
+  const int& mylevel = pmb->loc.level;
   int il, iu, jl, ju, kl, ku;
   il = si, iu = ei + 1;
   if ((nb.ni.ox1 >= 0) && (nblevel[nb.ni.ox3+1][nb.ni.ox2+1][nb.ni.ox1  ] >= mylevel))

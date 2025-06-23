@@ -45,12 +45,12 @@ void RadIntegrator::Compton(AthenaArray<Real> &wmu_cm,
                             AthenaArray<Real> &tran_coef, Real *sigma_s,
                             Real dt, Real lorz, Real rho, Real &tgas,
                             AthenaArray<Real> &ir_cm) {
-  Real& prat = pmy_rad->prat;
+  const Real& prat = pmy_rad->prat;
   Real ct = dt * pmy_rad->crat;
   Real redfactor=pmy_rad->reduced_c/pmy_rad->crat;
 
-  int& nang=pmy_rad->nang;
-  int& nfreq=pmy_rad->nfreq;
+  const int& nang=pmy_rad->nang;
+  const int& nfreq=pmy_rad->nfreq;
   Real gamma = pmy_rad->pmy_block->peos->GetGamma();
   Real telectron = 1.0/pmy_rad->telectron;
 
@@ -114,12 +114,12 @@ void RadIntegrator::MultiGroupCompton(
     Real &tgas_ini, Real &tgas, AthenaArray<Real> &ir_cm) {
   int bd_cell_flag = 0;
 
-  Real& prat = pmy_rad->prat;
+  const Real& prat = pmy_rad->prat;
   Real ct = dt * pmy_rad->crat;
   Real redfactor=pmy_rad->reduced_c/pmy_rad->crat;
 
-  int& nang=pmy_rad->nang;
-  int& nfreq=pmy_rad->nfreq;
+  const int& nang=pmy_rad->nang;
+  const int& nfreq=pmy_rad->nfreq;
   Real gamma = pmy_rad->pmy_block->peos->GetGamma();
   Real one_telectron = 1.0/pmy_rad->telectron;
   //correction factor for high order terms of energy change per scattering

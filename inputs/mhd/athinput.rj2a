@@ -1,7 +1,7 @@
 <comment>
 problem   = Riemann problem from Figure 2a of Ryu & Jones (1995)
 reference = Ryu, D. & Jones, T.W., ApJ 442, 228-258 (1995)
-configure = -b
+configure = -b --prob=shock_tube
 
 <job>
 problem_id  = RJ2a      # problem ID: basename of output filenames

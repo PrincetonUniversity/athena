@@ -110,7 +110,7 @@ void RadBoundaryVariable::ShearQuantities(AthenaArray<Real> &shear_cc_, bool upp
   Mesh *pmesh = pmb->pmy_mesh;
   Hydro *phydro = pmb->phydro;
   NRRadiation *prad = pmb->pnrrad;
-  int &xgh = pbval_->xgh_;
+  const int& xgh = pbval_->xgh_;
   int jl = pmb->js - NGHOST;
   int ju = pmb->je + NGHOST+2*xgh+1;
   int kl = pmb->ks;
@@ -209,7 +209,7 @@ void RadBoundaryVariable::SetShearingBoxBoundarySameLevel(
   MeshBlock *pmb = pmy_block_;
   Mesh *pmesh = pmb->pmy_mesh;
   int si, sj, sk, ei, ej, ek;
-  int &xgh = pbval_->xgh_;
+  const int& xgh = pbval_->xgh_;
   si = pmb->is-NGHOST; ei = pmb->is-1;
   sk = pmb->ks;        ek = pmb->ke;
   if (pmesh->mesh_size.nx3 > 1)  ek += NGHOST, sk -= NGHOST;
@@ -248,8 +248,8 @@ void RadBoundaryVariable::SetShearingBoxBoundaryBuffers() {
   OrbitalAdvection *porb = pmb->porb;
   AthenaArray<Real> &var = *var_cc;
   AthenaArray<Real> &pflux = pflux_;
-  int &xgh = pbval_->xgh_;
-  int &xorder = pmb->pnrrad->pradintegrator->rad_xorder;
+  const int& xgh = pbval_->xgh_;
+  const int& xorder = pmb->pnrrad->pradintegrator->rad_xorder;
   int ib[2]{pmb->is - NGHOST, pmb->ie + 1};
   int js = pmb->js, je = pmb->je;
   int kl = pmb->ks, ku = pmb->ke;
