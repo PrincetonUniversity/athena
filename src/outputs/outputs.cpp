@@ -321,7 +321,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           } else if (op.data_format.compare("half") == 0 ||
             op.data_format.compare("f16") == 0) {
 #ifdef fp16_t
-            std::cout << "Using half precision floating point data format for HDF5 output in block '"
+            std::cout << "Using fp16 data format for HDF5 output in block '"
                       << op.block_name << "'" << std::endl;
             pnew_type = new ATHDF5Output<fp16_t>(op);
 #else
