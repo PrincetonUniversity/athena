@@ -166,12 +166,12 @@ class RestartOutput : public OutputType {
 //! \class ATHDF5Output
 //! \brief derived OutputType class for Athena HDF5 files
 
-template <typename T>
+template <typename h5out_t>
 class ATHDF5Output : public OutputType {
  public:
   // Function declarations
   explicit ATHDF5Output(OutputParameters oparams) :
-           OutputType(oparams), H5Type(get_hdf5_type<T>()) {}
+           OutputType(oparams), H5Type(get_hdf5_type<h5out_t>()) {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
   void MakeXDMF();
 
@@ -190,7 +190,7 @@ class ATHDF5Output : public OutputType {
   char (*variable_names)[max_name_length+1];  // array of C-string names of variables
   hid_t H5Type;                               // HDF5 type of data (float, double, etc.)
 
-  template<typename U = T>
+  template<typename U = h5out_t>
   inline hid_t get_hdf5_type();
 
 #ifdef fp16_t
