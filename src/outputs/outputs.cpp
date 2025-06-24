@@ -129,13 +129,13 @@ inline bool vmin_vmax_check(OutputParameters &op, ParameterInput *pin) {
   std::stringstream msg;
   op.vmin = pin->GetReal(op.block_name, "vmin");
   op.vmax = pin->GetReal(op.block_name, "vmax");
-  if (~std::isfinite(op.vmin)) {
+  if (not std::isfinite(op.vmin)) {
     msg << "### FATAL ERROR in Outputs constructor" << std::endl
         << "vmin is not a finite number in output block '" << op.block_name << "'"
         << std::endl;
     ATHENA_ERROR(msg);
   }
-  if (~std::isfinite(op.vmax)) {
+  if (not std::isfinite(op.vmax)) {
     msg << "### FATAL ERROR in Outputs constructor" << std::endl
         << "vmax is not a finite number in output block '" << op.block_name << "'"
         << std::endl;
