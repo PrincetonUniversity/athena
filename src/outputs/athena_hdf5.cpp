@@ -39,21 +39,9 @@
 
 // External library headers
 #include <hdf5.h>  // H5[F|P|S|T]_*, H5[A|D|F|P|S|T]*(), hid_t
+//#include "hdf5_debugging.hpp"  // HDF5 debugging utilities
 #ifdef MPI_PARALLEL
 #include <mpi.h>   // MPI_COMM_WORLD, MPI_INFO_NULL
-#endif
-
-// type alias that allows HDF5 output to be written in either floats or doubles
-#if H5_DOUBLE_PRECISION_ENABLED
-using H5Real = double;
-#if SINGLE_PRECISION_ENABLED
-#error "Cannot create HDF5 output at higher precision than internal representation"
-#endif
-#define H5T_NATIVE_REAL H5T_NATIVE_DOUBLE
-
-#else
-using H5Real = float;
-#define H5T_NATIVE_REAL H5T_NATIVE_FLOAT
 #endif
 
 
@@ -63,6 +51,7 @@ using H5Real = float;
 //!        one file per output using parallel IO.
 template<typename T>
 void ATHDF5Output<T>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
+  //h5db::set_error_handler();
   // HDF5 structures
   hid_t file;                                  // file to be written to
   hsize_t dims_start[5], dims_count[5];        // array sizes
@@ -521,7 +510,7 @@ void ATHDF5Output<T>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) 
 
   // Write simulation time
   double time = pm->time;
-  attribute = H5Acreate2(file, "Time", H5T_NATIVE_REAL, dataspace_scalar, H5P_DEFAULT,
+  attribute = H5Acreate2(file, "Time", this->H5Type, dataspace_scalar, H5P_DEFAULT,
                          H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, &time);
   H5Aclose(attribute);
@@ -544,7 +533,7 @@ void ATHDF5Output<T>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) 
   coord_range[0] = pm->mesh_size.x1min;
   coord_range[1] = pm->mesh_size.x1max;
   coord_range[2] = pm->mesh_size.x1rat;
-  attribute = H5Acreate2(file, "RootGridX1", H5T_NATIVE_REAL, dataspace_triple,
+  attribute = H5Acreate2(file, "RootGridX1", this->H5Type, dataspace_triple,
                          H5P_DEFAULT, H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, coord_range);
   H5Aclose(attribute);
@@ -553,7 +542,7 @@ void ATHDF5Output<T>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) 
   coord_range[0] = pm->mesh_size.x2min;
   coord_range[1] = pm->mesh_size.x2max;
   coord_range[2] = pm->mesh_size.x2rat;
-  attribute = H5Acreate2(file, "RootGridX2", H5T_NATIVE_REAL, dataspace_triple,
+  attribute = H5Acreate2(file, "RootGridX2", this->H5Type, dataspace_triple,
                          H5P_DEFAULT, H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, coord_range);
   H5Aclose(attribute);
@@ -562,7 +551,7 @@ void ATHDF5Output<T>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) 
   coord_range[0] = pm->mesh_size.x3min;
   coord_range[1] = pm->mesh_size.x3max;
   coord_range[2] = pm->mesh_size.x3rat;
-  attribute = H5Acreate2(file, "RootGridX3", H5T_NATIVE_REAL, dataspace_triple,
+  attribute = H5Acreate2(file, "RootGridX3", this->H5Type, dataspace_triple,
                          H5P_DEFAULT, H5P_DEFAULT);
   H5Awrite(attribute, H5T_NATIVE_DOUBLE, coord_range);
   H5Aclose(attribute);
@@ -657,21 +646,21 @@ void ATHDF5Output<T>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) 
   dataset_locations = H5Dcreate(file, "LogicalLocations", H5T_STD_I64BE,
                                 filespace_blocks_3,
                                 H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x1f = H5Dcreate(file, "x1f", H5T_NATIVE_REAL, filespace_blocks_nx1,
+  dataset_x1f = H5Dcreate(file, "x1f", this->H5Type, filespace_blocks_nx1,
                           H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x2f = H5Dcreate(file, "x2f", H5T_NATIVE_REAL, filespace_blocks_nx2,
+  dataset_x2f = H5Dcreate(file, "x2f", this->H5Type, filespace_blocks_nx2,
                           H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x3f = H5Dcreate(file, "x3f", H5T_NATIVE_REAL, filespace_blocks_nx3,
+  dataset_x3f = H5Dcreate(file, "x3f", this->H5Type, filespace_blocks_nx3,
                           H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x1v = H5Dcreate(file, "x1v", H5T_NATIVE_REAL, filespace_blocks_nx1v,
+  dataset_x1v = H5Dcreate(file, "x1v", this->H5Type, filespace_blocks_nx1v,
                           H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x2v = H5Dcreate(file, "x2v", H5T_NATIVE_REAL, filespace_blocks_nx2v,
+  dataset_x2v = H5Dcreate(file, "x2v", this->H5Type, filespace_blocks_nx2v,
                           H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  dataset_x3v = H5Dcreate(file, "x3v", H5T_NATIVE_REAL, filespace_blocks_nx3v,
+  dataset_x3v = H5Dcreate(file, "x3v", this->H5Type, filespace_blocks_nx3v,
                           H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   datasets_celldata = new hid_t[num_datasets];
   for (int n = 0; n < num_datasets; ++n)
-    datasets_celldata[n] = H5Dcreate(file, dataset_names[n], H5T_NATIVE_REAL,
+    datasets_celldata[n] = H5Dcreate(file, dataset_names[n], this->H5Type,
                                      filespaces_vars_blocks_nx3_nx2_nx1[n],
                                      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -758,22 +747,22 @@ void ATHDF5Output<T>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) 
            property_list, locations_mesh);
 
   // Write coordinates
-  H5Dwrite(dataset_x1f, H5T_NATIVE_REAL, memspace_blocks_nx1, filespace_blocks_nx1,
+  H5Dwrite(dataset_x1f, this->H5Type, memspace_blocks_nx1, filespace_blocks_nx1,
            property_list, x1f_mesh);
-  H5Dwrite(dataset_x2f, H5T_NATIVE_REAL, memspace_blocks_nx2, filespace_blocks_nx2,
+  H5Dwrite(dataset_x2f, this->H5Type, memspace_blocks_nx2, filespace_blocks_nx2,
            property_list, x2f_mesh);
-  H5Dwrite(dataset_x3f, H5T_NATIVE_REAL, memspace_blocks_nx3, filespace_blocks_nx3,
+  H5Dwrite(dataset_x3f, this->H5Type, memspace_blocks_nx3, filespace_blocks_nx3,
            property_list, x3f_mesh);
-  H5Dwrite(dataset_x1v, H5T_NATIVE_REAL, memspace_blocks_nx1v, filespace_blocks_nx1v,
+  H5Dwrite(dataset_x1v, this->H5Type, memspace_blocks_nx1v, filespace_blocks_nx1v,
            property_list, x1v_mesh);
-  H5Dwrite(dataset_x2v, H5T_NATIVE_REAL, memspace_blocks_nx2v, filespace_blocks_nx2v,
+  H5Dwrite(dataset_x2v, this->H5Type, memspace_blocks_nx2v, filespace_blocks_nx2v,
            property_list, x2v_mesh);
-  H5Dwrite(dataset_x3v, H5T_NATIVE_REAL, memspace_blocks_nx3v, filespace_blocks_nx3v,
+  H5Dwrite(dataset_x3v, this->H5Type, memspace_blocks_nx3v, filespace_blocks_nx3v,
            property_list, x3v_mesh);
 
   // Write cell data
   for (int n = 0; n < num_datasets; ++n)
-    H5Dwrite(datasets_celldata[n], H5T_NATIVE_REAL,
+    H5Dwrite(datasets_celldata[n], this->H5Type,
              memspaces_vars_blocks_nx3_nx2_nx1[n], filespaces_vars_blocks_nx3_nx2_nx1[n],
              property_list, data_buffers[n]);
 
@@ -850,6 +839,7 @@ void ATHDF5Output<T>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) 
   output_params.next_time += output_params.dt;
   pin->SetInteger(output_params.block_name, "file_number", output_params.file_number);
   pin->SetReal(output_params.block_name, "next_time", output_params.next_time);
+  //h5db::reset_error_handler();
 }
 
 //----------------------------------------------------------------------------------------

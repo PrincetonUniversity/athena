@@ -281,15 +281,17 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
           op.variable = pin->GetString(op.block_name, "variable");
         }
-        op.data_format = pin->GetOrAddString(op.block_name, "data_format", "%12.5e");
-        op.data_format.insert(0, " "); // prepend with blank to separate columns
 
         // Construct new OutputType according to file format
         // NEW_OUTPUT_TYPES: Add block to construct new types here
         if (op.file_type.compare("hst") == 0) {
+          op.data_format = pin->GetOrAddString(op.block_name, "data_format", "%12.5e");
+          op.data_format.insert(0, " "); // prepend with blank to separate columns
           pnew_type = new HistoryOutput(op);
           num_hst_outputs++;
         } else if (op.file_type.compare("tab") == 0) {
+          op.data_format = pin->GetOrAddString(op.block_name, "data_format", "%12.5e");
+          op.data_format.insert(0, " "); // prepend with blank to separate columns
           pnew_type = new FormattedTableOutput(op);
         } else if (op.file_type.compare("vtk") == 0) {
           pnew_type = new VTKOutput(op);
@@ -302,7 +304,14 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           // HDF5 file format requested
           //
           // Check if data format is specified, and if not fall back to default
+          if (pin->DoesParameterExist(op.block_name, "data_format")) {
+            op.data_format = pin->GetString(op.block_name, "data_format");
+          } else {
+            op.data_format.clear(); // empty string means use default
+          }
           if (op.data_format.empty()) {
+            std::cout << "No data_format specified in output block '"
+                      << op.block_name << "', using default" << std::endl;
             if (H5_DOUBLE_PRECISION_ENABLED) {
               pnew_type = new ATHDF5Output<double>(op);
             } else {
@@ -312,6 +321,8 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           } else if (op.data_format.compare("half") == 0 ||
             op.data_format.compare("f16") == 0) {
 #ifdef fp16_t
+            std::cout << "Using half precision floating point data format for HDF5 output in block '"
+                      << op.block_name << "'" << std::endl;
             pnew_type = new ATHDF5Output<fp16_t>(op);
 #else
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
@@ -321,9 +332,13 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
 #endif
           } else if (op.data_format.compare("float") == 0 ||
                      op.data_format.compare("f32") == 0) {
+            std::cout << "Using float data format for HDF5 output in block '"
+                      << op.block_name << "'" << std::endl;
             pnew_type = new ATHDF5Output<float>(op);
           } else if (op.data_format.compare("double") == 0 ||
                      op.data_format.compare("f64") == 0) {
+            std::cout << "Using double data format for HDF5 output in block '"
+                      << op.block_name << "'" << std::endl;
             pnew_type = new ATHDF5Output<double>(op);
           } else if (op.data_format.compare("quad") == 0 ||
             op.data_format.compare("f128") == 0) {
@@ -343,10 +358,10 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
             vmin_vmax_check(op, pin); // can throw errors
             pnew_type = new ATHDF5Output<std::uint32_t>(op);
           } else {
-            msg << "### FATAL ERROR in Outputs constructor" << std::endl
-                << "Unrecognized HDF5 data format = '" << op.data_format
-                << "' in output block '" << op.block_name << "'" << std::endl;
-            ATHENA_ERROR(msg);
+            if (Globals::my_rank == 0) {
+              std::cout << "Ignoring unknown data_format '" << op.data_format
+                        << "' in output block '" << op.block_name << "'" << std::endl;
+            }
           }
 #else
           msg << "### FATAL ERROR in Outputs constructor" << std::endl

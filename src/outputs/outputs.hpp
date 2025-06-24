@@ -12,6 +12,7 @@
 
 // C++ headers
 #include <cstdio>  // std::size_t
+#include <limits>
 #include <string>
 
 // Athena++ headers
