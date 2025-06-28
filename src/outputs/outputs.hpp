@@ -14,6 +14,7 @@
 #include <cstdio>  // std::size_t
 #include <limits>
 #include <string>
+#include <type_traits>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -171,7 +172,8 @@ class ATHDF5Output : public OutputType {
  public:
   // Function declarations
   explicit ATHDF5Output(OutputParameters oparams) :
-           OutputType(oparams), H5Type(get_hdf5_type<h5out_t>()) {}
+           OutputType(oparams), H5Type(get_hdf5_type<h5out_t>()),
+           MeshType(get_hdf5_type<mesh_t>()) {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
   void MakeXDMF();
 
@@ -189,13 +191,21 @@ class ATHDF5Output : public OutputType {
   char (*dataset_names)[max_name_length+1];   // array of C-string names of datasets
   char (*variable_names)[max_name_length+1];  // array of C-string names of variables
   hid_t H5Type;                               // HDF5 type of data (float, double, etc.)
+  hid_t MeshType;                             // HDF5 type of mesh data (float, double, etc.)
+  // Set output type for mesh data
+  using mesh_t = typename std::conditional<
+    std::is_floating_point<h5out_t>::value,
+    h5out_t,
+    float
+>::type;
 
-  template<typename U = h5out_t>
+  // Function to get the HDF5 type for a given data type
+  template<typename T = h5out_t>
   inline hid_t get_hdf5_type();
-
+  // Instantiate the get_hdf5_type function for all types used in outputs.cpp
 #ifdef fp16_t
   template<>
-  inline hid_t get_hdf5_type<fp16_t>()  { return H5T_NATIVE_FLOAT16; }
+  inline hid_t get_hdf5_type<fp16_t>() { return H5T_NATIVE_FLOAT16; }
 #endif
   template<>
   inline hid_t get_hdf5_type<float>()  { return H5T_NATIVE_FLOAT; }
@@ -208,7 +218,38 @@ class ATHDF5Output : public OutputType {
   template<>
   inline hid_t get_hdf5_type<std::uint16_t>() { return H5T_NATIVE_UINT16; }
   template<>
-  inline hid_t get_hdf5_type<unsigned int>()    { return H5T_NATIVE_UINT; }
+  inline hid_t get_hdf5_type<unsigned int>() { return H5T_NATIVE_UINT; }
+
+  // Just type cast normalization for floating point types
+  template<typename T>
+  inline typename std::enable_if<
+    std::is_same<T, fp16_t>::value ||
+    std::is_same<T,  float>::value ||
+    std::is_same<T, double>::value ||
+    std::is_same<T, long double>::value
+  , T>::type
+  normalize(const Real data) {
+      return static_cast<T>(data);
+  }
+
+  // Apply normalization for unsigned integer types
+  template<typename T>
+  inline typename std::enable_if<
+    std::is_same<T, std::uint8_t>::value ||
+    std::is_same<T, std::uint16_t>::value ||
+    std::is_same<T, unsigned int>::value, T>::type
+  normalize(const Real data) {
+    Real out;
+    out = (out - output_params.vmin) /
+          (output_params.vmax - output_params.vmin) * std::numeric_limits<T>::max();
+    out = std::min(out, static_cast<Real>(std::numeric_limits<T>::max()));
+    return static_cast<T>(std::max(out, static_cast<Real>(0.0)));
+  }
+
+  // Dispatch function
+  inline h5out_t normalize(const Real data) {
+      return normalize<h5out_t>(data);
+  }
 };
 #endif
 
