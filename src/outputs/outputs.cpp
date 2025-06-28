@@ -149,6 +149,39 @@ inline bool vmin_vmax_check(OutputParameters &op, ParameterInput *pin) {
   return true;
 }
 
+enum base_type {
+  F = 0,  // floating point types
+  U = 1,  // unsigned integer types
+};
+
+inline bool type_string_check(const base_type base_t, const uint bits,
+                              const OutputParameters &op) {
+
+  std::string check_string;
+  const std::string &type_string = op.data_format;
+  const std::string &block_name = op.block_name;
+  if (base_t == base_type::F) {
+    std::string prefixes[] = {"f", "fp", "float"};
+    for (const auto &prefix : prefixes) {
+      check_string = prefix + std::to_string(bits);
+      if (check_string.compare(type_string) == 0) return true;
+    }
+    if (type_string.compare("half") == 0 && bits == 16) return true;
+    if (type_string.compare("float") == 0 && bits == 32) return true;
+    if (type_string.compare("double") == 0 && bits == 64) return true;
+    if (type_string.compare("quad") == 0 && bits == 128) return true;
+  } else if (base_t == base_type::U) {
+    std::string prefixes[] = {"u", "uint"};
+    for (const auto &prefix : prefixes) {
+      check_string = prefix + std::to_string(bits);
+      if (check_string.compare(type_string) == 0) return true;
+    }
+    if (type_string.compare("uint") == 0 && bits == 32) return true;
+    if (type_string.compare("ulong") == 0 && bits == 64) return true;
+  }
+  return false;
+}
+
 //----------------------------------------------------------------------------------------
 //! Outputs constructor
 
@@ -318,9 +351,14 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
               pnew_type = new ATHDF5Output<float>(op);
             }
           // Check float options
-          } else if (op.data_format.compare("half") == 0 ||
-            op.data_format.compare("f16") == 0) {
+          } else if (type_string_check(base_type::F, 16, op)) {
 #ifdef fp16_t
+            if (H5T_NATIVE_FLOAT16 == H5I_INVALID_HID) {
+              msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                  << "HDF5 is not configured for requested fp16 support in "
+                  << "output block '" << op.block_name << "'" << std::endl;
+              ATHENA_ERROR(msg);
+            }
             std::cout << "Using fp16 data format for HDF5 output in block '"
                       << op.block_name << "'" << std::endl;
             pnew_type = new ATHDF5Output<fp16_t>(op);
@@ -330,31 +368,25 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
                 << " in output block '" << op.block_name << "'" << std::endl;
             ATHENA_ERROR(msg);
 #endif
-          } else if (op.data_format.compare("float") == 0 ||
-                     op.data_format.compare("f32") == 0) {
+          } else if (type_string_check(base_type::F, 32, op)) {
             std::cout << "Using float data format for HDF5 output in block '"
                       << op.block_name << "'" << std::endl;
             pnew_type = new ATHDF5Output<float>(op);
-          } else if (op.data_format.compare("double") == 0 ||
-                     op.data_format.compare("f64") == 0) {
+          } else if (type_string_check(base_type::F, 64, op)) {
             std::cout << "Using double data format for HDF5 output in block '"
                       << op.block_name << "'" << std::endl;
             pnew_type = new ATHDF5Output<double>(op);
-          } else if (op.data_format.compare("quad") == 0 ||
-            op.data_format.compare("f128") == 0) {
+          } else if (type_string_check(base_type::F, 128, op)) {
             pnew_type = new ATHDF5Output<long double>(op);
           // Check integer options
           // vmin/vmax must be specified for these to convert to integers
-          } else if (op.data_format.compare("uint8") == 0 ||
-                     op.data_format.compare("u8") == 0) {
+          } else if (type_string_check(base_type::U, 8, op)) {
             vmin_vmax_check(op, pin); // can throw errors
             pnew_type = new ATHDF5Output<std::uint8_t>(op);
-          } else if (op.data_format.compare("uint16") == 0 ||
-                     op.data_format.compare("u16") == 0) {
+          } else if (type_string_check(base_type::U, 16, op)) {
             vmin_vmax_check(op, pin); // can throw errors
             pnew_type = new ATHDF5Output<std::uint16_t>(op);
-          } else if (op.data_format.compare("uint32") == 0 ||
-                     op.data_format.compare("u32") == 0) {
+          } else if (type_string_check(base_type::U, 32, op)) {
             vmin_vmax_check(op, pin); // can throw errors
             pnew_type = new ATHDF5Output<std::uint32_t>(op);
           } else {
