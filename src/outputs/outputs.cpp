@@ -156,7 +156,6 @@ enum base_type {
 
 inline bool type_string_check(const base_type base_t, const uint bits,
                               const OutputParameters &op) {
-
   std::string check_string;
   const std::string &type_string = op.data_format;
   const std::string &block_name = op.block_name;

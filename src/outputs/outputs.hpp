@@ -11,6 +11,7 @@
 // C headers
 
 // C++ headers
+#include <algorithm>  // std::max, std::min
 #include <cstdio>  // std::size_t
 #include <limits>
 #include <string>
@@ -191,7 +192,7 @@ class ATHDF5Output : public OutputType {
   char (*dataset_names)[max_name_length+1];   // array of C-string names of datasets
   char (*variable_names)[max_name_length+1];  // array of C-string names of variables
   hid_t H5Type;                               // HDF5 type of data (float, double, etc.)
-  hid_t MeshType;                             // HDF5 type of mesh data (float, double, etc.)
+  hid_t MeshType;                             // HDF5 type of mesh data
   // Set output type for mesh data
   using mesh_t = typename std::conditional<
     std::is_floating_point<h5out_t>::value,
