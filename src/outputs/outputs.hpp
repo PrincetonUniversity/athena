@@ -50,6 +50,7 @@ struct OutputParameters {
   bool output_sumx1, output_sumx2, output_sumx3;
   bool include_ghost_zones, cartesian_vector;
   bool orbital_system_output;
+  bool include_mesh_data; // whether to include mesh data in HDF5 output
   int islice, jslice, kslice;
   Real vmin, vmax; // used for casting to integer for HDF5 output
   Real x1_slice, x2_slice, x3_slice;

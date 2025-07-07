@@ -341,6 +341,8 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           } else {
             op.data_format.clear(); // empty string means use default
           }
+          // Check if we want to include the mesh data in the output
+          op.include_mesh_data = pin->GetOrAddBoolean(op.block_name, "mesh_data", true);
           if (op.data_format.empty()) {
             std::cout << "No data_format specified in output block '"
                       << op.block_name << "', using default" << std::endl;
