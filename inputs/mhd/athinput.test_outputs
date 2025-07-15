@@ -28,11 +28,29 @@ variable   = prim      # variables to be output
 dt         = 0.1       # time increment between outputs
 
 <output5>
+file_type   = hdf5     # HDF5 data dump
+variable    = prim     # variables to be output
+dt          = 0.1      # time increment between outputs
+
+<output6>
 file_type  = hdf5      # HDF5 data dump
 variable   = prim      # variables to be output
 dt         = 0.1       # time increment between outputs
+data_format = float16  # Optional data format string
 
-<output6>
+<output7>
+file_type  = hdf5      # HDF5 data dump
+variable   = prim      # variables to be output
+dt         = 0.1       # time increment between outputs
+data_format = float32  # Optional data format string
+
+<output8>
+file_type  = hdf5      # HDF5 data dump
+variable   = prim      # variables to be output
+dt         = 0.1       # time increment between outputs
+data_format = float64  # Optional data format string
+
+<output9>
 file_type  = rst       # Restart dump
 dt         = 0.2       # time increment between outputs
 
