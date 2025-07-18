@@ -240,13 +240,25 @@ class ATHDF5Output : public OutputType {
 
 // Instantiate the get_hdf5_type function for all types used in outputs.cpp
 #ifdef fp16_t
-template<> inline hid_t ATHDF5Output<fp16_t>::get_hdf5_type() { return H5T_NATIVE_FLOAT16; }
-template<> inline hid_t ATHDF5Output<fp16_t>::get_mesh_type() { return H5T_NATIVE_FLOAT16; }
+template<> inline hid_t ATHDF5Output<fp16_t>::get_hdf5_type() {
+  return H5T_NATIVE_FLOAT16;
+}
+template<> inline hid_t ATHDF5Output<fp16_t>::get_mesh_type() {
+  return H5T_NATIVE_FLOAT16;
+}
 #endif
-template<> inline hid_t ATHDF5Output<float>::get_hdf5_type() { return H5T_NATIVE_FLOAT; }
-template<> inline hid_t ATHDF5Output<float>::get_mesh_type() { return H5T_NATIVE_FLOAT; }
-template<> inline hid_t ATHDF5Output<double>::get_hdf5_type() { return H5T_NATIVE_DOUBLE; }
-template<> inline hid_t ATHDF5Output<double>::get_mesh_type() { return H5T_NATIVE_DOUBLE; }
+template<> inline hid_t ATHDF5Output<float>::get_hdf5_type() {
+  return H5T_NATIVE_FLOAT;
+}
+template<> inline hid_t ATHDF5Output<float>::get_mesh_type() {
+  return H5T_NATIVE_FLOAT;
+}
+template<> inline hid_t ATHDF5Output<double>::get_hdf5_type() {
+  return H5T_NATIVE_DOUBLE;
+}
+template<> inline hid_t ATHDF5Output<double>::get_mesh_type() {
+  return H5T_NATIVE_DOUBLE;
+}
 template<> inline hid_t ATHDF5Output<long double>::get_hdf5_type() {
   return H5T_NATIVE_LDOUBLE;
 }
