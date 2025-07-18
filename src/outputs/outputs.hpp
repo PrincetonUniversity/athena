@@ -174,8 +174,8 @@ class ATHDF5Output : public OutputType {
  public:
   // Function declarations
   explicit ATHDF5Output(OutputParameters oparams) :
-           OutputType(oparams), H5Type(get_hdf5_type<h5out_t>()),
-           MeshType(get_hdf5_type<mesh_t>()) {}
+           OutputType(oparams), H5Type(get_hdf5_type()),
+           MeshType(get_mesh_type()) {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
   void MakeXDMF();
 
@@ -202,25 +202,8 @@ class ATHDF5Output : public OutputType {
 >::type;
 
   // Function to get the HDF5 type for a given data type
-  template<typename T = h5out_t>
   inline hid_t get_hdf5_type();
-  // Instantiate the get_hdf5_type function for all types used in outputs.cpp
-#ifdef fp16_t
-  template<>
-  inline hid_t get_hdf5_type<fp16_t>() { return H5T_NATIVE_FLOAT16; }
-#endif
-  template<>
-  inline hid_t get_hdf5_type<float>()  { return H5T_NATIVE_FLOAT; }
-  template<>
-  inline hid_t get_hdf5_type<double>() { return H5T_NATIVE_DOUBLE; }
-  template<>
-  inline hid_t get_hdf5_type<long double>() { return H5T_NATIVE_LDOUBLE; }
-  template<>
-  inline hid_t get_hdf5_type<std::uint8_t>() { return H5T_NATIVE_UINT8; }
-  template<>
-  inline hid_t get_hdf5_type<std::uint16_t>() { return H5T_NATIVE_UINT16; }
-  template<>
-  inline hid_t get_hdf5_type<unsigned int>() { return H5T_NATIVE_UINT; }
+  inline hid_t get_mesh_type();
 
   // Just type cast normalization for floating point types
   template<typename T>
@@ -255,6 +238,40 @@ class ATHDF5Output : public OutputType {
 };
 #endif
 
+// Instantiate the get_hdf5_type function for all types used in outputs.cpp
+#ifdef fp16_t
+template<> inline hid_t ATHDF5Output<fp16_t>::get_hdf5_type() { return H5T_NATIVE_FLOAT16; }
+template<> inline hid_t ATHDF5Output<fp16_t>::get_mesh_type() { return H5T_NATIVE_FLOAT16; }
+#endif
+template<> inline hid_t ATHDF5Output<float>::get_hdf5_type() { return H5T_NATIVE_FLOAT; }
+template<> inline hid_t ATHDF5Output<float>::get_mesh_type() { return H5T_NATIVE_FLOAT; }
+template<> inline hid_t ATHDF5Output<double>::get_hdf5_type() { return H5T_NATIVE_DOUBLE; }
+template<> inline hid_t ATHDF5Output<double>::get_mesh_type() { return H5T_NATIVE_DOUBLE; }
+template<> inline hid_t ATHDF5Output<long double>::get_hdf5_type() {
+  return H5T_NATIVE_LDOUBLE;
+}
+template<> inline hid_t ATHDF5Output<long double>::get_mesh_type() {
+  return H5T_NATIVE_LDOUBLE;
+}
+template<> inline hid_t ATHDF5Output<std::uint8_t>::get_hdf5_type() {
+  return H5T_NATIVE_UINT8;
+}
+template<> inline hid_t ATHDF5Output<std::uint8_t>::get_mesh_type() {
+  return H5T_NATIVE_UINT8;
+}
+template<> inline hid_t ATHDF5Output<std::uint16_t>::get_hdf5_type() {
+  return H5T_NATIVE_UINT16;
+}
+template<> inline hid_t ATHDF5Output<std::uint16_t>::get_mesh_type() {
+  return H5T_NATIVE_UINT16;
+}
+template<> inline hid_t ATHDF5Output<unsigned int>::get_hdf5_type() {
+  return H5T_NATIVE_UINT;
+}
+template<> inline hid_t ATHDF5Output<unsigned int>::get_mesh_type() {
+  return H5T_NATIVE_UINT;
+}
+
 //----------------------------------------------------------------------------------------
 //! \class Outputs
 //! \brief root class for all Athena++ outputs. Provides a singly linked list of
@@ -271,4 +288,5 @@ class Outputs {
   OutputType *pfirst_type_; // ptr to head OutputType node in singly linked list
   // (not storing a reference to the tail node)
 };
+
 #endif // OUTPUTS_OUTPUTS_HPP_
