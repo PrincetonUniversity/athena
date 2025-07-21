@@ -208,7 +208,9 @@ class ATHDF5Output : public OutputType {
   // Just type cast normalization for floating point types
   template<typename T>
   inline typename std::enable_if<
+#ifdef fp16_t
     std::is_same<T, fp16_t>::value ||
+#endif
     std::is_same<T,  float>::value ||
     std::is_same<T, double>::value ||
     std::is_same<T, long double>::value
@@ -239,7 +241,7 @@ class ATHDF5Output : public OutputType {
 #endif
 
 // Instantiate the get_hdf5_type function for all types used in outputs.cpp
-#ifdef fp16_t
+#if defined(fp16_t) && defined(H5T_NATIVE_FLOAT16)
 template<> inline hid_t ATHDF5Output<fp16_t>::get_hdf5_type() {
   return H5T_NATIVE_FLOAT16;
 }
