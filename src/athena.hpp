@@ -25,7 +25,7 @@
 #elif defined(_Float16)
 #define fp16_t _Float16
 #endif
-else
+#else
 #define fp16_t_not_supported
 #pragma message("fp16 not supported for icpx")
 #endif // __INTEL_LLVM_COMPILER

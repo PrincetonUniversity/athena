@@ -19,10 +19,10 @@
 
 // Athena++ headers
 #include "../athena.hpp"
-#include "H5Tpublic.h"
 #include "io_wrapper.hpp"
 
 #ifdef HDF5OUTPUT
+#include <H5Tpublic.h>
 #include <hdf5.h>
 #endif
 
@@ -238,7 +238,6 @@ class ATHDF5Output : public OutputType {
       return normalize<h5out_t>(data);
   }
 };
-#endif
 
 // Instantiate the get_hdf5_type function for all types used in outputs.cpp
 #if defined(fp16_t) && defined(H5T_NATIVE_FLOAT16)
@@ -285,6 +284,7 @@ template<> inline hid_t ATHDF5Output<unsigned int>::get_hdf5_type() {
 template<> inline hid_t ATHDF5Output<unsigned int>::get_mesh_type() {
   return H5T_NATIVE_UINT;
 }
+#endif
 
 //----------------------------------------------------------------------------------------
 //! \class Outputs
