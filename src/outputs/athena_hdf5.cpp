@@ -979,5 +979,6 @@ template class ATHDF5Output<long double>;
 template class ATHDF5Output<std::uint8_t>;
 template class ATHDF5Output<std::uint16_t>;
 template class ATHDF5Output<std::uint32_t>;
+template class ATHDF5Output<std::uint64_t>;
 
 #endif  // HDF5OUTPUT

@@ -390,6 +390,9 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           } else if (type_string_check(base_type::U, 32, op)) {
             vmin_vmax_check(op, pin); // can throw errors
             pnew_type = new ATHDF5Output<std::uint32_t>(op);
+          } else if (type_string_check(base_type::U, 64, op)) {
+            vmin_vmax_check(op, pin); // can throw errors
+            pnew_type = new ATHDF5Output<std::uint64_t>(op);
           } else {
             if (Globals::my_rank == 0) {
               std::cout << "Ignoring unknown data_format '" << op.data_format

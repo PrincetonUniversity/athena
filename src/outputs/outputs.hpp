@@ -199,7 +199,7 @@ class ATHDF5Output : public OutputType {
     std::is_floating_point<h5out_t>::value,
     h5out_t,
     float
->::type;
+  >::type;
 
   // Function to get the HDF5 type for a given data type
   inline hid_t get_hdf5_type();
@@ -224,7 +224,8 @@ class ATHDF5Output : public OutputType {
   inline typename std::enable_if<
     std::is_same<T, std::uint8_t>::value ||
     std::is_same<T, std::uint16_t>::value ||
-    std::is_same<T, unsigned int>::value, T>::type
+    std::is_same<T, std::uint32_t>::value ||
+    std::is_same<T, std::uint64_t>::value, T>::type
   normalize(const Real data) {
     Real out;
     out = (out - output_params.vmin) /
@@ -278,11 +279,17 @@ template<> inline hid_t ATHDF5Output<std::uint16_t>::get_hdf5_type() {
 template<> inline hid_t ATHDF5Output<std::uint16_t>::get_mesh_type() {
   return H5T_NATIVE_UINT16;
 }
-template<> inline hid_t ATHDF5Output<unsigned int>::get_hdf5_type() {
-  return H5T_NATIVE_UINT;
+template<> inline hid_t ATHDF5Output<std::uint32_t>::get_hdf5_type() {
+  return H5T_NATIVE_UINT32;
 }
-template<> inline hid_t ATHDF5Output<unsigned int>::get_mesh_type() {
-  return H5T_NATIVE_UINT;
+template<> inline hid_t ATHDF5Output<std::uint32_t>::get_mesh_type() {
+  return H5T_NATIVE_UINT32;
+}
+template<> inline hid_t ATHDF5Output<std::uint64_t>::get_hdf5_type() {
+  return H5T_NATIVE_UINT64;
+}
+template<> inline hid_t ATHDF5Output<std::uint64_t>::get_mesh_type() {
+  return H5T_NATIVE_UINT64;
 }
 #endif
 
