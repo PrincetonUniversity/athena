@@ -49,7 +49,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
     n_2bodytr_(0), n_gr_(0), igr_H_(-1), n_sr_(0), n_gc_(0),
     n_freq_(0), index_gpe_(0), index_cr_(0), gradv_(0.) {
   // set the parameters from input file
-  Z_g_ = pin->GetOrAddReal("chemistry", "Z_g", 1.); // gas metallicity
+  // Gas metallicity is set by the inital elemental abundance instead
+  // Z_g_ = pin->GetOrAddReal("chemistry", "Z_g", 1.); // gas metallicity
   // PAH recombination efficiency
   phi_PAH_ = pin->GetOrAddReal("chemistry", "phi_PAH", 0.4);
   // size of the dust grain in cm, default 0.1 micron
