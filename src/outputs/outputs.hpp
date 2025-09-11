@@ -24,7 +24,17 @@
 #ifdef HDF5OUTPUT
 #include <H5Tpublic.h>
 #include <hdf5.h>
+#if H5_DOUBLE_PRECISION_ENABLED
+using H5Real = double;
+#if SINGLE_PRECISION_ENABLED
+#error "Cannot create HDF5 output at higher precision than internal representation"
 #endif
+#define H5T_NATIVE_REAL H5T_NATIVE_DOUBLE
+#else
+using H5Real = float;
+#define H5T_NATIVE_REAL H5T_NATIVE_FLOAT
+#endif // H5_DOUBLE_PRECISION_ENABLED
+#endif // HDF5OUTPUT
 
 // forward declarations
 class Mesh;
@@ -194,12 +204,18 @@ class ATHDF5Output : public OutputType {
   char (*variable_names)[max_name_length+1];  // array of C-string names of variables
   hid_t H5Type;                               // HDF5 type of data (float, double, etc.)
   hid_t MeshType;                             // HDF5 type of mesh data
+
   // Set output type for mesh data
-  using mesh_t = typename std::conditional<
-    std::is_floating_point<h5out_t>::value,
-    h5out_t,
-    float
-  >::type;
+using mesh_t = typename std::conditional<
+#ifdef fp16_t
+  std::is_same<h5out_t, fp16_t>::value,
+  fp16_t,
+#else
+  std::is_unsigned<h5out_t>::value,
+  H5Real,
+#endif
+  h5out_t
+>::type;
 
   // Function to get the HDF5 type for a given data type
   inline hid_t get_hdf5_type();
@@ -227,11 +243,10 @@ class ATHDF5Output : public OutputType {
     std::is_same<T, std::uint32_t>::value ||
     std::is_same<T, std::uint64_t>::value, T>::type
   normalize(const Real data) {
+    const Real nmax = static_cast<Real>(std::numeric_limits<T>::max());
     Real out;
-    out = (out - output_params.vmin) /
-          (output_params.vmax - output_params.vmin) * std::numeric_limits<T>::max();
-    out = std::min(out, static_cast<Real>(std::numeric_limits<T>::max()));
-    return static_cast<T>(std::max(out, static_cast<Real>(0.0)));
+    out = (data - output_params.vmin) * nmax / (output_params.vmax - output_params.vmin);
+    return static_cast<T>(std::max(std::min(out, nmax), 0.0));
   }
 
   // Dispatch function
@@ -240,7 +255,7 @@ class ATHDF5Output : public OutputType {
   }
 };
 
-// Instantiate the get_hdf5_type function for all types used in outputs.cpp
+// Instantiate the get_[hdf5, mesh]_type functions for all types used in outputs.cpp
 #if defined(fp16_t) && defined(H5T_NATIVE_FLOAT16)
 template<> inline hid_t ATHDF5Output<fp16_t>::get_hdf5_type() {
   return H5T_NATIVE_FLOAT16;
@@ -271,25 +286,25 @@ template<> inline hid_t ATHDF5Output<std::uint8_t>::get_hdf5_type() {
   return H5T_NATIVE_UINT8;
 }
 template<> inline hid_t ATHDF5Output<std::uint8_t>::get_mesh_type() {
-  return H5T_NATIVE_UINT8;
+  return H5T_NATIVE_REAL;
 }
 template<> inline hid_t ATHDF5Output<std::uint16_t>::get_hdf5_type() {
   return H5T_NATIVE_UINT16;
 }
 template<> inline hid_t ATHDF5Output<std::uint16_t>::get_mesh_type() {
-  return H5T_NATIVE_UINT16;
+  return H5T_NATIVE_REAL;
 }
 template<> inline hid_t ATHDF5Output<std::uint32_t>::get_hdf5_type() {
   return H5T_NATIVE_UINT32;
 }
 template<> inline hid_t ATHDF5Output<std::uint32_t>::get_mesh_type() {
-  return H5T_NATIVE_UINT32;
+  return H5T_NATIVE_REAL;
 }
 template<> inline hid_t ATHDF5Output<std::uint64_t>::get_hdf5_type() {
   return H5T_NATIVE_UINT64;
 }
 template<> inline hid_t ATHDF5Output<std::uint64_t>::get_mesh_type() {
-  return H5T_NATIVE_UINT64;
+  return H5T_NATIVE_REAL;
 }
 #endif
 
