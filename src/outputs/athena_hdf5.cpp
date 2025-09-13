@@ -417,7 +417,6 @@ void ATHDF5Output<h5out_t>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool 
       } // end if include_mesh_data
 
       // store the data into the data_buffers
-      // TODO(msbc): use vmin/vmax for int conversion
       if (variable.compare("prim") == 0 || variable.compare("cons") == 0) {
         int n_dataset = 0;
         int ndv = 0;
@@ -456,7 +455,7 @@ void ATHDF5Output<h5out_t>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool 
               for (int j = out_js; j <= out_je; j++) {
                 for (int i = out_is; i <= out_ie; i++, index++)
                   data_buffers[0][(ndv*num_blocks_local+nba)*nx3*nx2*nx1+index]
-                      = pod->data(v,k,j,i);
+                      = this->normalize(pod->data(v,k,j,i));
               }
             }
           }
