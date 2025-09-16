@@ -218,6 +218,10 @@ class ChemNetwork : public NetworkWrapper {
   void SetGrad_v(const int k, const int j, const int i);
   void UpdateRatesSpecial(const Real *y, const Real E);
   void UpdateJacobianSpecial(const Real *y, const Real E, AthenaArray<Real> &jac);
+  // store diagnostic output for heating and cooling rates
+  Real GCR_, GPE_, GH2gr_, GH2pump_, GH2diss_; // heating rates
+  Real LCII_, LCI_, LOI_, LHotGas_, LCOR_; // cooling rates
+  Real LH2_, LDust_, LRec_, LH2diss_, LHIion_; // cooling rates
 };
 
 #endif // CHEMISTRY_NETWORK_KIDA_HPP_

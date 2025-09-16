@@ -163,3 +163,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   return;
 }
+
+void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
+  // User output variables for heating and cooling rates in chemistry
+  AllocateUserOutputVariables(15);
+  return;
+}

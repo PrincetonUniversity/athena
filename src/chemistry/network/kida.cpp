@@ -39,6 +39,7 @@
 
 static bool output_rates = true;
 static bool output_thermo = true;  // only used if DEBUG
+static bool output_user = true; // heating and cooling rates
 
 //----------------------------------------------------------------------------------------
 //! \brief ChemNetwork constructor
@@ -323,6 +324,24 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   }
   // CO cooling paramters
   SetGrad_v(k, j, i);
+  // heating and cooling rates diagnostic output
+  if (output_user) {
+    pmy_mb_->user_out_var(0,k,j,i) = GCR_;
+    pmy_mb_->user_out_var(1,k,j,i) = GPE_;
+    pmy_mb_->user_out_var(2,k,j,i) = GH2gr_;
+    pmy_mb_->user_out_var(3,k,j,i) = GH2pump_;
+    pmy_mb_->user_out_var(4,k,j,i) = GH2diss_;
+    pmy_mb_->user_out_var(5,k,j,i) = LCII_;
+    pmy_mb_->user_out_var(6,k,j,i) = LCI_;
+    pmy_mb_->user_out_var(7,k,j,i) = LOI_;
+    pmy_mb_->user_out_var(8,k,j,i) = LHotGas_;
+    pmy_mb_->user_out_var(9,k,j,i) = LCOR_;
+    pmy_mb_->user_out_var(10,k,j,i) = LH2_;
+    pmy_mb_->user_out_var(11,k,j,i) = LDust_;
+    pmy_mb_->user_out_var(12,k,j,i) = LRec_;
+    pmy_mb_->user_out_var(13,k,j,i) = LH2diss_;
+    pmy_mb_->user_out_var(14,k,j,i) = LHIion_;
+  }
   return;
 }
 
@@ -729,6 +748,26 @@ Real ChemNetwork::Edot(const Real t, const Real *y, const Real ED) {
   dEdt = (GCR + GPE + GH2gr + GH2pump + GH2diss)
          - (LCII + LCI + LOI + LHotGas + LCOR
             + LH2 + LDust + LRec + LH2diss + LHIion);
+  // output user variables for heating and cooling rates
+  if (output_user) {
+    // store variables in private class variables
+    // then output in InitializeNextStep()
+    GCR_ = GCR;
+    GPE_ = GPE;
+    GH2gr_ = GH2gr;
+    GH2pump_ = GH2pump;
+    GH2diss_ = GH2diss;
+    LCII_ = LCII;
+    LCI_ = LCI;
+    LOI_ = LOI;
+    LHotGas_ = LHotGas;
+    LCOR_ = LCOR;
+    LH2_ = LH2;
+    LDust_ = LDust;
+    LRec_ = LRec;
+    LH2diss_ = LH2diss;
+    LHIion_ = LHIion;
+  }
   // return in code units
   Real dEDdt = dEdt * nH_ / pmy_mb_->pmy_mesh->punit->code_energydensity_cgs
                * pmy_mb_->pmy_mesh->punit->code_time_cgs;
@@ -1183,7 +1222,8 @@ void ChemNetwork::InitializeReactions() {
       if (pr->reactants_[0] == "H2" && pr->reactants_[1] == "H2") {
         i2body_H2_H2_ = i2body;
       }
-      if (pr->reactants_[0] == "H" && pr->reactants_[1] == "e-") {
+      if (pr->reactants_[0] == "H" && pr->reactants_[1] == "e-" 
+           && pr->products_[0] == "H+" && pr->products_[1] == "e-") {
         i2body_H_e_ = i2body;
       }
       if (pr->formula_ == 3 || pr->formula_ == 4 || pr->formula_ == 5) {
@@ -1429,6 +1469,7 @@ void ChemNetwork::UpdateRates(const Real *y, const Real E) {
 
   Real T, Tcap;
   if (NON_BAROTROPIC_EOS) {
+    // This ignore contributions from H-
     T = E / Thermo::CvCold(y_H2, xHe_, y_e);
   } else {
     // isothermal EOS
