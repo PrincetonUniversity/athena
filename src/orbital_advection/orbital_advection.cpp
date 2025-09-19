@@ -8,8 +8,8 @@
 
 // C/C++ headers
 #include <algorithm>  // max(), min()
-#include <cfloat>     // FLT_MAX, FLT_MIN
 #include <iostream>   // cout, endl
+#include <limits>
 #include <sstream>    //
 #include <stdexcept>  // runtime_error
 #include <string>     // c_str()
@@ -432,8 +432,8 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
     // }
 
     //set vK_max, vK_min
-    vK_max = -(FLT_MAX);
-    vK_min = (FLT_MAX);
+    vK_max = -std::numeric_limits<float>::max();
+    vK_min = std::numeric_limits<float>::max();
     if (orbital_direction == 1) { // cartesian or cylindrical
       // cell center
       for (int k=pmb_->ks; k<= pmb_->ke; k++) {
@@ -494,7 +494,7 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
     int mylevel = pmb_->loc.level;
     int lblevel = mylevel, rblevel = mylevel;
     for(int n=0; n<pbval_->nneighbor; n++) {
-      NeighborBlock& nb = pbval_->neighbor[n];
+      const NeighborBlock& nb = pbval_->neighbor[n];
       if (nb.ni.type != NeighborConnect::face) break;
       if (orbital_direction == 1) {
         if (nb.fid == BoundaryFace::inner_x2)
@@ -509,24 +509,22 @@ void OrbitalAdvection::InitializeOrbitalAdvection() {
       }
     }
 
-    min_dt = (FLT_MAX);
+    min_dt = std::numeric_limits<Real>::max();
     // restrictions from meshblock size
-    if(orbital_uniform_mesh) { // uniform mesh
-      if(vK_max>0.0) {
-        if(lblevel > mylevel)
+    if (orbital_uniform_mesh) { // uniform mesh
+      if (vK_max>0.0) {
+        if (lblevel > mylevel)
           min_dt = std::min(min_dt, dx*(onx/2-xgh)/vK_max);
         else
           min_dt = std::min(min_dt, dx*(onx-xgh)/vK_max);
       }
-      if(vK_min<0.0) {
-        if(rblevel > mylevel)
+      if (vK_min<0.0) {
+        if (rblevel > mylevel)
           min_dt = std::min(min_dt, -dx*(onx/2-xgh)/vK_min);
         else
           min_dt = std::min(min_dt, -dx*(onx-xgh)/vK_min);
       }
     }
-    // else {
-    //  }
 
     // restrictions from derivatives of orbital velocity
     Real coef = 1.0;
