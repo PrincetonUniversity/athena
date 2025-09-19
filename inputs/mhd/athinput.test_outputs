@@ -77,6 +77,14 @@ vmin       = -2.0      # Minimum value for output
 vmax       = 2.0       # Maximum value for output
 
 <output12>
+file_type  = hdf5      # HDF5 data dump
+variable   = d         # variables to be output
+dt         = 0.1       # time increment between outputs
+data_format = uint8    # Optional data format string
+vmin       = -2.0      # Minimum value for output
+vmax       = 2.0       # Maximum value for output
+
+<output13>
 file_type  = rst       # Restart dump
 dt         = 0.2       # time increment between outputs
 
