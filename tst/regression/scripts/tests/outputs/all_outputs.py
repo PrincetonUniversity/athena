@@ -98,6 +98,8 @@ def analyze():
             if idx > 7:
                 # de-normalize data for unsigned types
                 bits = 2**(idx-5)
+                if idx == 12:
+                    bits = 8
                 nmax = 2**bits - 1
                 data = (data / nmax) * (vmax - vmin) + vmin
             atol = {np.uint8: 2e-2, np.uint16: 7e-5}.get(dtype, None)
