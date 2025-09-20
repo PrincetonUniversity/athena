@@ -28,6 +28,7 @@
 #include "../../globals.hpp"
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
+#include "../../orbital_advection/orbital_advection.hpp"
 #include "../../parameter_input.hpp"
 #include "../../utils/buffer_utils.hpp"
 #include "../bvals.hpp"
@@ -44,7 +45,8 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(MeshBlock *pmb,
             FaceField *var, FaceField &coarse_buf, EdgeField &var_flux, bool fflux)
           : BoundaryVariable(pmb, fflux), var_fc(var), coarse_buf(coarse_buf),
             e1(var_flux.x1e), e2(var_flux.x2e), e3(var_flux.x3e),
-            flip_across_pole_(flip_across_pole_field) {
+            flip_across_pole_(flip_across_pole_field),
+            fshear_emfy_correction_(false), fshear_emfz_correction_(false) {
   // assuming Field, not generic FaceCenteredBoundaryVariable:
   // flip_across_pole_ = flip_across_pole_field;
 
@@ -122,6 +124,11 @@ FaceCenteredBoundaryVariable::FaceCenteredBoundaryVariable(MeshBlock *pmb,
     shear_fc_phys_id_ = fc_flx_phys_id_ + 2;
     shear_emf_phys_id_ = shear_fc_phys_id_+ 1;
 #endif
+
+    if (pbval_->shearing_box == 1 || pmb->porb->orbital_advection_defined)
+      fshear_emfy_correction_ = true;
+    if (pbval_->shearing_box == 2)
+      fshear_emfz_correction_ = true;
 
     int nc2 = pmb->ncells2;
     int nc3 = pmb->ncells3;
@@ -1452,16 +1459,22 @@ void FaceCenteredBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
           int *counts2 = pbval_->sb_flux_data_[upper].recv_count;
           for (int n=0; n<3; n++) {
             if (counts1[n]>0) {
-              shear_send_count_emf_[upper][n] = counts1[n]*(nx3+1)
-                                                +(counts1[n]+1)*nx3;
+              shear_send_count_emf_[upper][n] = 0;
+              if (fshear_emfy_correction_)
+                shear_send_count_emf_[upper][n] += counts1[n]*(nx3+1);
+              if (fshear_emfz_correction_)
+                shear_send_count_emf_[upper][n] += (counts1[n]+1)*nx3;
               shear_bd_flux_[upper].sflag[n] = BoundaryStatus::waiting;
             } else {
               shear_send_count_emf_[upper][n] = 0;
               shear_bd_flux_[upper].sflag[n] = BoundaryStatus::completed;
             }
             if (counts2[n]>0) {
-              shear_recv_count_emf_[upper][n] = counts2[n]*(nx3+1)
-                                                +(counts2[n]+1)*nx3;
+              shear_recv_count_emf_[upper][n] = 0;
+              if (fshear_emfy_correction_)
+                shear_recv_count_emf_[upper][n] += counts2[n]*(nx3+1);
+              if (fshear_emfz_correction_)
+                shear_recv_count_emf_[upper][n] += (counts2[n]+1)*nx3;
               shear_bd_flux_[upper].flag[n] = BoundaryStatus::waiting;
             } else {
               shear_recv_count_emf_[upper][n] = 0;

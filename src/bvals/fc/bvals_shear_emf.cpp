@@ -74,17 +74,21 @@ void FaceCenteredBoundaryVariable::LoadEMFShearingBoxBoundarySameLevel(
 
   int p = 0;
   // pack e2
-  for (int k=sk; k<=ek+1; k++) {
+  if (fshear_emfy_correction_) {
+    for (int k=sk; k<=ek+1; k++) {
 #pragma omp simd
-    for (int j=sj; j<=ej; j++) {
-      buf[p++] = src.x2e(k,j);
+      for (int j=sj; j<=ej; j++) {
+        buf[p++] = src.x2e(k,j);
+      }
     }
   }
   // pack e3
-  for (int k=sk; k<=ek; k++) {
+  if (fshear_emfz_correction_) {
+    for (int k=sk; k<=ek; k++) {
 #pragma omp simd
-    for (int j=sj; j<=ej+1; j++) {
-      buf[p++] = src.x3e(k,j);
+      for (int j=sj; j<=ej+1; j++) {
+        buf[p++] = src.x3e(k,j);
+      }
     }
   }
   return;
@@ -102,21 +106,27 @@ void FaceCenteredBoundaryVariable::SendEMFShearingBoxBoundaryCorrection() {
     if (pbval_->is_shear[upper]) {
       // step 1. -- average edges of shboxvar_fc_flx_
       // average e3 for x1x2 edge
-      for (int k=pmb->ks; k<=pmb->ke; k++) {
-        for (int j=pmb->js; j<=pmb->je+1; j+=pmb->block_size.nx2)
-          shear_var_emf_[upper].x3e(k,j) *= 0.5;
+      if (fshear_emfz_correction_) {
+        for (int k=pmb->ks; k<=pmb->ke; k++) {
+          for (int j=pmb->js; j<=pmb->je+1; j+=pmb->block_size.nx2)
+            shear_var_emf_[upper].x3e(k,j) *= 0.5;
+        }
       }
       if(pmb->block_size.nx3 > 1) {
         // average e2 for x1x3 edge
         if (pbval_->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::block
             || pbval_->block_bcs[BoundaryFace::inner_x3] == BoundaryFlag::periodic) {
-          for (int j=pmb->js; j<=pmb->je; j++)
-            shear_var_emf_[upper].x2e(pmb->ks,j) *= 0.5;
+          if (fshear_emfy_correction_) {
+            for (int j=pmb->js; j<=pmb->je; j++)
+              shear_var_emf_[upper].x2e(pmb->ks,j) *= 0.5;
+          }
         }
         if (pbval_->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::block
             || pbval_->block_bcs[BoundaryFace::outer_x3] == BoundaryFlag::periodic) {
-          for (int j=pmb->js; j<=pmb->je; j++)
-            shear_var_emf_[upper].x2e(pmb->ke+1,j) *= 0.5;
+          if (fshear_emfy_correction_) {
+            for (int j=pmb->js; j<=pmb->je; j++)
+              shear_var_emf_[upper].x2e(pmb->ke+1,j) *= 0.5;
+          }
         }
       }
 
@@ -177,17 +187,21 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundarySameLevel(
 
   int p = 0;
   // unpack e2
-  for (int k=sk; k<=ek+1; k++) {
+  if (fshear_emfy_correction_) {
+    for (int k=sk; k<=ek+1; k++) {
 #pragma omp simd
-    for (int j=sj; j<=ej; j++) {
-      dst.x2e(k,0,j) = buf[p++];
+      for (int j=sj; j<=ej; j++) {
+        dst.x2e(k,0,j) = buf[p++];
+      }
     }
   }
   // unpack e3
-  for (int k=sk; k<=ek; k++) {
+  if (fshear_emfz_correction_) {
+    for (int k=sk; k<=ek; k++) {
 #pragma omp simd
-    for (int j=sj; j<=ej+1; j++) {
-      dst.x3e(k,0,j) = buf[p++];
+      for (int j=sj; j<=ej+1; j++) {
+        dst.x3e(k,0,j) = buf[p++];
+      }
     }
   }
   return;
@@ -258,7 +272,7 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundaryCorrection() {
     if (pbval_->is_shear[upper]) {
       Real eps = (1.0-2*upper)*pbval_->eps_flux_;
       int ii = ib[upper];
-      if (pbval_->shearing_box == 1 || porb->orbital_advection_defined) {
+      if (fshear_emfy_correction_) {
         // ex2
         AthenaArray<Real> &pe2 = shear_map_emf_[upper].x2e;
         for (int k=ks; k<=ke+1; k++) {
@@ -273,7 +287,7 @@ void FaceCenteredBoundaryVariable::SetEMFShearingBoxBoundaryCorrection() {
           }
         }
       }
-      if (pbval_->shearing_box == 2 || porb->orbital_advection_defined) {
+      if (fshear_emfz_correction_) {
         //ex3
         AthenaArray<Real> &pe3 = shear_map_emf_[upper].x3e;
         for (int k=ks; k<=ke; k++) {

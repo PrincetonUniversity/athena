@@ -200,6 +200,7 @@ class FaceCenteredBoundaryVariable : public BoundaryVariable {
   // Shearing box Field
   FaceField shear_fc_[2];
   int shear_send_count_fc_[2][4], shear_recv_count_fc_[2][4];
+  bool fshear_emfy_correction_, fshear_emfz_correction_;
 
 #ifdef MPI_PARALLEL
   int shear_fc_phys_id_;

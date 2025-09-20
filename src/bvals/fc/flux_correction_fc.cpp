@@ -75,7 +75,7 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
         }
         // pack e3
         // KGF: shearing box
-        // KT: now correction for EMF is skipped for SB without OA
+        // KT: now correction for EMF-z is skipped for SB
         //     just pack e3 without frame conversion
         for (int k=pmb->ks; k<=pmb->ke; k++) {
           for (int j=pmb->js; j<=pmb->je+1; j++)
@@ -145,7 +145,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
         // pack e3
         // KGF: shearing box
         // shift azmuthal velocity if shearing boundary blocks
-        // KT: now correction for EMF is skipped for SB without OA
+        // KT: now correction for EMF-z is skipped for SB
+        //     just pack e3 without frame conversion
         for (int j=pmb->js; j<=pmb->je+1; j++)
           buf[p++] = e3(k,j,i);
         // x2 direction
@@ -203,7 +204,8 @@ int FaceCenteredBoundaryVariable::LoadFluxBoundaryBufferSameLevel(
       // pack e3
       // KGF: shearing box
       // shift azmuthal velocity if shearing boundary blocks
-      // KT: now correction for EMF is skipped for SB without OA
+      // KT: now correction for EMF-z is skipped for SB
+      //     just pack e3 without frame conversion
       for (int k=pmb->ks; k<=pmb->ke; k++)
         buf[p++] = e3(k,j,i);
       // x1x3 edge
