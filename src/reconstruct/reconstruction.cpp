@@ -37,10 +37,10 @@ void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x);
 //!constructor
 
 Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
-    pmy_block_(pmb), characteristic_projection_(false), ppm_fast_(false),
+    pmy_block_(pmb), characteristic_projection_(false), rec3m_(REC3METHOD::PPM),
     floor_ppm_fast_{pin->GetOrAddBoolean("time", "floor_ppm_fast", false)},
     extremum_preserving_{pin->GetOrAddBoolean("time", "ext_preserving", true)},
-    uniform_{true, true, true}, curvilinear_{false, false}, fweno_(false),
+    uniform_{true, true, true}, curvilinear_{false, false},
     correct_ic_{pin->GetOrAddBoolean("time", "correct_ic", false)},
     correct_err_{pin->GetOrAddBoolean("time", "correct_err", false)} {
   // Read and set type of spatial reconstruction
@@ -64,12 +64,15 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     characteristic_projection_ = true;
   } else if (input_recon == "3f") {
     xorder = 3;
-    ppm_fast_ = true;
-  } else if (input_recon == "weno") {
-    // Technically WENO-Z+M can achieve 5th order, but here we use xorder=3
-    // because its stencil requirement is same as PPM.
+    rec3m_ = REC3METHOD::PPMF;
+  } else if (input_recon == "wenoz") {
+    // Technically WENO-Z class solvers can achieve 5th order, but here we use xorder=3
+    // because their stencil requirement is same as PPM.
     xorder = 3;
-    fweno_ = true;
+    rec3m_ = REC3METHOD::WENOZ;
+  } else if (input_recon == "wenomz") {
+    xorder = 3;
+    rec3m_ = REC3METHOD::WENOMZ;
   } else if ((input_recon == "4") || (input_recon == "4c")) {
     // Full 4th-order scheme for hydro or MHD on uniform Cartesian grids
     xorder = 4;
@@ -229,7 +232,7 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     uniform_[X3DIR] = false;
 
   // check coordinate compatibility with WENO
-  if (fweno_) {
+  if (rec3m_ == REC3METHOD::WENOZ || rec3m_ == REC3METHOD::WENOMZ) {
     if (!uniform_[X1DIR] || !uniform_[X2DIR] || !uniform_[X3DIR]
       || curvilinear_[X1DIR] || curvilinear_[X2DIR]) {
       std::stringstream msg;

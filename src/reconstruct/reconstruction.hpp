@@ -20,6 +20,10 @@
 class MeshBlock;
 class ParameterInput;
 
+
+// enum declaretion
+enum class REC3METHOD {PPM, PPMF, WENOZ, WENOMZ};
+
 //! \class Reconstruction
 //! \brief member functions implement various spatial reconstruction algorithms
 
@@ -103,18 +107,30 @@ class Reconstruction {
   inline void WENOZ(const Real &q_im2, const Real &q_im1, const Real &q_i,
               const Real &q_ip1, const Real &q_ip2, Real &ql_ip1, Real &qr_i) noexcept;
 
-  inline void WENOZM(const Real &q_im2, const Real &q_im1, const Real &q_i,
+  inline void WENOMZ(const Real &q_im2, const Real &q_im1, const Real &q_i,
               const Real &q_ip1, const Real &q_ip2, Real &ql_ip1, Real &qr_i) noexcept;
 
-  void WENOZMX1(const int k, const int j, const int il, const int iu,
+  void WENOZX1(const int k, const int j, const int il, const int iu,
+               const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+               AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+
+  void WENOZX2(const int k, const int j, const int il, const int iu,
+               const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+               AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+
+  void WENOZX3(const int k, const int j, const int il, const int iu,
+               const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
+               AthenaArray<Real> &wl, AthenaArray<Real> &wr);
+
+  void WENOMZX1(const int k, const int j, const int il, const int iu,
                 const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
                 AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  void WENOZMX2(const int k, const int j, const int il, const int iu,
+  void WENOMZX2(const int k, const int j, const int il, const int iu,
                 const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
                 AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
-  void WENOZMX3(const int k, const int j, const int il, const int iu,
+  void WENOMZX3(const int k, const int j, const int il, const int iu,
                 const AthenaArray<Real> &w, const AthenaArray<Real> &bcc,
                 AthenaArray<Real> &wl, AthenaArray<Real> &wr);
 
@@ -167,14 +183,23 @@ class Reconstruction {
                              const AthenaArray<Real> &q,
                              AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void WENOZMX1(const int k, const int j, const int il, const int iu,
-           const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+  void WENOZX1(const int k, const int j, const int il, const int iu,
+               const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void WENOZMX2(const int k, const int j, const int il, const int iu,
-           const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+  void WENOZX2(const int k, const int j, const int il, const int iu,
+               const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
-  void WENOZMX3(const int k, const int j, const int il, const int iu,
-           const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+  void WENOZX3(const int k, const int j, const int il, const int iu,
+               const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void WENOMZX1(const int k, const int j, const int il, const int iu,
+                const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void WENOMZX2(const int k, const int j, const int il, const int iu,
+                const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+
+  void WENOMZX3(const int k, const int j, const int il, const int iu,
+                const AthenaArray<Real> &q, AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
   // overloads for cell centered variables with memory order as [k,j,i,n]
   // Notice that the default order in Athena++ is [n,k,j,i]
@@ -236,10 +261,9 @@ class Reconstruction {
 
   // switches for reconstruction method variants:
   bool characteristic_projection_; // reconstruction on characteristic hydro vars
-  bool ppm_fast_; // true if the fast version of PPM is used
+  REC3METHOD rec3m_; // reconstruction method for xorder = 3
   bool floor_ppm_fast_; // true if floor is set in the fast version of PPM
   bool extremum_preserving_; // true if Colella & Sekora limiter is used
-  bool fweno_;
   bool uniform_[3], curvilinear_[2];
   // (Cartesian reconstruction formulas are used for x3 azimuthal coordinate in both
   // cylindrical and spherical-polar coordinates)
