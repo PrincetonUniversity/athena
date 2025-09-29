@@ -261,6 +261,7 @@ class Reconstruction {
 
   // switches for reconstruction method variants:
   bool characteristic_projection_; // reconstruction on characteristic hydro vars
+  bool minmod_;
   REC3METHOD rec3m_; // reconstruction method for xorder = 3
   bool floor_ppm_fast_; // true if floor is set in the fast version of PPM
   bool extremum_preserving_; // true if Colella & Sekora limiter is used

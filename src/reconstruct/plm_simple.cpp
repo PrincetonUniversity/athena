@@ -53,42 +53,78 @@ void Reconstruction::PiecewiseLinearX1(
     }
   }
 
-  // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
-  // with uniform mesh spacing
-  if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
-    for (int n=0; n<=nu; ++n) {
+  if (minmod_) {
+    if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
+      for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dq2 = dql(n,i)*dqr(n,i);
-        dqm(n,i) = 2.0*dq2/(dql(n,i) + dqr(n,i));
-        if (dq2 <= 0.0) dqm(n,i) = 0.0;
+        for (int i=il; i<=iu; ++i) {
+          Real dq2 = dql(n,i)*dqr(n,i);
+          if (dq2 <= 0.0) {
+            dqm(n,i) = 0.0;
+          } else {
+            if (dql(n,i) >= 0.0)
+              dqm(n,i) = std::min(dql(n,i), dqr(n,i));
+            else
+              dqm(n,i) = std::max(dql(n,i), dqr(n,i));
+          }
+        }
+      }
+    } else {
+      for (int n=0; n<NWAVE; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dq2 = dql(n,i)*dqr(n,i);
+          Real dqrw = dqr(n,i)*pco->dx1f(i)/pco->dx1v(i);
+          Real dqlw = dql(n,i)*pco->dx1f(i)/pco->dx1v(i-1);
+          if (dq2 <= 0.0) {
+            dqm(n,i) = 0.0;
+          } else {
+            if (dqlw >= 0.0)
+              dqm(n,i) = std::min(dqlw, dqrw);
+            else
+              dqm(n,i) = std::max(dqlw, dqrw);
+          }
+        }
       }
     }
-
-    // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
-    // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
   } else {
-    for (int n=0; n<=nu; ++n) {
+    // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
+    // with uniform mesh spacing
+    if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
+      for (int n=0; n<=nu; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dqF =  dqr(n,i)*pco->dx1f(i)/pco->dx1v(i);
-        Real dqB =  dql(n,i)*pco->dx1f(i)/pco->dx1v(i-1);
-        Real dq2 = dqF*dqB;
-        // cf, cb -> 2 (uniform Cartesian mesh / original VL value) w/ vanishing curvature
-        // (may not exactly hold for nonuniform meshes, but converges w/ smooth
-        // nonuniformity)
-        Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i)); // (Mignone eq 33)
-        Real cb = pco->dx1v(i-1)/(pco->x1v(i  ) - pco->x1f(i));
-        // (modified) VL limiter (Mignone eq 37)
-        // (dQ^F term from eq 31 pulled into eq 37, then multiply by (dQ^F/dQ^F)^2)
-        dqm(n,i) = (dq2*(cf*dqB + cb*dqF)/
-                    (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
-        if (dq2 <= 0.0) dqm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
+        for (int i=il; i<=iu; ++i) {
+          Real dq2 = dql(n,i)*dqr(n,i);
+          dqm(n,i) = 2.0*dq2/(dql(n,i) + dqr(n,i));
+          if (dq2 <= 0.0) dqm(n,i) = 0.0;
+        }
+      }
 
-        // Real v = dqB/dqF;
-        // monotoniced central (MC) limiter (Mignone eq 38)
-        // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
-        //dqm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
+      // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
+      // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
+    } else {
+      for (int n=0; n<=nu; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dqF =  dqr(n,i)*pco->dx1f(i)/pco->dx1v(i);
+          Real dqB =  dql(n,i)*pco->dx1f(i)/pco->dx1v(i-1);
+          Real dq2 = dqF*dqB;
+          // cf, cb -> 2 (uniform Cartesian mesh / original VL value) w/ vanishing curvature
+          // (may not exactly hold for nonuniform meshes, but converges w/ smooth
+          // nonuniformity)
+          Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i)); // (Mignone eq 33)
+          Real cb = pco->dx1v(i-1)/(pco->x1v(i  ) - pco->x1f(i));
+          // (modified) VL limiter (Mignone eq 37)
+          // (dQ^F term from eq 31 pulled into eq 37, then multiply by (dQ^F/dQ^F)^2)
+          dqm(n,i) = (dq2*(cf*dqB + cb*dqF)/
+                      (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
+          if (dq2 <= 0.0) dqm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
+
+          // Real v = dqB/dqF;
+          // monotoniced central (MC) limiter (Mignone eq 38)
+          // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
+          //dqm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
+        }
       }
     }
   }
@@ -133,6 +169,8 @@ void Reconstruction::PiecewiseLinearX1(
         // renamed dw* -> dq* from plm.cpp
       }
     }
+
+    // KT: I skip adding the minmod limiter for radiation transport
 
     // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
     // with uniform mesh spacing
@@ -223,40 +261,78 @@ void Reconstruction::PiecewiseLinearX2(
     }
   }
 
-  // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
-  // with uniform mesh spacing
-  if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
-    for (int n=0; n<=nu; ++n) {
+  if (minmod_) {
+    if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
+      for (int n=0; n<=nu; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dq2 = dql(n,i)*dqr(n,i);
-        dqm(n,i) = 2.0*dq2/(dql(n,i) + dqr(n,i));
-        if (dq2 <= 0.0) dqm(n,i) = 0.0;
+        for (int i=il; i<=iu; ++i) {
+          Real dq2 = dql(n,i)*dqr(n,i);
+          if (dq2 <= 0.0) {
+            dqm(n,i) = 0.0;
+          } else {
+            if (dql(n,i) >= 0.0)
+              dqm(n,i) = std::min(dql(n,i), dqr(n,i));
+            else
+              dqm(n,i) = std::max(dql(n,i), dqr(n,i));
+          }
+        }
+      }
+    } else {
+      Real cr =  pco->dx2f(j)/pco->dx2v(j);
+      Real cl =  pco->dx2f(j)/pco->dx2v(j-1);
+      for (int n=0; n<=nu; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dq2 = dql(n,i)*dqr(n,i);
+          Real dqrw = dqr(n,i)*cr;
+          Real dqlw = dql(n,i)*cl;
+          if (dq2 <= 0.0) {
+            dqm(n,i) = 0.0;
+          } else {
+            if (dqlw >= 0.0)
+              dqm(n,i) = std::min(dqlw, dqrw);
+            else
+              dqm(n,i) = std::max(dqlw, dqrw);
+          }
+        }
       }
     }
-
-    // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
-    // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
   } else {
-    Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
-    Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
-    Real dxF = pco->dx2f(j)/pco->dx2v(j); // dimensionless, not technically a dx quantity
-    Real dxB = pco->dx2f(j)/pco->dx2v(j-1);
-    for (int n=0; n<=nu; ++n) {
+    // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
+    // with uniform mesh spacing
+    if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
+      for (int n=0; n<=nu; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dqF =  dqr(n,i)*dxF;
-        Real dqB =  dql(n,i)*dxB;
-        Real dq2 = dqF*dqB;
-        // (modified) VL limiter (Mignone eq 37)
-        dqm(n,i) = (dq2*(cf*dqB + cb*dqF)/
-                    (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
-        if (dq2 <= 0.0) dqm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
+        for (int i=il; i<=iu; ++i) {
+          Real dq2 = dql(n,i)*dqr(n,i);
+          dqm(n,i) = 2.0*dq2/(dql(n,i) + dqr(n,i));
+          if (dq2 <= 0.0) dqm(n,i) = 0.0;
+        }
+      }
 
-        // Real v = dqB/dqF;
-        // // monotoniced central (MC) limiter (Mignone eq 38)
-        // // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
-        // dqm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
+      // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
+      // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
+    } else {
+      Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
+      Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
+      Real dxF = pco->dx2f(j)/pco->dx2v(j); // dimensionless, not technically a dx quantity
+      Real dxB = pco->dx2f(j)/pco->dx2v(j-1);
+      for (int n=0; n<=nu; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dqF =  dqr(n,i)*dxF;
+          Real dqB =  dql(n,i)*dxB;
+          Real dq2 = dqF*dqB;
+          // (modified) VL limiter (Mignone eq 37)
+          dqm(n,i) = (dq2*(cf*dqB + cb*dqF)/
+                      (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
+          if (dq2 <= 0.0) dqm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
+
+          // Real v = dqB/dqF;
+          // // monotoniced central (MC) limiter (Mignone eq 38)
+          // // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
+          // dqm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
+        }
       }
     }
   }
@@ -301,6 +377,8 @@ void Reconstruction::PiecewiseLinearX2(
         qcn[n] = qn[n];
       }
     }
+
+    // KT: I skip adding the minmod limiter for radiation transport
 
     // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
     // with uniform mesh spacing
@@ -392,34 +470,72 @@ void Reconstruction::PiecewiseLinearX3(
     }
   }
 
-  // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
-  // with uniform mesh spacing
-  if (uniform_[X3DIR]) {
-    for (int n=0; n<=nu; ++n) {
+  if (minmod_) {
+    if (uniform_[X3DIR]) {
+      for (int n=0; n<=nu; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dq2 = dql(n,i)*dqr(n,i);
-        dqm(n,i) = 2.0*dq2/(dql(n,i) + dqr(n,i));
-        if (dq2 <= 0.0) dqm(n,i) = 0.0;
+        for (int i=il; i<=iu; ++i) {
+          Real dq2 = dql(n,i)*dqr(n,i);
+          if (dq2 <= 0.0) {
+            dqm(n,i) = 0.0;
+          } else {
+            if (dql(n,i) >= 0.0)
+              dqm(n,i) = std::min(dql(n,i), dqr(n,i));
+            else
+              dqm(n,i) = std::max(dql(n,i), dqr(n,i));
+          }
+        }
+      }
+    } else {
+      Real cr =  pco->dx3f(k)/pco->dx3v(k);
+      Real cl =  pco->dx3f(k)/pco->dx3v(k-1);
+      for (int n=0; n<=nu; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dq2 = dql(n,i)*dqr(n,i);
+          Real dqrw = dqr(n,i)*cr;
+          Real dqlw = dql(n,i)*cl;
+          if (dq2 <= 0.0) {
+            dqm(n,i) = 0.0;
+          } else {
+            if (dqlw >= 0.0)
+              dqm(n,i) = std::min(dqlw, dqrw);
+            else
+              dqm(n,i) = std::max(dqlw, dqrw);
+          }
+        }
       }
     }
-
-    // Apply original VL limiter's general expression for a Cartesian-like coordinate with
-    // nonuniform mesh spacing
   } else {
-    Real dxF = pco->dx3f(k)/pco->dx3v(k);
-    Real dxB = pco->dx3f(k)/pco->dx3v(k-1);
-    for (int n=0; n<=nu; ++n) {
+    // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
+    // with uniform mesh spacing
+    if (uniform_[X3DIR]) {
+      for (int n=0; n<=nu; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dqF =  dqr(n,i)*dxF;
-        Real dqB =  dql(n,i)*dxB;
-        Real dq2 = dqF*dqB;
-        // original VL limiter (Mignone eq 36)
-        dqm(n,i) = 2.0*dq2/(dqF + dqB);
-        // dq2 > 0 ---> dqF, dqB are nonzero and have the same sign ----> no risk for
-        // (dqF + dqB) = 0 cancellation causing a divide-by-0 in the above line
-        if (dq2 <= 0.0) dqm(n,i) = 0.0;
+        for (int i=il; i<=iu; ++i) {
+          Real dq2 = dql(n,i)*dqr(n,i);
+          dqm(n,i) = 2.0*dq2/(dql(n,i) + dqr(n,i));
+          if (dq2 <= 0.0) dqm(n,i) = 0.0;
+        }
+      }
+
+      // Apply original VL limiter's general expression for a Cartesian-like coordinate with
+      // nonuniform mesh spacing
+    } else {
+      Real dxF = pco->dx3f(k)/pco->dx3v(k);
+      Real dxB = pco->dx3f(k)/pco->dx3v(k-1);
+      for (int n=0; n<=nu; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dqF =  dqr(n,i)*dxF;
+          Real dqB =  dql(n,i)*dxB;
+          Real dq2 = dqF*dqB;
+          // original VL limiter (Mignone eq 36)
+          dqm(n,i) = 2.0*dq2/(dqF + dqB);
+          // dq2 > 0 ---> dqF, dqB are nonzero and have the same sign ----> no risk for
+          // (dqF + dqB) = 0 cancellation causing a divide-by-0 in the above line
+          if (dq2 <= 0.0) dqm(n,i) = 0.0;
+        }
       }
     }
   }
@@ -465,6 +581,8 @@ void Reconstruction::PiecewiseLinearX3(
         qcn[n] = qn[n];
       }
     }
+
+    // KT: I skip adding the minmod limiter for radiation transport
 
     // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
     // with uniform mesh spacing

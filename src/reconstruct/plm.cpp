@@ -64,42 +64,78 @@ void Reconstruction::PiecewiseLinearX1(
     LeftEigenmatrixDotVector(IVX, il, iu, bx, wc, dwr);
   }
 
-  // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
-  // with uniform mesh spacing
-  if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
-    for (int n=0; n<NWAVE; ++n) {
+  if (minmod_) {
+    if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
+      for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dw2 = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = 2.0*dw2/(dwl(n,i) + dwr(n,i));
-        if (dw2 <= 0.0) dwm(n,i) = 0.0;
+        for (int i=il; i<=iu; ++i) {
+          Real dw2 = dwl(n,i)*dwr(n,i);
+          if (dw2 <= 0.0) {
+            dwm(n,i) = 0.0;
+          } else {
+            if (dwl(n,i) >= 0.0)
+              dwm(n,i) = std::min(dwl(n,i), dwr(n,i));
+            else
+              dwm(n,i) = std::max(dwl(n,i), dwr(n,i));
+          }
+        }
+      }
+    } else {
+      for (int n=0; n<NWAVE; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dw2 = dwl(n,i)*dwr(n,i);
+          Real dwrw =  dwr(n,i)*pco->dx1f(i)/pco->dx1v(i);
+          Real dwlw =  dwl(n,i)*pco->dx1f(i)/pco->dx1v(i-1);
+          if (dw2 <= 0.0) {
+            dwm(n,i) = 0.0;
+          } else {
+            if (dwlw >= 0.0)
+              dwm(n,i) = std::min(dwlw, dwrw);
+            else
+              dwm(n,i) = std::max(dwlw, dwrw);
+          }
+        }
       }
     }
-
-    // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
-    // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
   } else {
-    for (int n=0; n<NWAVE; ++n) {
+    // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
+    // with uniform mesh spacing
+    if (uniform_[X1DIR] && !curvilinear_[X1DIR]) {
+      for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dqF =  dwr(n,i)*pco->dx1f(i)/pco->dx1v(i);
-        Real dqB =  dwl(n,i)*pco->dx1f(i)/pco->dx1v(i-1);
-        Real dq2 = dqF*dqB;
-        // cf, cb -> 2 (uniform Cartesian mesh / original VL value) w/ vanishing curvature
-        // (may not exactly hold for nonuniform meshes, but converges w/ smooth
-        // nonuniformity)
-        Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i)); // (Mignone eq 33)
-        Real cb = pco->dx1v(i-1)/(pco->x1v(i  ) - pco->x1f(i));
-        // (modified) VL limiter (Mignone eq 37)
-        // (dQ^F term from eq 31 pulled into eq 37, then multiply by (dQ^F/dQ^F)^2)
-        dwm(n,i) = (dq2*(cf*dqB + cb*dqF)/
-                    (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
-        if (dq2 <= 0.0) dwm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
+        for (int i=il; i<=iu; ++i) {
+          Real dw2 = dwl(n,i)*dwr(n,i);
+          dwm(n,i) = 2.0*dw2/(dwl(n,i) + dwr(n,i));
+          if (dw2 <= 0.0) dwm(n,i) = 0.0;
+        }
+      }
 
-        // Real v = dqB/dqF;
-        // monotoniced central (MC) limiter (Mignone eq 38)
-        // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
-        // dwm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
+      // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
+      // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
+    } else {
+      for (int n=0; n<NWAVE; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dqF =  dwr(n,i)*pco->dx1f(i)/pco->dx1v(i);
+          Real dqB =  dwl(n,i)*pco->dx1f(i)/pco->dx1v(i-1);
+          Real dq2 = dqF*dqB;
+          // cf, cb -> 2 (uniform Cartesian mesh / original VL value) w/ vanishing curvature
+          // (may not exactly hold for nonuniform meshes, but converges w/ smooth
+          // nonuniformity)
+          Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i)); // (Mignone eq 33)
+          Real cb = pco->dx1v(i-1)/(pco->x1v(i  ) - pco->x1f(i));
+          // (modified) VL limiter (Mignone eq 37)
+          // (dQ^F term from eq 31 pulled into eq 37, then multiply by (dQ^F/dQ^F)^2)
+          dwm(n,i) = (dq2*(cf*dqB + cb*dqF)/
+                      (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
+          if (dq2 <= 0.0) dwm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
+
+          // Real v = dqB/dqF;
+          // monotoniced central (MC) limiter (Mignone eq 38)
+          // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
+          // dwm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
+        }
       }
     }
   }
@@ -178,40 +214,78 @@ void Reconstruction::PiecewiseLinearX2(
     LeftEigenmatrixDotVector(IVY, il, iu, bx, wc, dwr);
   }
 
-  // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
-  // with uniform mesh spacing
-  if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
-    for (int n=0; n<NWAVE; ++n) {
+  if (minmod_) {
+    if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
+      for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dw2 = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = 2.0*dw2/(dwl(n,i) + dwr(n,i));
-        if (dw2 <= 0.0) dwm(n,i) = 0.0;
+        for (int i=il; i<=iu; ++i) {
+          Real dw2 = dwl(n,i)*dwr(n,i);
+          if (dw2 <= 0.0) {
+            dwm(n,i) = 0.0;
+          } else {
+            if (dwl(n,i) >= 0.0)
+              dwm(n,i) = std::min(dwl(n,i), dwr(n,i));
+            else
+              dwm(n,i) = std::max(dwl(n,i), dwr(n,i));
+          }
+        }
+      }
+    } else {
+      Real cr =  pco->dx2f(j)/pco->dx2v(j);
+      Real cl =  pco->dx2f(j)/pco->dx2v(j-1);
+      for (int n=0; n<NWAVE; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dw2 = dwl(n,i)*dwr(n,i);
+          Real dwrw = dwr(n,i)*cr;
+          Real dwlw = dwl(n,i)*cl;
+          if (dw2 <= 0.0) {
+            dwm(n,i) = 0.0;
+          } else {
+            if (dwlw >= 0.0)
+              dwm(n,i) = std::min(dwlw, dwrw);
+            else
+              dwm(n,i) = std::max(dwlw, dwrw);
+          }
+        }
       }
     }
-
-    // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
-    // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
   } else {
-    Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
-    Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
-    Real dxF = pco->dx2f(j)/pco->dx2v(j); // dimensionless, not technically a dx quantity
-    Real dxB = pco->dx2f(j)/pco->dx2v(j-1);
-    for (int n=0; n<NWAVE; ++n) {
+    // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
+    // with uniform mesh spacing
+    if (uniform_[X2DIR] && !curvilinear_[X2DIR]) {
+      for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dqF =  dwr(n,i)*dxF;
-        Real dqB =  dwl(n,i)*dxB;
-        Real dq2 = dqF*dqB;
-        // (modified) VL limiter (Mignone eq 37)
-        dwm(n,i) = (dq2*(cf*dqB + cb*dqF)/
-                    (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
-        if (dq2 <= 0.0) dwm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
+        for (int i=il; i<=iu; ++i) {
+          Real dw2 = dwl(n,i)*dwr(n,i);
+          dwm(n,i) = 2.0*dw2/(dwl(n,i) + dwr(n,i));
+          if (dw2 <= 0.0) dwm(n,i) = 0.0;
+        }
+      }
 
-        // Real v = dqB/dqF;
-        // // monotoniced central (MC) limiter (Mignone eq 38)
-        // // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
-        // dwm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
+      // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
+      // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
+    } else {
+      Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
+      Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
+      Real dxF = pco->dx2f(j)/pco->dx2v(j); // dimensionless, not technically a dx quantity
+      Real dxB = pco->dx2f(j)/pco->dx2v(j-1);
+      for (int n=0; n<NWAVE; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dqF =  dwr(n,i)*dxF;
+          Real dqB =  dwl(n,i)*dxB;
+          Real dq2 = dqF*dqB;
+          // (modified) VL limiter (Mignone eq 37)
+          dwm(n,i) = (dq2*(cf*dqB + cb*dqF)/
+                      (SQR(dqB) + SQR(dqF) + dq2*(cf + cb - 2.0)));
+          if (dq2 <= 0.0) dwm(n,i) = 0.0; // ---> no concern for divide-by-0 in above line
+
+          // Real v = dqB/dqF;
+          // // monotoniced central (MC) limiter (Mignone eq 38)
+          // // (std::min calls should avoid issue if divide-by-zero causes v=Inf)
+          // dwm(n,i) = dqF*std::max(0.0, std::min(0.5*(1.0 + v), std::min(cf, cb*v)));
+        }
       }
     }
   }
@@ -292,33 +366,71 @@ void Reconstruction::PiecewiseLinearX3(
   }
 
 
-  // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
-  // with uniform mesh spacing
-  if (uniform_[X3DIR]) {
-    for (int n=0; n<NWAVE; ++n) {
+  if (minmod_) {
+    if (uniform_[X3DIR]) {
+      for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dw2 = dwl(n,i)*dwr(n,i);
-        dwm(n,i) = 2.0*dw2/(dwl(n,i) + dwr(n,i));
-        if (dw2 <= 0.0) dwm(n,i) = 0.0;
+        for (int i=il; i<=iu; ++i) {
+          Real dw2 = dwl(n,i)*dwr(n,i);
+          if (dw2 <= 0.0) {
+            dwm(n,i) = 0.0;
+          } else {
+            if (dwl(n,i) >= 0.0)
+              dwm(n,i) = std::min(dwl(n,i), dwr(n,i));
+            else
+              dwm(n,i) = std::max(dwl(n,i), dwr(n,i));
+          }
+        }
+      }
+    } else {
+      Real cr =  pco->dx3f(k)/pco->dx3v(k);
+      Real cl =  pco->dx3f(k)/pco->dx3v(k-1);
+      for (int n=0; n<NWAVE; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dw2 = dwl(n,i)*dwr(n,i);
+          Real dwrw = dwr(n,i)*cr;
+          Real dwlw = dwl(n,i)*cl;
+          if (dw2 <= 0.0) {
+            dwm(n,i) = 0.0;
+          } else {
+            if (dwlw >= 0.0)
+              dwm(n,i) = std::min(dwlw, dwrw);
+            else
+              dwm(n,i) = std::max(dwlw, dwrw);
+          }
+        }
       }
     }
-    // Apply original VL limiter's general expression for a Cartesian-like coordinate with
-    // nonuniform mesh spacing
   } else {
-    Real dxF = pco->dx3f(k)/pco->dx3v(k);
-    Real dxB = pco->dx3f(k)/pco->dx3v(k-1);
-    for (int n=0; n<NWAVE; ++n) {
+    // Apply simplified van Leer (VL) limiter expression for a Cartesian-like coordinate
+    // with uniform mesh spacing
+    if (uniform_[X3DIR]) {
+      for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
-      for (int i=il; i<=iu; ++i) {
-        Real dqF =  dwr(n,i)*dxF;
-        Real dqB =  dwl(n,i)*dxB;
-        Real dq2 = dqF*dqB;
-        // original VL limiter (Mignone eq 36)
-        dwm(n,i) = 2.0*dq2/(dqF + dqB);
-        // dq2 > 0 ---> dqF, dqB are nonzero and have the same sign ----> no risk for
-        // (dqF + dqB) = 0 cancellation causing a divide-by-0 in the above line
-        if (dq2 <= 0.0) dwm(n,i) = 0.0;
+        for (int i=il; i<=iu; ++i) {
+          Real dw2 = dwl(n,i)*dwr(n,i);
+          dwm(n,i) = 2.0*dw2/(dwl(n,i) + dwr(n,i));
+          if (dw2 <= 0.0) dwm(n,i) = 0.0;
+        }
+      }
+      // Apply original VL limiter's general expression for a Cartesian-like coordinate with
+      // nonuniform mesh spacing
+    } else {
+      Real dxF = pco->dx3f(k)/pco->dx3v(k);
+      Real dxB = pco->dx3f(k)/pco->dx3v(k-1);
+      for (int n=0; n<NWAVE; ++n) {
+#pragma omp simd simdlen(SIMD_WIDTH)
+        for (int i=il; i<=iu; ++i) {
+          Real dqF =  dwr(n,i)*dxF;
+          Real dqB =  dwl(n,i)*dxB;
+          Real dq2 = dqF*dqB;
+          // original VL limiter (Mignone eq 36)
+          dwm(n,i) = 2.0*dq2/(dqF + dqB);
+          // dq2 > 0 ---> dqF, dqB are nonzero and have the same sign ----> no risk for
+          // (dqF + dqB) = 0 cancellation causing a divide-by-0 in the above line
+          if (dq2 <= 0.0) dwm(n,i) = 0.0;
+        }
       }
     }
   }

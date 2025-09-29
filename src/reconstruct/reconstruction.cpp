@@ -37,7 +37,8 @@ void DoolittleLUPSolve(Real **lu, int *pivot, Real *b, int n, Real *x);
 //!constructor
 
 Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
-    pmy_block_(pmb), characteristic_projection_(false), rec3m_(REC3METHOD::PPM),
+    pmy_block_(pmb), characteristic_projection_(false),
+    minmod_(false), rec3m_(REC3METHOD::PPM),
     floor_ppm_fast_{pin->GetOrAddBoolean("time", "floor_ppm_fast", false)},
     extremum_preserving_{pin->GetOrAddBoolean("time", "ext_preserving", true)},
     uniform_{true, true, true}, curvilinear_{false, false},
@@ -54,6 +55,13 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     xorder = 2;
   } else if (input_recon == "2c") {
     xorder = 2;
+    characteristic_projection_ = true;
+  } else if (input_recon == "2m") {
+    xorder = 2;
+    minmod_ = true;
+  } else if (input_recon == "2cm" || input_recon == "2mc") {
+    xorder = 2;
+    minmod_ = true;
     characteristic_projection_ = true;
   } else if (input_recon == "3") {
     // PPM approximates interfaces with 4th-order accurate stencils, but use xorder=3
