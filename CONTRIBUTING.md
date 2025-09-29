@@ -14,7 +14,7 @@ The guidelines in this document are meant to help make the development of Athena
   * The [Athena 4.2 Test Page](https://www.astro.princeton.edu/~jstone/Athena/tests/) contains useful algorithm test results.
 * The [Athena++ website](https://www.athena-astro.app/) is hosted by [GitHub Pages](https://pages.github.com/).
 * The latest version of the [Athena++ documentation](https://github.com/PrincetonUniversity/athena/wiki) is hosted as a GitHub Wiki attached to this repository.
-* The Athena++ Slack workspace is located at [athena-pp.slack.com](https:://athena-pp.slack.com).
+* The Athena++ Slack workspace is located at [athena-pp.slack.com](https://athena-pp.slack.com).
 <!-- Could add links to New PR, New Issue, Issue Labels e.g. current "bugs" -->
 
 
