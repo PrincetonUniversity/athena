@@ -223,7 +223,7 @@ void Reconstruction::PiecewiseParabolicX1(
 
     //--- Step 4a. -----------------------------------------------------------------------
     // For uniform Cartesian-like coordinate: apply CS limiters to parabolic interpolant
-    if (extremum_preserving_ && uniform_[X1DIR]) {
+    if (extremum_preserving_ && uniform_[X1DIR] && !curvilinear_[X1DIR]) {
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
