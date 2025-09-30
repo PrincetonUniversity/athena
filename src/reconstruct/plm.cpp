@@ -111,8 +111,8 @@ void Reconstruction::PiecewiseLinearX1(
         }
       }
 
-      // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
-      // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
+    // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
+    // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
     } else {
       for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
@@ -120,7 +120,7 @@ void Reconstruction::PiecewiseLinearX1(
           Real dqF =  dwr(n,i)*pco->dx1f(i)/pco->dx1v(i);
           Real dqB =  dwl(n,i)*pco->dx1f(i)/pco->dx1v(i-1);
           Real dq2 = dqF*dqB;
-          // cf, cb -> 2 (uniform Cartesian mesh / original VL value) w/ vanishing curvature
+          // cf, cb -> 2 (uniform Cartesian mesh / original VL) w/ vanishing curvature
           // (may not exactly hold for nonuniform meshes, but converges w/ smooth
           // nonuniformity)
           Real cf = pco->dx1v(i  )/(pco->x1f(i+1) - pco->x1v(i)); // (Mignone eq 33)
@@ -263,12 +263,12 @@ void Reconstruction::PiecewiseLinearX2(
         }
       }
 
-      // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
-      // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
+    // Apply general VL limiter expression w/ the Mignone correction for a Cartesian-like
+    // coordinate with nonuniform mesh spacing or for any curvilinear coordinate spacing
     } else {
       Real cf = pco->dx2v(j  )/(pco->x2f(j+1) - pco->x2v(j));
       Real cb = pco->dx2v(j-1)/(pco->x2v(j  ) - pco->x2f(j));
-      Real dxF = pco->dx2f(j)/pco->dx2v(j); // dimensionless, not technically a dx quantity
+      Real dxF = pco->dx2f(j)/pco->dx2v(j); // dimensionless, not technically a dx
       Real dxB = pco->dx2f(j)/pco->dx2v(j-1);
       for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
@@ -414,8 +414,8 @@ void Reconstruction::PiecewiseLinearX3(
           if (dw2 <= 0.0) dwm(n,i) = 0.0;
         }
       }
-      // Apply original VL limiter's general expression for a Cartesian-like coordinate with
-      // nonuniform mesh spacing
+      // Apply original VL limiter's general expression for a Cartesian-like coordinate
+      // with nonuniform mesh spacing
     } else {
       Real dxF = pco->dx3f(k)/pco->dx3v(k);
       Real dxB = pco->dx3f(k)/pco->dx3v(k-1);
