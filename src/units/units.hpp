@@ -11,9 +11,9 @@
 // C headers
 
 // C++ headers
+#include <iomanip>
 #include <string>
 #include <tuple>
-#include <iomanip>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -22,11 +22,14 @@
 //! \brief Physical constants defined in c.g.s.
 namespace Constants {
 static const Real grav_const_cgs = 6.67259e-8;
-static const Real Msun_cgs       = 1.9884099e33; // Changed from 1.9891e+33 to agree with Astropy
+// Changed from 1.9891e+33 to agree with Astropy:
+static const Real Msun_cgs       = 1.9884099e33;
 static const Real solar_lum_cgs  = 3.8268e33;
-static const Real yr_cgs         = 3.15576e7;    // Changed from 3.155815e7 to agree with Astropy and the FITS standard
+// Changed from 3.155815e7 to agree with Astropy and the FITS standard:
+static const Real yr_cgs         = 3.15576e7;
 static const Real Myr_cgs        = 3.15576e13;
-static const Real pc_cgs         = 3.08567758e18;// Changed from 3.085678e+18 to agree with Astropy
+// Changed from 3.085678e+18 to agree with Astropy:
+static const Real pc_cgs         = 3.08567758e18;
 static const Real kpc_cgs        = 3.08567758e21;
 static const Real au_cgs         = 1.495978707e13;
 static const Real km_s_cgs       = 1.0e5;
@@ -66,7 +69,7 @@ class Units {
   // To access basis value use: std::get<0>(basis_X)
   // To access basis unit use : std::get<1>(basis_X)
   //
-  // User chooses a 'length' basis (with possible units):  
+  // User chooses a 'length' basis (with possible units):
   //   length (pc, kpc, au, cm, m, km)
   // Then either 'time' or 'velocity' (with possible units):
   //   time (yr, Myr, s)

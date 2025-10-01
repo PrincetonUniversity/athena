@@ -72,7 +72,7 @@ Units::Units(ParameterInput *pin) :
   //     basis_velocity = 1.0 m/s
   //     basis_ndensity = 1.0 n/m^3
   // 7) custom_basis
-  //    User chooses a 'length' basis (with possible units):  
+  //    User chooses a 'length' basis (with possible units):
   //      length (pc, kpc, au, cm, m, km)
   //    Then either 'time' or 'velocity' (with possible units):
   //      time (yr, Myr, s)
@@ -123,41 +123,43 @@ Units::Units(ParameterInput *pin) :
     basis_mass = std::make_tuple(1.0,"Msun");
 
     velocity_basis = true;
-
   } else if (unit_system.compare("cgs") == 0) {
     // ism unit system, but for special relativity
     basis_length = std::make_tuple(1.0,"cm");
     basis_time   = std::make_tuple(1.0,"s");
     basis_mass   = std::make_tuple(1.0,"g");
-    
+
     // Complete the basis set with dummy values and default units
     basis_velocity = std::make_tuple(1.0,"cm/s");
     basis_ndensity = std::make_tuple(1.0,"n/cm^3");
 
     mass_basis = true;
-
   } else if (unit_system.compare("SI") == 0) {
     // ism unit system, but for special relativity
     basis_length = std::make_tuple(1.0,"m");
     basis_time   = std::make_tuple(1.0,"s");
     basis_mass   = std::make_tuple(1.0,"kg");
-    
+
     // Complete the basis set with dummy values and default units
     basis_velocity = std::make_tuple(1.0,"m/s");
     basis_ndensity = std::make_tuple(1.0,"n/m^3");
 
     mass_basis = true;
-
-  } // New unit basis systems should be added here
-  else if (unit_system.compare("custom_basis") == 0) {
+  } else if (unit_system.compare("custom_basis") == 0) {
+    // New unit basis systems should be added here
     int basis_count = 0;
 
     // Create the tuples with dummy values and default units if not given
-    basis_length   = std::make_tuple(1.0,pin->GetOrAddString("units", "length_unit","pc"));
-    basis_time     = std::make_tuple(1.0,pin->GetOrAddString("units", "time_unit","Myr"));
-    basis_velocity = std::make_tuple(1.0,pin->GetOrAddString("units", "velocity_unit","km/s"));
-    basis_ndensity = std::make_tuple(1.0,pin->GetOrAddString("units", "ndensity_unit","n/cm^3"));
-    basis_mass     = std::make_tuple(1.0,pin->GetOrAddString("units", "mass_unit","Msun"));
+    basis_length   = std::make_tuple(1.0,pin->GetOrAddString("units",
+                                                             "length_unit","pc"));
+    basis_time     = std::make_tuple(1.0,pin->GetOrAddString("units",
+                                                             "time_unit","Myr"));
+    basis_velocity = std::make_tuple(1.0,pin->GetOrAddString("units",
+                                                             "velocity_unit","km/s"));
+    basis_ndensity = std::make_tuple(1.0,pin->GetOrAddString("units",
+                                                             "ndensity_unit","n/cm^3"));
+    basis_mass     = std::make_tuple(1.0,pin->GetOrAddString("units",
+                                                             "mass_unit","Msun"));
 
     // Process values from input file
     if (pin->DoesParameterExist("units", "length")) {
@@ -241,7 +243,7 @@ void Units::SetUnitsConstants() {
   //
   // The same is true for the basis values (basis_X).
   // i.e. mass (code units) * basis_mass = mass (Msun)
-  // 
+  //
   // For constants named X_code, divide the code value by
   // the constant to get the real (pysical) world value.
   // i.e. mass (code units) / Msun_code = mass (Msun)
@@ -385,7 +387,7 @@ void Units::PrintytUnitsOverride() {
 
 //========================================================================================
 //! \fn void Units::ConvertTimeFromInputFile()
-//! \brief Converts time values from input file using code 
+//! \brief Converts time values from input file using code
 //!        basis unit conversions
 //========================================================================================
 void Units::ConvertTimeFromInputFile(ParameterInput *pin) {
@@ -412,7 +414,7 @@ void Units::ConvertTimeFromInputFile(ParameterInput *pin) {
 
 //========================================================================================
 //! \fn void Units::ConvertMeshFromInputFile()
-//! \brief Converts mesh box size values from input file 
+//! \brief Converts mesh box size values from input file
 //!        using code basis unit conversions
 //========================================================================================
 void Units::ConvertMeshFromInputFile(ParameterInput *pin) {
@@ -468,7 +470,7 @@ void Units::ConvertInputFile(ParameterInput *pin) {
 //
 //    Additional units should be added here.
 //========================================================================================
-Real Units::Returncgs(std::string parameter,Real value,std::string unit) {
+Real Units::Returncgs(std::string parameter, Real value, std::string unit) {
   Real code_cgs_;
   // Only needed if unit not recognized
   std::stringstream msg;
@@ -540,8 +542,13 @@ Real Units::Returncgs(std::string parameter,Real value,std::string unit) {
       msg << "  Allowed units are: Msun, g, or kg" << std::endl;
       ATHENA_ERROR(msg);
     }
+  } else {
+    code_cgs_ = 0.0;
+    std::stringstream msg2;
+    msg2 << "### FATAL ERROR in Units constructor" << std::endl
+         << "   Parameter: " << parameter << " is not a valid choice" << std::endl;
+      ATHENA_ERROR(msg2);
   }
-
   return code_cgs_;
 }
 
@@ -577,7 +584,8 @@ void Units::CompleteBasis() {
   if (mass_basis) {
     code_mass_cgs_ = Returncgs("basis_mass",
                       std::get<0>(basis_mass),std::get<1>(basis_mass));
-    code_ndensity_cgs_ = code_mass_cgs_/(mean_weight*Constants::H_mass_cgs*CUBE(code_length_cgs_));
+    code_ndensity_cgs_ = code_mass_cgs_/(
+        mean_weight*Constants::H_mass_cgs*CUBE(code_length_cgs_));
     // Set corresponding ndensity basis
     Real nden_conv = Returncgs("basis_ndensity",1.0,std::get<1>(basis_ndensity));
     std::get<0>(basis_ndensity) = code_ndensity_cgs_/nden_conv;
