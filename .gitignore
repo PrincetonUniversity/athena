@@ -44,6 +44,9 @@ meshtest.dat
 # Mac OS metadata
 .DS_Store
 
+# vscode files
+.vscode/
+
 # editor temp files
 *~
 *.swp
