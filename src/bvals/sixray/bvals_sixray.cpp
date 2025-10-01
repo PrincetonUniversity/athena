@@ -272,7 +272,7 @@ BoundaryFace SixRayBoundaryVariable::GetOppositeBoundaryFace(
                                        const BoundaryFace direction) {
   BoundaryFace opp_direction;
 
-    if (direction == BoundaryFace::inner_x1) {
+  if (direction == BoundaryFace::inner_x1) {
     opp_direction = BoundaryFace::outer_x1;
   } else if (direction == BoundaryFace::outer_x1) {
     opp_direction = BoundaryFace::inner_x1;
@@ -295,6 +295,12 @@ BoundaryFace SixRayBoundaryVariable::GetOppositeBoundaryFace(
 }
 NeighborBlock *SixRayBoundaryVariable::GetFaceNeighbor(const BoundaryFace direction) {
   NeighborBlock *pnb = nullptr;
+
+  // Enforcing six-ray boundary for perodic boundary conditions
+  if (pbval_->block_bcs[direction] == BoundaryFlag::periodic) {
+    return nullptr;
+  }
+
   for (int n=0; n<pbval_->nneighbor; n++) {
     pnb = &pbval_->neighbor[n];
     // Only done for the first match, and should be the only match for uniform mesh
