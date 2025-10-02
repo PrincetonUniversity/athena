@@ -7,7 +7,6 @@
 //! \brief Problem file to demonstrate unit module
 //!
 
-
 // C headers
 
 // C++ headers
@@ -72,7 +71,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real pres = pin->GetReal("problem", "pamb");
   Real pres_code = pres/punit->code_pressure_cgs;
   std::cout << "Pressure value in cgs units  = " << pres << " dyne" << std::endl;
-  std::cout << "Pressure value in code units = " << pres_code << " code pressure" << std::endl;
+  std::cout << "Pressure value in code units = " << pres_code
+            << " code pressure" << std::endl;
   std::cout << std::endl;
 
   // Energy
@@ -93,31 +93,34 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   Real rad = pin->GetReal("problem", "radius");
   Real rad_code = rad/std::get<0>(punit->basis_length);
   std::cout << "Length value in basis units = " << rad << " " << lunit << std::endl;
-  std::cout << "Length value in code units  = " << rad_code << " code length" << std::endl;
+  std::cout << "Length value in code units  = " << rad_code
+            << " code length" << std::endl;
   std::cout << std::endl;
 
   // Velocity
   Real vel = pin->GetReal("problem", "vel");
   Real vel_code = vel/std::get<0>(punit->basis_velocity);
   std::cout << "Velocity value in basis units = " << vel << " " << vunit << std::endl;
-  std::cout << "Velocity value in code units  = " << vel_code << " code velocity" << std::endl;
+  std::cout << "Velocity value in code units  = " << vel_code
+            << " code velocity" << std::endl;
   std::cout << std::endl;
 
   // ndensity
   Real ndin = pin->GetReal("problem", "ndin");
   Real ndin_code = ndin/std::get<0>(punit->basis_ndensity);
   std::cout << "ndensity value in basis units = " << ndin << " " << nunit << std::endl;
-  std::cout << "ndensity value in code units  = " << ndin_code << " code ndensity" << std::endl;
+  std::cout << "ndensity value in code units  = " << ndin_code
+            << " code ndensity" << std::endl;
   std::cout << std::endl;
 
-  std::cout << "Gravitational constant in code units = " << punit->Gconst_code << std::endl;
-
+  std::cout << "Gravitational constant in code units = "
+            << punit->Gconst_code << std::endl;
   return;
 }
 
 //========================================================================================
 //! \fn void MeshBlock::ProblemGenerator(ParameterInput *pin)
-//! \brief 
+//! \brief
 //========================================================================================
 
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
@@ -129,7 +132,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   Real din  = pin->GetReal("problem", "ndin")/std::get<0>(punit->basis_ndensity);
   Real rin  = pin->GetReal("problem", "radius")/std::get<0>(punit->basis_length);
   Real vel  = pin->GetReal("problem", "vel")/std::get<0>(punit->basis_velocity);
-  
+
   Real gamma = peos->GetGamma();
   Real gm1 = gamma - 1.0;
 

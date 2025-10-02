@@ -205,8 +205,10 @@ Units::Units(ParameterInput *pin) :
     // Set the basis using the input values
     basis_length   = std::make_tuple(code_length_cgs_/Constants::pc_cgs,"pc");
     basis_time     = std::make_tuple(code_time_cgs_/Constants::Myr_cgs,"Myr");
-    basis_velocity = std::make_tuple(code_length_cgs_/code_time_cgs_/Constants::km_s_cgs,"km/s");
-    basis_ndensity = std::make_tuple((code_mass_cgs_/(mean_weight*Constants::H_mass_cgs))/CUBE(Constants::pc_cgs),"n/cm^3");
+    basis_velocity = std::make_tuple(code_length_cgs_/code_time_cgs_/Constants::km_s_cgs,
+                                     "km/s");
+    basis_ndensity = std::make_tuple((code_mass_cgs_/(
+        mean_weight*Constants::H_mass_cgs))/CUBE(Constants::pc_cgs),"n/cm^3");
     basis_mass     = std::make_tuple(code_mass_cgs_/Constants::Msun_cgs,"Msun");
   } else {
     std::stringstream msg;
@@ -491,8 +493,7 @@ Real Units::Returncgs(std::string parameter, Real value, std::string unit) {
       code_cgs_ = 100*value;
     } else if (unit == "km") {
       code_cgs_ = 1000*value;
-    } // If more length units are added, they should be added here
-    else {
+    } else { // If more length units are added, they should be added here
       msg << "  Allowed units are: pc, kpc, au, cm, m, or km" << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -503,8 +504,7 @@ Real Units::Returncgs(std::string parameter, Real value, std::string unit) {
       code_cgs_ = Constants::Myr_cgs*value;
     } else if (unit == "s") {
       code_cgs_ = value;
-    } // If more time units are added, they should be added here
-    else {
+    } else { // If more time units are added, they should be added here
       msg << "  Allowed units are: yr, Myr, or s" << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -515,8 +515,7 @@ Real Units::Returncgs(std::string parameter, Real value, std::string unit) {
       code_cgs_ = 100*value;
     } else if (unit == "cm/s") {
       code_cgs_ = value;
-    } // If more velocity units are added, they should be added here
-    else {
+    } else { // If more velocity units are added, they should be added here
       msg << "  Allowed units are: km/s, m/s, or cm/s" << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -525,8 +524,7 @@ Real Units::Returncgs(std::string parameter, Real value, std::string unit) {
       code_cgs_ = value;
     } else if (unit == "n/m^3") {
       code_cgs_ = value/CUBE(100.0);
-    } // If more ndensity units are added, they should be added here
-    else {
+    } else { // If more ndensity units are added, they should be added here
       msg << "  Allowed units are: n/cm^3, or n/m^3" << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -537,8 +535,7 @@ Real Units::Returncgs(std::string parameter, Real value, std::string unit) {
       code_cgs_ = value;
     } else if (unit == "kg") {
       code_cgs_ = 1000*value;
-    } // If more mass units are added, they should be added here
-    else {
+    } else { // If more mass units are added, they should be added here
       msg << "  Allowed units are: Msun, g, or kg" << std::endl;
       ATHENA_ERROR(msg);
     }
@@ -593,7 +590,6 @@ void Units::CompleteBasis() {
     code_ndensity_cgs_ = Returncgs("basis_ndensity",
                           std::get<0>(basis_ndensity),std::get<1>(basis_ndensity));
     // Using length and ndensity to get mass basis
-
     code_mass_cgs_ = mean_weight*Constants::H_mass_cgs*
                       CUBE(code_length_cgs_)*code_ndensity_cgs_;
     Real mass_conv = Returncgs("basis_mass",1.0,std::get<1>(basis_mass));
