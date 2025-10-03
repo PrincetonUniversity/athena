@@ -162,7 +162,7 @@ def mpirun(mpirun_cmd, mpirun_opts, nproc, input_filename, arguments,
 
 # Function for saving configure-generated files that may already exist
 def save_files():
-    global saved_files
+    global saved_files  # noqa: F824
     for filename in saved_filenames:
         rel_path_to_file = athena_rel_path + filename
         if os.path.isfile(rel_path_to_file):
