@@ -105,7 +105,7 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) :
     // isothermal, temperature is calculated from a fixed mean molecular weight
     const Real mu_iso = pin->GetReal("chemistry", "mu_iso");
     const Real cs = pin->GetReal("hydro", "iso_sound_speed");
-    temperature_ = cs * cs * pmy_mb_->pmy_mesh->punit->code_temperature_mu_cgs * mu_iso;
+    temperature_ = cs * cs * pmy_mb_->pmy_mesh->punit->code_temp_cgs * mu_iso;
     std::cout << "isothermal temperature = " << temperature_ << " K" << std::endl;
   }
   // whether to cap temperature if the reaction is outside of the temperature range
