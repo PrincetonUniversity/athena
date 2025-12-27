@@ -40,16 +40,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
   Real gm1 = peos->GetGamma() - 1.0;
 
-  // to make sure the ICs are symmetric, set y0 to be in between cell centers
+  // to make sure the ICs are symmetric, set y0 to be at a cell center
+  // Use global mesh properties to compute y0 consistently across all MeshBlocks
   Real y0 = 0.5*(pmy_mesh->mesh_size.x2max + pmy_mesh->mesh_size.x2min);
-  for (int j=js; j<=je; j++) {
-    if (pcoord->x2v(j) > y0) {
-      // TODO(felker): check this condition for multi-meshblock setups
-      // further adjust y0 to be between cell center and lower x2 face
-      y0 = pcoord->x2f(j) + 0.5*pcoord->dx2f(j);
-      break;
-    }
+  // Compute the global cell size (uniform mesh assumed)
+  Real dx2 = (pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min) / pmy_mesh->mesh_size.nx2;
+  // Find the first global cell index whose center is > y0
+  int j_global = static_cast<int>((y0 - pmy_mesh->mesh_size.x2min) / dx2);
+  Real center_j = pmy_mesh->mesh_size.x2min + (j_global + 0.5) * dx2;
+  if (center_j <= y0) {
+    j_global++;
   }
+  // Set y0 to the center of that cell (matches original single-block behavior)
+  y0 = pmy_mesh->mesh_size.x2min + (j_global + 0.5) * dx2;
 
   // Set initial conditions
   for (int k=ks; k<=ke; k++) {
