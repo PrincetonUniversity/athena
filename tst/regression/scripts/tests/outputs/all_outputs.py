@@ -75,12 +75,42 @@ def analyze():
     #  analyze_status = False
     # logger.debug(str(vtk_data['rho'].shape))
 
-    hdf5_data = athena_read.athdf('bin/TestOutputs.out5.00010.athdf', dtype=np.float32)
-    if max(hdf5_data['rho'][0, 32, :]) < 0.25:
+    # consistency check of all HDF5 outputs
+    hdf5_data_5 = athena_read.athdf('bin/TestOutputs.out5.00010.athdf', dtype=np.float32)
+    if max(hdf5_data_5['rho'][0, 32, :]) < 0.25:
         analyze_status = False
-    if max(hdf5_data['vel3'][0, 32, :]) != 0.0:
+    if max(hdf5_data_5['vel3'][0, 32, :]) != 0.0:
         analyze_status = False
-    if max(hdf5_data['Bcc3'][0, 32, :]) != 0.0:
+    if max(hdf5_data_5['Bcc3'][0, 32, :]) != 0.0:
         analyze_status = False
+
+    out_types = {6: np.float32, 7: np.float64, 8: np.uint8, 9: np.uint16, 10: np.uint32,
+                 11: np.uint64, 12: np.uint8}
+
+    vmin, vmax = -2.0, 2.0  # set in athinput.test_outputs
+    for idx, dtype in out_types.items():
+        fn = f'bin/TestOutputs.out{idx}.00010.athdf'
+        hdf5_data = athena_read.athdf(fn, dtype=np.float64)
+        for key in ['rho', 'press', 'vel1', 'vel2', 'vel3', 'Bcc1', 'Bcc2', 'Bcc3']:
+            if key not in hdf5_data:
+                continue
+            data = hdf5_data[key]
+            if idx > 7:
+                # de-normalize data for unsigned types
+                bits = 2**(idx-5)
+                if idx == 12:
+                    bits = 8
+                nmax = 2**bits - 1
+                data = (data / nmax) * (vmax - vmin) + vmin
+            atol = {np.uint8: 2e-2, np.uint16: 7e-5}.get(dtype, None)
+            opt = {'atol': atol} if atol else {}
+            if not np.allclose(data, hdf5_data_5[key], **opt):
+                diff = data - hdf5_data_5[key]
+                loc = np.unravel_index(np.argmax(np.abs(diff)), diff.shape)
+                err = diff[loc]
+                msg = f'Key {key} in out{idx} ({dtype}) does not match out5 data;'
+                msg += f' max error = |{err:.3g}|.'
+                logger.warning(msg)
+                analyze_status = False
 
     return analyze_status
