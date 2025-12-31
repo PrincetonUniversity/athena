@@ -63,6 +63,9 @@ bool error_output;
   fftw_complex *fft_data;
 #endif
 
+
+Real HistoryBxError(MeshBlock *pmb, int iout);
+Real HistoryPError(MeshBlock *pmb, int iout);
 Real HistoryBxc(MeshBlock *pmb, int iout);
 Real HistoryBzc(MeshBlock *pmb, int iout);
 Real HistoryBs(MeshBlock *pmb, int iout);
@@ -130,13 +133,16 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
       AllocateRealUserMeshDataField(1);
       ruser_mesh_data[0].NewAthenaArray(mesh_size.nx3, mesh_size.nx2, mesh_size.nx1);
       // allocate User-defined History Output
-      AllocateUserHistoryOutput(2);
       if (mesh_size.nx3 > 1) { // 3D
+        AllocateUserHistoryOutput(2);
         EnrollUserHistoryOutput(0, HistoryBzc, "Bzc");
         EnrollUserHistoryOutput(1, HistoryBs, "Bzs");
       } else { // 2D
-        EnrollUserHistoryOutput(0, HistoryBxc, "Bxc");
-        EnrollUserHistoryOutput(1, HistoryBs, "Bxs");
+        AllocateUserHistoryOutput(2);
+        EnrollUserHistoryOutput(0, HistoryBxError, "BError");
+        EnrollUserHistoryOutput(1, HistoryPError, "PError");
+//        EnrollUserHistoryOutput(1, HistoryBxc, "Bxc");
+//        EnrollUserHistoryOutput(2, HistoryBs, "Bxs");
       }
     } else if (ipert == 2) {
       // preparation for fft
@@ -193,6 +199,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
         << "Parameter problem/ipert should be chosen from 1  or 2." << std::endl;
     ATHENA_ERROR(msg);
   }
+
+  return;
+}
+
+void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
+  AllocateUserOutputVariables(2);
   return;
 }
 
@@ -239,12 +251,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie+1; i++) {
-          if (block_size.nx3>1) { // 3D
-            pfield->b.x1f(k,j,i) = 0.0;
-          } else { // 2D
             x2 = pcoord->x2v(j);
             pfield->b.x1f(k,j,i) = amp*std::cos(ky*x2);
-          }
         }
       }
     }
@@ -261,12 +269,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
      for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
-          if (block_size.nx3>1) { // 3D
-            x2 = pcoord->x2v(j);
-            pfield->b.x3f(k,j,i) = amp*std::cos(ky*x2);
-          } else { // 2D
             pfield->b.x3f(k,j,i) = 0.0;
-          }
         }
       }
     }
@@ -392,8 +395,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     for (int k=ks; k<=ke; k++) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
+          Real p = p0 - 0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1)))
+                           + SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i)))
+                           + SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i))));
           phydro->u(IEN,k,j,i) =
-              rp/gm1 +
+              p/gm1 +
               0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
                    SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
                    SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) + (0.5)*
@@ -685,6 +691,36 @@ void Mesh::UserWorkInLoop() {
   return;
 }
 
+
+void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin) {
+  Real qom = qshear*Omega0;
+
+  AthenaArray<Real> &w = phydro->w;
+  AthenaArray<Real> &b = pfield->bcc;
+
+  Real kx = (TWO_PI/Lx)
+            *(static_cast<Real>(nwx)+qom*pmy_mesh->time);
+  Real ky = (TWO_PI/Ly)*(static_cast<Real>(nwy));
+  Real kz = (TWO_PI/Lz)*(static_cast<Real>(nwz));
+
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      for (int i=is; i<=ie; i++) {
+        Real x1 = pcoord->x1v(i);
+        Real x2 = pcoord->x2v(j);
+        Real x3 = pcoord->x3v(k);
+        Real bxa = amp*std::cos(kx*x1+ky*x2+kz*x3);
+        Real pt = w(IPR,k,j,i)
+          + 0.5 * (SQR(b(IB1,k,j,i)) + SQR(b(IB2,k,j,i)) + SQR(b(IB3,k,j,i)));
+        user_out_var(0,k,j,i) = b(IB1,k,j,i)-bxa;
+        user_out_var(1,k,j,i) = pt - p0;
+      }
+    }
+  }
+  return;
+}
+
+
 //========================================================================================
 //! \fn void Mesh::UserWorkAfterLoop(ParameterInput *pin)
 //  \brief Function called after main loop is finished for user-defined work.
@@ -699,6 +735,69 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 }
 
 namespace {
+
+Real HistoryBxError(MeshBlock *pmb, int iout) {
+  Real x1, x2, x3;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
+  AthenaArray<Real> volume; // 1D array of volumes
+  volume.NewAthenaArray(pmb->ncells1);
+
+  Real qom = qshear*Omega0;
+  Real bxc = 0.0;
+
+  AthenaArray<Real> &b = pmb->pfield->bcc;
+
+  Real kx = (TWO_PI/Lx)
+            *(static_cast<Real>(nwx)+qom*pmb->pmy_mesh->time);
+  Real ky = (TWO_PI/Ly)*(static_cast<Real>(nwy));
+  Real kz = (TWO_PI/Lz)*(static_cast<Real>(nwz));
+  Real total_volume = Lx*Ly*Lz;
+
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      pmb->pcoord->CellVolume(k, j, is, ie, volume);
+      for (int i=is; i<=ie; i++) {
+        x1 = pmb->pcoord->x1v(i);
+        x2 = pmb->pcoord->x2v(j);
+        x3 = pmb->pcoord->x3v(k);
+        Real bxa = amp*std::cos(kx*x1+ky*x2+kz*x3);
+        bxc += volume(i)*std::abs(b(IB1,k,j,i)-bxa);
+      }
+    }
+  }
+  return bxc/(amp*total_volume);
+}
+
+
+Real HistoryPError(MeshBlock *pmb, int iout) {
+  Real x1, x2, x3;
+  int is = pmb->is, ie = pmb->ie;
+  int js = pmb->js, je = pmb->je;
+  int ks = pmb->ks, ke = pmb->ke;
+  AthenaArray<Real> volume; // 1D array of volumes
+  volume.NewAthenaArray(pmb->ncells1);
+
+  AthenaArray<Real> &w = pmb->phydro->w;
+  AthenaArray<Real> &b = pmb->pfield->bcc;
+
+  Real dp = 0.0;
+  Real total_volume = Lx*Ly*Lz;
+
+  for (int k=ks; k<=ke; k++) {
+    for (int j=js; j<=je; j++) {
+      pmb->pcoord->CellVolume(k, j, is, ie, volume);
+      for (int i=is; i<=ie; i++) {
+        Real pt = w(IPR,k,j,i)
+          + 0.5 * (SQR(b(IB1,k,j,i)) + SQR(b(IB2,k,j,i)) + SQR(b(IB3,k,j,i)));
+        dp += volume(i)*std::abs(pt - p0);
+      }
+    }
+  }
+  return dp/(p0*total_volume);
+}
+
 
 Real HistoryBxc(MeshBlock *pmb, int iout) {
   Real x1, x2, x3;

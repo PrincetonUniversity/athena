@@ -94,6 +94,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
         << "This problem generator works only in 2D or 3D." << std::endl;
     ATHENA_ERROR(msg);
   }
+
+  return;
+}
+
+void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
+  AllocateUserOutputVariables(3);
   return;
 }
 
@@ -476,6 +482,22 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   return;
 }
 
+
+void MeshBlock::UserWorkBeforeOutput(ParameterInput *pin)
+{
+  for(int k=ks-NGHOST; k<=ke+NGHOST; k++) {
+    for(int j=js-NGHOST; j<=je+NGHOST; j++) {
+      for(int i=is-NGHOST; i<=ie+NGHOST; i++) {
+        user_out_var(0,k,j,i) = pfield->e.x1e(k,j,i);
+        user_out_var(1,k,j,i) = pfield->e.x2e(k,j,i);
+        user_out_var(2,k,j,i) = pfield->e.x3e(k,j,i);
+      }
+    }
+  }
+}
+
+
+
 namespace {
 
 Real HistoryBxBy(MeshBlock *pmb, int iout) {
@@ -521,4 +543,5 @@ Real HistorydVxVy(MeshBlock *pmb, int iout) {
   }
   return dvxvy;
 }
+
 } // namespace
