@@ -320,7 +320,6 @@ void FieldDiffusion::AmbipolarEMF(const FaceField &b, const AthenaArray<Real> &b
         JdotB = intJx*intBx + intJy*intBy + intJz*intBz;
 
         e3(ks,  j,i) += eta_A * (J3(ks,j,i) - JdotB*intBz/Bsq);
-        e3(ke+1,j,i) = e3(ks,j,i);
       }
     }
     return;
