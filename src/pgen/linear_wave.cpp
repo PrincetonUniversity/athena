@@ -200,7 +200,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
         kl = pmb->ks, ku = pmb->ke;
     // adjust loop limits for fourth order error calculation
     //------------------------------------------------
-    if (pmb->precon->correct_err) {
+    if (pmb->precon->correct_err_) {
       // Expand loop limits on all sides by one
       if (pbval->nblevel[1][1][0] != -1) il -= 1;
       if (pbval->nblevel[1][1][2] != -1) iu += 1;
@@ -260,7 +260,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     }
     // begin fourth-order error correction
     // -------------------------------
-    if (pmb->precon->correct_err) {
+    if (pmb->precon->correct_err_) {
       // Restore loop limits to real cells only
       il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
 
@@ -284,7 +284,7 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           }
         }
       }
-    } // end if (pmb->precon->correct_err)
+    } // end if (pmb->precon->correct_err_)
     // ------- end fourth-order error calculation
 
     for (int k=kl; k<=ku; ++k) {

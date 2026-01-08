@@ -7,6 +7,8 @@
 //! \brief Calculate hydro/MHD fluxes
 
 // C headers
+#include <iostream>   // endl
+#include <sstream>    // stringstream
 
 // C++ headers
 #include <algorithm>   // min,max
@@ -81,7 +83,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
       } else {
-        pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
+        if (pmb->precon->rec3m_ == REC3METHOD::PPMF)
+          pmb->precon->PiecewiseParabolicFastX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
+        else if (pmb->precon->rec3m_ == REC3METHOD::WENOZ)
+          pmb->precon->WENOZX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
+        else if (pmb->precon->rec3m_ == REC3METHOD::WENOMZ)
+          pmb->precon->WENOMZX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
+        else
+          pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, w, bcc, wl_, wr_);
       }
 
       pmb->pcoord->CenterWidth1(k, j, is, ie+1, dxw_);
@@ -179,7 +188,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX2(k, js-1, il, iu, w, bcc, wl_, wr_);
       } else {
-        pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, w, bcc, wl_, wr_);
+        if (pmb->precon->rec3m_ == REC3METHOD::PPMF)
+          pmb->precon->PiecewiseParabolicFastX2(k, js-1, il, iu, w, bcc, wl_, wr_);
+        else if (pmb->precon->rec3m_ == REC3METHOD::WENOZ)
+          pmb->precon->WENOZX2(k, js-1, il, iu, w, bcc, wl_, wr_);
+        else if (pmb->precon->rec3m_ == REC3METHOD::WENOMZ)
+          pmb->precon->WENOMZX2(k, js-1, il, iu, w, bcc, wl_, wr_);
+        else
+          pmb->precon->PiecewiseParabolicX2(k, js-1, il, iu, w, bcc, wl_, wr_);
       }
       for (int j=js; j<=je+1; ++j) {
         // reconstruct L/R states at j
@@ -188,7 +204,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX2(k, j, il, iu, w, bcc, wlb_, wr_);
         } else {
-          pmb->precon->PiecewiseParabolicX2(k, j, il, iu, w, bcc, wlb_, wr_);
+          if (pmb->precon->rec3m_ == REC3METHOD::PPMF)
+            pmb->precon->PiecewiseParabolicFastX2(k, j, il, iu, w, bcc, wlb_, wr_);
+          else if (pmb->precon->rec3m_ == REC3METHOD::WENOZ)
+            pmb->precon->WENOZX2(k, j, il, iu, w, bcc, wlb_, wr_);
+          else if (pmb->precon->rec3m_ == REC3METHOD::WENOMZ)
+            pmb->precon->WENOMZX2(k, j, il, iu, w, bcc, wlb_, wr_);
+          else
+            pmb->precon->PiecewiseParabolicX2(k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
         pmb->pcoord->CenterWidth2(k, j, il, iu, dxw_);
@@ -285,7 +308,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       } else if (order == 2) {
         pmb->precon->PiecewiseLinearX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
       } else {
-        pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
+        if (pmb->precon->rec3m_ == REC3METHOD::PPMF)
+          pmb->precon->PiecewiseParabolicFastX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
+        else if (pmb->precon->rec3m_ == REC3METHOD::WENOZ)
+          pmb->precon->WENOZX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
+        else if (pmb->precon->rec3m_ == REC3METHOD::WENOMZ)
+          pmb->precon->WENOMZX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
+        else
+          pmb->precon->PiecewiseParabolicX3(ks-1, j, il, iu, w, bcc, wl_, wr_);
       }
       for (int k=ks; k<=ke+1; ++k) {
         // reconstruct L/R states at k
@@ -294,7 +324,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
         } else if (order == 2) {
           pmb->precon->PiecewiseLinearX3(k, j, il, iu, w, bcc, wlb_, wr_);
         } else {
-          pmb->precon->PiecewiseParabolicX3(k, j, il, iu, w, bcc, wlb_, wr_);
+          if (pmb->precon->rec3m_ == REC3METHOD::PPMF)
+            pmb->precon->PiecewiseParabolicFastX3(k, j, il, iu, w, bcc, wlb_, wr_);
+          else if (pmb->precon->rec3m_ == REC3METHOD::WENOZ)
+            pmb->precon->WENOZX3(k, j, il, iu, w, bcc, wlb_, wr_);
+          else if (pmb->precon->rec3m_ == REC3METHOD::WENOMZ)
+            pmb->precon->WENOMZX3(k, j, il, iu, w, bcc, wlb_, wr_);
+          else
+            pmb->precon->PiecewiseParabolicX3(k, j, il, iu, w, bcc, wlb_, wr_);
         }
 
         pmb->pcoord->CenterWidth3(k, j, il, iu, dxw_);
