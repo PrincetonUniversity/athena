@@ -41,6 +41,8 @@ class Thermo {
     static Real CoolingH2(const Real xH2, const Real nHI, const Real nH2,
                      const Real nHe, const Real nHplus, const Real ne,
                      const Real T);
+    static Real CoolingH2_M21(const Real xH2, const Real xHI,
+                              const Real nH, const Real T);
     static Real CoolingDust(const Real Zd, const Real nH, const Real Tg,
                             const Real GISRF);
     static Real CoolingDustTd(const Real Zd, const Real nH, const Real Tg,

@@ -637,7 +637,8 @@ Real Thermo::CoolingCOR(const Real xCO, const Real nHI, const Real nH2,
 Real Thermo::CoolingH2(const Real xH2, const Real nHI, const Real nH2,
                          const Real nHe, const Real nHplus, const Real ne,
                          const Real temp) {
-  const Real Tmax_H2 = 6000.; //maximum temperature above which use Tmax
+  //Tmax_H2 set by comparing extrapolation of Glover15 to Mosely21
+  const Real Tmax_H2 = 1.0e4; //maximum temperature above which use Tmax
   const Real Tmin_H2 = 10.; //min temperature below which cut off cooling
   Real T = 0;
   // Note: limit extended to T< 10K and T>6000K
@@ -713,6 +714,46 @@ Real Thermo::CoolingH2(const Real xH2, const Real nHI, const Real nH2,
     Gamma_tot = 0;
   }
   return Gamma_tot * xH2;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real Thermo::CoolingH2_M21(const Real xH2, const Real xHI,
+//!                                const Real nH, const Real T)
+//! \brief Cooling by H2 vibration and rotation lines from Mosely+21.
+//
+//! Collision species: HI, H2, He, e. Does not include H+, assume constant x_e=1.6e-4
+//! Note: Implemented by JGK for TIGRESS-NCR, not used as default here, assuming
+//! that ortho to para ration of H2 is 0.7.
+//! Auguments:
+//! xH2 = nH2 / nH
+//! ni: number density of species i, in cm^-3
+//! T: temperature in K
+//! Return:
+//! Cooling rate for H2 vibrational and rotational lines in erg H^-1 s^-1///
+Real Thermo::CoolingH2_M21(const Real xH2, const Real xHI, const Real nH, const Real T) {
+  const Real n1 = 50.0;
+  const Real n2 = 450.0;
+  const Real n3 = 25.0;
+  const Real n4 = 900;
+  Real T3 = T*1e-3;
+  Real T3inv = 1.0/T3;
+  Real nH2 = xH2*nH;
+  Real nHI = xHI*nH;
+  Real x1 = nHI + 5.0*nH2;
+  Real x2 = nHI + 4.5*nH2;
+  Real x3 = nHI + 0.75*nH2;
+  Real x4 = nHI + 0.05*nH2;
+  Real sqrtT3 = sqrt(T3);
+  Real f1 = 1.1e-25*sqrtT3*std::exp(-0.51*T3inv)*
+    (0.7*x1/(1.0 + x1/n1) + 0.3*x1/(1.0 + x1/(10.0*n1)));
+  Real f2 = 2.0e-25*T3*std::exp(-T3inv)*
+    (0.35*x2/(1.0 + x2/n2) + 0.65*x2/(1.0 + x2/(10.0*n2)));
+  Real f3 = 2.4e-24*sqrtT3*T3*std::exp(-2.0*T3inv)*
+    (x3/(1.0 + x3/n3));
+  Real f4 = 1.7e-23*sqrtT3*T3*std::exp(-4.0*T3inv)*
+    (0.45*x4/(1.0 + x4/n4) + 0.55*x4/(1.0 + x4/(10.0*n4)));
+
+  return xH2*(f1 + f2 + f3 + f4);
 }
 
 //----------------------------------------------------------------------------------------
