@@ -2008,8 +2008,8 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
           if (octetmap_[lev].count(nloc) == 1) { // same or finer
             int nid = octetmap_[lev][nloc];
             MGOctet *noct = octets_[lev][nid];
-            SetOctetBoundarySameLevel(oct->u, noct->u, oct->uold, noct->uold, cbuf, cbufold,
-                                      nvar_, ox1, ox2, ox3, folddata);
+            SetOctetBoundarySameLevel(oct->u, noct->u, oct->uold, noct->uold, cbuf,
+                                      cbufold, nvar_, ox1, ox2, ox3, folddata);
           } else { // coarser
             ncoarse(ox3+1, ox2+1, ox1+1) = true;
             if (lev > 0) { // from octet
@@ -2036,7 +2036,8 @@ void MultigridDriver::SetOctetBoundariesBeforeTransfer(bool folddata) {
     ApplyPhysicalBoundariesOctet(cbuf, loc, oct->ccoord, true, false);
     if (folddata)
       ApplyPhysicalBoundariesOctet(cbufold, loc, oct->ccoord, true, false);
-    ProlongateOctetBoundaries(oct->u, oct->uold, cbuf, cbufold, nvar_, ncoarse, folddata);
+    ProlongateOctetBoundaries(oct->u, oct->uold, cbuf, cbufold,
+                              nvar_, ncoarse, folddata);
     ApplyPhysicalBoundariesOctet(oct->u, loc, oct->coord, false, false);
   }
   return;
