@@ -594,7 +594,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
     int ci = (static_cast<int>(loc_.lx1)&1);
     int cj = (static_cast<int>(loc_.lx2)&1);
     int ck = (static_cast<int>(loc_.lx3)&1);
-    const AthenaArray<Real> &src = pmy_driver_->octets_[olev][oid].u;
+    const AthenaArray<Real> &src = pmy_driver_->octets_[olev][oid]->u;
     for (int v=0; v<nvar_; ++v) {
       for (int k=0; k<=2; ++k) {
         for (int j=0; j<=2; ++j) {
@@ -606,7 +606,7 @@ void Multigrid::SetFromRootGrid(bool folddata) {
     }
     if (folddata) {
       AthenaArray<Real> &odst = uold_[current_level_];
-      const AthenaArray<Real> &osrc = pmy_driver_->octets_[olev][oid].uold;
+      const AthenaArray<Real> &osrc = pmy_driver_->octets_[olev][oid]->uold;
       for (int v=0; v<nvar_; ++v) {
         for (int k=0; k<=2; ++k) {
           for (int j=0; j<=2; ++j) {
