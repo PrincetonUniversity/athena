@@ -20,7 +20,9 @@
 #include "../../network.hpp"
 
 static bool check_index = true;
+static bool is_kgrH2_const = false;
 Real CII_rec_rate(const Real temp);
+Real get_kgr_H2(const Real temp);
 
 //----------------------------------------------------------------------------------------
 //! \fn void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E)
@@ -72,7 +74,7 @@ void ChemNetwork::UpdateRatesSpecial(const Real y[NSCALARS], const Real E) {
   const int ns_gr = 5;
   const int indices_gr[ns_gr] = {15, 16, 17, 18, 19};
   //(15) H + H + gr -> H2 + gr , from Draine book chapter 31.2 page 346, Jura 1975
-  kgr_(id7map_(15)) = 3.0e-17 * nH_ * Z_d_;
+  kgr_(id7map_(15)) = get_kgr_H2(T) * nH_ * Z_d_;
   //(16) H+ + e- + gr -> H + gr
   kgr_(id7map_(16)) = 1.0e-14 * cHp[0] /
                (
@@ -255,3 +257,23 @@ Real CII_rec_rate(const Real temp) {
         9.793e-09 * std::exp(-7.38e1/temp) + 1.634e-06 * std::exp(-1.523e+04/temp) );
   return (alpharr+alphadr);
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn Real get_kgr_H2(const Real temp)
+//! \brief H2 formation rate on dust grains. TIGRESS-NCR (Kim+23) implementation.
+
+Real get_kgr_H2(const Real temp) {
+  Real kgr;
+  const Real kgr0 = 3.0e-17;
+  if (is_kgrH2_const) {
+    // Use temperature independent rate
+    kgr = kgr0;
+  } else {
+    // Use temperature dependent rate from Hollenbach & McKee (1979)
+    // Taking Tgr2 = 0 and renormalized to have kgr ~ kgr_H2 near 200>T>50
+    const Real T2 = temp*1e-2;
+    kgr = kgr0 * std::sqrt(T2) * 2.0 / (1+0.4*std::sqrt(T2)+0.2*T2+0.08*T2*T2);
+  }
+  return kgr;
+}
+

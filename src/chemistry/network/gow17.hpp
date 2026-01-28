@@ -75,6 +75,8 @@ class ChemNetwork : public NetworkWrapper {
   bool is_H2_rovib_cooling_; // whether to include H2 rovibrational cooling
   // CR shielding
   bool is_cr_shielding_;
+  // H2 formation rate on grains
+  bool is_kgrH2_const_;
   // parameters of the netowork
   Real zdg_;
   Real xHe_;
@@ -179,6 +181,7 @@ class ChemNetwork : public NetworkWrapper {
   // private functions
   void GetGhostSpecies(const Real *y, Real *yall);
   Real CII_rec_rate_(const Real temp);
+  Real get_kgr_H2_(const Real temp);
   void UpdateRates(const Real *y, const Real E);
   void OutputRates(FILE *pf) const;
   Real GetStddev(Real arr[], const int len);

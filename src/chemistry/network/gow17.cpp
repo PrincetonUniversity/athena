@@ -325,6 +325,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   is_cr_shielding_ = pin->GetOrAddBoolean("chemistry", "is_cr_shielding", false);
   // H2 rovibrational cooling
   is_H2_rovib_cooling_ = pin->GetOrAddBoolean("chemistry", "isH2RVcooling", true);
+  // H2 formation rate on grains
+  is_kgrH2_const_ = pin->GetOrAddBoolean("chemistry", "is_kgrH2_const", false);
   // temperature above or below which heating and cooling is turned off
   Real inf = std::numeric_limits<Real>::infinity();
   temp_max_heat_ = pin->GetOrAddReal("chemistry", "temp_max_heat", inf);
@@ -786,6 +788,25 @@ Real ChemNetwork::CII_rec_rate_(const Real temp) {
 }
 
 //----------------------------------------------------------------------------------------
+//! \fn Real ChemNetwork::get_kgr_H2_(const Real temp)
+//! \brief H2 formation rate on dust grains. TIGRESS-NCR (Kim+23) implementation.
+
+Real ChemNetwork::get_kgr_H2_(const Real temp) {
+  Real kgr;
+  const Real kgr0 = 3.0e-17;
+  if (is_kgrH2_const_) {
+    // Use temperature independent rate
+    kgr = kgr0;
+  } else {
+    // Use temperature dependent rate from Hollenbach & McKee (1979)
+    // Taking Tgr2 = 0 and renormalized to have kgr ~ kgr_H2 near 200>T>50
+    const Real T2 = temp*1e-2;
+    kgr = kgr0 * std::sqrt(T2) * 2.0 / (1+0.4*std::sqrt(T2)+0.2*T2+0.08*T2*T2);
+  }
+  return kgr;
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E)
 //! \brief update the rates for chemical reactions.
 //!
@@ -933,9 +954,8 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
   }
 
   // Grain assisted recombination of H and H2
-  //   (0) *H + *H + gr -> H2 + gr , from Draine book chapter 31.2 page 346,
-  //   Jura 1975
-  kgr_[0] = 3.0e-17 * nH_ * zdg_;
+  //   (0) *H + *H + gr -> H2 + gr
+  kgr_[0] = get_kgr_H2_(T) * nH_ * zdg_;
   //   (1) H+ + *e + gr -> *H + gr
   //   (2) C+ + *e + gr -> *C + gr
   //   (3) He+ + *e + gr -> *He + gr
