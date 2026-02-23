@@ -279,6 +279,21 @@ class SuperTimeStepTaskList : public TaskList {
   TaskStatus NewBlockTimeStep_STS(MeshBlock *pmb, int stage);
   TaskStatus CheckRefinement_STS(MeshBlock *pmb, int stage);
 
+  TaskStatus SendHydroFlux_STS(MeshBlock *pmb, int stage);
+  TaskStatus SendEMF_STS(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveAndCorrectHydroFlux_STS(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveAndCorrectEMF_STS(MeshBlock *pmb, int stage);
+  TaskStatus SendHydroFluxShear_STS(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveHydroFluxShear_STS(MeshBlock *pmb, int stage);
+  TaskStatus SendEMFShear_STS(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveEMFShear_STS(MeshBlock *pmb, int stage);
+  TaskStatus SendScalarFlux_STS(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalarFlux_STS(MeshBlock *pmb, int stage);
+  TaskStatus SendScalarsFluxShear_STS(MeshBlock *pmb, int stage);
+  TaskStatus ReceiveScalarsFluxShear_STS(MeshBlock *pmb, int stage);
+  TaskStatus DiffuseHydro_STS(MeshBlock *pmb, int stage);
+  TaskStatus DiffuseField_STS(MeshBlock *pmb, int stage);
+  TaskStatus DiffuseScalars_STS(MeshBlock *pmb, int stage);
 
  private:
   bool SHEAR_PERIODIC; // flag for shear periodic boundary (true w/ , false w/o)
