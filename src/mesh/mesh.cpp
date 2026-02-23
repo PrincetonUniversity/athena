@@ -1791,7 +1791,7 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
       // perform fourth-order correction of midpoint initial condition:
       // (correct IC on all MeshBlocks or none; switch cannot be toggled independently)
-      bool correct_ic = my_blocks(0)->precon->correct_ic;
+      bool correct_ic = my_blocks(0)->precon->correct_ic_;
       if (correct_ic)
         CorrectMidpointInitialCondition();
 
