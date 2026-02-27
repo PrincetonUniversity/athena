@@ -44,7 +44,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Use global mesh properties to compute y0 consistently across all MeshBlocks
   Real y0 = 0.5*(pmy_mesh->mesh_size.x2max + pmy_mesh->mesh_size.x2min);
   // Compute the global cell size (uniform mesh assumed)
-  Real dx2 = (pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min) / pmy_mesh->mesh_size.nx2;
+  Real dx2 = (pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min)
+             / pmy_mesh->mesh_size.nx2;
   // Find the first global cell index whose center is > y0
   int j_global = static_cast<int>((y0 - pmy_mesh->mesh_size.x2min) / dx2);
   Real center_j = pmy_mesh->mesh_size.x2min + (j_global + 0.5) * dx2;
