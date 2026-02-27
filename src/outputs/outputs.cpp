@@ -104,6 +104,11 @@
 #include "../scalars/scalars.hpp"
 #include "outputs.hpp"
 
+#ifdef HDF5OUTPUT
+// External library headers
+#include <hdf5.h>  // H5[F|P|S|T]_*, H5[A|D|F|P|S|T]*(), hid_t
+#endif
+
 //----------------------------------------------------------------------------------------
 //! OutputType constructor
 
@@ -114,6 +119,66 @@ OutputType::OutputType(OutputParameters oparams) :
     // nested doubly linked list of OutputData:
     pfirst_data_(),  // Initialize head node to nullptr
     plast_data_() { // Initialize tail node to nullptr
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn bool vmin_vmax_check(const OutputParameters &op) {
+//! \brief helper function to check vmin and vmax values in OutputParameters
+
+inline bool vmin_vmax_check(OutputParameters &op, ParameterInput *pin) {
+  std::stringstream msg;
+  op.vmin = pin->GetReal(op.block_name, "vmin");
+  op.vmax = pin->GetReal(op.block_name, "vmax");
+  if (!std::isfinite(op.vmin)) {
+    msg << "### FATAL ERROR in Outputs constructor" << std::endl
+        << "vmin is not a finite number in output block '" << op.block_name << "'"
+        << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  if (!std::isfinite(op.vmax)) {
+    msg << "### FATAL ERROR in Outputs constructor" << std::endl
+        << "vmax is not a finite number in output block '" << op.block_name << "'"
+        << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  if (op.vmin >= op.vmax) {
+    msg << "### FATAL ERROR in Outputs constructor" << std::endl
+        << "vmin >= vmax in output block '" << op.block_name << "'" << std::endl;
+    ATHENA_ERROR(msg);
+  }
+  return true;
+}
+
+enum base_type {
+  F = 0,  // floating point types
+  U = 1,  // unsigned integer types
+};
+
+inline bool type_string_check(const base_type base_t, const uint bits,
+                              const OutputParameters &op) {
+  std::string check_string;
+  const std::string &type_string = op.data_format;
+  const std::string &block_name = op.block_name;
+  if (base_t == base_type::F) {
+    std::string prefixes[] = {"f", "fp", "float"};
+    for (const auto &prefix : prefixes) {
+      check_string = prefix + std::to_string(bits);
+      if (check_string.compare(type_string) == 0) return true;
+    }
+    if (type_string.compare("half") == 0 && bits == 16) return true;
+    if (type_string.compare("float") == 0 && bits == 32) return true;
+    if (type_string.compare("double") == 0 && bits == 64) return true;
+    if (type_string.compare("quad") == 0 && bits == 128) return true;
+  } else if (base_t == base_type::U) {
+    std::string prefixes[] = {"u", "uint"};
+    for (const auto &prefix : prefixes) {
+      check_string = prefix + std::to_string(bits);
+      if (check_string.compare(type_string) == 0) return true;
+    }
+    if (type_string.compare("uint") == 0 && bits == 32) return true;
+    if (type_string.compare("ulong") == 0 && bits == 64) return true;
+  }
+  return false;
 }
 
 //----------------------------------------------------------------------------------------
@@ -248,15 +313,17 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         if (op.file_type.compare("hst") != 0 && op.file_type.compare("rst") != 0) {
           op.variable = pin->GetString(op.block_name, "variable");
         }
-        op.data_format = pin->GetOrAddString(op.block_name, "data_format", "%12.5e");
-        op.data_format.insert(0, " "); // prepend with blank to separate columns
 
         // Construct new OutputType according to file format
         // NEW_OUTPUT_TYPES: Add block to construct new types here
         if (op.file_type.compare("hst") == 0) {
+          op.data_format = pin->GetOrAddString(op.block_name, "data_format", "%12.5e");
+          op.data_format.insert(0, " "); // prepend with blank to separate columns
           pnew_type = new HistoryOutput(op);
           num_hst_outputs++;
         } else if (op.file_type.compare("tab") == 0) {
+          op.data_format = pin->GetOrAddString(op.block_name, "data_format", "%12.5e");
+          op.data_format.insert(0, " "); // prepend with blank to separate columns
           pnew_type = new FormattedTableOutput(op);
         } else if (op.file_type.compare("vtk") == 0) {
           pnew_type = new VTKOutput(op);
@@ -266,7 +333,72 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
         } else if (op.file_type.compare("ath5") == 0
                    || op.file_type.compare("hdf5") == 0) {
 #ifdef HDF5OUTPUT
-          pnew_type = new ATHDF5Output(op);
+          // HDF5 file format requested
+          //
+          // Check if data format is specified, and if not fall back to default
+          if (pin->DoesParameterExist(op.block_name, "data_format")) {
+            op.data_format = pin->GetString(op.block_name, "data_format");
+          } else {
+            op.data_format.clear(); // empty string means use default
+          }
+          // Check if we want to include the mesh data in the output
+          op.include_mesh_data = pin->GetOrAddBoolean(op.block_name, "mesh_data", true);
+          if (op.data_format.empty()) {
+            std::cout << "No data_format specified in output block '"
+                      << op.block_name << "', using default" << std::endl;
+            if (H5_DOUBLE_PRECISION_ENABLED) {
+              pnew_type = new ATHDF5Output<double>(op);
+            } else {
+              pnew_type = new ATHDF5Output<float>(op);
+            }
+          // Check float options
+          } else if (type_string_check(base_type::F, 16, op)) {
+#ifdef fp16_t
+            if (H5T_NATIVE_FLOAT16 == H5I_INVALID_HID) {
+              msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                  << "HDF5 is not configured for requested fp16 support in "
+                  << "output block '" << op.block_name << "'" << std::endl;
+              ATHENA_ERROR(msg);
+            }
+            std::cout << "Using fp16 data format for HDF5 output in block '"
+                      << op.block_name << "'" << std::endl;
+            pnew_type = new ATHDF5Output<fp16_t>(op);
+#else
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "Compiler/hardware does not support half precision floating point"
+                << " in output block '" << op.block_name << "'" << std::endl;
+            ATHENA_ERROR(msg);
+#endif
+          } else if (type_string_check(base_type::F, 32, op)) {
+            std::cout << "Using float data format for HDF5 output in block '"
+                      << op.block_name << "'" << std::endl;
+            pnew_type = new ATHDF5Output<float>(op);
+          } else if (type_string_check(base_type::F, 64, op)) {
+            std::cout << "Using double data format for HDF5 output in block '"
+                      << op.block_name << "'" << std::endl;
+            pnew_type = new ATHDF5Output<double>(op);
+          } else if (type_string_check(base_type::F, 128, op)) {
+            pnew_type = new ATHDF5Output<long double>(op);
+          // Check integer options
+          // vmin/vmax must be specified for these to convert to integers
+          } else if (type_string_check(base_type::U, 8, op)) {
+            vmin_vmax_check(op, pin); // can throw errors
+            pnew_type = new ATHDF5Output<std::uint8_t>(op);
+          } else if (type_string_check(base_type::U, 16, op)) {
+            vmin_vmax_check(op, pin); // can throw errors
+            pnew_type = new ATHDF5Output<std::uint16_t>(op);
+          } else if (type_string_check(base_type::U, 32, op)) {
+            vmin_vmax_check(op, pin); // can throw errors
+            pnew_type = new ATHDF5Output<std::uint32_t>(op);
+          } else if (type_string_check(base_type::U, 64, op)) {
+            vmin_vmax_check(op, pin); // can throw errors
+            pnew_type = new ATHDF5Output<std::uint64_t>(op);
+          } else {
+            if (Globals::my_rank == 0) {
+              std::cout << "Ignoring unknown data_format '" << op.data_format
+                        << "' in output block '" << op.block_name << "'" << std::endl;
+            }
+          }
 #else
           msg << "### FATAL ERROR in Outputs constructor" << std::endl
               << "Executable not configured for HDF5 outputs, but HDF5 file format "

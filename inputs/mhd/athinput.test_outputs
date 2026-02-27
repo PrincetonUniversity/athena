@@ -28,11 +28,63 @@ variable   = prim      # variables to be output
 dt         = 0.1       # time increment between outputs
 
 <output5>
+file_type   = hdf5     # HDF5 data dump
+variable    = prim     # variables to be output
+dt          = 0.1      # time increment between outputs
+
+<output6>
+file_type   = hdf5     # HDF5 data dump
+variable    = prim     # variables to be output
+dt          = 0.1      # time increment between outputs
+data_format = float32  # Optional data format string
+
+<output7>
+file_type   = hdf5     # HDF5 data dump
+variable    = prim     # variables to be output
+dt          = 0.1      # time increment between outputs
+data_format = float64  # Optional data format string
+
+<output8>
 file_type  = hdf5      # HDF5 data dump
 variable   = prim      # variables to be output
 dt         = 0.1       # time increment between outputs
+data_format = uint8    # Optional data format string
+vmin       = -2.0      # Minimum value for output
+vmax       = 2.0       # Maximum value for output
 
-<output6>
+<output9>
+file_type  = hdf5      # HDF5 data dump
+variable   = prim      # variables to be output
+dt         = 0.1       # time increment between outputs
+data_format = uint16   # Optional data format string
+vmin       = -2.0      # Minimum value for output
+vmax       = 2.0       # Maximum value for output
+
+<output10>
+file_type  = hdf5      # HDF5 data dump
+variable   = prim      # variables to be output
+dt         = 0.1       # time increment between outputs
+data_format = uint32   # Optional data format string
+vmin       = -2.0      # Minimum value for output
+vmax       = 2.0       # Maximum value for output
+
+<output11>
+file_type  = hdf5      # HDF5 data dump
+variable   = prim      # variables to be output
+dt         = 0.1       # time increment between outputs
+data_format = uint64   # Optional data format string
+vmin       = -2.0      # Minimum value for output
+vmax       = 2.0       # Maximum value for output
+
+<output12>
+file_type  = hdf5      # HDF5 data dump
+variable   = d         # variables to be output
+dt         = 0.1       # time increment between outputs
+data_format = uint8    # Optional data format string
+vmin       = -2.0      # Minimum value for output
+vmax       = 2.0       # Maximum value for output
+
+<output13>
 file_type  = rst       # Restart dump
 dt         = 0.2       # time increment between outputs
 
