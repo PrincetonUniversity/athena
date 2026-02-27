@@ -27,7 +27,6 @@
 #endif
 #else
 #define fp16_t_not_supported
-#pragma message("fp16 not supported for icpx")
 #endif // __INTEL_LLVM_COMPILER
 
 // primitive type alias that allows code to run with either floats or doubles

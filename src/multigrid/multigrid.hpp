@@ -58,7 +58,7 @@ class MGCoordinates {
 
 class MGOctet {
  public:
-  void Allocate(int nvar, int ncoct, int nccoct, int ncoeff, int nmatrix);
+  MGOctet(int nvar, int ncoct, int nccoct, int ncoeff, int nmatrix);
   LogicalLocation loc;
   bool fleaf;
   AthenaArray<Real> u, def, src, uold, coeff, matrix;
@@ -265,7 +265,7 @@ class MultigridDriver {
   int fprolongation_;
 
   // for mesh refinement
-  std::vector<MGOctet> *octets_;
+  std::vector<MGOctet*> *octets_;
   std::unordered_map<LogicalLocation, int, LogicalLocationHash> *octetmap_;
   std::vector<bool> *octetbflag_;
   int *noctets_, *pmaxnoct_;
