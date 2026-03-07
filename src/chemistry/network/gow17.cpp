@@ -284,7 +284,8 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   pmy_mb_ = pmb;
 
   // set the parameters from input file
-  zdg_ = pin->GetOrAddReal("chemistry", "Zdg", 1.);  // dust and gas metallicity
+  zd_ = pin->GetOrAddReal("chemistry", "Z_d", 1.);  // dust metallicity
+  zg_ = pin->GetOrAddReal("chemistry", "Z_g", 1.);  // gas metallicity
   xHe_ = pin->GetOrAddReal("chemistry", "xHe", 0.1);  //He aboundance per H
   // metal abundance at Z=1
   xC_std_ = pin->GetOrAddReal("chemistry", "xC", 1.6e-4);
@@ -344,9 +345,9 @@ ChemNetwork::ChemNetwork(MeshBlock *pmb, ParameterInput *pin) {
   gradv_ = 0.;
 
   // atomic abundance
-  xC_ = zdg_ * xC_std_;
-  xO_ = zdg_ * xO_std_;
-  xSi_ = zdg_ * xSi_std_;
+  xC_ = zg_ * xC_std_;
+  xO_ = zg_ * xO_std_;
+  xSi_ = zg_ * xSi_std_;
 
   // initialize rates to zero
   for (int i=0; i<n_cr_; i++) {
@@ -607,7 +608,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
     GCR = Thermo::HeatingCr(yprev[ige_],  nH_,
                             yprev[igH_],   yprev[iH2_], rad_[index_cr_]);
     //photo electric effect on dust
-    GPE = Thermo::HeatingPE(rad_[index_gpe_], zdg_, T, nH_*yprev[ige_]);
+    GPE = Thermo::HeatingPE(rad_[index_gpe_], zd_, T, nH_*yprev[ige_]);
     //H2 formation on dust grains
     k_xH2_photo = kph_[iph_H2_];
     GH2gr = Thermo::HeatingH2gr(yprev[igH_],  yprev[iH2_],  nH_,
@@ -652,7 +653,7 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
                             nH_*yprev[ige_],  Tcool_nm);
     // cooling of hot gas: radiative cooling, free-free.
     LHotGas = Thermo::CoolingLya(yprev[igH_], nH_*yprev[ige_], T);
-    //Thermo::CoolingHotGas(nH_,  T, zdg_);
+    //Thermo::CoolingHotGas(nH_,  T, zg_);
     // CO rotational lines
     // Calculate effective CO column density
     vth = std::sqrt(2. * Constants::k_boltzmann_cgs * Tcool_nm / ChemistryUtility::mCO);
@@ -671,9 +672,9 @@ Real ChemNetwork::Edot(const Real t, const Real y[NSPECIES], const Real ED) {
       LH2 = 0.;
     }
     // dust thermo emission
-    LDust = 0.;//Thermo::CoolingDustTd(zdg_,  nH_, Tcool_nm, 10.);
+    LDust = 0.;//Thermo::CoolingDustTd(zd_,  nH_, Tcool_nm, 10.);
     // reconbination of e on PAHs
-    LRec = Thermo::CoolingRec(zdg_,  Tcool_nm,  nH_*yprev[ige_], rad_[index_gpe_]);
+    LRec = Thermo::CoolingRec(zd_,  Tcool_nm,  nH_*yprev[ige_], rad_[index_gpe_]);
     // collisional dissociation of H2
     LH2diss = Thermo::CoolingH2diss(yprev[igH_],  yprev[iH2_], k2body_[i2body_H2_H],
                                     k2body_[i2body_H2_H2]);
@@ -955,7 +956,7 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
 
   // Grain assisted recombination of H and H2
   //   (0) *H + *H + gr -> H2 + gr
-  kgr_[0] = get_kgr_H2_(T) * nH_ * zdg_;
+  kgr_[0] = get_kgr_H2_(T) * nH_ * zd_;
   //   (1) H+ + *e + gr -> *H + gr
   //   (2) C+ + *e + gr -> *C + gr
   //   (3) He+ + *e + gr -> *He + gr
@@ -977,28 +978,28 @@ void ChemNetwork::UpdateRates(const Real y[NSPECIES+ngs_], const Real E) {
                   (1.0 + cHp_[3] * std::pow(T, cHp_[4])
                    *std::pow( psi, -cHp_[5]-cHp_[6]*std::log(T) )
                    )
-               ) * nH_ * zdg_;
+               ) * nH_ * zd_;
     kgr_[2] = 1.0e-14 * cCp_[0] /
               (
                   1.0 + cCp_[1]*std::pow(psi, cCp_[2]) *
                   (1.0 + cCp_[3] * std::pow(T, cCp_[4])
                    *std::pow( psi, -cCp_[5]-cCp_[6]*std::log(T) )
                    )
-               ) * nH_ * zdg_;
+               ) * nH_ * zd_;
     kgr_[3] = 1.0e-14 * cHep_[0] /
               (
                   1.0 + cHep_[1]*std::pow(psi, cHep_[2]) *
                   (1.0 + cHep_[3] * std::pow(T, cHep_[4])
                    *std::pow( psi, -cHep_[5]-cHep_[6]*std::log(T) )
                    )
-               ) * nH_ * zdg_;
+               ) * nH_ * zd_;
     kgr_[4] = 1.0e-14 * cSip_[0] /
               (
                   1.0 + cSip_[1]*std::pow(psi, cSip_[2]) *
                   (1.0 + cSip_[3] * std::pow(T, cSip_[4])
                    *std::pow( psi, -cSip_[5]-cSip_[6]*std::log(T) )
                    )
-               ) * nH_ * zdg_;
+               ) * nH_ * zd_;
   } else {
     for (int i=1; i<5; i++) {
       kgr_[i] = 0.;

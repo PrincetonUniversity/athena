@@ -78,7 +78,8 @@ class ChemNetwork : public NetworkWrapper {
   // H2 formation rate on grains
   bool is_kgrH2_const_;
   // parameters of the netowork
-  Real zdg_;
+  Real zd_;
+  Real zg_;
   Real xHe_;
   Real xC_std_;
   Real xO_std_;

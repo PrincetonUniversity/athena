@@ -59,7 +59,8 @@ r_init      = 1.0e-6      # initial abundances
 
 <chemistry>
 # chemistry network parameters
-Zdg        = 1.0          # metallicity, dust and gas metallicity are the same. default = 1.
+Z_d        = 1.           # dust metallicity
+Z_g        = 1.           # gas metallicity
 # chemistry solver parameters
 reltol     = 1.0e-3       # relative tolerance, default 1.0e-2
 abstol     = 1.0e-12      # absolute tolerance, default 1.0e-12

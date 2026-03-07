@@ -55,7 +55,8 @@ r_init_H2  = 0.4          # initial abundances
 
 <chemistry>
 # chemistry network parameters
-Zdg        = 1.           # metallicity, dust and gas metallicity are the same. default = 1.
+Z_d        = 1.           # dust metallicity
+Z_g        = 1.           # gas metallicity
 Leff_CO_max = 1.0e18      # max length scale in cm for CO LVG cooling
 # chemistry solver parameters
 reltol     = 1.0e-2       # relative tolerance, default 1.0e-2

@@ -58,7 +58,8 @@ r_init = 1.0e-6
 
 <chemistry>
 # chemistry network parameters
-Zdg        = 1.           # metallicity, dust and gas metallicity are the same. default = 1.
+Z_d        = 1.           # dust metallicity
+Z_g        = 1.           # gas metallicity
 is_cr_shielding = true
 # chemistry solver parameters
 reltol     = 1.0e-3       # relative tolerance, default 1.0e-2

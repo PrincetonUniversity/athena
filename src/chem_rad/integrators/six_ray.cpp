@@ -150,7 +150,7 @@ void ChemRadIntegrator::CopyToOutput() {
 //! \brief calcuate total column and update radiation
 
 void ChemRadIntegrator::UpdateRadiation() {
-  const Real Zd = pmy_chemnet->zdg_;
+  const Real Zd = pmy_chemnet->zd_;
   const Real bH2 = 3.0e5; // H2 velocity dispersion
   const int iph_H2 = ChemNetwork::iph_H2_;
   const int iph_CO = ChemNetwork::iph_CO_;

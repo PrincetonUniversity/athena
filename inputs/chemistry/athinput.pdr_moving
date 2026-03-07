@@ -56,7 +56,8 @@ Tw         = 4e4
 
 <chemistry>
 # chemistry network parameters
-Zdg        = 1.        # metallicity, dust and gas metallicity are the same. default = 1.
+Z_d        = 1.           # dust metallicity
+Z_g        = 1.           # gas metallicity
 Leff_CO_max = 1.0e18   # max length scale in cm for CO LVG cooling
 # fixed mean molecular weight for isothermal eos, used to caldulate temperature
 mu_iso = 2.33333333333 # H2 + He
