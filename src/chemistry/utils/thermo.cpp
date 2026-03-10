@@ -215,6 +215,9 @@ Thermo::Thermo() {}
 //! cosmic ray heating in erg H^-1 s^-1
 Real Thermo::HeatingCr(const Real xe, const Real nH,
                        const Real xHI, const Real xH2, const Real crir_prim) {
+  // heating for CR interaction with free electrons
+  // Draine ISM book eq (30.4)
+  // const Real qe = 287.1 * eV_;
   // heating rate per ionization in atomic region.
   // Draine ISM book eq (30.1)
   Real qHI;
@@ -239,6 +242,7 @@ Real Thermo::HeatingCr(const Real xe, const Real nH,
   } else {
     qH2 = 18. * eV_;
   }
+  //const Real qtot = xHI*qHI + 2*xH2*qH2 + xe*qe;
   const Real qtot = xHI*qHI + 2*xH2*qH2;
   return (crir_prim * qtot);
 }
