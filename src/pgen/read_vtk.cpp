@@ -143,7 +143,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           MPI_Barrier(MPI_COMM_WORLD);
           printf("Start to MPI broadcast density.\n");
         }
-        ierr = MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
+        MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
                          MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
         if (DEBUG) {
           MPI_Barrier(MPI_COMM_WORLD);
@@ -169,7 +169,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           MPI_Barrier(MPI_COMM_WORLD);
           printf("Start to MPI broadcast pressure.\n");
         }
-        ierr = MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
+        MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
                          MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
         if (DEBUG) {
           MPI_Barrier(MPI_COMM_WORLD);
@@ -204,7 +204,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           MPI_Barrier(MPI_COMM_WORLD);
           printf("Start to MPI broadcast velocity 0.\n");
         }
-        ierr = MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
+        MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
                          MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
         if (DEBUG) {
           MPI_Barrier(MPI_COMM_WORLD);
@@ -227,7 +227,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           MPI_Barrier(MPI_COMM_WORLD);
           printf("Start to MPI broadcast velocity 1.\n");
         }
-        ierr = MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
+        MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
                          MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
         if (DEBUG) {
           MPI_Barrier(MPI_COMM_WORLD);
@@ -250,7 +250,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           MPI_Barrier(MPI_COMM_WORLD);
           printf("Start to MPI broadcast velocity 2.\n");
         }
-        ierr = MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
+        MPI_Bcast(data.data(), Nx_mesh*Ny_mesh*Nz_mesh,
                          MPI_ATHENA_REAL, 0, MPI_COMM_WORLD);
         if (DEBUG) {
           MPI_Barrier(MPI_COMM_WORLD);
