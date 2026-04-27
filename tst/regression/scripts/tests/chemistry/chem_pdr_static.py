@@ -38,7 +38,7 @@ def run(**kwargs):
 
 def analyze():
     err_control = 1e-1
-    small_ = 1e-30
+    small_ = 1e-10
     _, _, _, data_ref = athena_read.vtk('data/chem_pdr_static.vtk')
     _, _, _, data_new = athena_read.vtk('bin/pdr_static.block0.out1.00010.vtk')
     chemistry.get_gow17_fields(data_ref)

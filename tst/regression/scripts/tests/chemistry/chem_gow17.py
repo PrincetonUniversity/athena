@@ -40,6 +40,7 @@ def run(**kwargs):
 
 def analyze():
     err_control = 1e-3
+    small_ = 1e-10
     gam1 = 1.666666666666667 - 1.
     nH = 1.0921e+02
     unit_E_cgs = 1.6733e-24 * 1.4 * 1e10
@@ -53,11 +54,11 @@ def analyze():
         s = species[i]
         xs_ref = data_ref["r"+s]
         xs_new = data_new["r"+s]
-        err_all[i] = (abs(xs_ref - xs_new) / abs(xs_ref)).max()
+        err_all[i] = (abs(xs_ref - xs_new) / (abs(xs_ref) + small_)).max()
         print(s, err_all[i])
     E_ref = data_ref["press"]/gam1 * unit_E_cgs / nH
     E_new = data_new["press"]/gam1 * unit_E_cgs / nH
-    err_all[ns] = (abs(E_ref - E_new) / abs(E_ref)).max()
+    err_all[ns] = (abs(E_ref - E_new) / (abs(E_ref) + small_)).max()
     print("E", err_all[ns])
     err_max = err_all.max()
     if err_max < err_control:

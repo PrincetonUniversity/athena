@@ -58,17 +58,16 @@ class Thermo {
     static Real CvCold(const Real xH2, const Real xHe_total, const Real xe);
 
  private:
-    static const Real eV_; //eV in erg
-    static const Real kb_; //boltzmann constant in erg/K
-    static const Real ca_; //speed of light * radiation constant, or
-                            // stephan-bolzmann constant*4
-    static const Real TCMB_; //CMB temperature
-    static const Real o2p_;//ratio of ortho to para H2
-    static const Real fo_; //ortho H2 fraction
-    static const Real fp_; //para H2 fraction
-    static const Real sigmaPE_; //dust cross-section for 8-13.6eV photons in cm2
-    static const Real sigmaISRF_; //dust cross-section for ISRF in cm2
-    static const Real sigmad10_; //dust cross-section for IR at T=10K
+    static const Real eV_; 
+    static const Real kb_; 
+    static const Real ca_; 
+    static const Real TCMB_; 
+    static const Real o2p_;
+    static const Real fo_; 
+    static const Real fp_; 
+    static const Real sigmaPE_; 
+    static const Real sigmaISRF_; 
+    static const Real sigmad10_; 
     static const Real alpha_GD_;
     static Real q10CII_(const Real nHI, const Real nH2, const Real ne,
                    const Real T);

@@ -78,16 +78,16 @@ class ChemNetwork : public NetworkWrapper {
   // H2 formation rate on grains
   bool is_kgrH2_const_;
   // parameters of the netowork
-  Real zd_;
-  Real zg_;
-  Real xHe_;
-  Real xC_std_;
-  Real xO_std_;
-  Real xSi_std_;
-  Real xC_;
-  Real xO_;
-  Real xSi_;
-  // index of species
+  Real zd_; // dust metallicity relative to solar
+  Real zg_; // gas metallicity relative to solar
+  Real xHe_; // helium elemental abundance relative to hydrogen, default 0.1
+  Real xC_std_; // carbon elemental abundance relative to hydrogen at solar metallicity
+  Real xO_std_; // oxygen elemental abundance relative to hydrogen at solar metallicity
+  Real xSi_std_; // silicon elemental abundance relative to hydrogen at solar metallicity
+  Real xC_; // carbon elemental abundance relative to hydrogen
+  Real xO_; // oxygen elemental abundance relative to hydrogen
+  Real xSi_; // silicon elemental abundance relative to hydrogen
+  // index of species in the y[] and ydot[] array for ODE solvers
   static const int iHeplus_;
   static const int iOHx_;
   static const int iCHx_;
@@ -109,61 +109,65 @@ class ChemNetwork : public NetworkWrapper {
   static const int ige_;
   static const int igH_;
   // species needed for calculating shielding
-  static constexpr int n_cols_ = 4;
-  static constexpr int iNHtot_ = 0;
-  static constexpr int iNH2_ = 1;
-  static constexpr int iNCO_ = 2;
-  static constexpr int iNC_ = 3;
+  // number of species which column density is calculated by six-ray radiation transfer
+  static constexpr int n_cols_ = 4; 
+  static constexpr int iNHtot_ = 0; // index for total hydrogen nuclei in six-ray
+  static constexpr int iNH2_ = 1; // index for H2 in six-ray
+  static constexpr int iNCO_ = 2; // index for CO in six-ray
+  static constexpr int iNC_ = 3; // index for C in six-ray
   //-------------------chemical network---------------------
   // number of different reactions
   // cosmic ray reactions
-  static const int icr_H2_;
-  static const int icr_He_;
-  static const int icr_H_;
-  static const int incr_[n_cr_]; // reactant
-  static const int outcr_[n_cr_]; // product
-  static const Real kcr_base_[n_cr_]; // coefficents of rates relative to H
-  Real kcr_[n_cr_]; // rates for cosmic-ray reactions  // NOLINT (runtime/arrays)
+  static const int icr_H2_; // index for H2 CR reaction
+  static const int icr_He_; // index for He CR reaction
+  static const int icr_H_; // index for H CR reaction
+  static const int incr_[n_cr_]; // reactant index
+  static const int outcr_[n_cr_]; // product index
+  static const Real kcr_base_[n_cr_]; // coefficents of rates relative to H in s^-1
+  Real kcr_[n_cr_]; // rates for cosmic-ray reactions  in s^-1 // NOLINT (runtime/arrays)
   // 2body reactions
-  static const int i2body_H2_H;
-  static const int i2body_H2_H2;
-  static const int i2body_H_e;
-  static const int in2body1_[n_2body_];
-  static const int in2body2_[n_2body_];
-  static const int out2body1_[n_2body_];
-  static const int out2body2_[n_2body_];
+  static const int i2body_H2_H; // index for H2 + H -> 3H reaction
+  static const int i2body_H2_H2; // index for H2 + H2 -> H2 + 2H reaction
+  static const int i2body_H_e; // index for H + e -> H+ + 2e reaction
+  static const int in2body1_[n_2body_]; // index for first reactant
+  static const int in2body2_[n_2body_]; // index for second reactant
+  static const int out2body1_[n_2body_]; // index for first product
+  static const int out2body2_[n_2body_]; // index for second product
   static const Real k2Texp_[n_2body_]; // exponent of temp dependance
-  static const Real k2body_base_[n_2body_]; // base rate coefficents
-  Real k2body_[n_2body_]; // rates for 2 body reactions  // NOLINT (runtime/arrays)
+  static const Real k2body_base_[n_2body_]; // base rate coefficents in s^-1 cm^3
+  Real k2body_[n_2body_]; // rates for 2 body reactions in s^-1 cm^3 // NOLINT (runtime/arrays)
+  // rate coefficients for H3+ + C -> CH + H2, from Vissapragada+2016, ApJ, 832, 31
   static const Real A_kCHx_;
   static const Real n_kCHx_;
   static const Real c_kCHx_[4];
   static const Real Ti_kCHx_[4];
   // (15) H2 + *H -> 3 *H  and (16) H2 + H2 -> H2 + 2 *H
-  // temperature above which collisional dissociation (15), (16) and (17)
+  // temperature in K above which collisional dissociation (15), (16) and (17)
   // will be importatant k>~1e-30
   static const Real temp_coll_;
   // photo reactions
   // radiation related variables, used in ChemRadIntegrator
   // radiation field in unit of Draine 1987 field (G0), updated at InitializeNextStep
   // vector: [Gph, GPE]
-  Real rad_[n_freq_];   // NOLINT (runtime/arrays)
-  Real kph_[n_ph_]; // rates for photo-reactions  // NOLINT (runtime/arrays)
+  Real rad_[n_freq_]; // radiation field intensity // NOLINT (runtime/arrays)
+  Real kph_[n_ph_]; // rates for photo-reactions in s^-1  // NOLINT (runtime/arrays)
+  // index for photo reactions of species
   static const int iph_C_;
   static const int iph_CHx_;
   static const int iph_CO_;
   static const int iph_OHx_;
   static const int iph_H2_;
   static const int iph_Si_;
-  static const int inph_[n_ph_];
-  static const int outph1_[n_ph_];
-  static const Real kph_base_[n_ph_];   // base rate of photo reaction
+  static const int inph_[n_ph_]; // index for reactant
+  static const int outph1_[n_ph_]; // index for first product
+  static const Real kph_base_[n_ph_];   // base rate of photo reaction in s^-1
   static const Real kph_avfac_[n_ph_];  // exponent factor in front of AV
   // grain assisted reactions
-  static const int igr_H_;
-  static const int ingr_[n_gr_];
-  static const int outgr_[n_gr_];
-  Real kgr_[n_gr_]; // rates for grain assisted reactions  // NOLINT (runtime/arrays)
+  static const int igr_H_; // index for reaction H + H + gr -> H2 + gr
+  static const int ingr_[n_gr_]; // index for reactant
+  static const int outgr_[n_gr_]; // index for product
+  // rates for grain assisted reactions in cm^3 s^-1 z_d^-1
+  Real kgr_[n_gr_]; // NOLINT (runtime/arrays)
   // constants for H+, C+, He+ grain recombination.
   // See Draine ISM book table 14.9 page 158, or Weingartner+Draine2001.
   static const Real cHp_[7];
@@ -175,7 +179,7 @@ class ChemNetwork : public NetworkWrapper {
   // parameters related to CO cooling
   // these are needed for LVG approximation
   Real gradv_; // absolute value of velocity gradient in cgs, >0
-  Real Leff_CO_max_; // maximum effective length for CO cooling
+  Real Leff_CO_max_; // maximum effective length for CO cooling in cm
   // a small number to avoid divide by zero.
   static const Real small_;
 

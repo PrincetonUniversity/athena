@@ -16,30 +16,37 @@
 #include "../../units/units.hpp"
 #include "../../utils/interp.hpp"
 
-//physical constants
-const Real Thermo::eV_ = 1.602e-12;
-const Real Thermo::kb_ = Constants::k_boltzmann_cgs;
-const Real Thermo::ca_ = 2.27e-4;
-const Real Thermo::TCMB_ = 2.73;
-//ortho to para ratio of H2
-const Real Thermo::o2p_ = 3.;
-const Real Thermo::fo_ = 0.75;
-const Real Thermo::fp_ = 0.25;
-const Real Thermo::sigmaPE_ = 1.0e-21;//DESPOTIC, Draine2003
-const Real Thermo::sigmaISRF_ = 3.0e-22;//DESPOTIC
-const Real Thermo::sigmad10_ = 2.0e-25;//DESPOTIC
-const Real Thermo::alpha_GD_ = 3.2e-34;//DESPOTIC
-//----C+, 2 level system---
+// physical constants
+const Real Thermo::eV_ = 1.602e-12; // eV in erg
+const Real Thermo::kb_ = Constants::k_boltzmann_cgs; // boltzmann constant in erg/K
+// speed of light * radiation constant, or stephan-bolzmann constant*4
+const Real Thermo::ca_ = 2.27e-4; 
+const Real Thermo::TCMB_ = 2.73; //CMB temperature
+// ortho to para ratio of H2
+const Real Thermo::o2p_ = 3.; // ratio of ortho to para H2
+const Real Thermo::fo_ = 0.75; // ortho H2 fraction
+const Real Thermo::fp_ = 0.25; // para H2 fraction
+// dust cross-section for 8-13.6eV photons in cm2
+// DESPOTIC: Krumhols, MNRAS 437, 1662–1680 (2014)
+const Real Thermo::sigmaPE_ = 1.0e-21; 
+const Real Thermo::sigmaISRF_ = 3.0e-22; //dust cross-section for ISRF in cm2, DESPOTIC
+const Real Thermo::sigmad10_ = 2.0e-25; //dust cross-section for IR at T=10K, DESPOTIC
+const Real Thermo::alpha_GD_ = 3.2e-34; //gas-dust coupling coefficient, DESPOTIC
+// atomic constants
+// Aij: Einstein A coefficient for level i->j, in s^-1
+// Eij: Energy level Eij = Ei - Ej, in erg
+// gi: degeneracy in level i
+// ----C+, 2 level system---
 const Real Thermo::A10CII_ = 2.3e-6; //Silva+Viegas2002
 const Real Thermo::E10CII_ = 1.26e-14;
 const Real Thermo::g0CII_ = 2.;
 const Real Thermo::g1CII_ = 4.;
-//----HI+, 2 level system---
+// ----HI+, 2 level system---
 const Real Thermo::A10HI_ = 6.265e8;
 const Real Thermo::E10HI_ = 1.634e-11;
 const Real Thermo::g0HI_ = 1.;
 const Real Thermo::g1HI_ = 3.;
-//----CI, 3 level system---
+// ----CI, 3 level system---
 const Real Thermo::g0CI_ = 1;
 const Real Thermo::g1CI_ = 3;
 const Real Thermo::g2CI_ = 5;
@@ -49,7 +56,7 @@ const Real Thermo::A21CI_ = 2.650e-07;
 const Real Thermo::E10CI_ = 3.261e-15;
 const Real Thermo::E20CI_ = 8.624e-15;
 const Real Thermo::E21CI_ = 5.363e-15;
-//----OI, 3 level system---
+// ----OI, 3 level system---
 const Real Thermo::g0OI_ = 5;
 const Real Thermo::g1OI_ = 3;
 const Real Thermo::g2OI_ = 1;
@@ -60,11 +67,15 @@ const Real Thermo::E10OI_ = 3.144e-14;
 const Real Thermo::E20OI_ = 4.509e-14;
 const Real Thermo::E21OI_ = 1.365e-14;
 
-//-----CO cooling table data, from Omukai+2010-----
+// -----CO cooling table data, from Omukai+2010, ApJ, 722:1793–1815-----
+// gas temperature in K
 const Real Thermo::TCO_[lenTCO_] = {10, 20, 30, 50, 80, 100,
-                                      300,  600,  1000, 1500, 2000};
+                                    300,  600,  1000, 1500, 2000};
+// effective column density of CO in cm^-2
 const Real Thermo::NeffCO_[lenNeffCO_] = {14.0, 14.5, 15.0, 15.5, 16.0, 16.5,
-                                            17.0, 17.5, 18.0, 18.5, 19.0};
+                                          17.0, 17.5, 18.0, 18.5, 19.0};
+// L0CO_, LLTECO_, nhalfCO_, alphaCO_ are fitting coefficients
+// in Omukai+2010 equation B1 and Table 2
 const Real Thermo::L0CO_[lenTCO_] = {24.77, 24.38, 24.21, 24.03, 23.89, 23.82,
   // values from despotic, behaves better at high temperature
   23.34238089,  22.99832519,  22.75384686,  22.56640625, 22.43740866};
@@ -108,6 +119,8 @@ const Real Thermo::alphaCO_[lenNeffCO_*lenTCO_] = {
 0.582, 0.528, 0.499, 0.469, 0.457, 0.451, 0.470, 0.487, 0.432, 0.364, 0.310,
 0.596, 0.546, 0.519, 0.492, 0.483, 0.479, 0.510, 0.516, 0.448, 0.372, 0.313
 };
+
+// --- dust cooling tabulated from DESPOTIC, not used ---------------
 const Real Thermo::logTg_[lenTg_] = {
   0.5       , 0.88888889, 1.27777778, 1.66666667, 2.05555556,  2.44444444,
   2.83333333, 3.22222222, 3.61111111, 4.
@@ -150,7 +163,7 @@ const Real Thermo::logps_[lennH_ * lenTg_] = {
   23.86220014, 23.26098873, 22.66932799, 22.08203828, 21.49678269
 };
 
-//-----radiative cooling from Schure 2009 -------
+//-----radiative cooling from Schure 2009, A&A 508, 751–757, not used -------
 const Real Thermo::log_Trad_[len_rad_cool_] =
 { 3.80,  3.84,  3.88,  3.92,  3.96,  4.00,  4.04,  4.08,  4.12,  4.16,
   4.20,  4.24,  4.28,  4.32,  4.36,  4.40,  4.44,  4.48,  4.52,  4.56,
@@ -191,8 +204,11 @@ const Real Thermo::log_gamma_Z_[len_rad_cool_] =
   -23.15, -23.15, -23.15, -23.15, -23.16, -23.16, -23.15, -23.16, -23.17, -23.17
 };
 
+// WD2001: Weingartner and Draine 2001, ApJ, 134:263-281
+// PE heating coefficients from WD2001 Table 2, second last line
 const Real Thermo::CPE_[7] = {5.22, 2.25, 0.04996, 0.00430,
-                                0.147, 0.431,0.692};
+                              0.147, 0.431,0.692};
+// Collisional cooling included in PE heating, WD2001 Table3, second last line
 const Real Thermo::DPE_[5] = {0.4535, 2.234, -6.266, 1.442, 0.05089};
 
 //----------------------------------------------------------------------------------------

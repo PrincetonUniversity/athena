@@ -80,7 +80,7 @@ void ChemNetwork::InitializeNextStep(const int k, const int j, const int i) {
   rho_floor = pmy_mb_->peos->GetDensityFloor();
   rho = (rho > rho_floor) ?  rho : rho_floor;
   // hydrogen atom number density
-  nH_ =  rho;
+  nH_ =  rho * pmy_mb_->pmy_mesh->punit->code_density_cgs / (1.4 * Constants::hydrogen_mass_cgs);
   return;
 }
 

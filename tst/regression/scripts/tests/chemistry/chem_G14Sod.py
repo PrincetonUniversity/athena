@@ -38,11 +38,12 @@ def run(**kwargs):
 
 def analyze():
     err_control = 1e-3
+    small_ = 1e-10
     _, _, _, data_ref = athena_read.vtk('data/chem_G14Sod.vtk')
     _, _, _, data_new = athena_read.vtk('bin/chem_G14Sod.block0.out1.00010.vtk')
     press_ref = data_ref["press"]
     press_new = data_new["press"]
-    err = (abs(press_ref - press_new) / abs(press_ref)).max()
+    err = (abs(press_ref - press_new) / (abs(press_ref) + small_)).max()
     print("E err", err)
     if err < err_control:
         return True

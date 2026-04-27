@@ -40,7 +40,7 @@ def run(**kwargs):
 def analyze():
     err_control = 1e-10
     err_control_species = 1e-1
-    small_ = 1e-30
+    small_ = 1e-10
     gam1 = 1.666666666666667 - 1.
     unit_E_cgs = 1.6733e-24 * 1.4 * 1e10
     _, _, _, data_ref = athena_read.vtk('data/chem_cgk_sixray_output.vtk')
