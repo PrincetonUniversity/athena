@@ -282,8 +282,11 @@ NRRadiation::NRRadiation(MeshBlock *pmb, ParameterInput *pin):
     AngularGrid(angle_flag, nzeta, npsi);
     if (nc2 > 1) {
       cot_theta.NewAthenaArray(nc2);
-      for(int i=0; i<nc2; ++i)
-        cot_theta(i) = cos(pmb->pcoord->x2v(i))/sin(pmb->pcoord->x2v(i));
+      for(int i=0; i<nc2; ++i) {
+        Real th_l = pmb->pcoord->x2f(i);
+        Real th_r = pmb->pcoord->x2f(i+1);
+        cot_theta(i) = (sin(th_r) - sin(th_l)) / (cos(th_l) - cos(th_r));
+      }
     }
   } else {
     AngularGrid(angle_flag, nmu);
