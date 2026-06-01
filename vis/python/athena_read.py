@@ -952,6 +952,28 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
 
 # ========================================================================================
 
+def int2d(filename):
+    """Reads an output file for integrals of data fields over two dimensions.
+
+    Positional Argument
+        filename
+            Name of or path to the output file (with extension int12, int13, or int23).
+
+    Returned Values
+        None.
+    """
+    from struct import unpack
+
+    # Hard code the size of an int from C/C++.
+    intsize = 4  # bytes
+
+    with open(filename, "rb") as f:
+        # Read number of output variables.
+        nvar = unpack("=i", f.read(intsize))[0]
+        print(f"int2d: nvar = {nvar}")
+
+# ========================================================================================
+
 def restrict_like(vals, levels, vols=None):
     """Average cell values according to given mesh refinement scheme."""
 
