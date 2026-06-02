@@ -82,6 +82,16 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
       }
     }
 
+    // Read and check the number of cells in the third dimension.
+    fin.read(reinterpret_cast<char*>(&n), sizeof(n));
+    if (n != nx) {
+      msg << "### FATAL ERROR in Int2DOutput::ProcessHeader" << std::endl
+          << "Inconsistent number of cells in the third dimension: "
+          << nx << " requested vs. " << n << " in existing header" << std::endl;
+      ATHENA_ERROR(msg);
+      return;
+    }
+
     fin.close();
   } else { // if (fin.is_open())
     // Open a new output file for write.
@@ -102,6 +112,13 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
       const int size = it->size();
       fout.write(reinterpret_cast<const char*>(&size), sizeof(size));
       if (size > 0) fout.write(it->data(), size);
+    }
+
+    // Write the coordinates in the third dimension.
+    fout.write(reinterpret_cast<const char*>(&nx), sizeof(nx));
+    for (std::vector<Real>::iterator it = xf.begin(); it != xf.end(); ++it) {
+      const Real x = *it;
+      fout.write(reinterpret_cast<const char*>(&x), sizeof(x));
     }
 
     fout.close();
