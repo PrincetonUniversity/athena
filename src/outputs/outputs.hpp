@@ -161,7 +161,7 @@ class Int2DOutput : public OutputType {
   int nx;  // number of cells in the third dimension
 
  private:
-  virtual void SetThirdDim() = 0;
+  virtual void SetThirdDim(const Mesh *pm) = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -175,7 +175,7 @@ class IntX1X2Output : public Int2DOutput {
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
-  void SetThirdDim() override {}
+  void SetThirdDim(const Mesh *pm) override {}
 };
 
 //----------------------------------------------------------------------------------------
@@ -189,7 +189,7 @@ class IntX1X3Output : public Int2DOutput {
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
-  void SetThirdDim() override {}
+  void SetThirdDim(const Mesh *pm) override {}
 };
 
 //----------------------------------------------------------------------------------------
@@ -203,7 +203,7 @@ class IntX2X3Output : public Int2DOutput {
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
-  void SetThirdDim() override {}
+  void SetThirdDim(const Mesh *pm) override {}
 };
 
 //----------------------------------------------------------------------------------------
