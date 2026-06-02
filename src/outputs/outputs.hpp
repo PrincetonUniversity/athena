@@ -189,7 +189,7 @@ class IntX1X3Output : public Int2DOutput {
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
-  void SetThirdDim(const Mesh *pm) override {}
+  void SetThirdDim(const Mesh *pm) override;
 };
 
 //----------------------------------------------------------------------------------------
@@ -203,7 +203,7 @@ class IntX2X3Output : public Int2DOutput {
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
-  void SetThirdDim(const Mesh *pm) override {}
+  void SetThirdDim(const Mesh *pm) override;
 };
 
 //----------------------------------------------------------------------------------------

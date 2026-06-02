@@ -111,6 +111,7 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
 //----------------------------------------------------------------------------------------
 //! \fn void IntX1X2Output::SetThirdDim(const Mesh *pm)
 //! \brief constructs the coordinates in the X3 dimension.
+// TODO(ccyang): consider the case of mesh refinement.
 
 void IntX1X2Output::SetThirdDim(const Mesh *pm) {
   const bool uniform = pm->use_uniform_meshgen_fn_[X3DIR];
@@ -119,6 +120,36 @@ void IntX1X2Output::SetThirdDim(const Mesh *pm) {
   for (int i = 0; i <= nx; ++i) {
     const Real rx = ComputeMeshGeneratorX(i, nx, uniform);
     xf.push_back(pm->MeshGenerator_[X3DIR](rx, pm->mesh_size));
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void IntX1X3Output::SetThirdDim(const Mesh *pm)
+//! \brief constructs the coordinates in the X2 dimension.
+// TODO(ccyang): consider the case of mesh refinement.
+
+void IntX1X3Output::SetThirdDim(const Mesh *pm) {
+  const bool uniform = pm->use_uniform_meshgen_fn_[X2DIR];
+  xf.clear();
+  nx = pm->mesh_size.nx2;
+  for (int i = 0; i <= nx; ++i) {
+    const Real rx = ComputeMeshGeneratorX(i, nx, uniform);
+    xf.push_back(pm->MeshGenerator_[X2DIR](rx, pm->mesh_size));
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void IntX2X3Output::SetThirdDim(const Mesh *pm)
+//! \brief constructs the coordinates in the X1 dimension.
+// TODO(ccyang): consider the case of mesh refinement.
+
+void IntX2X3Output::SetThirdDim(const Mesh *pm) {
+  const bool uniform = pm->use_uniform_meshgen_fn_[X1DIR];
+  xf.clear();
+  nx = pm->mesh_size.nx1;
+  for (int i = 0; i <= nx; ++i) {
+    const Real rx = ComputeMeshGeneratorX(i, nx, uniform);
+    xf.push_back(pm->MeshGenerator_[X1DIR](rx, pm->mesh_size));
   }
 }
 

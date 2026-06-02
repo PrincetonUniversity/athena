@@ -207,6 +207,8 @@ class Mesh {
   friend class RestartOutput;
   friend class HistoryOutput;
   friend class IntX1X2Output;
+  friend class IntX1X3Output;
+  friend class IntX2X3Output;
   friend class MeshBlock;
   friend class MeshBlockTree;
   friend class BoundaryBase;
