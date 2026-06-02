@@ -109,6 +109,13 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
 }
 
 //----------------------------------------------------------------------------------------
+//! \fn void IntX1X2Output::SetThirdDim(const Mesh *pm)
+//! \brief constructs the coordinates in the X3 dimension.
+
+void IntX1X2Output::SetThirdDim(const Mesh *pm) {
+}
+
+//----------------------------------------------------------------------------------------
 //! \fn void IntX1X2Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
 //! \brief integrates the data over x1 and x2 directions and writes the resulting 1D
 //      array in x3.
