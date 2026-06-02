@@ -960,7 +960,9 @@ def int2d(filename):
             Name of or path to the output file (with extension int12, int13, or int23).
 
     Returned Values
-        None.
+        A numpy record array containing the following data:
+            xf
+                Coordinates of the cell edges in the third dimension.
     """
     from struct import unpack
 
@@ -985,6 +987,14 @@ def int2d(filename):
         for i in range(nvar):
             size = unpack("=i", f.read(intsize))[0]
             varnames.append(f.read(size).decode())
+
+        # Read the coordinates of cell edges in the third dimension.
+        nx = unpack("=i", f.read(intsize))[0]
+        xf = np.empty(nx + 1,)
+        for i in range(nx + 1):
+            xf[i] = unpack(fmt, f.read(realsize))[0]
+
+        return np.rec.array((xf,), names=("xf",))
 
 # ========================================================================================
 
