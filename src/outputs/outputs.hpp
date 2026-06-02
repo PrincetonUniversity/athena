@@ -155,7 +155,13 @@ class Int2DOutput : public OutputType {
 
  protected:
   void ProcessHeader(const std::string& ext, const Mesh *pm);
-  std::string fname;  // name of the output file
+
+  std::string fname;     // name of the output file
+  std::vector<Real> xf;  // coordinates of cell edges in the third dimension
+  int nx;  // number of cells in the third dimension
+
+ private:
+  virtual void SetThirdDim() = 0;
 };
 
 //----------------------------------------------------------------------------------------
@@ -167,6 +173,9 @@ class IntX1X2Output : public Int2DOutput {
   explicit IntX1X2Output(const Mesh *pm, const OutputParameters &op)
   : Int2DOutput(pm, op) { ProcessHeader("int12", pm); }
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
+
+ private:
+  void SetThirdDim() override {}
 };
 
 //----------------------------------------------------------------------------------------
@@ -178,6 +187,9 @@ class IntX1X3Output : public Int2DOutput {
   explicit IntX1X3Output(const Mesh *pm, const OutputParameters &op)
   : Int2DOutput(pm, op) { ProcessHeader("int13", pm); }
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
+
+ private:
+  void SetThirdDim() override {}
 };
 
 //----------------------------------------------------------------------------------------
@@ -189,6 +201,9 @@ class IntX2X3Output : public Int2DOutput {
   explicit IntX2X3Output(const Mesh *pm, const OutputParameters &op)
   : Int2DOutput(pm, op) { ProcessHeader("int23", pm); }
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
+
+ private:
+  void SetThirdDim() override {}
 };
 
 //----------------------------------------------------------------------------------------

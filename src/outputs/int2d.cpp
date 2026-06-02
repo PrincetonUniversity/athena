@@ -49,6 +49,9 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
   }
   ClearOutputData();
 
+  // Construct the coordinates of the third dimension.
+  SetThirdDim();
+
   // Process the header of the output file.
   const int nvar = varnames.size();
   std::ifstream fin(fname, std::ios::in | std::ios::binary);
