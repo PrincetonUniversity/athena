@@ -113,6 +113,13 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
 //! \brief constructs the coordinates in the X3 dimension.
 
 void IntX1X2Output::SetThirdDim(const Mesh *pm) {
+  const bool uniform = pm->use_uniform_meshgen_fn_[X3DIR];
+  xf.clear();
+  nx = pm->mesh_size.nx3;
+  for (int i = 0; i <= nx; ++i) {
+    const Real rx = ComputeMeshGeneratorX(i, nx, uniform);
+    xf.push_back(pm->MeshGenerator_[X3DIR](rx, pm->mesh_size));
+  }
 }
 
 //----------------------------------------------------------------------------------------
