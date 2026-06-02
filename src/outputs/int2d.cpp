@@ -63,6 +63,22 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
       ATHENA_ERROR(msg);
       return;
     }
+
+    // Read and check the names of the variables.
+    for (int i = 0; i < nvar; ++i) {
+      fin.read(reinterpret_cast<char*>(&n), sizeof(n));
+      std::string name(n, '*');
+      fin.read(&name[0], n);
+      if (name != varnames[i]) {
+        msg << "### FATAL ERROR in Int2DOutput::ProcessHeader" << std::endl
+            << "Inconsistent name of output variable " << (i + 1) << std::endl
+            << "'" << varnames[i] << "' requested vs. '" << name << "' in existing header"
+            << std::endl;
+        ATHENA_ERROR(msg);
+        return;
+      }
+    }
+
     fin.close();
   } else { // if (fin.is_open())
     // Open a new output file for write.
@@ -76,6 +92,15 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
 
     // Write the number of output variables.
     fout.write(reinterpret_cast<const char*>(&nvar), sizeof(nvar));
+
+    // Write the names of the variables.
+    for (std::vector<std::string>::iterator it = varnames.begin();
+        it != varnames.end(); ++it) {
+      const int size = it->size();
+      fout.write(reinterpret_cast<const char*>(&size), sizeof(size));
+      if (size > 0) fout.write(it->data(), size);
+    }
+
     fout.close();
   } // if (fin.is_open())
 }

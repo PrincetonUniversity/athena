@@ -970,7 +970,13 @@ def int2d(filename):
     with open(filename, "rb") as f:
         # Read number of output variables.
         nvar = unpack("=i", f.read(intsize))[0]
-        print(f"int2d: nvar = {nvar}")
+
+        # Read the names of the variables.
+        varnames = []
+        for i in range(nvar):
+            size = unpack("=i", f.read(intsize))[0]
+            varnames.append(f.read(size).decode())
+        print("varnames = ", varnames)
 
 # ========================================================================================
 
