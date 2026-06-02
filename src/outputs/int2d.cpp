@@ -56,8 +56,11 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
   const int nvar = varnames.size();
   std::ifstream fin(fname, std::ios::in | std::ios::binary);
   if (fin.is_open()) {
-    // Read and check the number of output variables.
+    // Skip the first int (size of Real).
     int n;
+    fin.read(reinterpret_cast<char*>(&n), sizeof(n));
+
+    // Read and check the number of output variables.
     fin.read(reinterpret_cast<char*>(&n), sizeof(n));
     if (n != nvar) {
       msg << "### FATAL ERROR in Int2DOutput::ProcessHeader" << std::endl
@@ -102,6 +105,10 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
       ATHENA_ERROR(msg);
       return;
     }
+
+    // Write the size of the Athena++ Real.
+    const int size = sizeof(Real);
+    fout.write(reinterpret_cast<const char*>(&size), sizeof(size));
 
     // Write the number of output variables.
     fout.write(reinterpret_cast<const char*>(&nvar), sizeof(nvar));

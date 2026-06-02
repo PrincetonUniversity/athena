@@ -968,7 +968,16 @@ def int2d(filename):
     intsize = 4  # bytes
 
     with open(filename, "rb") as f:
-        # Read number of output variables.
+        # Read and check the size of the Athena++ Real.
+        realsize = unpack("=i", f.read(intsize))[0]
+        if realsize == 4:
+          fmt = "=f"
+        elif realsize == 8:
+          fmt = "=d"
+        else:
+          raise RuntimeError(f"Unsupported Real size of {realsize} bytes. ")
+
+        # Read the number of output variables.
         nvar = unpack("=i", f.read(intsize))[0]
 
         # Read the names of the variables.
@@ -976,7 +985,6 @@ def int2d(filename):
         for i in range(nvar):
             size = unpack("=i", f.read(intsize))[0]
             varnames.append(f.read(size).decode())
-        print("varnames = ", varnames)
 
 # ========================================================================================
 
