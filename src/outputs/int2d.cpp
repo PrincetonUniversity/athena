@@ -188,6 +188,21 @@ void IntX1X2Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
             << "\n\tnext_time = " << output_params.next_time
             << "\n\tdt = " << output_params.dt << std::endl;
 
+  // Open the output file for write.
+  std::ofstream fout(fname, std::ios::out | std::ios::app | std::ios::binary);
+  if (!fout.is_open()) {
+    std::stringstream msg;
+    msg << "### FATAL ERROR in IntX1X2Output::ProcessHeader" << std::endl
+        << "Unable to open output file '" << fname << "'" << std::endl;
+    ATHENA_ERROR(msg);
+    return;
+  }
+
+  // Write the current time.
+  fout.write(reinterpret_cast<const char*>(&pm->time), sizeof(pm->time));
+
+  fout.close();
+
   // Update output parameters.
   output_params.next_time += output_params.dt;
 }
