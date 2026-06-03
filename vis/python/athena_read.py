@@ -960,10 +960,11 @@ def int2d(filename):
             Name of or path to the output file (with extension int12, int13, or int23).
 
     Returned Values
-        A numpy record array containing the following data:
+        A namedtuple containing the following fields:
             xf
                 Coordinates of the cell edges in the third dimension.
     """
+    from collections import namedtuple
     from struct import unpack
 
     # Hard code the size of an int from C/C++.
@@ -994,7 +995,8 @@ def int2d(filename):
         for i in range(nx + 1):
             xf[i] = unpack(fmt, f.read(realsize))[0]
 
-        return np.rec.array((xf,), names=("xf",))
+        Int2D = namedtuple("Int2D", ["xf"])
+        return Int2D(xf)
 
 # ========================================================================================
 
