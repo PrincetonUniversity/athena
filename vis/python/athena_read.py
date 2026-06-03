@@ -995,8 +995,18 @@ def int2d(filename):
         for i in range(nx + 1):
             xf[i] = unpack(fmt, f.read(realsize))[0]
 
-        Int2D = namedtuple("Int2D", ["xf"])
-        return Int2D(xf)
+        # Loop over the time series.
+        time = []
+        while True:
+            # Read the time.
+            b = f.read(realsize)
+            if len(b) <= 0: break
+            time.append(unpack(fmt, b)[0])
+        time = np.array(time)
+
+        # Construct and return a namedtuple.
+        Int2D = namedtuple("Int2D", ["xf", "time"])
+        return Int2D(xf, time)
 
 # ========================================================================================
 
