@@ -54,11 +54,20 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
 
   // Process the header of the output file.
   const int nvar = varnames.size();
+  const int rsize = sizeof(Real);
   std::ifstream fin(fname, std::ios::in | std::ios::binary);
   if (fin.is_open()) {
-    // Skip the first int (size of Real).
+    // Check the Real size.
     int n;
     fin.read(reinterpret_cast<char*>(&n), sizeof(n));
+    if (n != rsize) {
+      msg << "### FATAL ERROR in Int2DOutput::ProcessHeader" << std::endl
+          << "Inconsistent Athena++ Real size: "
+          << rsize << " bytes compied vs. " << n << " bytes in existing header"
+          << std::endl;
+      ATHENA_ERROR(msg);
+      return;
+    }
 
     // Read and check the number of output variables.
     fin.read(reinterpret_cast<char*>(&n), sizeof(n));
@@ -107,8 +116,7 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
     }
 
     // Write the size of the Athena++ Real.
-    const int size = sizeof(Real);
-    fout.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    fout.write(reinterpret_cast<const char*>(&rsize), sizeof(rsize));
 
     // Write the number of output variables.
     fout.write(reinterpret_cast<const char*>(&nvar), sizeof(nvar));
