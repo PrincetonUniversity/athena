@@ -49,11 +49,20 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
   }
   ClearOutputData();
 
+  // Confirm the count of output variables with the parent class.
+  const int nvar = varnames.size();
+  if (nvar != num_vars_) {
+    msg << "### FATAL ERROR in Int2DOutput::ProcessHeader" << std::endl
+        << "Inconsistent num_vars_ = " << num_vars_ << " vs. nvar = " << nvar
+        << std::endl;
+    ATHENA_ERROR(msg);
+    return;
+  }
+
   // Construct the coordinates of the third dimension.
   SetThirdDim(pm);
 
   // Process the header of the output file.
-  const int nvar = varnames.size();
   const int rsize = sizeof(Real);
   std::ifstream fin(fname, std::ios::in | std::ios::binary);
   if (fin.is_open()) {
