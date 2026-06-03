@@ -154,13 +154,16 @@ class Int2DOutput : public OutputType {
   virtual void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) = 0;
 
  protected:
-  void ProcessHeader(const std::string& ext, const Mesh *pm);
-
+  // Instance variables
   std::string fname;     // name of the output file
   std::vector<Real> xf;  // coordinates of cell edges in the third dimension
   int nx;  // number of cells in the third dimension
 
+  // Constructor helper
+  void ProcessHeader(const std::string& ext, const Mesh *pm);
+
  private:
+  // Constructor helper
   virtual void SetThirdDim(const Mesh *pm) = 0;
 };
 
@@ -175,6 +178,7 @@ class IntX1X2Output : public Int2DOutput {
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
+  // Constructor helper
   void SetThirdDim(const Mesh *pm) override;
 };
 
@@ -189,6 +193,7 @@ class IntX1X3Output : public Int2DOutput {
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
+  // Constructor helper
   void SetThirdDim(const Mesh *pm) override;
 };
 
@@ -203,6 +208,7 @@ class IntX2X3Output : public Int2DOutput {
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
+  // Constructor helper
   void SetThirdDim(const Mesh *pm) override;
 };
 
