@@ -227,7 +227,27 @@ void IntX1X2Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // Write the current time.
   fout.write(reinterpret_cast<const char*>(&pm->time), sizeof(pm->time));
 
+  // Allocate arrays for 2D integrals.
+  AthenaArray<Real> integral(num_vars_, nx);
+  integral.ZeroClear();
+
+  // Loop over meshblocks.
+  for (int i = 0; i < pm->nblocal; ++i) {
+    MeshBlock *pmb = pm->my_blocks(i);
+    LoadOutputData(pmb);
+
+    // Loop over data in each meshblock.
+    OutputData *pdata = pfirst_data_;
+    while (pdata != nullptr) {
+      pdata = pdata->pnext;
+    }
+
+    ClearOutputData();
+  }
+
+  // Close and clean up.
   fout.close();
+  integral.DeleteAthenaArray();
 
   // Update output parameters.
   output_params.next_time += output_params.dt;
