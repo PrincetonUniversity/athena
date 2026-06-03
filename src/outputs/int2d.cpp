@@ -57,6 +57,15 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
   const int rsize = sizeof(Real);
   std::ifstream fin(fname, std::ios::in | std::ios::binary);
   if (fin.is_open()) {
+    // Stop if the run is a fresh start.
+    // TODO(ccyang): implement truncation of the output file for restart.
+    if (pm->time == pm->start_time) {
+      msg << "### FATAL ERROR in Int2DOutput::ProcessHeader" << std::endl
+          << "The output file '" << fname << "' already exists. " << std::endl;
+      ATHENA_ERROR(msg);
+      return;
+    }
+
     // Check the Real size.
     int n;
     fin.read(reinterpret_cast<char*>(&n), sizeof(n));
