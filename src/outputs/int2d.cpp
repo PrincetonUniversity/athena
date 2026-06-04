@@ -23,6 +23,9 @@
 //! \brief writes a new or check the existing header of the output file.
 
 void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
+  // Construct the coordinates of the third dimension.
+  SetThirdDim(pm);
+
   // Compose the name of the output file.
   fname = output_params.file_basename + '.' + ext;
 
@@ -59,9 +62,7 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
     ATHENA_ERROR(msg);
     return;
   }
-
-  // Construct the coordinates of the third dimension.
-  SetThirdDim(pm);
+  if (Globals::my_rank != 0) return;
 
   // Process the header of the output file.
   const int rsize = sizeof(Real);
@@ -210,18 +211,23 @@ void IntX2X3Output::SetThirdDim(const Mesh *pm) {
 //!     the third.
 
 void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  // Open the output file for write.
-  std::ofstream fout(fname, std::ios::out | std::ios::app | std::ios::binary);
-  if (!fout.is_open()) {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in IntX1X2Output::ProcessHeader" << std::endl
-        << "Unable to open output file '" << fname << "'" << std::endl;
-    ATHENA_ERROR(msg);
-    return;
-  }
+  const int ROOT = 0;
+  const bool is_root = (Globals::my_rank == ROOT);
+  std::ofstream fout;
+  if (is_root) {
+    // Open the output file for write.
+    fout.open(fname, std::ios::out | std::ios::app | std::ios::binary);
+    if (!fout.is_open()) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in IntX1X2Output::ProcessHeader" << std::endl
+          << "Unable to open output file '" << fname << "'" << std::endl;
+      ATHENA_ERROR(msg);
+      return;
+    }
 
-  // Write the current time.
-  fout.write(reinterpret_cast<const char*>(&pm->time), sizeof(pm->time));
+    // Write the current time.
+    fout.write(reinterpret_cast<const char*>(&pm->time), sizeof(pm->time));
+  } // if (is_root)
 
   // Allocate arrays for 2D integrals.
   AthenaArray<Real> area(pm->my_blocks(0)->ncells1);
@@ -236,11 +242,14 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     ClearOutputData();
   }
 
-  // Write the integrals.
-  fout.write(reinterpret_cast<const char*>(integrals.data()), integrals.GetSizeInBytes());
+  if (is_root) {
+    // Write the integrals and close the output file.
+    fout.write(reinterpret_cast<const char*>(integrals.data()),
+               integrals.GetSizeInBytes());
+    fout.close();
+  }
 
-  // Close and clean up.
-  fout.close();
+  // Clean up.
   integrals.DeleteAthenaArray();
   area.DeleteAthenaArray();
 
