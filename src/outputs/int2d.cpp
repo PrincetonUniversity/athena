@@ -320,7 +320,27 @@ void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
 
 void IntX2X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals,
     AthenaArray<Real> &area) {
-  std::stringstream msg;
-  msg << "IntX2X3Output: not implemented " << std::endl;
-  ATHENA_ERROR(msg);
+  // Determine where the meshblock fits.
+  const int offset = pmb->loc.lx1 * pmb->block_size.nx1 - pmb->is;
+
+  // Integrate each data field.
+  int ii = 0;
+  OutputData *pdata = pfirst_data_;
+  while (pdata != nullptr) {
+    const int nc = (pdata->type == "VECTORS") ? 3 : 1;
+    for (int c = 0; c < nc; ++c) {
+      for (int i = pmb->is; i <= pmb->ie; ++i) {
+        Real sum = 0;
+        for (int k = pmb->ks; k <= pmb->ke; ++k) {
+          for (int j = pmb->js; j <= pmb->je; ++j) {
+            pmb->pcoord->VolCenterFace1Area(k, j, i, i, area);
+            sum += pdata->data(c,k,j,i) * area(i);
+          }
+        }
+        integrals(ii, i + offset) += sum;
+      }
+      ++ii;
+    }
+    pdata = pdata->pnext;
+  }
 }
