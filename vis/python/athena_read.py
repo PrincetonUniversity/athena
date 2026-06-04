@@ -973,12 +973,7 @@ def int2d(filename):
     with open(filename, "rb") as f:
         # Read and check the size of the Athena++ Real.
         realsize = unpack("=i", f.read(intsize))[0]
-        if realsize == 4:
-          fmt = "=f"
-        elif realsize == 8:
-          fmt = "=d"
-        else:
-          raise RuntimeError(f"Unsupported Real size of {realsize} bytes. ")
+        dtype = np.dtype(f"f{realsize}")
 
         # Read the number of output variables.
         nvar = unpack("=i", f.read(intsize))[0]
@@ -991,18 +986,15 @@ def int2d(filename):
 
         # Read the coordinates of cell edges in the third dimension.
         nx = unpack("=i", f.read(intsize))[0]
-        xf = np.empty(nx + 1,)
-        for i in range(nx + 1):
-            xf[i] = unpack(fmt, f.read(realsize))[0]
+        xf = np.frombuffer(f.read((nx+1) * realsize), dtype=dtype)
 
         # Loop over the time series.
-        time = []
+        time = np.array([])
         while True:
             # Read the time.
             b = f.read(realsize)
             if len(b) <= 0: break
-            time.append(unpack(fmt, b)[0])
-        time = np.array(time)
+            time = np.concatenate((time, np.frombuffer(b, dtype=dtype)))
 
         # Construct and return a namedtuple.
         Int2D = namedtuple("Int2D", ["xf", "time"])
