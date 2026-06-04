@@ -180,11 +180,6 @@ void IntX1X2Output::SetThirdDim(const Mesh *pm) {
 // TODO(ccyang): consider the case of mesh refinement.
 
 void IntX1X3Output::SetThirdDim(const Mesh *pm) {
-  std::stringstream msg;
-  msg << "IntX1X3Output: not implemented " << std::endl;
-  ATHENA_ERROR(msg);
-  return;
-
   const bool uniform = pm->use_uniform_meshgen_fn_[X2DIR];
   xf.clear();
   nx = pm->mesh_size.nx2;
@@ -200,11 +195,6 @@ void IntX1X3Output::SetThirdDim(const Mesh *pm) {
 // TODO(ccyang): consider the case of mesh refinement.
 
 void IntX2X3Output::SetThirdDim(const Mesh *pm) {
-  std::stringstream msg;
-  msg << "IntX2X3Output: not implemented " << std::endl;
-  ATHENA_ERROR(msg);
-  return;
-
   const bool uniform = pm->use_uniform_meshgen_fn_[X1DIR];
   xf.clear();
   nx = pm->mesh_size.nx1;
@@ -242,6 +232,7 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   for (int b = 0; b < pm->nblocal; ++b) {
     MeshBlock *pmb = pm->my_blocks(b);
     LoadOutputData(pmb);
+    AddToIntegrals(pmb, integral);
 
     // Determine where the meshblock fits.
     const int offset = pmb->loc.lx3 * pmb->block_size.nx3 - pmb->ks;
@@ -279,4 +270,37 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
   // Update output parameters.
   output_params.next_time += output_params.dt;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void IntX1X2Output::AddToIntegrals(
+//!     const MeshBlock *pmb, AthenaArray<Real> &integrals)
+//! \brief processes loaded output data in one meshblock and adds the sums to the
+//!     integrals.
+
+void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) {
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void IntX1X3Output::AddToIntegrals(
+//!     const MeshBlock *pmb, AthenaArray<Real> &integrals)
+//! \brief processes loaded output data in one meshblock and adds the sums to the
+//!     integrals.
+
+void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) {
+  std::stringstream msg;
+  msg << "IntX1X3Output: not implemented " << std::endl;
+  ATHENA_ERROR(msg);
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void IntX2X3Output::AddToIntegrals(
+//!     const MeshBlock *pmb, AthenaArray<Real> &integrals)
+//! \brief processes loaded output data in one meshblock and adds the sums to the
+//!     integrals.
+
+void IntX2X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) {
+  std::stringstream msg;
+  msg << "IntX2X3Output: not implemented " << std::endl;
+  ATHENA_ERROR(msg);
 }

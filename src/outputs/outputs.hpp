@@ -179,7 +179,7 @@ class IntX1X2Output : public Int2DOutput {
 
  private:
   // Helpers
-  void AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) override {}
+  void AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) override;
   void SetThirdDim(const Mesh *pm) override;
 };
 
@@ -194,7 +194,7 @@ class IntX1X3Output : public Int2DOutput {
 
  private:
   // Helpers
-  void AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) override {}
+  void AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) override;
   void SetThirdDim(const Mesh *pm) override;
 };
 
@@ -209,7 +209,7 @@ class IntX2X3Output : public Int2DOutput {
 
  private:
   // Helpers
-  void AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) override {}
+  void AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) override;
   void SetThirdDim(const Mesh *pm) override;
 };
 
