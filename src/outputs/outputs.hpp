@@ -163,7 +163,8 @@ class Int2DOutput : public OutputType {
   void ProcessHeader(const std::string& ext, const Mesh *pm);
 
  private:
-  // Constructor helper
+  // Helpers
+  virtual void AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) = 0;
   virtual void SetThirdDim(const Mesh *pm) = 0;
 };
 
@@ -177,7 +178,8 @@ class IntX1X2Output : public Int2DOutput {
   : Int2DOutput(pm, op) { ProcessHeader("int12", pm); }
 
  private:
-  // Constructor helper
+  // Helpers
+  void AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) override {}
   void SetThirdDim(const Mesh *pm) override;
 };
 
@@ -191,7 +193,8 @@ class IntX1X3Output : public Int2DOutput {
   : Int2DOutput(pm, op) { ProcessHeader("int13", pm); }
 
  private:
-  // Constructor helper
+  // Helpers
+  void AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) override {}
   void SetThirdDim(const Mesh *pm) override;
 };
 
@@ -205,7 +208,8 @@ class IntX2X3Output : public Int2DOutput {
   : Int2DOutput(pm, op) { ProcessHeader("int23", pm); }
 
  private:
-  // Constructor helper
+  // Helpers
+  void AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) override {}
   void SetThirdDim(const Mesh *pm) override;
 };
 
