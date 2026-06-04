@@ -16,6 +16,7 @@
 #include <limits>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
