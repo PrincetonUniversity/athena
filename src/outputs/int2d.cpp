@@ -209,10 +209,7 @@ void IntX2X3Output::SetThirdDim(const Mesh *pm) {
 //      array in x3.
 
 void IntX1X2Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  std::cout << "IntX1X2Output: under construction; "
-            << "\n\tt = " << pm->time
-            << "\n\tnext_time = " << output_params.next_time
-            << "\n\tdt = " << output_params.dt << std::endl;
+  std::cout << "IntX1X2Output: under construction" << std::endl;
 
   // Open the output file for write.
   std::ofstream fout(fname, std::ios::out | std::ios::app | std::ios::binary);
@@ -244,6 +241,9 @@ void IntX1X2Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
     ClearOutputData();
   }
+
+  // Write the integrals.
+  fout.write(reinterpret_cast<const char*>(integral.data()), integral.GetSizeInBytes());
 
   // Close and clean up.
   fout.close();

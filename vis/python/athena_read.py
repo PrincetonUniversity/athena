@@ -989,6 +989,7 @@ def int2d(filename):
         xf = np.frombuffer(f.read((nx+1) * realsize), dtype=dtype)
 
         # Loop over the time series.
+        arraysize = nx * realsize
         time = np.array([])
         while True:
             # Read the time.
@@ -996,9 +997,20 @@ def int2d(filename):
             if len(b) <= 0: break
             time = np.concatenate((time, np.frombuffer(b, dtype=dtype)))
 
+            # Read the 2D integrals.
+            if len(time) > 1:
+                for i, v in enumerate(integrals):
+                    a = np.frombuffer(f.read(arraysize), dtype=dtype)
+                    integrals[i] = np.vstack((v, a))
+            else:
+                integrals = []
+                for i in range(nvar):
+                    integrals.append(np.frombuffer(f.read(arraysize), dtype=dtype))
+
         # Construct and return a namedtuple.
-        Int2D = namedtuple("Int2D", ["xf", "time"])
-        return Int2D(xf, time)
+        names = ["xf", "time"] + varnames
+        pairs = dict(zip(names, [xf, time] + integrals))
+        return namedtuple("Int2D", names)(**pairs)
 
 # ========================================================================================
 
