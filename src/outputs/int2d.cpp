@@ -224,6 +224,7 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   fout.write(reinterpret_cast<const char*>(&pm->time), sizeof(pm->time));
 
   // Allocate arrays for 2D integrals.
+  AthenaArray<Real> area(pm->my_blocks(0)->ncells1);
   AthenaArray<Real> integrals(num_vars_, nx);
   integrals.ZeroClear();
 
@@ -231,7 +232,7 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   for (int b = 0; b < pm->nblocal; ++b) {
     MeshBlock *pmb = pm->my_blocks(b);
     LoadOutputData(pmb);
-    AddToIntegrals(pmb, integrals);
+    AddToIntegrals(pmb, integrals, area);
     ClearOutputData();
   }
 
@@ -241,24 +242,25 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // Close and clean up.
   fout.close();
   integrals.DeleteAthenaArray();
+  area.DeleteAthenaArray();
 
   // Update output parameters.
   output_params.next_time += output_params.dt;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void IntX1X2Output::AddToIntegrals(
-//!     const MeshBlock *pmb, AthenaArray<Real> &integrals)
+//! \fn void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb,
+//!         AthenaArray<Real> &integrals, AthenaArray<Real> &area)
 //! \brief processes loaded output data in one meshblock and adds the sums to the
 //!     integrals.
 
-void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) {
+void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals,
+    AthenaArray<Real> &area) {
   // Determine where the meshblock fits.
   const int offset = pmb->loc.lx3 * pmb->block_size.nx3 - pmb->ks;
 
   // Integrate each data field.
   int ii = 0;
-  AthenaArray<Real> area(pmb->ncells1);
   OutputData *pdata = pfirst_data_;
   while (pdata != nullptr) {
     const int nc = (pdata->type == "VECTORS") ? 3 : 1;
@@ -276,30 +278,29 @@ void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
     }
     pdata = pdata->pnext;
   }
-
-  // Clean up.
-  area.DeleteAthenaArray();
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void IntX1X3Output::AddToIntegrals(
-//!     const MeshBlock *pmb, AthenaArray<Real> &integrals)
+//! \fn void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb,
+//!         AthenaArray<Real> &integrals, AthenaArray<Real> &area)
 //! \brief processes loaded output data in one meshblock and adds the sums to the
 //!     integrals.
 
-void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) {
+void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals,
+    AthenaArray<Real> &area) {
   std::stringstream msg;
   msg << "IntX1X3Output: not implemented " << std::endl;
   ATHENA_ERROR(msg);
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void IntX2X3Output::AddToIntegrals(
-//!     const MeshBlock *pmb, AthenaArray<Real> &integrals)
+//! \fn void IntX2X3Output::AddToIntegrals(const MeshBlock *pmb,
+//!         AthenaArray<Real> &integrals, AthenaArray<Real> &area)
 //! \brief processes loaded output data in one meshblock and adds the sums to the
 //!     integrals.
 
-void IntX2X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) {
+void IntX2X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals,
+    AthenaArray<Real> &area) {
   std::stringstream msg;
   msg << "IntX2X3Output: not implemented " << std::endl;
   ATHENA_ERROR(msg);
