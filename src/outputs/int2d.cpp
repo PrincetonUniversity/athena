@@ -224,49 +224,23 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   fout.write(reinterpret_cast<const char*>(&pm->time), sizeof(pm->time));
 
   // Allocate arrays for 2D integrals.
-  AthenaArray<Real> area(pm->my_blocks(0)->ncells3);
-  AthenaArray<Real> integral(num_vars_, nx);
-  integral.ZeroClear();
+  AthenaArray<Real> integrals(num_vars_, nx);
+  integrals.ZeroClear();
 
-  // Loop over meshblocks.
+  // Conduct the integrals.
   for (int b = 0; b < pm->nblocal; ++b) {
     MeshBlock *pmb = pm->my_blocks(b);
     LoadOutputData(pmb);
-    AddToIntegrals(pmb, integral);
-
-    // Determine where the meshblock fits.
-    const int offset = pmb->loc.lx3 * pmb->block_size.nx3 - pmb->ks;
-
-    // Integrate each data field.
-    int ii = 0;
-    OutputData *pdata = pfirst_data_;
-    while (pdata != nullptr) {
-      const int nc = (pdata->type == "VECTORS") ? 3 : 1;
-      for (int c = 0; c < nc; ++c) {
-        for (int k = pmb->ks; k <= pmb->ke; ++k) {
-          Real sum = 0;
-          for (int j = pmb->js; j <= pmb->je; ++j) {
-            pmb->pcoord->VolCenterFace3Area(k, j, pmb->is, pmb->ie, area);
-            for (int i = pmb->is; i <= pmb->ie; ++i)
-              sum += pdata->data(c,k,j,i) * area(i);
-          }
-          integral(ii, k + offset) += sum;
-        }
-        ++ii;
-      }
-      pdata = pdata->pnext;
-    }
-
+    AddToIntegrals(pmb, integrals);
     ClearOutputData();
   }
 
   // Write the integrals.
-  fout.write(reinterpret_cast<const char*>(integral.data()), integral.GetSizeInBytes());
+  fout.write(reinterpret_cast<const char*>(integrals.data()), integrals.GetSizeInBytes());
 
   // Close and clean up.
   fout.close();
-  integral.DeleteAthenaArray();
-  area.DeleteAthenaArray();
+  integrals.DeleteAthenaArray();
 
   // Update output parameters.
   output_params.next_time += output_params.dt;
@@ -279,6 +253,32 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 //!     integrals.
 
 void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals) {
+  // Determine where the meshblock fits.
+  const int offset = pmb->loc.lx3 * pmb->block_size.nx3 - pmb->ks;
+
+  // Integrate each data field.
+  int ii = 0;
+  AthenaArray<Real> area(pmb->ncells1);
+  OutputData *pdata = pfirst_data_;
+  while (pdata != nullptr) {
+    const int nc = (pdata->type == "VECTORS") ? 3 : 1;
+    for (int c = 0; c < nc; ++c) {
+      for (int k = pmb->ks; k <= pmb->ke; ++k) {
+        Real sum = 0;
+        for (int j = pmb->js; j <= pmb->je; ++j) {
+          pmb->pcoord->VolCenterFace3Area(k, j, pmb->is, pmb->ie, area);
+          for (int i = pmb->is; i <= pmb->ie; ++i)
+            sum += pdata->data(c,k,j,i) * area(i);
+        }
+        integrals(ii, k + offset) += sum;
+      }
+      ++ii;
+    }
+    pdata = pdata->pnext;
+  }
+
+  // Clean up.
+  area.DeleteAthenaArray();
 }
 
 //----------------------------------------------------------------------------------------
