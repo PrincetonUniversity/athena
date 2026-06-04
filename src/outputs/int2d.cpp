@@ -18,6 +18,11 @@
 #include "../mesh/mesh.hpp"  // time, my_blocks
 #include "outputs.hpp"
 
+// MPI headers
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
+
 //----------------------------------------------------------------------------------------
 //! \fn void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm)
 //! \brief writes a new or check the existing header of the output file.
@@ -241,6 +246,14 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     AddToIntegrals(pmb, integrals, area);
     ClearOutputData();
   }
+#ifdef MPI_PARALLEL
+  const int count = integrals.GetSize();
+  void *buf = reinterpret_cast<void*>(&integrals(0,0));
+  if (is_root)
+    MPI_Reduce(MPI_IN_PLACE, buf, count, MPI_ATHENA_REAL, MPI_SUM, ROOT, MPI_COMM_WORLD);
+  else
+    MPI_Reduce(buf, buf, count, MPI_ATHENA_REAL, MPI_SUM, ROOT, MPI_COMM_WORLD);
+#endif
 
   if (is_root) {
     // Write the integrals and close the output file.
