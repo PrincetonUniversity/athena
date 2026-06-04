@@ -151,7 +151,7 @@ class HistoryOutput : public OutputType {
 class Int2DOutput : public OutputType {
  public:
   explicit Int2DOutput(const Mesh *pm, const OutputParameters &op) : OutputType(op) {}
-  virtual void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) = 0;
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
 
  protected:
   // Instance variables
@@ -175,7 +175,6 @@ class IntX1X2Output : public Int2DOutput {
  public:
   explicit IntX1X2Output(const Mesh *pm, const OutputParameters &op)
   : Int2DOutput(pm, op) { ProcessHeader("int12", pm); }
-  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
   // Constructor helper
@@ -190,7 +189,6 @@ class IntX1X3Output : public Int2DOutput {
  public:
   explicit IntX1X3Output(const Mesh *pm, const OutputParameters &op)
   : Int2DOutput(pm, op) { ProcessHeader("int13", pm); }
-  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
   // Constructor helper
@@ -205,7 +203,6 @@ class IntX2X3Output : public Int2DOutput {
  public:
   explicit IntX2X3Output(const Mesh *pm, const OutputParameters &op)
   : Int2DOutput(pm, op) { ProcessHeader("int23", pm); }
-  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
 
  private:
   // Constructor helper

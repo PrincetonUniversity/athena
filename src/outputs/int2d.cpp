@@ -180,6 +180,11 @@ void IntX1X2Output::SetThirdDim(const Mesh *pm) {
 // TODO(ccyang): consider the case of mesh refinement.
 
 void IntX1X3Output::SetThirdDim(const Mesh *pm) {
+  std::stringstream msg;
+  msg << "IntX1X3Output: not implemented " << std::endl;
+  ATHENA_ERROR(msg);
+  return;
+
   const bool uniform = pm->use_uniform_meshgen_fn_[X2DIR];
   xf.clear();
   nx = pm->mesh_size.nx2;
@@ -195,6 +200,11 @@ void IntX1X3Output::SetThirdDim(const Mesh *pm) {
 // TODO(ccyang): consider the case of mesh refinement.
 
 void IntX2X3Output::SetThirdDim(const Mesh *pm) {
+  std::stringstream msg;
+  msg << "IntX2X3Output: not implemented " << std::endl;
+  ATHENA_ERROR(msg);
+  return;
+
   const bool uniform = pm->use_uniform_meshgen_fn_[X1DIR];
   xf.clear();
   nx = pm->mesh_size.nx1;
@@ -205,13 +215,11 @@ void IntX2X3Output::SetThirdDim(const Mesh *pm) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void IntX1X2Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-//! \brief integrates the data over x1 and x2 directions and writes the resulting 1D
-//      array in x3.
+//! \fn void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
+//! \brief integrates the data over two dimensions and writes the resulting 1D array in
+//!     the third.
 
-void IntX1X2Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  std::cout << "IntX1X2Output: under construction" << std::endl;
-
+void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
   // Open the output file for write.
   std::ofstream fout(fname, std::ios::out | std::ios::app | std::ios::binary);
   if (!fout.is_open()) {
@@ -271,26 +279,4 @@ void IntX1X2Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 
   // Update output parameters.
   output_params.next_time += output_params.dt;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn void IntX1X3Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-//! \brief integrates the data over x1 and x3 directions and writes the resulting 1D
-//      array in x2.
-
-void IntX1X3Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  std::stringstream msg;
-  msg << "IntX1X3Output: not implemented " << std::endl;
-  ATHENA_ERROR(msg);
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn void IntX2X3Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag)
-//! \brief integrates the data over x2 and x3 directions and writes the resulting 1D
-//      array in x1.
-
-void IntX2X3Output::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
-  std::stringstream msg;
-  msg << "IntX2X3Output: not implemented " << std::endl;
-  ATHENA_ERROR(msg);
 }
