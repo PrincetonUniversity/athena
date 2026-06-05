@@ -173,7 +173,7 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
 void IntX1X2Output::SetThirdDim(const Mesh *pm) {
   const bool uniform = pm->use_uniform_meshgen_fn_[X3DIR];
   xf.clear();
-  nx = pm->mesh_size.nx3;
+  nx = pm->mesh_size.nx3 << (pm->max_level - pm->root_level);
   for (int i = 0; i <= nx; ++i) {
     const Real rx = ComputeMeshGeneratorX(i, nx, uniform);
     xf.push_back(pm->MeshGenerator_[X3DIR](rx, pm->mesh_size));
@@ -188,7 +188,7 @@ void IntX1X2Output::SetThirdDim(const Mesh *pm) {
 void IntX1X3Output::SetThirdDim(const Mesh *pm) {
   const bool uniform = pm->use_uniform_meshgen_fn_[X2DIR];
   xf.clear();
-  nx = pm->mesh_size.nx2;
+  nx = pm->mesh_size.nx2 << (pm->max_level - pm->root_level);
   for (int i = 0; i <= nx; ++i) {
     const Real rx = ComputeMeshGeneratorX(i, nx, uniform);
     xf.push_back(pm->MeshGenerator_[X2DIR](rx, pm->mesh_size));
@@ -203,7 +203,7 @@ void IntX1X3Output::SetThirdDim(const Mesh *pm) {
 void IntX2X3Output::SetThirdDim(const Mesh *pm) {
   const bool uniform = pm->use_uniform_meshgen_fn_[X1DIR];
   xf.clear();
-  nx = pm->mesh_size.nx1;
+  nx = pm->mesh_size.nx1 << (pm->max_level - pm->root_level);
   for (int i = 0; i <= nx; ++i) {
     const Real rx = ComputeMeshGeneratorX(i, nx, uniform);
     xf.push_back(pm->MeshGenerator_[X1DIR](rx, pm->mesh_size));
