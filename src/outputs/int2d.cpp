@@ -279,7 +279,8 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals,
     AthenaArray<Real> &area) {
   // Determine where the meshblock fits.
-  const int offset = pmb->loc.lx3 * pmb->block_size.nx3 - pmb->ks;
+  const int nfine = 1 << (pmb->pmy_mesh->max_level - pmb->loc.level);
+  const int offset = pmb->loc.lx3 * pmb->block_size.nx3 * nfine;
 
   // Integrate each data field.
   int ii = 0;
@@ -294,7 +295,9 @@ void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
           for (int i = pmb->is; i <= pmb->ie; ++i)
             sum += pdata->data(c,k,j,i) * area(i);
         }
-        integrals(ii, k + offset) += sum;
+        const int ns = offset + (k - pmb->ks) * nfine;
+        for (int n = ns; n < ns + nfine; ++n)
+          integrals(ii, n) += sum;
       }
       ++ii;
     }
@@ -311,7 +314,8 @@ void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
 void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals,
     AthenaArray<Real> &area) {
   // Determine where the meshblock fits.
-  const int offset = pmb->loc.lx2 * pmb->block_size.nx2 - pmb->js;
+  const int nfine = 1 << (pmb->pmy_mesh->max_level - pmb->loc.level);
+  const int offset = pmb->loc.lx2 * pmb->block_size.nx2 * nfine;
 
   // Integrate each data field.
   int ii = 0;
@@ -326,7 +330,9 @@ void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
           for (int i = pmb->is; i <= pmb->ie; ++i)
             sum += pdata->data(c,k,j,i) * area(i);
         }
-        integrals(ii, j + offset) += sum;
+        const int ns = offset + (j - pmb->js) * nfine;
+        for (int n = ns; n < ns + nfine; ++n)
+          integrals(ii, n) += sum;
       }
       ++ii;
     }
@@ -343,7 +349,8 @@ void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
 void IntX2X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals,
     AthenaArray<Real> &area) {
   // Determine where the meshblock fits.
-  const int offset = pmb->loc.lx1 * pmb->block_size.nx1 - pmb->is;
+  const int nfine = 1 << (pmb->pmy_mesh->max_level - pmb->loc.level);
+  const int offset = pmb->loc.lx1 * pmb->block_size.nx1 * nfine;
 
   // Integrate each data field.
   int ii = 0;
@@ -359,7 +366,9 @@ void IntX2X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
             sum += pdata->data(c,k,j,i) * area(i);
           }
         }
-        integrals(ii, i + offset) += sum;
+        const int ns = offset + (i - pmb->is) * nfine;
+        for (int n = ns; n < ns + nfine; ++n)
+          integrals(ii, n) += sum;
       }
       ++ii;
     }
