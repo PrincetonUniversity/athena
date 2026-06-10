@@ -1010,7 +1010,6 @@ def int2d(filename):
                     a = np.frombuffer(f.read(arraysize), dtype=dtype)
                     integrals[i] = np.vstack((v, a))
             else:
-                integrals = []
                 for i in range(nvar):
                     integrals.append(np.frombuffer(f.read(arraysize), dtype=dtype))
 
