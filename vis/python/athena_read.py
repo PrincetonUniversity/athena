@@ -963,6 +963,11 @@ def int2d(filename):
         A namedtuple containing the following fields:
             xf
                 Coordinates of the cell edges in the third dimension.
+            time
+                Times in the series.
+            *
+                2D integrals of the data fields specified by output*/variable in the
+                input file as a function of time and the third dimension.
     """
     from collections import namedtuple
     from struct import unpack
