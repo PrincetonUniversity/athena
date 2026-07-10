@@ -69,8 +69,6 @@ class Field {
   // 3D corner velocity states
   AthenaArray<Real> v_R3R2, v_R3L2, v_L3R2, v_L3L2;
   AthenaArray<Real> v_R3R1, v_R3L1, v_L3R1, v_L3L1;
-  AthenaArray<Real> vl_temp_;
-  AthenaArray<Real> vr_temp_;
   // max/min fast magnetosonic wavespeeds at interfaces (LDZ04 eq. 55)
   AthenaArray<Real> alpha_plus_x1_, alpha_minus_x1_;
   AthenaArray<Real> alpha_plus_x2_, alpha_minus_x2_;
