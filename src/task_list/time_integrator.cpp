@@ -1617,12 +1617,12 @@ void TimeIntegratorTaskList::StartupTaskList(MeshBlock *pmb, int stage) {
       pf->b1.x1f.ZeroClear();
       pf->b1.x2f.ZeroClear();
       pf->b1.x3f.ZeroClear();
+      // Cache face-averaged B^n in the third memory register, b2, via deep copy
+      // (used by the 3S* integrator SSPRK(5,4); see IntegrateField)
       if (integrator == "ssprk5_4") {
-        std::stringstream msg;
-        msg << "### FATAL ERROR in TimeIntegratorTaskList::StartupTaskList\n"
-            << "integrator=" << integrator << " is currently incompatible with MHD."
-            << std::endl;
-        ATHENA_ERROR(msg);
+        pf->b2.x1f = pf->b.x1f;
+        pf->b2.x2f = pf->b.x2f;
+        pf->b2.x3f = pf->b.x3f;
       }
     }
     if (NSCALARS > 0) {
@@ -1714,7 +1714,13 @@ TaskStatus TimeIntegratorTaskList::CalculateHydroFlux(MeshBlock *pmb, int stage)
 TaskStatus TimeIntegratorTaskList::CalculateEMF(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     if (stage_wghts[stage-1].main_stage) {
-      pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
+      if (pmb->precon->xorder == 4) {
+        // fourth-order UCT: corner EMFs from the states reconstructed during
+        // Hydro::CalculateFluxes
+        pmb->pfield->ComputeCornerE_UCT4();
+      } else {
+        pmb->pfield->ComputeCornerE(pmb->phydro->w,  pmb->pfield->bcc);
+      }
     }
     return TaskStatus::next;
   }
@@ -1878,6 +1884,24 @@ TaskStatus TimeIntegratorTaskList::IntegrateField(MeshBlock *pmb, int stage) {
       }
 
       pf->CT(stage_wghts[stage-1].beta*pmb->pmy_mesh->dt, pf->b);
+
+      // Hardcode an additional CT update for the penultimate stage of SSPRK(5,4),
+      // since it cannot be expressed in the low-storage 3S* framework (the same
+      // combination is applied to the u2 register on the hydro side via the
+      // integrator's stage weights). From Gottlieb et al. (2009), the partial
+      // calculation of u^(n+1):
+      if (stage == 4 && integrator == "ssprk5_4") {
+        Real ave_wghts[5];
+        ave_wghts[0] = -1.0; // -b^(n) coeff.
+        ave_wghts[1] = 0.0;
+        ave_wghts[2] = 0.0;
+        ave_wghts[3] = 0.0;
+        ave_wghts[4] = 0.0;
+        Real beta = 0.063692468666290; // F(u^(3)) coeff.
+        // writing out to the b2 register
+        pmb->WeightedAve(pf->b2, pf->b1, pf->b2, pf->b0, pf->ct_update, ave_wghts);
+        pf->CT(beta*pmb->pmy_mesh->dt, pf->b2);
+      }
     }
     return TaskStatus::next;
   }
@@ -2212,6 +2236,19 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
   if (pbval->nblevel[2][1][1] != -1) ku += NGHOST;
 
   if (stage <= nstages) {
+    // fourth-order MHD (UCT4): compute the fourth-order approximations to the
+    // cell-averaged field <B> (into bcc) and the point-valued face- and cell-centered
+    // fields (into b_fc, bcc_center) from the face-averaged field b. The EOS-internal
+    // 2nd-order CalculateCellCenteredField call is skipped when xorder == 4.
+    if (MAGNETIC_FIELDS_ENABLED && pmb->precon->xorder == 4) {
+      // second-order initialization of bcc/bcc_center everywhere (the outermost ghost
+      // cells cannot be corrected to fourth order by the Laplacian stencils below)
+      pf->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
+                                     il, iu, jl, ju, kl, ku);
+      pf->bcc_center = pf->bcc;
+      pf->FaceAveragedToCellAveragedField(pf->b, pf->b_fc, pf->bcc, pf->bcc_center,
+                                          pmb->pcoord, il, iu, jl, ju, kl, ku);
+    }
     // At beginning of this task, ph->w contains previous stage's W(U) output
     // and ph->w1 is used as a register to store the current stage's output.
     // For the second order integrators VL2 and RK2, the prim_old initial guess for the
@@ -2231,15 +2268,15 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
     }
     // fourth-order EOS:
     if (pmb->precon->xorder == 4) {
-      // for hydro, shrink buffer by 1 on all sides
-      if (pbval->nblevel[1][1][0] != -1) il += 1;
-      if (pbval->nblevel[1][1][2] != -1) iu -= 1;
-      if (pbval->nblevel[1][0][1] != -1) jl += 1;
-      if (pbval->nblevel[1][2][1] != -1) ju -= 1;
-      if (pbval->nblevel[0][1][1] != -1) kl += 1;
-      if (pbval->nblevel[2][1][1] != -1) ku -= 1;
-      // for MHD, shrink buffer by 3
-      // TODO(felker): add MHD loop limit calculation for 4th order W(U)
+      // shrink buffer on all sides: by 3 for MHD (UCT4 corner reconstruction stencils),
+      // by 1 for hydro (Laplacian stencils)
+      const int nbuf = (MAGNETIC_FIELDS_ENABLED ? 3 : 1);
+      if (pbval->nblevel[1][1][0] != -1) il += nbuf;
+      if (pbval->nblevel[1][1][2] != -1) iu -= nbuf;
+      if (pbval->nblevel[1][0][1] != -1) jl += nbuf;
+      if (pbval->nblevel[1][2][1] != -1) ju -= nbuf;
+      if (pbval->nblevel[0][1][1] != -1) kl += nbuf;
+      if (pbval->nblevel[2][1][1] != -1) ku -= nbuf;
       // Apply physical boundaries prior to 4th order W(U)
       // Time at the end of stage for (u, b) register pair
       Real t_end_stage = pmb->pmy_mesh->time
@@ -2256,10 +2293,17 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
         }
       }
       pbval->ApplyPhysicalBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
-      // Perform 4th order W(U)
-      pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
-                                                 ph->w1, pf->bcc, pmb->pcoord,
-                                                 il, iu, jl, ju, kl, ku);
+      // Perform 4th order W(U); for MHD, the point-valued cell-centered field
+      // bcc_center is passed for the pointwise variable inversion
+      if (MAGNETIC_FIELDS_ENABLED) {
+        pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
+                                                   ph->w1, pf->bcc_center, pmb->pcoord,
+                                                   il, iu, jl, ju, kl, ku);
+      } else {
+        pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
+                                                   ph->w1, pf->bcc, pmb->pcoord,
+                                                   il, iu, jl, ju, kl, ku);
+      }
       if (NSCALARS > 0) {
         pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
             ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);

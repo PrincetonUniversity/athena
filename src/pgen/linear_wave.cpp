@@ -54,6 +54,14 @@ Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
 Real A1(const Real x1, const Real x2, const Real x3);
 Real A2(const Real x1, const Real x2, const Real x3);
 Real A3(const Real x1, const Real x2, const Real x3);
+// exact edge-averaged and differenced values of the vector potential, used for the
+// fourth-order accurate initialization of the face-averaged fields in 1D/2D
+Real AveDiff2A1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                const Real x2f_jp1);
+Real AveDiff1A2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                const Real x2f_jp1);
+Real AveDiff1A3(const Real x1f_i, const Real x1f_ip1, const Real x2f_j);
+Real AveDiff2A3(const Real x1f_i, const Real x2f_j, const Real x2f_jp1);
 
 // function to compute eigenvectors of linear waves
 void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
@@ -507,48 +515,66 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           }
         }
       }
-    } else {
-      for (int k=ks; k<=ke+1; k++) {
-        for (int j=js; j<=je+1; j++) {
+      // Initialize interface fields by differencing the midpoint approx. of A vector
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            if (i != ie+1)
-              a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
-            if (j != je+1)
-              a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
-            if (k != ke+1)
-              a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+            pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
+                                   (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
           }
         }
       }
-    }
-
-    // Initialize interface fields
-    for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie+1; i++) {
-          pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
-                                 (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
+                                   (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
+          }
         }
       }
-    }
-
-    for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je+1; j++) {
-        for (int i=is; i<=ie; i++) {
-          pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
-                                 (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
+                                   (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
+          }
         }
       }
-    }
-
-    for (int k=ks; k<=ke+1; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
-          pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
-                                 (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
+    } else { // 1D or 2D
+      // Initialize the face-averaged interface fields exactly, from the analytic
+      // edge-averaged and differenced vector potential (fourth-order accurate IC)
+      // TODO(felker): add 3D implementation
+      // B1 initialization
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            pfield->b.x1f(k,j,i) = AveDiff2A3(pcoord->x1f(i), pcoord->x2f(j),
+                                              pcoord->x2f(j+1));
+          }
         }
       }
-    }
+      // B2 initialization
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = -AveDiff1A3(pcoord->x1f(i), pcoord->x1f(i+1),
+                                               pcoord->x2f(j));
+          }
+        }
+      }
+      // B3 initialization
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) =
+                AveDiff1A2(pcoord->x1f(i), pcoord->x1f(i+1), pcoord->x2f(j),
+                           pcoord->x2f(j+1))
+                - AveDiff2A1(pcoord->x1f(i), pcoord->x1f(i+1), pcoord->x2f(j),
+                             pcoord->x2f(j+1));
+          }
+        }
+      }
+    } // end if 2D or 1D
   }
 
   // initialize conserved variables
@@ -617,6 +643,129 @@ Real A3(const Real x1, const Real x2, const Real x3) {
   Real Az = -by0*x + (dby/k_par)*std::cos(k_par*(x)) + bx0*y;
 
   return Az*cos_a2;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveDiff2A1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+//!                     const Real x2f_jp1)
+//! \brief AveDiff2A1: 1-component of vector potential on x2-x3 edges, averaged along
+//! x1, and differenced between x2 faces (x3f constant). Used to compute B3
+//! (2D, cos_a2 = 1 assumed)
+
+Real AveDiff2A1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                const Real x2f_jp1) {
+  // xl_i, xl_ip1 are lower (x2f_j) x2-x3 edge x endpoints
+  Real xl_i = x1f_i*cos_a3 + x2f_j*sin_a3;
+  Real xl_ip1 = x1f_ip1*cos_a3 + x2f_j*sin_a3;
+  // xu_i, xu_ip1 are upper (x2f_jp1) x2-x3 edge x1 endpoints
+  Real xu_i = x1f_i*cos_a3 + x2f_jp1*sin_a3;
+  Real xu_ip1 = x1f_ip1*cos_a3 + x2f_jp1*sin_a3;
+
+  Real dx1f = x1f_ip1 - x1f_i;
+  Real dx2f = x2f_jp1 - x2f_j;
+
+  Real Ay;
+  if (cos_a3 != 0.0) {
+    // O(bz0) linear term
+    Ay = -bz0*SQR(sin_a3);
+    Ay += dbz*sin_a3/(SQR(k_par)*cos_a3*dx1f*dx2f)
+          *((std::sin(k_par*xu_ip1) - std::sin(k_par*xu_i))
+            - (std::sin(k_par*xl_ip1) - std::sin(k_par*xl_i)));
+  } else { // vertical coordinate aligned wave--- uniform on the x1 edge
+    // O(bz0) linear term
+    Ay = -bz0;
+    // O(amp) perturbative term
+    // Using the difference of cosine trig identity, with angles x+/-dx2f/2
+    Ay -= (2.0*dbz/(k_par*dx2f))*std::sin(k_par*dx2f/2.0)
+          *std::sin(k_par*(x2f_j + dx2f/2.0));
+  }
+  return Ay;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveDiff1A2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+//!                     const Real x2f_jp1)
+//! \brief AveDiff1A2: 2-component of vector potential on x1-x3 edges, averaged along
+//! x2, and differenced between x1 faces (x3f constant). Used to compute B3
+//! (2D, cos_a2 = 1 assumed)
+
+Real AveDiff1A2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                const Real x2f_jp1) {
+  // xl_j, xl_jp1 are lower (x1f_i) x1-x3 edge x2 endpoints
+  Real xl_j = x1f_i*cos_a3 + x2f_j*sin_a3;
+  Real xl_jp1 = x1f_i*cos_a3 + x2f_jp1*sin_a3;
+  // xu_j, xu_jp1 are upper (x1f_ip1) x1-x3 edge x2 endpoints
+  Real xu_j = x1f_ip1*cos_a3 + x2f_j*sin_a3;
+  Real xu_jp1 = x1f_ip1*cos_a3 + x2f_jp1*sin_a3;
+
+  Real dx1f = x1f_ip1 - x1f_i;
+  Real dx2f = x2f_jp1 - x2f_j;
+  Real Ay;
+  if (sin_a3 != 0.0) {
+    // O(bz0) linear term
+    Ay = bz0*SQR(cos_a3);
+    Ay -= dbz*cos_a3/(SQR(k_par)*sin_a3*dx1f*dx2f)
+          *((std::sin(k_par*xu_jp1) - std::sin(k_par*xu_j))
+            - (std::sin(k_par*xl_jp1) - std::sin(k_par*xl_j)));
+  } else { // horizontal coordinate aligned wave--- uniform on the x2 edge
+    // O(bz0) linear term
+    Ay = bz0;
+    // O(amp) perturbative term
+    // Using the difference of cosine trig identity, with angles x+/-dx1f/2
+    Ay += (2.0*dbz/(k_par*dx1f))*std::sin(k_par*dx1f/2.0)
+          *std::sin(k_par*(x1f_i + dx1f/2.0));
+  }
+  return Ay;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveDiff1A3(const Real x1f_i, const Real x1f_ip1, const Real x2f_j)
+//! \brief AveDiff1A3: 3-component of vector potential on x1-x2 edges, averaged along
+//! x3, and differenced between x1 faces (x2f constant). Used to compute B2
+//! (2D, cos_a2 = 1 assumed)
+
+Real AveDiff1A3(const Real x1f_i, const Real x1f_ip1, const Real x2f_j) {
+  // xl is lower (x1f_i) x1-x2 edge x3 midpoint
+  // (no need for endpoints due to lack of x3 dependence)
+  Real xl = x1f_i*cos_a3 + x2f_j*sin_a3;
+
+  // xu is upper (x1f_ip1) x1-x2 edge x3 midpoint
+  Real xu = x1f_ip1*cos_a3 + x2f_j*sin_a3;
+
+  // O(bx0,by0) linear term
+  Real Az = -by0*cos_a3 - bx0*sin_a3;
+
+  Real dx1f = x1f_ip1 - x1f_i;
+
+  // O(amp) perturbative term
+  Az += (dby/(k_par*dx1f))*(std::cos(k_par*xu) - std::cos(k_par*xl));
+
+  return Az;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveDiff2A3(const Real x1f_i, const Real x2f_j, const Real x2f_jp1)
+//! \brief AveDiff2A3: 3-component of vector potential on x1-x2 edges, averaged along
+//! x3, and differenced between x2 faces (x1f constant). Used to compute B1
+//! (2D, cos_a2 = 1 assumed)
+
+Real AveDiff2A3(const Real x1f_i, const Real x2f_j, const Real x2f_jp1) {
+  // xl is lower (x2f_j) x1-x2 edge x3 midpoint (no need for endpoints due to
+  // lack of x3 dependence)
+  Real xl = x1f_i*cos_a3 + x2f_j*sin_a3;
+
+  // xu is upper (x2f_jp1) x1-x2 edge x3 midpoint
+  Real xu = x1f_i*cos_a3 + x2f_jp1*sin_a3;
+
+  // O(bx0,by0) linear term
+  Real Az = -by0*sin_a3 + bx0*cos_a3;
+
+  Real dx2f = x2f_jp1 - x2f_j;
+
+  // O(amp) perturbative term
+  Az += (dby/(k_par*dx2f))*(std::cos(k_par*xu) - std::cos(k_par*xl));
+
+  return Az;
 }
 
 //----------------------------------------------------------------------------------------

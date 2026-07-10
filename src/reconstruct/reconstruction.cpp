@@ -82,17 +82,12 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     xorder = 3;
     rec3m_ = REC3METHOD::WENOMZ;
   } else if ((input_recon == "4") || (input_recon == "4c")) {
-    // Full 4th-order scheme for hydro or MHD on uniform Cartesian grids
+    // Full 4th-order scheme for hydro or MHD on uniform Cartesian grids.
+    // For MHD, the 4th-order upwind constrained transport (UCT4) scheme of
+    // Felker & Stone (2018), JCP 375, 1365 is used for the induction equation.
     xorder = 4;
     if (input_recon == "4c")
       characteristic_projection_ = true;
-    if (MAGNETIC_FIELDS_ENABLED) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
-          << "xorder=" << input_recon << " should not be used with MHD"<< std::endl
-          << "4th-order constrained transport algorithm is not yet merged" << std::endl;
-      ATHENA_ERROR(msg);
-    }
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
@@ -202,6 +197,33 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
           << "currently does not support shearing box boundary conditions " << std::endl;
       ATHENA_ERROR(msg);
       return;
+    }
+
+    // fourth-order MHD (UCT4) computes the cell-centered/averaged fields in the main
+    // time-integrator task list, which the operator-split STS task list does not do
+    if (MAGNETIC_FIELDS_ENABLED && STS_ENABLED) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Selected time/xorder=" << input_recon << " with MHD is currently"
+          << " incompatible with super-time-stepping (STS)" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    // fourth-order MHD (UCT4) currently requires periodic boundary conditions in all
+    // active dimensions: the specialized ghost-zone treatment of the face-averaged to
+    // face-/cell-centered field conversions near physical boundaries is unimplemented
+    if (MAGNETIC_FIELDS_ENABLED) {
+      int ndim = 1 + (pmb->block_size.nx2 > 1) + (pmb->block_size.nx3 > 1);
+      for (int face=BoundaryFace::inner_x1; face<=BoundaryFace::outer_x3; face++) {
+        if (face >= 2*ndim) break;
+        if (pmb->pmy_mesh->mesh_bcs[face] != BoundaryFlag::periodic) {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+              << "Selected time/xorder=" << input_recon << " with MHD requires"
+              << " periodic boundary conditions in all active dimensions" << std::endl;
+          ATHENA_ERROR(msg);
+        }
+      }
     }
 
     // check for necessary number of ghost zones for PPM w/ fourth-order flux corrections
