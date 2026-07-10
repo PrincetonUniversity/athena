@@ -187,8 +187,6 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     v_L3R1.NewAthenaArray(3, ncells3, ncells2, ncells1);
     v_L3L1.NewAthenaArray(3, ncells3, ncells2, ncells1);
 
-    vl_temp_.NewAthenaArray(3, ncells3, ncells2, ncells1);
-    vr_temp_.NewAthenaArray(3, ncells3, ncells2, ncells1);
     alpha_plus_x1_.NewAthenaArray(ncells3, ncells2, ncells1);
     alpha_minus_x1_.NewAthenaArray(ncells3, ncells2, ncells1);
     alpha_plus_x2_.NewAthenaArray(ncells3, ncells2, ncells1);
