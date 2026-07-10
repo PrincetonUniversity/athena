@@ -209,18 +209,22 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       ATHENA_ERROR(msg);
     }
 
-    // fourth-order MHD (UCT4) currently requires periodic boundary conditions in all
-    // active dimensions: the specialized ghost-zone treatment of the face-averaged to
-    // face-/cell-centered field conversions near physical boundaries is unimplemented
-    if (MAGNETIC_FIELDS_ENABLED) {
-      int ndim = 1 + (pmb->block_size.nx2 > 1) + (pmb->block_size.nx3 > 1);
+    // Multidimensional fourth-order MHD (UCT4) currently requires periodic boundary
+    // conditions in all active dimensions: the specialized ghost-zone treatment of the
+    // face-averaged to face-/cell-centered field conversions near physical boundaries
+    // is unimplemented. In 1D the transverse Laplacian corrections vanish identically,
+    // so non-periodic (e.g. outflow, for shock tubes) boundaries are permitted there,
+    // on the same footing as the existing 4th-order hydro boundary support.
+    if (MAGNETIC_FIELDS_ENABLED && pmb->block_size.nx2 > 1) {
+      int ndim = 2 + (pmb->block_size.nx3 > 1);
       for (int face=BoundaryFace::inner_x1; face<=BoundaryFace::outer_x3; face++) {
         if (face >= 2*ndim) break;
         if (pmb->pmy_mesh->mesh_bcs[face] != BoundaryFlag::periodic) {
           std::stringstream msg;
           msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
-              << "Selected time/xorder=" << input_recon << " with MHD requires"
-              << " periodic boundary conditions in all active dimensions" << std::endl;
+              << "Selected time/xorder=" << input_recon << " with multidimensional MHD"
+              << " requires periodic boundary conditions in all active dimensions"
+              << std::endl;
           ATHENA_ERROR(msg);
         }
       }

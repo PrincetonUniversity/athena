@@ -2238,16 +2238,30 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
   if (stage <= nstages) {
     // fourth-order MHD (UCT4): compute the fourth-order approximations to the
     // cell-averaged field <B> (into bcc) and the point-valued face- and cell-centered
-    // fields (into b_fc, bcc_center) from the face-averaged field b. The EOS-internal
+    // fields (into b_fc, bcc_center) from the face-averaged field b.  The EOS-internal
     // 2nd-order CalculateCellCenteredField call is skipped when xorder == 4.
+    // All cells, ghost and real, are passed to the conversions.
     if (MAGNETIC_FIELDS_ENABLED && pmb->precon->xorder == 4) {
+      // The ghost faces of the current b register at PHYSICAL boundaries may be stale
+      // or zeroed after the low-storage integrator register swaps (internal/periodic
+      // ghosts were already refreshed by the boundary exchange), so apply the physical
+      // boundary functions before the conversions below consume them. This is a no-op
+      // for fully periodic domains.
+      Real t_end_stage = pmb->pmy_mesh->time
+                         + stage_wghts[(stage-1)].ebeta*pmb->pmy_mesh->dt;
+      Real dt_stage = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+      pbval->ApplyPhysicalBoundaries(t_end_stage, dt_stage, pmb->pbval->bvars_main_int);
+      int mil = pmb->is - NGHOST, miu = pmb->ie + NGHOST;
+      int mjl = pmb->js, mju = pmb->je, mkl = pmb->ks, mku = pmb->ke;
+      if (pmb->block_size.nx2 > 1) mjl -= NGHOST, mju += NGHOST;
+      if (pmb->block_size.nx3 > 1) mkl -= NGHOST, mku += NGHOST;
       // second-order initialization of bcc/bcc_center everywhere (the outermost ghost
       // cells cannot be corrected to fourth order by the Laplacian stencils below)
       pf->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
-                                     il, iu, jl, ju, kl, ku);
+                                     mil, miu, mjl, mju, mkl, mku);
       pf->bcc_center = pf->bcc;
       pf->FaceAveragedToCellAveragedField(pf->b, pf->b_fc, pf->bcc, pf->bcc_center,
-                                          pmb->pcoord, il, iu, jl, ju, kl, ku);
+                                          pmb->pcoord, mil, miu, mjl, mju, mkl, mku);
     }
     // At beginning of this task, ph->w contains previous stage's W(U) output
     // and ph->w1 is used as a register to store the current stage's output.

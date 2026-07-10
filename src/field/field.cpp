@@ -367,19 +367,16 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
                                        Coordinates *pco, int il, int iu, int jl, int ju,
                                        int kl, int ku) {
   MeshBlock *pmb = pmy_block;
-  BoundaryValues *pbval = pmb->pbval;
 
   // Laplacians (in orthogonal directions) of face-averaged FaceField
   AthenaArray<Real> &laplacian_bx1 = scr1_kji_x1fc_, &laplacian_bx2 = scr2_kji_x2fc_,
                     &laplacian_bx3 = scr3_kji_x3fc_;
 
-  // Use 1x cell per boundary edge as buffer. If a boundary is shared with a neighbor
-  // MeshBlock (or is periodic), all cells are passed to this function, so shrink the
-  // transverse stencil limits by 1; for a physical boundary only real cells are passed
-  int il_buf = il, iu_buf = iu, jl_buf = jl, ju_buf = ju, kl_buf = kl, ku_buf = ku;
+  // All cells (ghost and real) are passed as input limits; the ghost values of bf are
+  // valid after the boundary exchange / physical BC application. Shrink the transverse
+  // stencil limits by 1 at every edge for the orthogonal Laplacian stencils.
+  int il_buf = il+1, iu_buf = iu-1, jl_buf = jl, ju_buf = ju, kl_buf = kl, ku_buf = ku;
   int nl = 0, nu = 0;
-  if (pbval->nblevel[1][1][0] != -1) il_buf += 1;
-  if (pbval->nblevel[1][1][2] != -1) iu_buf -= 1;
 
   if (pmb->block_size.nx2 > 1) {
     if (pmb->block_size.nx3 == 1) { // 2D
@@ -429,11 +426,12 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
 //! \brief compute the fourth-order approximations to face-centered, cell-centered, and
 //! cell-averaged magnetic fields, starting from the face-averaged field.
 //!
-//! The input loop limits (il, iu, ...) represent the validity of the INPUT bf; the
-//! output validity shrinks by 1 cell per conversion stage at each non-physical (shared
-//! or periodic) boundary edge, i.e. output is 2x cells smaller at each such edge.
-//! NOTE: 4th-order MHD currently supports only periodic (or MeshBlock-shared) boundary
-//! conditions; this is enforced in the Reconstruction constructor.
+//! The input loop limits (il, iu, ...) must span all cells, ghost and real (the ghost
+//! values of bf are valid after the boundary exchange / physical BC application); the
+//! output validity shrinks by 1 cell per conversion stage at each edge, i.e. the
+//! output is 2x cells smaller at each edge of the input range. The outermost ghost
+//! cells retain the second-order values that the caller initialized (they are beyond
+//! every stencil that consumes the output).
 
 void Field::FaceAveragedToCellAveragedField(const FaceField &bf, FaceField &bf_center,
                                             AthenaArray<Real> &bc,
@@ -441,26 +439,20 @@ void Field::FaceAveragedToCellAveragedField(const FaceField &bf, FaceField &bf_c
                                             Coordinates *pco, int il, int iu, int jl,
                                             int ju, int kl, int ku) {
   MeshBlock *pmb = pmy_block;
-  BoundaryValues *pbval = pmb->pbval;
-  // Assuming all cells (ghost and real) are passed as limits:
+  const bool f2 = (pmb->block_size.nx2 > 1);
+  const bool f3 = (pmb->block_size.nx3 > 1);
   CalculateFaceCenteredField(bf, bf_center, pco, il, iu, jl, ju, kl, ku);
   // ... output shrinks by 1 in transverse directions
 
-  if (pbval->nblevel[1][1][0] != -1) il += 1;
-  if (pbval->nblevel[1][1][2] != -1) iu -= 1;
-  if (pbval->nblevel[1][0][1] != -1) jl += 1;
-  if (pbval->nblevel[1][2][1] != -1) ju -= 1;
-  if (pbval->nblevel[0][1][1] != -1) kl += 1;
-  if (pbval->nblevel[2][1][1] != -1) ku -= 1;
+  il += 1, iu -= 1;
+  if (f2) jl += 1, ju -= 1;
+  if (f3) kl += 1, ku -= 1;
   CalculateCellCenteredFieldFourth(bf_center, bc_center, pco, il, iu, jl, ju, kl, ku);
 
   // All directions shrink by 1x again for the Laplacian
-  if (pbval->nblevel[1][1][0] != -1) il += 1;
-  if (pbval->nblevel[1][1][2] != -1) iu -= 1;
-  if (pbval->nblevel[1][0][1] != -1) jl += 1;
-  if (pbval->nblevel[1][2][1] != -1) ju -= 1;
-  if (pbval->nblevel[0][1][1] != -1) kl += 1;
-  if (pbval->nblevel[2][1][1] != -1) ku -= 1;
+  il += 1, iu -= 1;
+  if (f2) jl += 1, ju -= 1;
+  if (f3) kl += 1, ku -= 1;
   CellCenteredToAveragedField(bc_center, bc, pco, il, iu, jl, ju, kl, ku);
   return;
 }
