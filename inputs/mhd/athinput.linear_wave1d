@@ -53,3 +53,6 @@ amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
 ang_2     = 0.0       # rotation of k around x3 axis
 ang_3     = 0.0       # rotation of k around x2 axis
+nu_iso    = 0.0       # isotropic kinematic viscosity
+eta_ohm   = 0.0       # Ohmic resistivity (decaying Alfven wave test: set = nu_iso)
+nu_scalar_iso = 0.0   # passive scalar diffusivity (if compiled with nscalars > 0)

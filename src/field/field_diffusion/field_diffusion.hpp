@@ -78,6 +78,10 @@ class FieldDiffusion {
   // functions for energy flux
   void PoyntingFlux(EdgeField &e, const AthenaArray<Real> &bcc);
 
+  // fourth-order (uniform Cartesian) variants; see field_diffusion_fourth.cpp
+  void OhmicEMFFourth(EdgeField &e);
+  void PoyntingFluxFourth();
+
  private:
   AthenaArray<Real> bmag_; // B field strength
   EdgeField jedge_;       // curl of B
@@ -89,5 +93,10 @@ class FieldDiffusion {
   AthenaArray<Real>  cell_volume_;
   AthenaArray<Real> dx1_, dx2_, dx3_, len_;
   AthenaArray<Real> eta_tot_;
+
+  // fourth-order (uniform Cartesian) resistive EMF: dispatch flag and scratch
+  bool fourth_order_;   // use 4th-order diffusive EMF/Poynting flux (xorder=4)
+  EdgeField e_pt_;      // point-valued (edge-centered) resistive EMF
+  FaceField pfpt_;      // point-valued (face-centered) Poynting flux
 };
 #endif // FIELD_FIELD_DIFFUSION_FIELD_DIFFUSION_HPP_

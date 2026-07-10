@@ -32,6 +32,8 @@ class Reconstruction {
   friend class Hydro;
   friend class Field;
   friend class PassiveScalars;
+  friend class HydroDiffusion;
+  friend class FieldDiffusion;
  public:
   Reconstruction(MeshBlock *pmb, ParameterInput *pin);
 

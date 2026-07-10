@@ -67,6 +67,10 @@ void PassiveScalars::AddDiffusionFluxes() {
 void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim_r,
                                       const AthenaArray<Real> &w,
                                       AthenaArray<Real> *flx_out) {
+  if (diffusion_fourth_) {
+    DiffusiveFluxIsoFourth(prim_r, w, flx_out);
+    return;
+  }
   MeshBlock *pmb = pmy_block;
   Coordinates *pco = pmb->pcoord;
   const bool f2 = pmb->pmy_mesh->f2;
@@ -153,6 +157,173 @@ void PassiveScalars::DiffusiveFluxIso(const AthenaArray<Real> &prim_r,
         }
       }
     } // zero flux for 1D/2D
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void PassiveScalars::DiffusiveFluxIsoFourth
+//! \brief fourth-order isotropic diffusive scalar fluxes, F = -nu rho dr/dx, on a
+//! uniform Cartesian grid. Same strategy as the HydroDiffusion fourth-order operators
+//! (see hydro_diffusion_fourth.cpp): deconvolve to point values, evaluate the flux at
+//! face-centered points with fourth-order stencils, and face-average with the
+//! transverse Laplacian correction.
+
+void PassiveScalars::DiffusiveFluxIsoFourth(const AthenaArray<Real> &prim_r,
+                                            const AthenaArray<Real> &w,
+                                            AthenaArray<Real> *flx_out) {
+  MeshBlock *pmb = pmy_block;
+  Coordinates *pco = pmb->pcoord;
+  const bool f2 = pmb->pmy_mesh->f2;
+  const bool f3 = pmb->pmy_mesh->f3;
+  const int is = pmb->is, ie = pmb->ie, js = pmb->js, je = pmb->je,
+            ks = pmb->ks, ke = pmb->ke;
+  const Real h1 = pco->dx1f(is), h2 = pco->dx2f(js), h3 = pco->dx3f(ks);
+  constexpr Real ONE_24TH = 1.0/24.0;
+
+  // deconvolve concentrations and density to cell-centered point values
+  {
+    const int il = is - NGHOST + 1, iu = ie + NGHOST - 1;
+    const int jl = f2 ? js - NGHOST + 1 : js, ju = f2 ? je + NGHOST - 1 : je;
+    const int kl = f3 ? ks - NGHOST + 1 : ks, ku = f3 ? ke + NGHOST - 1 : ke;
+    for (int n=0; n<NSCALARS; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            Real lap = (prim_r(n,k,j,i-1) - 2.0*prim_r(n,k,j,i) + prim_r(n,k,j,i+1));
+            if (f2) lap += (prim_r(n,k,j-1,i) - 2.0*prim_r(n,k,j,i) + prim_r(n,k,j+1,i));
+            if (f3) lap += (prim_r(n,k-1,j,i) - 2.0*prim_r(n,k,j,i) + prim_r(n,k+1,j,i));
+            rc_(n,k,j,i) = prim_r(n,k,j,i) - ONE_24TH*lap;
+          }
+        }
+      }
+    }
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          Real lap = (w(IDN,k,j,i-1) - 2.0*w(IDN,k,j,i) + w(IDN,k,j,i+1));
+          if (f2) lap += (w(IDN,k,j-1,i) - 2.0*w(IDN,k,j,i) + w(IDN,k,j+1,i));
+          if (f3) lap += (w(IDN,k-1,j,i) - 2.0*w(IDN,k,j,i) + w(IDN,k+1,j,i));
+          rhoc_(k,j,i) = w(IDN,k,j,i) - ONE_24TH*lap;
+        }
+      }
+    }
+  }
+
+  //--- x1-fluxes
+  {
+    int jl = js, ju = je, kl = ks, ku = ke;
+    if (MAGNETIC_FIELDS_ENABLED && f2) {
+      jl = js-1, ju = je+1;
+      if (f3) kl = ks-1, ku = ke+1;
+    }
+    const int pjl = jl - (f2 ? 1 : 0), pju = ju + (f2 ? 1 : 0);
+    const int pkl = kl - (f3 ? 1 : 0), pku = ku + (f3 ? 1 : 0);
+    for (int n=0; n<NSCALARS; ++n) {
+      for (int k=pkl; k<=pku; ++k) {
+        for (int j=pjl; j<=pju; ++j) {
+#pragma omp simd
+          for (int i=is; i<=ie+1; ++i) {
+            Real drdx = (27.0*(rc_(n,k,j,i) - rc_(n,k,j,i-1))
+                         - (rc_(n,k,j,i+1) - rc_(n,k,j,i-2)))/(24.0*h1);
+            Real rhof = (9.0*(rhoc_(k,j,i-1) + rhoc_(k,j,i))
+                         - (rhoc_(k,j,i-2) + rhoc_(k,j,i+1)))/16.0;
+            spt_(n,k,j,i) = -nu_scalar_iso*rhof*drdx;
+          }
+        }
+      }
+    }
+    AthenaArray<Real> &x1flux = flx_out[X1DIR];
+    for (int n=0; n<NSCALARS; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+          for (int i=is; i<=ie+1; ++i) {
+            Real corr = 0.0;
+            if (f2) corr += (spt_(n,k,j-1,i) - 2.0*spt_(n,k,j,i) + spt_(n,k,j+1,i));
+            if (f3) corr += (spt_(n,k-1,j,i) - 2.0*spt_(n,k,j,i) + spt_(n,k+1,j,i));
+            x1flux(n,k,j,i) += spt_(n,k,j,i) + ONE_24TH*corr;
+          }
+        }
+      }
+    }
+  }
+
+  //--- x2-fluxes
+  if (f2) {
+    int il = is, iu = ie, kl = ks, ku = ke;
+    if (MAGNETIC_FIELDS_ENABLED) {
+      il = is-1, iu = ie+1;
+      if (f3) kl = ks-1, ku = ke+1;
+    }
+    const int pil = il - 1, piu = iu + 1;
+    const int pkl = kl - (f3 ? 1 : 0), pku = ku + (f3 ? 1 : 0);
+    for (int n=0; n<NSCALARS; ++n) {
+      for (int k=pkl; k<=pku; ++k) {
+        for (int j=js; j<=je+1; ++j) {
+#pragma omp simd
+          for (int i=pil; i<=piu; ++i) {
+            Real drdy = (27.0*(rc_(n,k,j,i) - rc_(n,k,j-1,i))
+                         - (rc_(n,k,j+1,i) - rc_(n,k,j-2,i)))/(24.0*h2);
+            Real rhof = (9.0*(rhoc_(k,j-1,i) + rhoc_(k,j,i))
+                         - (rhoc_(k,j-2,i) + rhoc_(k,j+1,i)))/16.0;
+            spt_(n,k,j,i) = -nu_scalar_iso*rhof*drdy;
+          }
+        }
+      }
+    }
+    AthenaArray<Real> &x2flux = flx_out[X2DIR];
+    for (int n=0; n<NSCALARS; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=js; j<=je+1; ++j) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            Real corr = (spt_(n,k,j,i-1) - 2.0*spt_(n,k,j,i) + spt_(n,k,j,i+1));
+            if (f3) corr += (spt_(n,k-1,j,i) - 2.0*spt_(n,k,j,i) + spt_(n,k+1,j,i));
+            x2flux(n,k,j,i) += spt_(n,k,j,i) + ONE_24TH*corr;
+          }
+        }
+      }
+    }
+  }
+
+  //--- x3-fluxes
+  if (f3) {
+    int il = is, iu = ie, jl = js, ju = je;
+    if (MAGNETIC_FIELDS_ENABLED) {
+      il = is-1, iu = ie+1, jl = js-1, ju = je+1;
+    }
+    const int pil = il - 1, piu = iu + 1;
+    const int pjl = jl - 1, pju = ju + 1;
+    for (int n=0; n<NSCALARS; ++n) {
+      for (int k=ks; k<=ke+1; ++k) {
+        for (int j=pjl; j<=pju; ++j) {
+#pragma omp simd
+          for (int i=pil; i<=piu; ++i) {
+            Real drdz = (27.0*(rc_(n,k,j,i) - rc_(n,k-1,j,i))
+                         - (rc_(n,k+1,j,i) - rc_(n,k-2,j,i)))/(24.0*h3);
+            Real rhof = (9.0*(rhoc_(k-1,j,i) + rhoc_(k,j,i))
+                         - (rhoc_(k-2,j,i) + rhoc_(k+1,j,i)))/16.0;
+            spt_(n,k,j,i) = -nu_scalar_iso*rhof*drdz;
+          }
+        }
+      }
+    }
+    AthenaArray<Real> &x3flux = flx_out[X3DIR];
+    for (int n=0; n<NSCALARS; ++n) {
+      for (int k=ks; k<=ke+1; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            Real corr = (spt_(n,k,j,i-1) - 2.0*spt_(n,k,j,i) + spt_(n,k,j,i+1))
+                        + (spt_(n,k,j-1,i) - 2.0*spt_(n,k,j,i) + spt_(n,k,j+1,i));
+            x3flux(n,k,j,i) += spt_(n,k,j,i) + ONE_24TH*corr;
+          }
+        }
+      }
+    }
   }
   return;
 }

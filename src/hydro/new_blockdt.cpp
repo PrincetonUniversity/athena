@@ -25,6 +25,7 @@
 #include "../nr_radiation/implicit/radiation_implicit.hpp"
 #include "../nr_radiation/radiation.hpp"
 #include "../orbital_advection/orbital_advection.hpp"
+#include "../reconstruct/reconstruction.hpp"
 #include "../scalars/scalars.hpp"
 #include "hydro.hpp"
 #include "hydro_diffusion/hydro_diffusion.hpp"
@@ -168,12 +169,17 @@ void Hydro::NewBlockTimeStep() {
     }
   }
 
-  // calculate the timestep limited by the diffusion processes
+  // calculate the timestep limited by the diffusion processes; for the fourth-order
+  // scheme also accumulate the sum of the inverse parabolic limits (the stiffnesses of
+  // simultaneously applied diffusion operators add, e.g. nu and eta both damp the
+  // Alfven mode)
+  Real inv_dt_parabolic_sum = 0.0;
   if (hdif.hydro_diffusion_defined) {
     Real min_dt_vis, min_dt_cnd;
     hdif.NewDiffusionDt(min_dt_vis, min_dt_cnd);
     min_dt_parabolic = std::min(min_dt_parabolic, min_dt_vis);
     min_dt_parabolic = std::min(min_dt_parabolic, min_dt_cnd);
+    inv_dt_parabolic_sum += 1.0/min_dt_vis + 1.0/min_dt_cnd;
   } // hydro diffusion
 
   if (MAGNETIC_FIELDS_ENABLED &&
@@ -181,6 +187,7 @@ void Hydro::NewBlockTimeStep() {
     Real min_dt_oa, min_dt_hall;
     pmb->pfield->fdif.NewDiffusionDt(min_dt_oa, min_dt_hall);
     min_dt_parabolic = std::min(min_dt_parabolic, min_dt_oa);
+    inv_dt_parabolic_sum += 1.0/min_dt_oa;
     // Hall effect is dispersive, not diffusive:
     min_dt_hyperbolic = std::min(min_dt_hyperbolic, min_dt_hall);
   } // field diffusion
@@ -188,6 +195,7 @@ void Hydro::NewBlockTimeStep() {
   if (NSCALARS > 0 && pmb->pscalars->scalar_diffusion_defined) {
     Real min_dt_scalar_diff = pmb->pscalars->NewDiffusionDt();
     min_dt_parabolic = std::min(min_dt_parabolic, min_dt_scalar_diff);
+    inv_dt_parabolic_sum += 1.0/min_dt_scalar_diff;
   } // passive scalar diffusion
 
   min_dt_hyperbolic *= pmb->pmy_mesh->cfl_number;
@@ -218,8 +226,19 @@ void Hydro::NewBlockTimeStep() {
   // parabolic:
   // STS handles parabolic terms -> then take the smaller of hyperbolic or user timestep
   if (!STS_ENABLED) {
-    // otherwise, take the smallest of the hyperbolic, parabolic, user timesteps
-    min_dt = std::min(min_dt, min_dt_parabolic);
+    if (pmb->precon->xorder == 4 && inv_dt_parabolic_sum > 0.0) {
+      // fourth-order diffusion: the hyperbolic and (summed) parabolic operator
+      // eigenvalues add within the RK stability region, so combine the restrictions
+      // additively, 1/dt = 1/dt_hyperbolic + sum(1/dt_parabolic). The plain
+      // min(dt_h, dt_p) leaves no margin when both act at once (e.g. the
+      // visco-resistive Alfven wave at CFL 0.4 + RK3 is unstable under min()).
+      Real min_dt_combined = 1.0/(1.0/min_dt_hyperbolic
+                                  + inv_dt_parabolic_sum/pmb->pmy_mesh->cfl_number);
+      min_dt = std::min(min_dt, min_dt_combined);
+    } else {
+      // otherwise, take the smallest of the hyperbolic, parabolic, user timesteps
+      min_dt = std::min(min_dt, min_dt_parabolic);
+    }
   }
   pmb->new_block_dt_ = min_dt;
   pmb->new_block_dt_hyperbolic_ = min_dt_hyperbolic;

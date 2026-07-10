@@ -66,3 +66,6 @@ meshtest.dat
 
 # compiled doxygen file
 doc/doxy*
+
+# local validation/performance reports (deliberately untracked)
+reports/

@@ -76,6 +76,11 @@ class HydroDiffusion {
   void ThermalFluxIso(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
   void ThermalFluxAniso(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
 
+  // fourth-order (uniform Cartesian) variants; see hydro_diffusion_fourth.cpp
+  void DeconvolvePrimitivesFourth(const AthenaArray<Real> &p);
+  void ViscousFluxIsoFourth(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
+  void ThermalFluxIsoFourth(const AthenaArray<Real> &p, AthenaArray<Real> *flx);
+
  private:
   Hydro *pmy_hydro_;  // ptr to Hydro containing this HydroDiffusion
   MeshBlock *pmb_;    // ptr to meshblock containing this HydroDiffusion
@@ -86,6 +91,13 @@ class HydroDiffusion {
   AthenaArray<Real> fx_, fy_, fz_;
   AthenaArray<Real> dx1_, dx2_, dx3_;
   AthenaArray<Real> nu_tot_, kappa_tot_;
+
+  // fourth-order (uniform Cartesian) diffusion: dispatch flag and scratch arrays
+  bool fourth_order_;         // use 4th-order diffusive fluxes (xorder=4 + Cartesian)
+  AthenaArray<Real> wc_;      // point-valued (cell-centered) primitives
+  AthenaArray<Real> tc_;      // point-valued temperature
+  AthenaArray<Real> fpt_;     // point-valued (face-centered) fluxes, one direction
+  AthenaArray<Real> gc1_, gc2_, gc3_, gc4_;  // cell-centered transverse gradients
 
   // functions pointer to calculate spatial dependent coefficients
   ViscosityCoeffFunc CalcViscCoeff_;

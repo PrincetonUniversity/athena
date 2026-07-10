@@ -10,6 +10,7 @@
 
 // C++ headers
 #include <algorithm>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -136,6 +137,20 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     dx2_.NewAthenaArray(nc1);
     dx3_.NewAthenaArray(nc1);
     // nu_scalar_tot_.NewAthenaArray(nc1);
+
+    // fourth-order diffusive fluxes: uniform Cartesian grids only (cf. HydroDiffusion)
+    diffusion_fourth_ = pmb->precon->xorder == 4
+                        && std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0
+                        && pmb->precon->uniform_[X1DIR]
+                        && (!pm->f2 || pmb->precon->uniform_[X2DIR])
+                        && (!pm->f3 || pmb->precon->uniform_[X3DIR]);
+    if (diffusion_fourth_) {
+      rc_.NewAthenaArray(NSCALARS, nc3, nc2, nc1);
+      rhoc_.NewAthenaArray(nc3, nc2, nc1);
+      spt_.NewAthenaArray(NSCALARS, nc3+1, nc2+1, nc1+1);
+    }
+  } else {
+    diffusion_fourth_ = false;
   }
   if (CHEMISTRY_ENABLED) {
     //allocate memory for the copy of s at intermediate step

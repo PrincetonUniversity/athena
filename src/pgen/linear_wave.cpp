@@ -33,6 +33,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../scalars/scalars.hpp"
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>
@@ -204,8 +205,31 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem", "compute_error", false)) return;
 
+  // Exact damping factors for the decaying visco-resistive Alfven wave test: with
+  // nu_iso == eta_ohm, the damped eigenmode is exactly the ideal Alfven eigenmode
+  // scaled by exp(-nu k^2 t); a passive scalar (transported by the Alfven velocity
+  // field, which is everywhere perpendicular to the wavevector) decays purely
+  // diffusively by exp(-nu_scalar k^2 t).
+  Real nu_iso = pin->GetOrAddReal("problem", "nu_iso", 0.0);
+  Real eta_ohm = pin->GetOrAddReal("problem", "eta_ohm", 0.0);
+  Real nu_scalar = pin->GetOrAddReal("problem", "nu_scalar_iso", 0.0);
+  Real damp = 1.0;
+  Real damp_s = std::exp(-nu_scalar*SQR(k_par)*time);
+  if (nu_iso > 0.0 || eta_ohm > 0.0) {
+    if (wave_flag != 1 ||
+        std::abs(nu_iso - eta_ohm) > 1.0e-12*(nu_iso + eta_ohm)) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop" << std::endl
+          << "compute_error with viscosity/resistivity requires the Alfven wave "
+          << "(wave_flag=1) and nu_iso == eta_ohm (exactly damped eigenmode)"
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    damp = std::exp(-nu_iso*SQR(k_par)*time);
+  }
+
   // Initialize errors to zero
-  Real l1_err[NHYDRO+NFIELD]{}, max_err[NHYDRO+NFIELD]{};
+  Real l1_err[NHYDRO+NFIELD+NSCALARS]{}, max_err[NHYDRO+NFIELD+NSCALARS]{};
 
   for (int b=0; b<nblocal; ++b) {
     MeshBlock *pmb = my_blocks(b);
@@ -226,12 +250,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     // Save analytic solution of conserved variables in 4D scratch array
     AthenaArray<Real> cons_;
     // Even for MHD, there are only cell-centered mesh variables
-    int ncells4 = NHYDRO + NFIELD;
+    int ncells4 = NHYDRO + NFIELD + NSCALARS;
     int nl = 0;
     int nu = ncells4 - 1;
     cons_.NewAthenaArray(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
     //  Compute errors at cell centers
+    const Real amp_d = amp*damp;
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
         for (int i=il; i<=iu; i++) {
@@ -239,10 +264,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                    + pmb->pcoord->x3v(k)*sin_a2;
           Real sn = std::sin(k_par*x);
 
-          Real d1 = d0 + amp*sn*rem[0][wave_flag];
-          Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
-          Real my = amp*sn*rem[2][wave_flag];
-          Real mz = amp*sn*rem[3][wave_flag];
+          Real d1 = d0 + amp_d*sn*rem[0][wave_flag];
+          Real mx = d0*vflow + amp_d*sn*rem[1][wave_flag];
+          Real my = amp_d*sn*rem[2][wave_flag];
+          Real mz = amp_d*sn*rem[3][wave_flag];
           Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
           Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
           Real m3 = mx*sin_a2                    + mz*cos_a2;
@@ -254,12 +279,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           cons_(IM3,k,j,i) = m3;
 
           if (NON_BAROTROPIC_EOS) {
-            Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
+            Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp_d*sn*rem[4][wave_flag];
             if (MAGNETIC_FIELDS_ENABLED) {
               e0 += 0.5*(bx0*bx0 + by0*by0 + bz0*bz0);
               Real bx = bx0;
-              Real by = by0 + amp*sn*rem[5][wave_flag];
-              Real bz = bz0 + amp*sn*rem[6][wave_flag];
+              Real by = by0 + amp_d*sn*rem[5][wave_flag];
+              Real bz = bz0 + amp_d*sn*rem[6][wave_flag];
               Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
               Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
               Real b3 = bx*sin_a2                    + bz*cos_a2;
@@ -269,6 +294,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             }
             cons_(IEN,k,j,i) = e0;
           }
+
+          // passive scalar mass, s = rho*(0.5 + amp*sn) diffusively damped
+          for (int n=0; n<NSCALARS; ++n)
+            cons_(NHYDRO+NFIELD+n,k,j,i) = d1*(0.5 + amp*damp_s*sn);
         }
       }
     }
@@ -352,6 +381,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             max_err[NHYDRO + IB2] = std::max(db2, max_err[NHYDRO+IB2]);
             max_err[NHYDRO + IB3] = std::max(db3, max_err[NHYDRO+IB3]);
           }
+
+          for (int n=0; n<NSCALARS; ++n) {
+            Real ds = std::abs(cons_(NHYDRO+NFIELD+n,k,j,i)
+                               - pmb->pscalars->s(n,k,j,i));
+            l1_err[NHYDRO+NFIELD+n] += ds*vol;
+            max_err[NHYDRO+NFIELD+n] = std::max(ds, max_err[NHYDRO+NFIELD+n]);
+          }
         }
       }
     }
@@ -360,15 +396,15 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
 #ifdef MPI_PARALLEL
   if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE, &l1_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_SUM, 0,
-               MPI_COMM_WORLD);
-    MPI_Reduce(MPI_IN_PLACE, &max_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_MAX, 0,
-               MPI_COMM_WORLD);
+    MPI_Reduce(MPI_IN_PLACE, &l1_err, (NHYDRO+NFIELD+NSCALARS), MPI_ATHENA_REAL,
+               MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(MPI_IN_PLACE, &max_err, (NHYDRO+NFIELD+NSCALARS), MPI_ATHENA_REAL,
+               MPI_MAX, 0, MPI_COMM_WORLD);
   } else {
-    MPI_Reduce(&l1_err, &l1_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_SUM, 0,
+    MPI_Reduce(&l1_err, &l1_err, (NHYDRO+NFIELD+NSCALARS), MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(&max_err, &max_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_MAX, 0,
-               MPI_COMM_WORLD);
+    MPI_Reduce(&max_err, &max_err, (NHYDRO+NFIELD+NSCALARS), MPI_ATHENA_REAL, MPI_MAX,
+               0, MPI_COMM_WORLD);
   }
 #endif
 
@@ -377,9 +413,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     // normalize errors by number of cells
     Real vol= (mesh_size.x1max - mesh_size.x1min)*(mesh_size.x2max - mesh_size.x2min)
               *(mesh_size.x3max - mesh_size.x3min);
-    for (int i=0; i<(NHYDRO+NFIELD); ++i) l1_err[i] = l1_err[i]/vol;
+    for (int i=0; i<(NHYDRO+NFIELD+NSCALARS); ++i) l1_err[i] = l1_err[i]/vol;
     // compute rms error
-    for (int i=0; i<(NHYDRO+NFIELD); ++i) {
+    for (int i=0; i<(NHYDRO+NFIELD+NSCALARS); ++i) {
       rms_err += SQR(l1_err[i]);
       max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
     }
@@ -409,8 +445,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       std::fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  ");
       std::fprintf(pfile, "RMS-L1-Error  d_L1  M1_L1  M2_L1  M3_L1  E_L1 ");
       if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile, "  B1c_L1  B2c_L1  B3c_L1");
+      for (int n=0; n<NSCALARS; ++n) std::fprintf(pfile, "  s%d_L1", n);
       std::fprintf(pfile, "  Largest-Max/L1  d_max  M1_max  M2_max  M3_max  E_max ");
       if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile, "  B1c_max  B2c_max  B3c_max");
+      for (int n=0; n<NSCALARS; ++n) std::fprintf(pfile, "  s%d_max", n);
       std::fprintf(pfile, "\n");
     }
 
@@ -426,6 +464,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       std::fprintf(pfile, "  %e", l1_err[NHYDRO+IB2]);
       std::fprintf(pfile, "  %e", l1_err[NHYDRO+IB3]);
     }
+    for (int n=0; n<NSCALARS; ++n)
+      std::fprintf(pfile, "  %e", l1_err[NHYDRO+NFIELD+n]);
     std::fprintf(pfile, "  %e  %e  ", max_max_over_l1, max_err[IDN]);
     std::fprintf(pfile, "%e  %e  %e", max_err[IM1], max_err[IM2], max_err[IM3]);
     if (NON_BAROTROPIC_EOS)
@@ -435,6 +475,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       std::fprintf(pfile, "  %e", max_err[NHYDRO+IB2]);
       std::fprintf(pfile, "  %e", max_err[NHYDRO+IB3]);
     }
+    for (int n=0; n<NSCALARS; ++n)
+      std::fprintf(pfile, "  %e", max_err[NHYDRO+NFIELD+n]);
     std::fprintf(pfile, "\n");
     std::fclose(pfile);
   }
@@ -608,6 +650,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             phydro->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
           }
         }
+
+        // passive scalar concentration r = 0.5 + amp*sin(k x) (pointwise; converted
+        // to a cell-averaged IC by CorrectMidpointInitialCondition when correct_ic)
+        for (int n=0; n<NSCALARS; ++n)
+          pscalars->s(n,k,j,i) = phydro->u(IDN,k,j,i)*(0.5 + amp*sn);
       }
     }
   }
