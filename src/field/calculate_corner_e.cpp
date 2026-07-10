@@ -291,11 +291,17 @@ void Field::ComputeCornerE_UCT4() {
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
       for (int i=is; i<=ie+1; ++i) {
-        Real alpha_plus_x = std::abs(alpha_plus_x1_(k,j,i));
-        Real alpha_minus_x = std::abs(alpha_minus_x1_(k,j,i));
+        // corner wavespeeds: take the max of the face-centered estimates on the two
+        // faces adjacent to the corner (symmetric w.r.t. the corner, following LDZ04)
+        Real alpha_plus_x = std::max(std::abs(alpha_plus_x1_(k,j,i)),
+                                     std::abs(alpha_plus_x1_(k,j-1,i)));
+        Real alpha_minus_x = std::max(std::abs(alpha_minus_x1_(k,j,i)),
+                                      std::abs(alpha_minus_x1_(k,j-1,i)));
 
-        Real alpha_plus_y = std::abs(alpha_plus_x2_(k,j,i));
-        Real alpha_minus_y = std::abs(alpha_minus_x2_(k,j,i));
+        Real alpha_plus_y = std::max(std::abs(alpha_plus_x2_(k,j,i)),
+                                     std::abs(alpha_plus_x2_(k,j,i-1)));
+        Real alpha_minus_y = std::max(std::abs(alpha_minus_x2_(k,j,i)),
+                                      std::abs(alpha_minus_x2_(k,j,i-1)));
 
         // Londrillo & Del Zanna (2004) eq. 56; L states are weighted by alpha^+
         Real e3_NE, e3_SE, e3_NW, e3_SW;
