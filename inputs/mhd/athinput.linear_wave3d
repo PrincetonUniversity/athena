@@ -22,6 +22,8 @@ tlim       = 5.0       # time limit
 integrator  = vl2      # time integration algorithm
 sts_integrator = rkl2  # time integration algorithm
 xorder      = 2        # order of spatial reconstruction
+correct_ic  = false    # correct midpoint assumption in initial condition
+correct_err = false    # correct midpoint assumption in analytic solution
 ncycle_out  = 1        # interval for stdout summary info
 
 <mesh>
