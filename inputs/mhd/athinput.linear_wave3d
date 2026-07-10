@@ -115,3 +115,4 @@ ang_3_vert= false     # set to 'true' to make ang_3=pi/2
 nu_iso    = 0.0       # isotropic viscosity coefficient
 kappa_iso = 0.0       # isotropic thermal conduction coefficient
 eta_ohm   = 0.0       # Ohmic resistivity coefficient
+nu_scalar_iso = 0.0   # passive scalar diffusivity (if compiled with nscalars > 0)

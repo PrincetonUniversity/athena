@@ -92,6 +92,8 @@ class PassiveScalars {
   //! - nu_scalar_iso is identical for all NSCALARS
   void DiffusiveFluxIso(const AthenaArray<Real> &prim_r, const AthenaArray<Real> &w,
                         AthenaArray<Real> *flx_out);
+  void DiffusiveFluxIsoFourth(const AthenaArray<Real> &prim_r,
+                              const AthenaArray<Real> &w, AthenaArray<Real> *flx_out);
   Real NewDiffusionDt();
 
  private:
@@ -120,5 +122,11 @@ class PassiveScalars {
   void AddDiffusionFluxes();
   // TODO(felker): dedpulicate these arrays and the same named ones in HydroDiffusion
   AthenaArray<Real> dx1_, dx2_, dx3_;
+
+  // fourth-order (uniform Cartesian) diffusion: dispatch flag and scratch arrays
+  bool diffusion_fourth_;
+  AthenaArray<Real> rc_;    // point-valued (cell-centered) concentrations
+  AthenaArray<Real> rhoc_;  // point-valued (cell-centered) density
+  AthenaArray<Real> spt_;   // point-valued (face-centered) fluxes, one direction
 };
 #endif // SCALARS_SCALARS_HPP_
