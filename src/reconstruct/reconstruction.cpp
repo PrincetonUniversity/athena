@@ -144,25 +144,28 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       const Real& dx_i   = pmb->pcoord->dx1f(pmb->is);
       const Real& dx_j   = pmb->pcoord->dx2f(pmb->js);
       const Real& dx_k   = pmb->pcoord->dx3f(pmb->ks);
-      // Note, probably want to make the following condition less strict (signal warning
-      // for small differences due to floating-point issues) but upgrade to error for
-      // large deviations from a square mesh. Currently signals a warning for each
-      // MeshBlock with non-square cells.
+      // It is possible for small floating-point differences to arise despite equal
+      // analytic values for grid spacings in the coordinates.cpp calculation of:
+      // Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
+      // due to the 3x rounding operations in numerator, e.g.
+      // float(float(x1max) - float((x1min))
+      // if mesh/x1max != mesh/x2max, etc. and/or if an asymmetric MeshBlock
+      // decomposition is used. Warn for such roundoff-level deviations, but ERROR for
+      // genuinely non-square cells: the h^2/24 corrections all use h=dx1f, and for MHD
+      // the resulting inconsistent face/cell field conversions excite a violent
+      // Nyquist-mode instability (empirically, dx1f=4*dx2f NaNs a linear wave within
+      // ~100 cycles); non-square cells also silently degrade 4th-order hydro
       if ((pmb->block_size.nx2 > 1 && dx_i != dx_j) ||
           (pmb->block_size.nx3 > 1 && dx_j != dx_k)) {
-        // It is possible for small floating-point differences to arise despite equal
-        // analytic values for grid spacings in the coordinates.cpp calculation of:
-        // Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
-        // due to the 3x rounding operations in numerator, e.g.
-        // float(float(x1max) - float((x1min))
-        // if mesh/x1max != mesh/x2max, etc. and/or if an asymmetric MeshBlock
-        // decomposition is used
-        if (Globals::my_rank == 0) {
-          // std::stringstream msg;
-          std::cout
-              << "### Warning in Reconstruction constructor" << std::endl
+        const Real rel_tol = 1.0e-12;
+        bool large_dev =
+            (pmb->block_size.nx2 > 1 && std::abs(dx_j/dx_i - 1.0) > rel_tol) ||
+            (pmb->block_size.nx3 > 1 && std::abs(dx_k/dx_j - 1.0) > rel_tol);
+        if (large_dev) {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
               << "Selected time/xorder=" << input_recon << " flux calculations"
-              << " require a uniform, Carteisan mesh with" << std::endl
+              << " require a uniform, Cartesian mesh with" << std::endl
               << "square cells (dx1f=dx2f=dx3f). "
               << "Change mesh limits and/or number of cells for equal spacings\n"
               << "Current values are:" << std::endl
@@ -171,7 +174,19 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
               << "dx1f=" << dx_i << std::endl
               << "dx2f=" << dx_j << std::endl
               << "dx3f=" << dx_k << std::endl;
-          // ATHENA_ERROR(msg);
+          ATHENA_ERROR(msg);
+        } else if (Globals::my_rank == 0) {
+          std::cout
+              << "### Warning in Reconstruction constructor" << std::endl
+              << "Selected time/xorder=" << input_recon << " flux calculations"
+              << " require a uniform, Cartesian mesh with" << std::endl
+              << "square cells (dx1f=dx2f=dx3f); found a roundoff-level deviation:"
+              << std::endl
+              << std::scientific
+              << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
+              << "dx1f=" << dx_i << std::endl
+              << "dx2f=" << dx_j << std::endl
+              << "dx3f=" << dx_k << std::endl;
         }
       }
       if (pmb->pmy_mesh->multilevel) {
