@@ -62,4 +62,6 @@ b_par   = 1.0         # B parallel
 b_perp  = 0.1         # B perpendicular
 pres    = 0.1         # pressure
 v_par   = 0.0         # vpar = {0, 1} -> {traveling, standing} wave
+ang_2   = -999.9      # rotation of k around x2 axis (-999.9 -> auto diagonal)
+ang_3   = -999.9      # rotation of k around x3 axis (-999.9 -> auto diagonal)
 dir     = 1           # 1: right polarization (whistler wave), 2: left
