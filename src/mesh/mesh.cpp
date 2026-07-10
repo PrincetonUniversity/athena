@@ -1835,12 +1835,22 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
         // cell-averaged field <B> (into bcc) and the point-valued face-/cell-centered
         // fields (into b_fc, bcc_center) from the face-averaged field b. The
         // EOS-internal 2nd-order CalculateCellCenteredField is skipped at xorder == 4.
+        // All cells, ghost and real, are passed to the conversions
         if (MAGNETIC_FIELDS_ENABLED && order == 4) {
+          // apply physical boundaries to the conserved variables and face-averaged
+          // field first, so that the ghost values consumed by the conversions are
+          // valid (only relevant for non-periodic boundaries, i.e. 1D shock tubes)
+          ph->hbvar.SwapHydroQuantity(ph->u, HydroBoundaryQuantity::cons);
+          pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
+          int mil = pmb->is - NGHOST, miu = pmb->ie + NGHOST;
+          int mjl = pmb->js, mju = pmb->je, mkl = pmb->ks, mku = pmb->ke;
+          if (pmb->block_size.nx2 > 1) mjl -= NGHOST, mju += NGHOST;
+          if (pmb->block_size.nx3 > 1) mkl -= NGHOST, mku += NGHOST;
           pf->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
-                                         il, iu, jl, ju, kl, ku);
+                                         mil, miu, mjl, mju, mkl, mku);
           pf->bcc_center = pf->bcc;
           pf->FaceAveragedToCellAveragedField(pf->b, pf->b_fc, pf->bcc, pf->bcc_center,
-                                              pmb->pcoord, il, iu, jl, ju, kl, ku);
+                                              pmb->pcoord, mil, miu, mjl, mju, mkl, mku);
         }
         pmb->peos->ConservedToPrimitive(ph->u, ph->w1, pf->b,
                                         ph->w, pf->bcc, pmb->pcoord,
