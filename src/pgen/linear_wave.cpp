@@ -62,6 +62,12 @@ Real AveDiff1A2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
                 const Real x2f_jp1);
 Real AveDiff1A3(const Real x1f_i, const Real x1f_ip1, const Real x2f_j);
 Real AveDiff2A3(const Real x1f_i, const Real x2f_j, const Real x2f_jp1);
+// exact edge-averaged values of the vector potential, used for the fourth-order
+// accurate initialization of the face-averaged fields in 3D
+Real EdgeAveCos(const Real xs, const Real xe);
+Real AveA1(const Real x1f_i, const Real x1f_ip1, const Real x2f, const Real x3f);
+Real AveA2(const Real x1f, const Real x2f_j, const Real x2f_jp1, const Real x3f);
+Real AveA3(const Real x1f, const Real x2f, const Real x3f_k, const Real x3f_kp1);
 
 // function to compute eigenvectors of linear waves
 void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
@@ -478,7 +484,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
                                A1(x1r, pcoord->x2f(j), pcoord->x3f(k)));
             } else {
-              a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+              a1(k,j,i) = AveA1(pcoord->x1f(i), pcoord->x1f(i+1), pcoord->x2f(j),
+                                pcoord->x3f(k));
             }
 
             if ((pbval->nblevel[1][1][0]>level && i==is)
@@ -494,7 +501,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
                                A2(pcoord->x1f(i), x2r, pcoord->x3f(k)));
             } else {
-              a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+              a2(k,j,i) = AveA2(pcoord->x1f(i), pcoord->x2f(j), pcoord->x2f(j+1),
+                                pcoord->x3f(k));
             }
 
             if ((pbval->nblevel[1][1][0]>level && i==is)
@@ -510,7 +518,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
               a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
                                A3(pcoord->x1f(i), pcoord->x2f(j), x3r));
             } else {
-              a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+              a3(k,j,i) = AveA3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k),
+                                pcoord->x3f(k+1));
             }
           }
         }
@@ -766,6 +775,63 @@ Real AveDiff2A3(const Real x1f_i, const Real x2f_j, const Real x2f_jp1) {
   Az += (dby/(k_par*dx2f))*(std::cos(k_par*xu) - std::cos(k_par*xl));
 
   return Az;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real EdgeAveCos(const Real xs, const Real xe)
+//! \brief exact average of cos(k_par*x) over an edge along which the phase coordinate x
+//! varies linearly from xs to xe (xs == xe for an edge orthogonal to the wavevector)
+
+Real EdgeAveCos(const Real xs, const Real xe) {
+  if (xs == xe) return std::cos(k_par*xs);
+  return (std::sin(k_par*xe) - std::sin(k_par*xs))/(k_par*(xe - xs));
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveA1(const Real x1f_i, const Real x1f_ip1, const Real x2f, const Real x3f)
+//! \brief AveA1: 1-component of vector potential, exactly averaged along the x1 edge
+//! (3D, arbitrary wavevector orientation). The averages of the terms linear in the
+//! rotated coordinates x, y equal their values at the edge midpoint.
+
+Real AveA1(const Real x1f_i, const Real x1f_ip1, const Real x2f, const Real x3f) {
+  Real xs = x1f_i*cos_a2*cos_a3 + x2f*cos_a2*sin_a3 + x3f*sin_a2;
+  Real xe = x1f_ip1*cos_a2*cos_a3 + x2f*cos_a2*sin_a3 + x3f*sin_a2;
+  Real xm = 0.5*(xs + xe);
+  Real ym = -0.5*(x1f_i + x1f_ip1)*sin_a3 + x2f*cos_a3;
+  Real avecos = EdgeAveCos(xs, xe);
+  Real Ay = bz0*xm - (dbz/k_par)*avecos;
+  Real Az = -by0*xm + (dby/k_par)*avecos + bx0*ym;
+  return -Ay*sin_a3 - Az*sin_a2*cos_a3;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveA2(const Real x1f, const Real x2f_j, const Real x2f_jp1, const Real x3f)
+//! \brief AveA2: 2-component of vector potential, exactly averaged along the x2 edge
+
+Real AveA2(const Real x1f, const Real x2f_j, const Real x2f_jp1, const Real x3f) {
+  Real xs = x1f*cos_a2*cos_a3 + x2f_j*cos_a2*sin_a3 + x3f*sin_a2;
+  Real xe = x1f*cos_a2*cos_a3 + x2f_jp1*cos_a2*sin_a3 + x3f*sin_a2;
+  Real xm = 0.5*(xs + xe);
+  Real ym = -x1f*sin_a3 + 0.5*(x2f_j + x2f_jp1)*cos_a3;
+  Real avecos = EdgeAveCos(xs, xe);
+  Real Ay = bz0*xm - (dbz/k_par)*avecos;
+  Real Az = -by0*xm + (dby/k_par)*avecos + bx0*ym;
+  return Ay*cos_a3 - Az*sin_a2*sin_a3;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveA3(const Real x1f, const Real x2f, const Real x3f_k, const Real x3f_kp1)
+//! \brief AveA3: 3-component of vector potential, exactly averaged along the x3 edge
+//! (y does not depend on x3)
+
+Real AveA3(const Real x1f, const Real x2f, const Real x3f_k, const Real x3f_kp1) {
+  Real xs = x1f*cos_a2*cos_a3 + x2f*cos_a2*sin_a3 + x3f_k*sin_a2;
+  Real xe = x1f*cos_a2*cos_a3 + x2f*cos_a2*sin_a3 + x3f_kp1*sin_a2;
+  Real xm = 0.5*(xs + xe);
+  Real y = -x1f*sin_a3 + x2f*cos_a3;
+  Real avecos = EdgeAveCos(xs, xe);
+  Real Az = -by0*xm + (dby/k_par)*avecos + bx0*y;
+  return Az*cos_a2;
 }
 
 //----------------------------------------------------------------------------------------
