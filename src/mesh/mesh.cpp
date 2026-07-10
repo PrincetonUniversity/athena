@@ -1830,6 +1830,18 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           if (pbval->nblevel[0][1][1] != -1) kl -= NGHOST;
           if (pbval->nblevel[2][1][1] != -1) ku += NGHOST;
         }
+        int order = pmb->precon->xorder;
+        // fourth-order MHD (UCT4): compute the fourth-order approximations to the
+        // cell-averaged field <B> (into bcc) and the point-valued face-/cell-centered
+        // fields (into b_fc, bcc_center) from the face-averaged field b. The
+        // EOS-internal 2nd-order CalculateCellCenteredField is skipped at xorder == 4.
+        if (MAGNETIC_FIELDS_ENABLED && order == 4) {
+          pf->CalculateCellCenteredField(pf->b, pf->bcc, pmb->pcoord,
+                                         il, iu, jl, ju, kl, ku);
+          pf->bcc_center = pf->bcc;
+          pf->FaceAveragedToCellAveragedField(pf->b, pf->b_fc, pf->bcc, pf->bcc_center,
+                                              pmb->pcoord, il, iu, jl, ju, kl, ku);
+        }
         pmb->peos->ConservedToPrimitive(ph->u, ph->w1, pf->b,
                                         ph->w, pf->bcc, pmb->pcoord,
                                         il, iu, jl, ju, kl, ku);
@@ -1840,19 +1852,16 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
                                                        il, iu, jl, ju, kl, ku);
         }
         // --------------------------
-        int order = pmb->precon->xorder;
         if (order == 4) {
           // fourth-order EOS:
-          // for hydro, shrink buffer by 1 on all sides
-          if (pbval->nblevel[1][1][0] != -1) il += 1;
-          if (pbval->nblevel[1][1][2] != -1) iu -= 1;
-          if (pbval->nblevel[1][0][1] != -1) jl += 1;
-          if (pbval->nblevel[1][2][1] != -1) ju -= 1;
-          if (pbval->nblevel[0][1][1] != -1) kl += 1;
-          if (pbval->nblevel[2][1][1] != -1) ku -= 1;
-          // for MHD, shrink buffer by 3
-          //! \todo (felker):
-          //! * add MHD loop limit calculation for 4th order W(U)
+          // shrink buffer on all sides: by 3 for MHD (UCT4 stencils), by 1 for hydro
+          const int nbuf = (MAGNETIC_FIELDS_ENABLED ? 3 : 1);
+          if (pbval->nblevel[1][1][0] != -1) il += nbuf;
+          if (pbval->nblevel[1][1][2] != -1) iu -= nbuf;
+          if (pbval->nblevel[1][0][1] != -1) jl += nbuf;
+          if (pbval->nblevel[1][2][1] != -1) ju -= nbuf;
+          if (pbval->nblevel[0][1][1] != -1) kl += nbuf;
+          if (pbval->nblevel[2][1][1] != -1) ku -= nbuf;
           // Apply physical boundaries prior to 4th order W(U)
           ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
           if (NSCALARS > 0) {
@@ -1864,10 +1873,18 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
           pbval->ApplyPhysicalBoundaries(time, 0.0, pbval->bvars_main_int);
           if(IM_RADIATION_ENABLED)
             pmb->pnrrad->rad_bvar.ApplyRadPhysicalBoundaries(time,0.0);
-          // Perform 4th order W(U)
-          pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
-                                                     ph->w, pf->bcc, pmb->pcoord,
-                                                     il, iu, jl, ju, kl, ku);
+          // Perform 4th order W(U); for MHD, the point-valued cell-centered field
+          // bcc_center is passed for the pointwise variable inversion
+          if (MAGNETIC_FIELDS_ENABLED) {
+            pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
+                                                       ph->w, pf->bcc_center,
+                                                       pmb->pcoord,
+                                                       il, iu, jl, ju, kl, ku);
+          } else {
+            pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w1, pf->b,
+                                                       ph->w, pf->bcc, pmb->pcoord,
+                                                       il, iu, jl, ju, kl, ku);
+          }
           if (NSCALARS > 0) {
             pmb->peos->PassiveScalarConservedToPrimitiveCellAverage(
                 ps->s, ps->r, ps->r, pmb->pcoord, il, iu, jl, ju, kl, ku);

@@ -1,5 +1,5 @@
 <comment>
-problem   = 1D MHD linear wave convergence
+problem   = 2D MHD linear wave convergence, but aligned with horizontal or vertical grid direction
 reference =
 configure = -b --prob=linear_wave
 
@@ -16,25 +16,27 @@ variable   = prim      # variables to be output
 dt         = 0.01      # time increment between outputs
 
 <time>
-cfl_number  = 0.8       # The Courant, Friedrichs, & Lewy (CFL) Number
+cfl_number  = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim        = -1        # cycle limit
 tlim        = 5.0       # time limit
 integrator  = vl2       # time integration algorithm
 xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
 correct_ic  = false     # correct midpoint assumption in initial condition
 correct_err = false     # correct midpoint assumption in analytic solution
-ncycle_out  = 1         # interval for stdout summary info
 
 <mesh>
-nx1        = 128       # Number of zones in X1-direction
+nx1        = 256       # Number of zones in X1-direction
 x1min      = 0.0       # minimum value of X1
 x1max      = 1.0       # maximum value of X1
 ix1_bc     = periodic  # inner-X1 boundary flag
 ox1_bc     = periodic  # outer-X1 boundary flag
 
-nx2        = 1         # Number of zones in X2-direction
-x2min      = -0.5      # minimum value of X2
+nx2        = 128       # Number of zones in X2-direction
+x2min      = 0.0       # minimum value of X2
 x2max      = 0.5       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
 
 nx3        = 1         # Number of zones in X3-direction
 x3min      = -0.5      # minimum value of X3
@@ -53,3 +55,4 @@ amp       = 1.0e-6    # Wave Amplitude
 vflow     = 0.0       # background flow velocity
 ang_2     = 0.0       # rotation of k around x3 axis
 ang_3     = 0.0       # rotation of k around x2 axis
+ang_3_vert= false     # set to 'true' to make ang_3=pi/2

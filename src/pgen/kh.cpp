@@ -384,14 +384,22 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
     }
-    // initialize uniform interface B
+    // initialize interface B, uniformly aligned with the u1 velocity in each fluid
     if (MAGNETIC_FIELDS_ENABLED) {
+      // NOTE: b0 is used directly in code units (no automatic 1/sqrt(4*pi) rescaling);
+      // e.g. with P0 = 10, b0 = 0.1 gives plasma beta = 2*P0/b0^2 = 2000
       Real b0 = pin->GetReal("problem", "b0");
-      b0 = b0/std::sqrt(4.0*(PI));
       for (int k=ks; k<=ke; k++) {
         for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            pfield->b.x1f(k,j,i) = b0*std::tanh((std::abs(pcoord->x2v(j)) - 0.5)/a);
+            // B1(x2) = b0*(tanh((x2-z1)/a) - tanh((x2-z2)/a) - 1), following the same
+            // form as the v1 profile; initialized here via the exact area average over
+            // the x1 face (fourth-order accurate IC):
+            pfield->b.x1f(k,j,i) = -b0 + b0*a/pcoord->dx2f(j)*(
+                std::log(std::cosh((pcoord->x2f(j+1) - z1)/a)
+                         / std::cosh((pcoord->x2f(j+1) - z2)/a))
+                - std::log(std::cosh((pcoord->x2f(j) - z1)/a)
+                           / std::cosh((pcoord->x2f(j) - z2)/a)));
           }
         }
       }

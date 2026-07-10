@@ -159,17 +159,23 @@ class Reconstruction {
                          const AthenaArray<Real> &q,
                          AthenaArray<Real> &ql, AthenaArray<Real> &qr);
 
+  // fourth-order MHD (UCT4): optional trailing arguments select a subrange
+  // [ninl:ninu] of the input array's 4th dim and remap the output to start at noutl.
+  // Defaults reproduce the original behavior (all variables, no offset).
   void PiecewiseParabolicX1(const int k, const int j, const int il, const int iu,
                             const AthenaArray<Real> &q,
-                            AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+                            AthenaArray<Real> &ql, AthenaArray<Real> &qr,
+                            int ninl = 0, int ninu = -1, int noutl = 0);
 
   void PiecewiseParabolicX2(const int k, const int j, const int il, const int iu,
                             const AthenaArray<Real> &q,
-                            AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+                            AthenaArray<Real> &ql, AthenaArray<Real> &qr,
+                            int ninl = 0, int ninu = -1, int noutl = 0);
 
   void PiecewiseParabolicX3(const int k, const int j, const int il, const int iu,
                             const AthenaArray<Real> &q,
-                            AthenaArray<Real> &ql, AthenaArray<Real> &qr);
+                            AthenaArray<Real> &ql, AthenaArray<Real> &qr,
+                            int ninl = 0, int ninu = -1, int noutl = 0);
 
   void PiecewiseParabolicFastX1(const int k, const int j, const int il, const int iu,
                              const AthenaArray<Real> &q,

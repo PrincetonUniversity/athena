@@ -244,3 +244,175 @@ void Field::ComputeCornerE_STS() {
   if (fdif.field_diffusion_defined) fdif.AddEMF(fdif.e_oa, e);
   return;
 }
+
+//----------------------------------------------------------------------------------------
+//! \fn  void Field::ComputeCornerE_UCT4
+//! \brief calculate the corner (edge-averaged) EMFs for the fourth-order UCT scheme
+//!
+//! Computes the multidimensional HLL average of the four one-sided corner states plus
+//! two field-jump diffusion terms, following Londrillo & Del Zanna (2004) eq. 56 and
+//! Felker & Stone (2018) section 4.2. The corner-reconstructed velocity/field states
+//! and the alpha^{+,-} fast magnetosonic wavespeeds are computed during
+//! Hydro::CalculateFluxes when xorder=4.
+//!
+//! Sign convention of the diffusion terms: for each transverse field component B_t
+//! differenced across direction d at the edge, the term enters with the sign such that
+//! the corner EMF reduces to the 1D HLL flux of B_t along d in the plane-symmetric
+//! limit. Since (dB/dt)_t = -(curl E)_t, the EMF component is (+/-) the flux of B_t
+//! along d, which fixes the sign of -alpha^+ alpha^- (B_t^R - B_t^L)/(alpha^+ + alpha^-)
+//! per component (see the E3 comments below; E1, E2 follow by cyclic permutation).
+
+void Field::ComputeCornerE_UCT4() {
+  MeshBlock *pmb = pmy_block;
+  int is = pmb->is; int js = pmb->js; int ks = pmb->ks;
+  int ie = pmb->ie; int je = pmb->je; int ke = pmb->ke;
+
+  AthenaArray<Real> &e1 = e.x1e, &e2 = e.x2e, &e3 = e.x3e;
+
+  //---- 1-D update:
+  //  copy face-centered E-fields to edges and return.
+
+  if (pmb->block_size.nx2 == 1) {
+    for (int i=is; i<=ie+1; ++i) {
+      e2(ks  ,js  ,i) = e2_x1f(ks,js,i);
+      e2(ke+1,js  ,i) = e2_x1f(ks,js,i);
+      e3(ks  ,js  ,i) = e3_x1f(ks,js,i);
+      e3(ks  ,je+1,i) = e3_x1f(ks,js,i);
+    }
+    if (!STS_ENABLED) // add diffusion flux
+      if (fdif.field_diffusion_defined) fdif.AddEMF(fdif.e_oa, e);
+    return;
+  }
+
+  //---- 2-D/3-D update:
+  // E3=-(v X B)=VyBx-VxBy
+  // integrate E3 to corner using UCT
+  // corner state naming: E/W = L1/R1, N/S = L2/R2 one-sided limits w.r.t. the corner
+  for (int k=ks; k<=ke; ++k) {
+    for (int j=js; j<=je+1; ++j) {
+      for (int i=is; i<=ie+1; ++i) {
+        Real alpha_plus_x = std::abs(alpha_plus_x1_(k,j,i));
+        Real alpha_minus_x = std::abs(alpha_minus_x1_(k,j,i));
+
+        Real alpha_plus_y = std::abs(alpha_plus_x2_(k,j,i));
+        Real alpha_minus_y = std::abs(alpha_minus_x2_(k,j,i));
+
+        // Londrillo & Del Zanna (2004) eq. 56; L states are weighted by alpha^+
+        Real e3_NE, e3_SE, e3_NW, e3_SW;
+        Real bx_S_minus_bx_N, by_W_minus_by_E;
+        e3_NE = v_NE(1,k,j,i)*bx_N(k,j,i) - v_NE(0,k,j,i)*by_E(k,j,i);
+        e3_SE = v_SE(1,k,j,i)*bx_S(k,j,i) - v_SE(0,k,j,i)*by_E(k,j,i);
+        e3_NW = v_NW(1,k,j,i)*bx_N(k,j,i) - v_NW(0,k,j,i)*by_W(k,j,i);
+        e3_SW = v_SW(1,k,j,i)*bx_S(k,j,i) - v_SW(0,k,j,i)*by_W(k,j,i);
+
+        // diffusion terms: +E3 is the x2-flux of B1 (hence "-" on the B1 jump across
+        // x2), and -E3 is the x1-flux of B2 (hence "+" on the B2 jump across x1)
+        bx_S_minus_bx_N = bx_S(k,j,i) - bx_N(k,j,i);
+        by_W_minus_by_E = by_W(k,j,i) - by_E(k,j,i);
+        e3(k,j,i) = (
+            alpha_plus_x*alpha_plus_y*e3_NE + alpha_plus_x*alpha_minus_y*e3_SE +
+            alpha_minus_x*alpha_plus_y*e3_NW + alpha_minus_x*alpha_minus_y*e3_SW
+                     ) / ((alpha_plus_x + alpha_minus_x)*(alpha_plus_y + alpha_minus_y))
+                    - alpha_plus_y*alpha_minus_y*bx_S_minus_bx_N / (
+                        alpha_plus_y + alpha_minus_y)
+                    + alpha_plus_x*alpha_minus_x*by_W_minus_by_E/(
+                        alpha_plus_x + alpha_minus_x);
+      }
+    }
+  }
+
+  if (pmb->block_size.nx3 == 1) {
+    // for 2D: copy E1 and E2 to edges and return
+    // (e1_x2f and e2_x1f are the 4th-order face-averaged fluxes of B3 in 2D)
+    for (int j=js; j<=je; ++j) {
+      for (int i=is; i<=ie+1; ++i) {
+        e2(ks  ,j,i) = e2_x1f(ks,j,i);
+        e2(ke+1,j,i) = e2_x1f(ks,j,i);
+      }
+    }
+    for (int j=js; j<=je+1; ++j) {
+      for (int i=is; i<=ie; ++i) {
+        e1(ks  ,j,i) = e1_x2f(ks,j,i);
+        e1(ke+1,j,i) = e1_x2f(ks,j,i);
+      }
+    }
+  } else {
+    //---- 3-D update:
+    // integrate E1 to corners using UCT (E3 already done above)
+    // E1=-(v X B)=VzBy-VyBz
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je+1; ++j) {
+        for (int i=is; i<=ie; ++i) {
+          Real alpha_plus_z = std::abs(alpha_plus_x3_(k,j,i));
+          Real alpha_minus_z = std::abs(alpha_minus_x3_(k,j,i));
+
+          Real alpha_plus_y = std::abs(alpha_plus_x2_(k,j,i));
+          Real alpha_minus_y = std::abs(alpha_minus_x2_(k,j,i));
+
+          Real e1_L3L2, e1_L3R2, e1_R3L2, e1_R3R2;
+          Real by_R3_minus_by_L3, bz_R2_minus_bz_L2;
+          e1_L3L2 = v_L3L2(2,k,j,i)*by_L3(k,j,i) - v_L3L2(1,k,j,i)*bz_L2(k,j,i);
+          e1_L3R2 = v_L3R2(2,k,j,i)*by_L3(k,j,i) - v_L3R2(1,k,j,i)*bz_R2(k,j,i);
+          e1_R3L2 = v_R3L2(2,k,j,i)*by_R3(k,j,i) - v_R3L2(1,k,j,i)*bz_L2(k,j,i);
+          e1_R3R2 = v_R3R2(2,k,j,i)*by_R3(k,j,i) - v_R3R2(1,k,j,i)*bz_R2(k,j,i);
+
+          // diffusion terms: -E1 is the x2-flux of B3 ("+" on the B3 jump across x2),
+          // and +E1 is the x3-flux of B2 ("-" on the B2 jump across x3)
+          by_R3_minus_by_L3 = by_R3(k,j,i) - by_L3(k,j,i);
+          bz_R2_minus_bz_L2 = bz_R2(k,j,i) - bz_L2(k,j,i);
+          e1(k,j,i) = (alpha_plus_z*alpha_plus_y*e1_L3L2 +
+                       alpha_plus_z*alpha_minus_y*e1_L3R2 +
+                       alpha_minus_z*alpha_plus_y*e1_R3L2 +
+                       alpha_minus_z*alpha_minus_y*e1_R3R2)
+              / ((alpha_plus_z + alpha_minus_z)*(alpha_plus_y + alpha_minus_y))
+              + alpha_plus_y*alpha_minus_y*bz_R2_minus_bz_L2 /
+              (alpha_plus_y + alpha_minus_y)
+              - alpha_plus_z*alpha_minus_z*by_R3_minus_by_L3 /
+              (alpha_plus_z + alpha_minus_z);
+        }
+      }
+    }
+
+    // integrate E2 to corners using UCT (E3 already done above)
+    // E2=-(v X B)=VxBz-VzBx
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je; ++j) {
+        for (int i=is; i<=ie+1; ++i) {
+          Real alpha_plus_z = std::abs(alpha_plus_x3_(k,j,i));
+          Real alpha_minus_z = std::abs(alpha_minus_x3_(k,j,i));
+
+          Real alpha_plus_x = std::abs(alpha_plus_x1_(k,j,i));
+          Real alpha_minus_x = std::abs(alpha_minus_x1_(k,j,i));
+
+          Real e2_L3L1, e2_L3R1, e2_R3L1, e2_R3R1;
+          Real bx_R3_minus_bx_L3, bz_R1_minus_bz_L1;
+          e2_L3L1 = - v_L3L1(2,k,j,i)*bx_L3(k,j,i) + v_L3L1(0,k,j,i)*bz_L1(k,j,i);
+          e2_L3R1 = - v_L3R1(2,k,j,i)*bx_L3(k,j,i) + v_L3R1(0,k,j,i)*bz_R1(k,j,i);
+          e2_R3L1 = - v_R3L1(2,k,j,i)*bx_R3(k,j,i) + v_R3L1(0,k,j,i)*bz_L1(k,j,i);
+          e2_R3R1 = - v_R3R1(2,k,j,i)*bx_R3(k,j,i) + v_R3R1(0,k,j,i)*bz_R1(k,j,i);
+
+          // diffusion terms: +E2 is the x1-flux of B3 ("-" on the B3 jump across x1),
+          // and -E2 is the x3-flux of B1 ("+" on the B1 jump across x3)
+          bx_R3_minus_bx_L3 = bx_R3(k,j,i) - bx_L3(k,j,i);
+          bz_R1_minus_bz_L1 = bz_R1(k,j,i) - bz_L1(k,j,i);
+          e2(k,j,i) = (alpha_plus_z*alpha_plus_x*e2_L3L1 +
+                       alpha_plus_z*alpha_minus_x*e2_L3R1 +
+                       alpha_minus_z*alpha_plus_x*e2_R3L1 +
+                       alpha_minus_z*alpha_minus_x*e2_R3R1)
+              / ((alpha_plus_z + alpha_minus_z)*(alpha_plus_x + alpha_minus_x))
+              - alpha_plus_x*alpha_minus_x*bz_R1_minus_bz_L1 /
+              (alpha_plus_x + alpha_minus_x)
+              + alpha_plus_z*alpha_minus_z*bx_R3_minus_bx_L3 /
+              (alpha_plus_z + alpha_minus_z);
+        }
+      }
+    }
+  } // end if 3D
+
+  // add diffusion EMFs (e.g. Ohmic resistivity), computed at second-order accuracy;
+  // consistent with the O(dx^2) treatment of the explicit diffusive fluxes
+  if (!STS_ENABLED)
+    if (fdif.field_diffusion_defined) fdif.AddEMF(fdif.e_oa, e);
+
+  return;
+}

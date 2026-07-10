@@ -33,8 +33,14 @@
 #include "../eos/eos.hpp"
 #include "../field/field.hpp"
 #include "../hydro/hydro.hpp"
+#include "../globals.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../reconstruct/reconstruction.hpp"
+
+#ifdef MPI_PARALLEL
+#include <mpi.h>
+#endif
 
 #if !MAGNETIC_FIELDS_ENABLED
 #error "This problem generator requires magnetic fields"
@@ -45,6 +51,7 @@ namespace {
 // with functions A1,2,3 which compute vector potentials
 Real den, pres, gm1, b_par, b_perp, v_perp, v_par;
 Real ang_2, ang_3; // Rotation angles about the y and z' axis
+bool ang_2_vert, ang_3_vert; // Switches to set ang_2 and/or ang_3 to pi/2
 Real fac, sin_a2, cos_a2, sin_a3, cos_a3;
 Real lambda, k_par; // Wavelength, 2*PI/wavelength
 
@@ -52,6 +59,10 @@ Real lambda, k_par; // Wavelength, 2*PI/wavelength
 Real A1(const Real x1, const Real x2, const Real x3);
 Real A2(const Real x1, const Real x2, const Real x3);
 Real A3(const Real x1, const Real x2, const Real x3);
+// exact edge-averaged values of the vector potential (4th-order accurate IC)
+Real AveA1(const Real x1f, const Real x1f_ip1, const Real x2, const Real x3);
+Real AveA2(const Real x1, const Real x2f, const Real x2f_jp1, const Real x3);
+Real AveA3(const Real x1, const Real x2, const Real x3f, const Real x3f_kp1);
 } // namespace
 
 //========================================================================================
@@ -73,6 +84,8 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   v_par = pin->GetReal("problem","v_par");
   ang_2 = pin->GetOrAddReal("problem","ang_2",-999.9);
   ang_3 = pin->GetOrAddReal("problem","ang_3",-999.9);
+  ang_2_vert = pin->GetOrAddBoolean("problem","ang_2_vert",false);
+  ang_3_vert = pin->GetOrAddBoolean("problem","ang_3_vert",false);
   Real dir = pin->GetOrAddReal("problem","dir",1); // right(1)/left(2) polarization
   if (NON_BAROTROPIC_EOS) {
     Real gam   = pin->GetReal("hydro","gamma");
@@ -90,9 +103,23 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   sin_a3 = std::sin(ang_3);
   cos_a3 = std::cos(ang_3);
 
+  // Override ang_3 input and hardcode vertical (along x2 axis) wavevector
+  if (ang_3_vert) {
+    sin_a3 = 1.0;
+    cos_a3 = 0.0;
+    ang_3 = 0.5*M_PI;
+  }
+
   if (ang_2 == -999.9) ang_2 = std::atan(0.5*(x1size*cos_a3 + x2size*sin_a3)/x3size);
   sin_a2 = std::sin(ang_2);
   cos_a2 = std::cos(ang_2);
+
+  // Override ang_2 input and hardcode vertical (along x3 axis) wavevector
+  if (ang_2_vert) {
+    sin_a2 = 1.0;
+    cos_a2 = 0.0;
+    ang_2 = 0.5*M_PI;
+  }
 
   Real x1 = x1size*cos_a2*cos_a3;
   Real x2 = x2size*cos_a2*sin_a3;
@@ -102,6 +129,12 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   lambda = x1;
   if (mesh_size.nx2 > 1 && ang_3 != 0.0) lambda = std::min(lambda,x2);
   if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
+
+  // If cos_a2 or cos_a3 = 0, need to override lambda
+  if (ang_3_vert)
+    lambda = x2;
+  if (ang_2_vert)
+    lambda = x3;
 
   // Initialize k_parallel
   k_par = 2.0*(PI)/lambda;
@@ -128,16 +161,34 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
   for (int b=0; b<nblocal; ++b) {
     MeshBlock *pmb = my_blocks(b);
-    //  Compute errors
-    for (int k=pmb->ks; k<=pmb->ke; k++) {
-      for (int j=pmb->js; j<=pmb->je; j++) {
-        for (int i=pmb->is; i<=pmb->ie; i++) {
+    BoundaryValues *pbval = pmb->pbval;
+    int il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je,
+        kl = pmb->ks, ku = pmb->ke;
+    // adjust loop limits for fourth order error calculation
+    if (pmb->precon->correct_err_) {
+      // Expand loop limits on all sides by one (for the Laplacian stencil below)
+      if (pbval->nblevel[1][1][0] != -1) il -= 1;
+      if (pbval->nblevel[1][1][2] != -1) iu += 1;
+      if (pbval->nblevel[1][0][1] != -1) jl -= 1;
+      if (pbval->nblevel[1][2][1] != -1) ju += 1;
+      if (pbval->nblevel[0][1][1] != -1) kl -= 1;
+      if (pbval->nblevel[2][1][1] != -1) ku += 1;
+    }
+    // Save analytic solution of conserved variables in 4D scratch array
+    // (even for MHD, there are only cell-centered variables here)
+    constexpr int ncells4 = NHYDRO + NFIELD;
+    constexpr int nl = 0;
+    constexpr int nu = ncells4 - 1;
+    AthenaArray<Real> cons_(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+
+    //  Compute analytic solution at cell centers
+    for (int k=kl; k<=ku; k++) {
+      for (int j=jl; j<=ju; j++) {
+        for (int i=il; i<=iu; i++) {
           Real x = cos_a2*(pmb->pcoord->x1v(i)*cos_a3 + pmb->pcoord->x2v(j)*sin_a3)
                    + pmb->pcoord->x3v(k)*sin_a2;
           Real sn = std::sin(k_par*x);
           Real cs = fac*std::cos(k_par*x);
-
-          err[IDN] += std::abs(den - pmb->phydro->u(IDN,k,j,i));
 
           Real mx = den*v_par;
           Real my = -fac*den*v_perp*sn;
@@ -145,9 +196,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
           Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
           Real m3 = mx*sin_a2                    + mz*cos_a2;
-          err[IM1] += std::abs(m1 - pmb->phydro->u(IM1,k,j,i));
-          err[IM2] += std::abs(m2 - pmb->phydro->u(IM2,k,j,i));
-          err[IM3] += std::abs(m3 - pmb->phydro->u(IM3,k,j,i));
+          cons_(IDN,k,j,i) = den;
+          cons_(IM1,k,j,i) = m1;
+          cons_(IM2,k,j,i) = m2;
+          cons_(IM3,k,j,i) = m3;
 
           Real bx = b_par;
           Real by = b_perp*sn;
@@ -155,28 +207,89 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
           Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
           Real b3 = bx*sin_a2                    + bz*cos_a2;
-          err[NHYDRO + IB1] += std::abs(b1 - pmb->pfield->bcc(IB1,k,j,i));
-          err[NHYDRO + IB2] += std::abs(b2 - pmb->pfield->bcc(IB2,k,j,i));
-          err[NHYDRO + IB3] += std::abs(b3 - pmb->pfield->bcc(IB3,k,j,i));
+          cons_(NHYDRO+IB1,k,j,i) = b1;
+          cons_(NHYDRO+IB2,k,j,i) = b2;
+          cons_(NHYDRO+IB3,k,j,i) = b3;
 
           if (NON_BAROTROPIC_EOS) {
             Real e0 = pres/gm1 + 0.5*(m1*m1 + m2*m2 + m3*m3)/den
                       + 0.5*(b1*b1+b2*b2+b3*b3);
-            err[IEN] += std::abs(e0 - pmb->phydro->u(IEN,k,j,i));
+            cons_(IEN,k,j,i) = e0;
+          }
+        }
+      }
+    }
+    // fourth-order error correction: convert the analytic cell-centered values to
+    // cell averages via the Laplacian, to compare against the evolved <U> at O(dx^4)
+    if (pmb->precon->correct_err_) {
+      // Restore loop limits to real cells only
+      il = pmb->is, iu = pmb->ie, jl = pmb->js, ju = pmb->je, kl = pmb->ks, ku = pmb->ke;
+
+      // Compute and store Laplacian of cell-centered conserved variables, Hydro and Bcc
+      AthenaArray<Real> delta_cons_(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
+      pmb->pcoord->Laplacian(cons_, delta_cons_, il, iu, jl, ju, kl, ku, nl, nu);
+
+      // uniform Cartesian mesh with square cells is assumed (checked in Reconstruction)
+      Real h = pmb->pcoord->dx1f(il);
+      Real C = (h*h)/24.0;
+
+      for (int n=nl; n<=nu; ++n) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
+            for (int i=il; i<=iu; ++i) {
+              cons_(n,k,j,i) = cons_(n,k,j,i) + C*delta_cons_(n,k,j,i);
+            }
+          }
+        }
+      }
+    } // end if correct_err_
+
+    // Compute volume-weighted L1 errors
+    for (int k=kl; k<=ku; ++k) {
+      for (int j=jl; j<=ju; ++j) {
+        for (int i=il; i<=iu; ++i) {
+          Real vol = pmb->pcoord->GetCellVolume(k, j, i);
+          err[IDN] += std::abs(cons_(IDN,k,j,i) - pmb->phydro->u(IDN,k,j,i))*vol;
+          err[IM1] += std::abs(cons_(IM1,k,j,i) - pmb->phydro->u(IM1,k,j,i))*vol;
+          err[IM2] += std::abs(cons_(IM2,k,j,i) - pmb->phydro->u(IM2,k,j,i))*vol;
+          err[IM3] += std::abs(cons_(IM3,k,j,i) - pmb->phydro->u(IM3,k,j,i))*vol;
+          err[NHYDRO+IB1] +=
+              std::abs(cons_(NHYDRO+IB1,k,j,i) - pmb->pfield->bcc(IB1,k,j,i))*vol;
+          err[NHYDRO+IB2] +=
+              std::abs(cons_(NHYDRO+IB2,k,j,i) - pmb->pfield->bcc(IB2,k,j,i))*vol;
+          err[NHYDRO+IB3] +=
+              std::abs(cons_(NHYDRO+IB3,k,j,i) - pmb->pfield->bcc(IB3,k,j,i))*vol;
+          if (NON_BAROTROPIC_EOS) {
+            err[IEN] += std::abs(cons_(IEN,k,j,i) - pmb->phydro->u(IEN,k,j,i))*vol;
           }
         }
       }
     }
   }
 
-  // normalize errors by number of cells, compute RMS
-  for (int i=0; i<(NHYDRO+NFIELD); ++i) {
-    err[i] = err[i]/static_cast<Real>(GetTotalCells());
+#ifdef MPI_PARALLEL
+  if (Globals::my_rank == 0) {
+    MPI_Reduce(MPI_IN_PLACE, &err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_SUM, 0,
+               MPI_COMM_WORLD);
+  } else {
+    MPI_Reduce(&err, &err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_SUM, 0,
+               MPI_COMM_WORLD);
+  }
+#endif
+
+  // normalize errors by total volume, compute RMS
+  {
+    Real vol = (mesh_size.x1max - mesh_size.x1min)*(mesh_size.x2max - mesh_size.x2min)
+               *(mesh_size.x3max - mesh_size.x3min);
+    for (int i=0; i<(NHYDRO+NFIELD); ++i) err[i] = err[i]/vol;
   }
 
   Real rms_err = 0.0;
   for (int i=0; i<(NHYDRO+NFIELD); ++i) rms_err += SQR(err[i]);
   rms_err = std::sqrt(rms_err);
+
+  // only the root process outputs the data
+  if (Globals::my_rank != 0) return;
 
   // open output file and write out errors
   std::string fname;
@@ -251,7 +364,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
                              A1(x1r, pcoord->x2f(j), pcoord->x3f(k)));
           } else {
-            a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+            a1(k,j,i) = AveA1(pcoord->x1f(i), pcoord->x1f(i+1), pcoord->x2f(j),
+                              pcoord->x3f(k));
           }
 
           if ((pbval->nblevel[1][1][0]>level && i==is)
@@ -267,7 +381,8 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
                              A2(pcoord->x1f(i), x2r, pcoord->x3f(k)));
           } else {
-            a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+            a2(k,j,i) = AveA2(pcoord->x1f(i), pcoord->x2f(j), pcoord->x2f(j+1),
+                              pcoord->x3f(k));
           }
 
           if ((pbval->nblevel[1][1][0]>level && i==is)
@@ -283,21 +398,25 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
                              A3(pcoord->x1f(i), pcoord->x2f(j), x3r));
           } else {
-            a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+            a3(k,j,i) = AveA3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k),
+                              pcoord->x3f(k+1));
           }
         }
       }
     }
-  } else {
+  } else { // 2D or 1D
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie+1; i++) {
           if (i != ie+1)
-            a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
+            a1(k,j,i) = AveA1(pcoord->x1f(i), pcoord->x1f(i+1), pcoord->x2f(j),
+                              pcoord->x3f(k));
           if (j != je+1)
-            a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
+            a2(k,j,i) = AveA2(pcoord->x1f(i), pcoord->x2f(j), pcoord->x2f(j+1),
+                              pcoord->x3f(k));
           if (k != ke+1)
-            a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+            a3(k,j,i) = AveA3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k),
+                              pcoord->x3f(k+1));
         }
       }
     }
@@ -351,11 +470,9 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         phydro->u(IM3,k,j,i) = mx*sin_a2                    + mz*cos_a2;
 
         if (NON_BAROTROPIC_EOS) {
+          // the exact magnetic energy density is spatially uniform for CPAW
           phydro->u(IEN,k,j,i) =
-              pres/gm1 +
-              0.5*(SQR(0.5*(pfield->b.x1f(k,j,i) + pfield->b.x1f(k,j,i+1))) +
-                   SQR(0.5*(pfield->b.x2f(k,j,i) + pfield->b.x2f(k,j+1,i))) +
-                   SQR(0.5*(pfield->b.x3f(k,j,i) + pfield->b.x3f(k+1,j,i)))) +
+              pres/gm1 + 0.5*(b_par*b_par + b_perp*b_perp) +
               (0.5/den)*(SQR(phydro->u(IM1,k,j,i)) + SQR(phydro->u(IM2,k,j,i)) +
                          SQR(phydro->u(IM3,k,j,i)));
         }
@@ -404,5 +521,82 @@ Real A3(const Real x1, const Real x2, const Real x3) {
   Real Az = (b_perp/k_par)*std::cos(k_par*(x)) + b_par*y;
 
   return Az*cos_a2;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveA1(const Real x1f, const Real x1f_ip1, const Real x2, const Real x3)
+//! \brief AveA1: 1-component of vector potential, exactly averaged along the x1 edge
+
+Real AveA1(const Real x1f, const Real x1f_ip1, const Real x2, const Real x3) {
+  Real x = cos_a2*cos_a3*x1f + cos_a2*sin_a3*x2 + sin_a2*x3;
+  Real x_ip1 = cos_a2*cos_a3*x1f_ip1 + cos_a2*sin_a3*x2 + sin_a2*x3;
+  Real dx1f = x1f_ip1 - x1f;
+  Real Ay, Az;
+
+  if (cos_a3 != 0.0 && cos_a2 != 0.0) {
+    Ay = (fac*b_perp/(SQR(k_par)*cos_a3*cos_a2))
+         *(-std::cos(k_par*x_ip1) + std::cos(k_par*x));
+  } else {
+    // vertical (+x2) OR polar (+x3) coordinate aligned wave--- Ay uniform on the x1 edge
+    Ay = dx1f*((fac*b_perp/k_par)*std::sin(k_par*(x))); // x = x_ip1
+  }
+  if (cos_a2 != 0.0) {
+    // cancelling cos_a3 factor
+    Az = b_perp/(SQR(k_par)*cos_a2)*(std::sin(k_par*x_ip1) - std::sin(k_par*x));
+  } else { // polar (+x3) coordinate aligned wave: only linear term in Az changes along x1
+    Az = dx1f*((cos_a3*b_perp/k_par)*std::cos(k_par*x)); // x = x3
+  }
+  Az += b_par*cos_a3*(-sin_a3*0.5*(SQR(x1f_ip1) - SQR(x1f)) + dx1f*cos_a3*x2);
+
+  return (-Ay*sin_a3 - Az*sin_a2)/dx1f;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveA2(const Real x1, const Real x2f, const Real x2f_jp1, const Real x3)
+//! \brief AveA2: 2-component of vector potential, exactly averaged along the x2 edge
+
+Real AveA2(const Real x1, const Real x2f, const Real x2f_jp1, const Real x3) {
+  Real x = cos_a2*cos_a3*x1 + cos_a2*sin_a3*x2f + sin_a2*x3;
+  Real x_jp1 = cos_a2*cos_a3*x1 + cos_a2*sin_a3*x2f_jp1 + sin_a2*x3;
+  Real dx2f = x2f_jp1 - x2f;
+  Real Ay, Az;
+
+  if (sin_a3 != 0.0 && cos_a2 != 0.0) {
+    Ay = (fac*b_perp/(SQR(k_par)*cos_a2*sin_a3))
+         *(-std::cos(k_par*x_jp1) + std::cos(k_par*x));
+  } else {
+    // horizontal (+x1) OR polar (+x3) coordinate aligned wave--- Ay uniform on x2 edge
+    Ay = dx2f*((fac*b_perp/k_par)*std::sin(k_par*(x))); // x = x_jp1
+  }
+  if (cos_a2 != 0.0) {
+    // cancelling sin_a3 factor
+    Az = b_perp/(SQR(k_par)*cos_a2)*(std::sin(k_par*x_jp1) - std::sin(k_par*x));
+  } else { // polar (+x3) coordinate aligned wave: only linear term in Az changes along x2
+    Az = dx2f*((sin_a3*b_perp/k_par)*std::cos(k_par*x)); // x = x3
+  }
+  Az += b_par*sin_a3*(-dx2f*sin_a3*x1 + cos_a3*0.5*(SQR(x2f_jp1) - SQR(x2f)));
+
+  return (Ay*cos_a3 - Az*sin_a2)/dx2f;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveA3(const Real x1, const Real x2, const Real x3f, const Real x3f_kp1)
+//! \brief AveA3: 3-component of vector potential, exactly averaged along the x3 edge
+
+Real AveA3(const Real x1, const Real x2, const Real x3f, const Real x3f_kp1) {
+  Real x = cos_a2*cos_a3*x1 + cos_a2*sin_a3*x2 + sin_a2*x3f;
+  Real x_kp1 = cos_a2*cos_a3*x1 + cos_a2*sin_a3*x2 + sin_a2*x3f_kp1;
+  Real y = -x1*sin_a3 + x2*cos_a3;
+  Real dx3f = x3f_kp1 - x3f;
+  Real Az;
+
+  if (sin_a2 != 0.0) {
+    Az = cos_a2*(b_perp/(SQR(k_par)*sin_a2)
+                 *(std::sin(k_par*x_kp1) - std::sin(k_par*x))
+                 + dx3f*b_par*y); // y never depends on x3
+  } else { // wave propagates in x1-x2 plane
+    Az = dx3f*((b_perp/k_par)*std::cos(k_par*(x)) + b_par*y); // x, y do not depend on x3
+  }
+  return Az/dx3f;
 }
 } // namespace
