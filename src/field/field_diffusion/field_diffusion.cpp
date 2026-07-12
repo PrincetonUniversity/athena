@@ -94,9 +94,10 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
       e_pt_.x1e.NewAthenaArray(nc3+1, nc2+1, nc1);
       e_pt_.x2e.NewAthenaArray(nc3+1, nc2, nc1+1);
       e_pt_.x3e.NewAthenaArray(nc3, nc2+1, nc1+1);
-      pfpt_.x1f.NewAthenaArray(nc3, nc2, nc1+1);
-      pfpt_.x2f.NewAthenaArray(nc3, nc2+1, nc1);
-      pfpt_.x3f.NewAthenaArray(nc3+1, nc2, nc1);
+      // pfpt_ shares storage with Field's 4th-order conversion scratch; see
+      // InitFourthOrderScratch(), called at the end of the Field constructor (the
+      // host arrays are not yet allocated when this constructor runs from Field's
+      // member-init list)
     }
   } else {
     fourth_order_ = false;
@@ -110,6 +111,25 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
   }
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::InitFourthOrderScratch
+//! \brief alias the point-valued Poynting-flux scratch pfpt_ onto Field's 4th-order
+//! conversion scratch (never simultaneously live: pfpt_ is used only inside
+//! PoyntingFluxFourth [DIFFUSE_FLD task], the host arrays only inside
+//! Field::CalculateFaceCenteredField [CONS2PRIM] and the 2D EMF Laplacian correction
+//! in Hydro::CalculateFluxes [CALC_HYDFLX]). Called at the end of the Field
+//! constructor (which passes itself; pmy_block->pfield is not yet assigned there).
+
+void FieldDiffusion::InitFourthOrderScratch(Field *pf) {
+  if (!fourth_order_) return;
+  // exact dimension matches: (nc3,nc2,nc1+1), (nc3,nc2+1,nc1), (nc3+1,nc2,nc1)
+  const int nc3 = pmy_block->ncells3;
+  pfpt_.x1f.InitWithShallowSlice(pf->scr1_kji_x1fc_, 3, 0, nc3);
+  pfpt_.x2f.InitWithShallowSlice(pf->scr2_kji_x2fc_, 3, 0, nc3);
+  pfpt_.x3f.InitWithShallowSlice(pf->scr3_kji_x3fc_, 3, 0, nc3+1);
+  return;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::CalcDiffusionEMF
