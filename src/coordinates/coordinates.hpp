@@ -210,6 +210,11 @@ class Coordinates {
   Mesh *pm;
   int il, iu, jl, ju, kl, ku, ng;  // limits of indices of arrays (normal or coarse)
   int nc1, nc2, nc3;               // # cells in each dir of arrays (normal or coarse)
+  // uniform-spacing fast path for the Laplacian operators: flag per direction
+  // (bitwise-identical face spacings, set in the base ctor) and the hoisted
+  // inverse-squared spacings (reciprocal-multiply instead of per-cell division)
+  bool uniform_lap_[3];
+  Real il2_[3];
   // Scratch arrays for coordinate factors
   // Format: coord_<type>[<direction>]_<index>[<count>]_
   //   type: vol[ume], area, etc.

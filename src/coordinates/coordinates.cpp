@@ -319,6 +319,27 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
     x3f(ku+1) = block_size.x3max;
   }
 
+  // uniform-spacing fast path for the Laplacian operators: engage only when the face
+  // spacings in a direction are bitwise identical (guaranteed by the uniform mesh
+  // generators; also detects numerically uniform user grids), so that il2_ holds the
+  // unique inverse-squared spacing
+  uniform_lap_[X1DIR] = true;
+  for (int i=il-ng; i<=iu+ng; ++i)
+    if (dx1f(i) != dx1f(il)) uniform_lap_[X1DIR] = false;
+  il2_[X1DIR] = 1.0/(dx1f(il)*dx1f(il));
+  uniform_lap_[X2DIR] = true;
+  if (nc2 > 1) {
+    for (int j=jl-ng; j<=ju+ng; ++j)
+      if (dx2f(j) != dx2f(jl)) uniform_lap_[X2DIR] = false;
+  }
+  il2_[X2DIR] = 1.0/(dx2f(jl)*dx2f(jl));
+  uniform_lap_[X3DIR] = true;
+  if (nc3 > 1) {
+    for (int k=kl-ng; k<=ku+ng; ++k)
+      if (dx3f(k) != dx3f(kl)) uniform_lap_[X3DIR] = false;
+  }
+  il2_[X3DIR] = 1.0/(dx3f(kl)*dx3f(kl));
+
   // coordinate-specific initialization
   Initialize(pin);
 }
@@ -560,6 +581,39 @@ void __attribute__((weak)) Coordinates::Laplacian(const AthenaArray<Real> &s,
                            AthenaArray<Real> &delta_s,
                            const int il, const int iu, const int jl, const int ju,
                            const int kl, const int ku, const int nl, const int nu) {
+  const bool f2 = pmy_block->block_size.nx2 > 1;
+  const bool f3 = pmy_block->block_size.nx3 > 1;
+  if (uniform_lap_[X1DIR] && (!f2 || uniform_lap_[X2DIR])
+      && (!f3 || uniform_lap_[X3DIR])) {
+    // uniform-spacing fast path: hoisted reciprocal multiplies (last-bit rounding
+    // differs from the division path)
+    const Real oodx1sq = il2_[X1DIR], oodx2sq = il2_[X2DIR], oodx3sq = il2_[X3DIR];
+    for (int n=nl; n<=nu; ++n) {
+      for (int k=kl; k<=ku; ++k) {
+        for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+          for (int i=il; i<=iu; ++i) {
+            delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))*oodx1sq;
+          }
+          if (f2) {
+#pragma omp simd
+            for (int i=il; i<=iu; ++i) {
+              delta_s(n,k,j,i) += (s(n,k,j-1,i) - 2.0*s(n,k,j,i)
+                                   + s(n,k,j+1,i))*oodx2sq;
+            }
+          }
+          if (f3) {
+#pragma omp simd
+            for (int i=il; i<=iu; ++i) {
+              delta_s(n,k,j,i) += (s(n,k-1,j,i) - 2.0*s(n,k,j,i)
+                                   + s(n,k+1,j,i))*oodx3sq;
+            }
+          }
+        }
+      }
+    }
+    return;
+  }
   for (int n=nl; n<=nu; ++n) {
     for (int k=kl; k<=ku; ++k) {
       for (int j=jl; j<=ju; ++j) {
@@ -568,14 +622,14 @@ void __attribute__((weak)) Coordinates::Laplacian(const AthenaArray<Real> &s,
           delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))
                              /(dx1f(i)*dx1f(i));
         }
-        if (pmy_block->block_size.nx2 > 1) {
+        if (f2) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
             delta_s(n,k,j,i) += (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))
                                 /(dx2f(j)*dx2f(j));
           }
         }
-        if (pmy_block->block_size.nx3 > 1) {
+        if (f3) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
             delta_s(n,k,j,i) += (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))
@@ -595,12 +649,29 @@ void __attribute__((weak)) Coordinates::LaplacianX1(const AthenaArray<Real> &s,
                            AthenaArray<Real> &delta_s, const int n,
                            const int k, const int j, const int il, const int iu) {
   if (pmy_block->block_size.nx3 > 1) {
+    if (uniform_lap_[X2DIR] && uniform_lap_[X3DIR]) {
+      const Real oodx2sq = il2_[X2DIR], oodx3sq = il2_[X3DIR];
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))*oodx2sq
+                     + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))*oodx3sq;
+      }
+      return;
+    }
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j))
                    + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i)) / (dx3f(k)*dx3f(k));
     }
   } else if (pmy_block->block_size.nx2 > 1) {
+    if (uniform_lap_[X2DIR]) {
+      const Real oodx2sq = il2_[X2DIR];
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))*oodx2sq;
+      }
+      return;
+    }
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j));
@@ -615,7 +686,24 @@ void __attribute__((weak)) Coordinates::LaplacianX1All(const AthenaArray<Real> &
                            AthenaArray<Real> &delta_s,
                            const int nl, const int nu, const int kl, const int ku,
                            const int jl, const int ju, const int il, const int iu) {
+  const Real oodx2sq = il2_[X2DIR], oodx3sq = il2_[X3DIR];
   if (pmy_block->block_size.nx3 > 1) {
+    if (uniform_lap_[X2DIR] && uniform_lap_[X3DIR]) {
+      for (int n=nl; n<=nu; ++n) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+            for (int i=il; i<=iu; ++i) {
+              delta_s(n,k,j,i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i)
+                                  + s(n,k,j+1,i))*oodx2sq
+                                 + (s(n,k-1,j,i) - 2.0*s(n,k,j,i)
+                                    + s(n,k+1,j,i))*oodx3sq;
+            }
+          }
+        }
+      }
+      return;
+    }
     for (int n=nl; n<=nu; ++n) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
@@ -630,6 +718,20 @@ void __attribute__((weak)) Coordinates::LaplacianX1All(const AthenaArray<Real> &
       }
     }
   } else if (pmy_block->block_size.nx2 > 1) {
+    if (uniform_lap_[X2DIR]) {
+      for (int n=nl; n<=nu; ++n) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+            for (int i=il; i<=iu; ++i) {
+              delta_s(n,k,j,i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i)
+                                  + s(n,k,j+1,i))*oodx2sq;
+            }
+          }
+        }
+      }
+      return;
+    }
     for (int n=nl; n<=nu; ++n) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
@@ -652,12 +754,29 @@ void __attribute__((weak)) Coordinates::LaplacianX2(const AthenaArray<Real> &s,
                            AthenaArray<Real> &delta_s, const int n,
                            const int k, const int j, const int il, const int iu) {
   if (pmy_block->block_size.nx3 > 1) {
+    if (uniform_lap_[X1DIR] && uniform_lap_[X3DIR]) {
+      const Real oodx1sq = il2_[X1DIR], oodx3sq = il2_[X3DIR];
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))*oodx1sq
+                     + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))*oodx3sq;
+      }
+      return;
+    }
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i))
                    + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i)) / (dx3f(k)*dx3f(k));
     }
   } else {
+    if (uniform_lap_[X1DIR]) {
+      const Real oodx1sq = il2_[X1DIR];
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))*oodx1sq;
+      }
+      return;
+    }
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i));
@@ -669,7 +788,24 @@ void __attribute__((weak)) Coordinates::LaplacianX2All(const AthenaArray<Real> &
                            AthenaArray<Real> &delta_s,
                            const int nl, const int nu, const int kl, const int ku,
                            const int jl, const int ju, const int il, const int iu) {
+  const Real oodx1sq = il2_[X1DIR], oodx3sq = il2_[X3DIR];
   if (pmy_block->block_size.nx3 > 1) {
+    if (uniform_lap_[X1DIR] && uniform_lap_[X3DIR]) {
+      for (int n=nl; n<=nu; ++n) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+            for (int i=il; i<=iu; ++i) {
+              delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i)
+                                  + s(n,k,j,i+1))*oodx1sq
+                                 + (s(n,k-1,j,i) - 2.0*s(n,k,j,i)
+                                    + s(n,k+1,j,i))*oodx3sq;
+            }
+          }
+        }
+      }
+      return;
+    }
     for (int n=nl; n<=nu; ++n) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
@@ -684,6 +820,20 @@ void __attribute__((weak)) Coordinates::LaplacianX2All(const AthenaArray<Real> &
       }
     }
   } else {
+    if (uniform_lap_[X1DIR]) {
+      for (int n=nl; n<=nu; ++n) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+            for (int i=il; i<=iu; ++i) {
+              delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i)
+                                  + s(n,k,j,i+1))*oodx1sq;
+            }
+          }
+        }
+      }
+      return;
+    }
     for (int n=nl; n<=nu; ++n) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
@@ -703,12 +853,29 @@ void __attribute__((weak)) Coordinates::LaplacianX3(const AthenaArray<Real> &s,
                            AthenaArray<Real> &delta_s, const int n,
                            const int k, const int j, const int il, const int iu) {
   if (pmy_block->block_size.nx2 > 1) {
+    if (uniform_lap_[X1DIR] && uniform_lap_[X2DIR]) {
+      const Real oodx1sq = il2_[X1DIR], oodx2sq = il2_[X2DIR];
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))*oodx1sq
+                     + (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))*oodx2sq;
+      }
+      return;
+    }
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i))
                    + (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i)) / (dx2f(j)*dx2f(j));
     }
   } else {
+    if (uniform_lap_[X1DIR]) {
+      const Real oodx1sq = il2_[X1DIR];
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))*oodx1sq;
+      }
+      return;
+    }
 #pragma omp simd
     for (int i=il; i<=iu; ++i) {
       delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1)) / (dx1f(i)*dx1f(i));
@@ -721,7 +888,24 @@ void __attribute__((weak)) Coordinates::LaplacianX3All(const AthenaArray<Real> &
                            AthenaArray<Real> &delta_s,
                            const int nl, const int nu, const int kl, const int ku,
                            const int jl, const int ju, const int il, const int iu) {
+  const Real oodx1sq = il2_[X1DIR], oodx2sq = il2_[X2DIR];
   if (pmy_block->block_size.nx2 > 1) {
+    if (uniform_lap_[X1DIR] && uniform_lap_[X2DIR]) {
+      for (int n=nl; n<=nu; ++n) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+            for (int i=il; i<=iu; ++i) {
+              delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i)
+                                  + s(n,k,j,i+1))*oodx1sq
+                                 + (s(n,k,j-1,i) - 2.0*s(n,k,j,i)
+                                    + s(n,k,j+1,i))*oodx2sq;
+            }
+          }
+        }
+      }
+      return;
+    }
     for (int n=nl; n<=nu; ++n) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
@@ -736,6 +920,20 @@ void __attribute__((weak)) Coordinates::LaplacianX3All(const AthenaArray<Real> &
       }
     }
   } else {
+    if (uniform_lap_[X1DIR]) {
+      for (int n=nl; n<=nu; ++n) {
+        for (int k=kl; k<=ku; ++k) {
+          for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+            for (int i=il; i<=iu; ++i) {
+              delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i)
+                                  + s(n,k,j,i+1))*oodx1sq;
+            }
+          }
+        }
+      }
+      return;
+    }
     for (int n=nl; n<=nu; ++n) {
       for (int k=kl; k<=ku; ++k) {
         for (int j=jl; j<=ju; ++j) {
