@@ -341,6 +341,7 @@ void Field::CellCenteredToAveragedField(const AthenaArray<Real> &bc_center,
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         bc(IB1,k,j,i) = bc_center(IB1,k,j,i) + C*laplacian_cc(0,k,j,i);
         bc(IB2,k,j,i) = bc_center(IB2,k,j,i) + C*laplacian_cc(1,k,j,i);
@@ -397,6 +398,7 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
 
   for (int k=kl_buf; k<=ku_buf; ++k) {
     for (int j=jl_buf; j<=ju_buf; ++j) {
+#pragma omp simd
       for (int i=il; i<=iu+1; ++i) {
         bf_center.x1f(k,j,i) = bf.x1f(k,j,i) - C*laplacian_bx1(k,j,i);
       }
@@ -404,6 +406,7 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
   }
   for (int k=kl_buf; k<=ku_buf; ++k) {
     for (int j=jl; j<=ju+1; ++j) {
+#pragma omp simd
       for (int i=il_buf; i<=iu_buf; ++i) {
         bf_center.x2f(k,j,i) = bf.x2f(k,j,i) - C*laplacian_bx2(k,j,i);
       }
@@ -411,6 +414,7 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
   }
   for (int k=kl; k<=ku+1; ++k) {
     for (int j=jl_buf; j<=ju_buf; ++j) {
+#pragma omp simd
       for (int i=il_buf; i<=iu_buf; ++i) {
         bf_center.x3f(k,j,i) = bf.x3f(k,j,i) - C*laplacian_bx3(k,j,i);
       }
