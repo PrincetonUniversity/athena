@@ -194,6 +194,10 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     alpha_plus_x3_.NewAthenaArray(ncells3, ncells2, ncells1);
     alpha_minus_x3_.NewAthenaArray(ncells3, ncells2, ncells1);
   }
+
+  // alias the 4th-order resistive Poynting-flux scratch onto the conversion scratch
+  // above (never simultaneously live; see FieldDiffusion::InitFourthOrderScratch)
+  if (fdif.field_diffusion_defined) fdif.InitFourthOrderScratch(this);
 }
 
 
