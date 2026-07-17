@@ -277,7 +277,7 @@ parser.add_argument('-crdiff',
 # compiler version and/or predefined sets of compiler options. The C++ compiler front ends
 # are the main supported/documented options and are invoked on the command line, but the C
 # front ends are also acceptable selections and are mapped to the matching C++ front end:
-# gcc -> g++, clang -> clang++, icc-> icpc
+# gcc -> g++, clang -> clang++, icc -> icpc, armclang -> armclang++, nvc -> nvc++
 cxx_choices = [
     'g++',
     'g++-simd',
@@ -291,6 +291,8 @@ cxx_choices = [
     'clang++-simd',
     'clang++-apple',
     'aocc',
+    'armclang++',
+    'nvc++',
 ]
 
 
@@ -298,6 +300,10 @@ def c_to_cpp(arg):
     arg = arg.replace('gcc', 'g++', 1)
     arg = arg.replace('icc', 'icpc', 1)
     arg = arg.replace('icx', 'icpx', 1)
+    if arg == 'armclang':
+        arg = 'armclang++'
+    if arg == 'nvc':
+        arg = 'nvc++'
     if arg == 'clang':
         arg = 'clang++'
     else:
@@ -387,6 +393,10 @@ if args['flux'] == 'lhlld' and args['eos'] == 'isothermal':
     raise SystemExit('### CONFIGURE ERROR: LHLLD flux cannot be used with isothermal EOS') # noqa
 if args['flux'] == 'lhlld' and not args['b']:
     raise SystemExit('### CONFIGURE ERROR: LHLLD flux can only be used with MHD')
+
+# nvc++ does not support the OpenMP declare simd directives used by Athena++.
+if args['cxx'] == 'nvc++' and args['omp']:
+    raise SystemExit('### CONFIGURE ERROR: OpenMP is not supported with nvc++')
 
 # Check relativity
 if args['s'] and args['g']:
@@ -700,6 +710,22 @@ if args['cxx'] == 'aocc':
     makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11 -flto -zopt'
     makefile_options['LINKER_FLAGS'] = ''
     makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'armclang++':
+    # Arm Compiler for Linux based on LLVM/Clang
+    definitions['COMPILER_CHOICE'] = 'armclang++'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'armclang++'
+    makefile_options['PREPROCESSOR_FLAGS'] = ''
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
+    makefile_options['LINKER_FLAGS'] = ''
+    makefile_options['LIBRARY_FLAGS'] = ''
+if args['cxx'] == 'nvc++':
+    # NVIDIA HPC SDK C++ compiler
+    definitions['COMPILER_CHOICE'] = 'nvc++'
+    definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'nvc++'
+    makefile_options['PREPROCESSOR_FLAGS'] = ''
+    makefile_options['COMPILER_FLAGS'] = '-O3 -std=c++11'
+    makefile_options['LINKER_FLAGS'] = ''
+    makefile_options['LIBRARY_FLAGS'] = ''
 
 # --chemistry=[network] argument
 makefile_options['CHEMISTRY_FILE'] = \
@@ -787,7 +813,8 @@ if args['debug']:
             or args['cxx'] == 'icpc' or args['cxx'] == 'icpc-debug'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
             or args['cxx'] == 'clang++-apple' or args['cxx'] == 'cray'
-            or args['cxx'] == 'aocc'):
+            or args['cxx'] == 'aocc' or args['cxx'] == 'armclang++'
+            or args['cxx'] == 'nvc++'):
         makefile_options['COMPILER_FLAGS'] = '-O0 -std=c++11 -g'  # -Og
     if args['cxx'] == 'icpc-phi':
         makefile_options['COMPILER_FLAGS'] = '-O0 -std=c++11 -g -xMIC-AVX512'
@@ -815,9 +842,10 @@ if args['coverage']:
             ' -O0 -fprofile-instr-generate -fcoverage-mapping'
             )  # use --coverage to produce GCC-compatible .gcno, .gcda output for gcov
     if (args['cxx'] == 'icpx' or args['cxx'] == 'icpx-old'
-            or args['cxx'] == 'cray' or args['cxx'] == 'aocc'):
+            or args['cxx'] == 'cray' or args['cxx'] == 'aocc'
+            or args['cxx'] == 'armclang++' or args['cxx'] == 'nvc++'):
         raise SystemExit(
-            '### CONFIGURE ERROR: No code coverage avaialbe for selected compiler!')
+            '### CONFIGURE ERROR: No code coverage available for selected compiler!')
 else:
     # Enable C++ try/throw/catch exception handling, by default. Disable only when testing
     # code coverage, since it causes Gcov and other tools to report misleadingly low
@@ -841,7 +869,8 @@ if args['mpi']:
             or args['cxx'] == 'icpx' or args['cxx'] == 'icpx-old'
             or args['cxx'] == 'icpc-phi' or args['cxx'] == 'g++-simd'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
-            or args['cxx'] == 'clang++-apple' or args['cxx'] == 'aocc'):
+            or args['cxx'] == 'clang++-apple' or args['cxx'] == 'aocc'
+            or args['cxx'] == 'armclang++' or args['cxx'] == 'nvc++'):
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'mpicxx'
     if args['cxx'] == 'cray':
         definitions['COMPILER_COMMAND'] = makefile_options['COMPILER_COMMAND'] = 'CC'
@@ -855,7 +884,7 @@ if args['omp']:
     definitions['OPENMP_OPTION'] = 'OPENMP_PARALLEL'
     if (args['cxx'] == 'g++' or args['cxx'] == 'g++-simd' or args['cxx'] == 'clang++'
             or args['cxx'] == 'clang++-simd' or args['cxx'] == 'cray'
-            or args['cxx'] == 'aocc'):
+            or args['cxx'] == 'aocc' or args['cxx'] == 'armclang++'):
         makefile_options['COMPILER_FLAGS'] += ' -fopenmp'
     if (args['cxx'] == 'clang++-apple'):
         # Apple Clang disables the front end OpenMP driver interface; enable it via the
@@ -914,7 +943,8 @@ if args['hdf5']:
             or args['cxx'] == 'icpx' or args['cxx'] == 'icpx-old'
             or args['cxx'] == 'icpc-debug' or args['cxx'] == 'icpc-phi'
             or args['cxx'] == 'clang++' or args['cxx'] == 'clang++-simd'
-            or args['cxx'] == 'clang++-apple' or args['cxx'] == 'aocc'):
+            or args['cxx'] == 'clang++-apple' or args['cxx'] == 'aocc'
+            or args['cxx'] == 'armclang++' or args['cxx'] == 'nvc++'):
         makefile_options['LIBRARY_FLAGS'] += ' -lhdf5'
 else:
     definitions['HDF5_OPTION'] = 'NO_HDF5OUTPUT'
