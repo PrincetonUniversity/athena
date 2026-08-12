@@ -133,7 +133,11 @@ void SixRayBoundaryVariable::StartReceiving(BoundaryCommSubset phase) {
   for (int n=0; n<pbval_->nneighbor; n++) {
     NeighborBlock& nb = pbval_->neighbor[n];
     // only face neighbors are used in six-ray
-    if (nb.ni.type == NeighborConnect::face && nb.snb.rank != Globals::my_rank) {
+    // Periodic domain faces are excluded from the six-ray sweep.  Do not start
+    // their persistent receives because no matching send will be issued.
+    if (nb.ni.type == NeighborConnect::face
+        && pbval_->block_bcs[nb.fid] != BoundaryFlag::periodic
+        && nb.snb.rank != Globals::my_rank) {
       MPI_Start(&(bd_var_.req_recv[nb.bufid]));
     }
   }
