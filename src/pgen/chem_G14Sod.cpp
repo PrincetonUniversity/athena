@@ -51,8 +51,8 @@
 void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Define the constants
   const Real mu = pin->GetReal("problem", "mu");
-  const Real k_b = Constants::k_boltzmann_cgs;
-  const Real m_h = Constants::hydrogen_mass_cgs;
+  const Real k_b = Constants::k_B_cgs;
+  const Real m_h = Constants::H_mass_cgs;
 
   // read density and temperature
   const Real dl_cgs = pin->GetReal("problem", "LHS_rho_cgs");

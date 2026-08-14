@@ -41,7 +41,7 @@ KidaSpecies::KidaSpecies(std::string line, int index) :
   for (int i=0; i < natom_; i++) {
     atom_count_[i] = std::stoi(fields[i+2]);
     mass_ += static_cast<float>(atom_count_[i]) * ma_atom_[i]
-      * Constants::hydrogen_mass_cgs;
+      * Constants::H_mass_cgs;
   }
   //electron mass
   mass_ += static_cast<float>(-charge_) * ChemistryUtility::me;
