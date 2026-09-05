@@ -59,7 +59,7 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
   ClearOutputData();
 
   // Confirm the count of output variables with the parent class.
-  const int nvar = varnames.size();
+  const int nvar = static_cast<int>(varnames.size());
   if (nvar != num_vars_) {
     msg << "### FATAL ERROR in Int2DOutput::ProcessHeader" << std::endl
         << "Inconsistent num_vars_ = " << num_vars_ << " vs. nvar = " << nvar
@@ -149,7 +149,7 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
     // Write the names of the variables.
     for (std::vector<std::string>::iterator it = varnames.begin();
         it != varnames.end(); ++it) {
-      const int size = it->size();
+      const int size = static_cast<int>(it->size());
       fout.write(reinterpret_cast<const char*>(&size), sizeof(size));
       if (size > 0) fout.write(it->data(), size);
     }
@@ -280,7 +280,7 @@ void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
     AthenaArray<Real> &area) {
   // Determine where the meshblock fits.
   const int nfine = 1 << (pmb->pmy_mesh->max_level - pmb->loc.level);
-  const int offset = pmb->loc.lx3 * pmb->block_size.nx3 * nfine;
+  const int offset = static_cast<int>(pmb->loc.lx3) * pmb->block_size.nx3 * nfine;
 
   // Integrate each data field.
   int ii = 0;
@@ -315,7 +315,7 @@ void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
     AthenaArray<Real> &area) {
   // Determine where the meshblock fits.
   const int nfine = 1 << (pmb->pmy_mesh->max_level - pmb->loc.level);
-  const int offset = pmb->loc.lx2 * pmb->block_size.nx2 * nfine;
+  const int offset = static_cast<int>(pmb->loc.lx2) * pmb->block_size.nx2 * nfine;
 
   // Integrate each data field.
   int ii = 0;
@@ -350,7 +350,7 @@ void IntX2X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
     AthenaArray<Real> &area) {
   // Determine where the meshblock fits.
   const int nfine = 1 << (pmb->pmy_mesh->max_level - pmb->loc.level);
-  const int offset = pmb->loc.lx1 * pmb->block_size.nx1 * nfine;
+  const int offset = static_cast<int>(pmb->loc.lx1) * pmb->block_size.nx1 * nfine;
 
   // Integrate each data field.
   int ii = 0;
