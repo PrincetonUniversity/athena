@@ -126,7 +126,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
     }
   } else {
     // uniform grid: use UniformMeshGeneratorX1()
-    Real dx = (block_size.x1max - block_size.x1min)/(iu-il+1);
+    // spacing from the whole mesh, not the block edges: identical dx in every block
+    Real dx = (mesh_size.x1max - mesh_size.x1min)
+              /static_cast<Real>(coarse_flag ? nrootmesh/2 : nrootmesh);
     for (int i=il-ng; i<=iu+ng+1; ++i) {
       // if there are too many levels, this won't work or be precise enough
       if (!coarse_flag) {
@@ -199,7 +201,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
 
     } else {
       // uniform grid: use UniformMeshGeneratorX2()
-      Real dx = (block_size.x2max - block_size.x2min)/(ju-jl+1);
+      // spacing from the whole mesh, not the block edges: identical dx in every block
+      Real dx = (mesh_size.x2max - mesh_size.x2min)
+                /static_cast<Real>(coarse_flag ? nrootmesh/2 : nrootmesh);
       for (int j=jl-ng; j<=ju+ng+1; ++j) {
         if (!coarse_flag) {
           noffset = static_cast<std::int64_t>(j-jl + lx2*block_size.nx2);
@@ -280,7 +284,9 @@ Coordinates::Coordinates(MeshBlock *pmb, ParameterInput *pin, bool flag) :
       }
     } else {
       // uniform grid: use UniformMeshGeneratorX3()
-      Real dx = (block_size.x3max - block_size.x3min)/(ku-kl+1);
+      // spacing from the whole mesh, not the block edges: identical dx in every block
+      Real dx = (mesh_size.x3max - mesh_size.x3min)
+                /static_cast<Real>(coarse_flag ? nrootmesh/2 : nrootmesh);
       for (int k=kl-ng; k<=ku+ng+1; ++k) {
         if (!coarse_flag) {
           noffset = static_cast<std::int64_t>(k-kl + lx3*block_size.nx3);
