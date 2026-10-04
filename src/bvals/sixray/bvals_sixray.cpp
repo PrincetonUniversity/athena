@@ -369,27 +369,24 @@ bool SixRayBoundaryVariable::ReceiveAndSetSixRayBoundaryBuffers(
         MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &test, MPI_STATUS_IGNORE);
         MPI_Test(&(bd_var_.req_recv[pnb->bufid]), &test, MPI_STATUS_IGNORE);
         if (!static_cast<bool>(test)) {
+          // not arrived yet: return and let the task list retry, do not block
           bflag = false;
+        } else {
+          bd_var_.flag[pnb->bufid] = BoundaryStatus::arrived;
         }
-        bd_var_.flag[pnb->bufid] = BoundaryStatus::arrived;
       }
 #endif
     }
     // set boundary
     if (bd_var_.flag[pnb->bufid] == BoundaryStatus::arrived) {
-#ifdef MPI_PARALLEL
-      if (pnb->snb.rank != Globals::my_rank) {
-        MPI_Wait(&(bd_var_.req_recv[pnb->bufid]),MPI_STATUS_IGNORE);
-      }
-#endif
       SetBoundarySameLevel(bd_var_.recv[pnb->bufid], *pnb);
       bd_var_.flag[pnb->bufid] = BoundaryStatus::completed;
     }
     return bflag;
   } else {
     std::stringstream msg;
-    msg << "### FATAL ERROR in SixRayBoundaryVariable::SendSixRayBoundaryBuffers()"
-      << std::endl
+    msg << "### FATAL ERROR in SixRayBoundaryVariable::"
+      << "ReceiveAndSetSixRayBoundaryBuffers()" << std::endl
       << "BoundaryFace " << direction  << " has no neighbor."
       << std::endl;
     ATHENA_ERROR(msg);

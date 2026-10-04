@@ -29,7 +29,9 @@ namespace {
   AthenaArray<Real> G0_iang; // diffuse radiation field strength in Draine 1987 unit
   Real G0, cr_rate; // cosmic ray ionisation rate
   Real f_cell, f_prev; // fraction of the column in the cell that goes to shielding
-  Real lunit; // length unit in cm
+  // conversion from code density times code length to column density in cm^-2.
+  // The code density is converted to n_H assuming rho = 1.4 m_H n_H (as in gow17).
+  Real col_unit;
 }
 
 //----------------------------------------------------------------------------------------
@@ -42,7 +44,10 @@ ChemRadIntegrator::ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pi
   pmy_mb = pchemrad->pmy_block;
   pmy_rad = pchemrad;
   G0 = pin->GetOrAddReal("chem_radiation", "G0", 0.);
-  G0_iang.NewAthenaArray(6);
+  // G0_iang is shared by all MeshBlocks, so allocate it only once
+  if (G0_iang.GetSize() == 0) {
+    G0_iang.NewAthenaArray(6);
+  }
   G0_iang(BoundaryFace::inner_x1) = pin->GetOrAddReal("chem_radiation","G0_inner_x1",G0);
   G0_iang(BoundaryFace::inner_x2) = pin->GetOrAddReal("chem_radiation","G0_inner_x2",G0);
   G0_iang(BoundaryFace::inner_x3) = pin->GetOrAddReal("chem_radiation","G0_inner_x3",G0);
@@ -61,7 +66,9 @@ ChemRadIntegrator::ChemRadIntegrator(ChemRadiation *pchemrad, ParameterInput *pi
   }
   if (CHEMISTRY_ENABLED) {
     pmy_chemnet = &pmy_mb->pscalars->chemnet;
-    lunit = pmy_mb->pmy_mesh->punit->code_length_cgs;
+    col_unit = pmy_mb->pmy_mesh->punit->code_length_cgs
+               * pmy_mb->pmy_mesh->punit->code_density_cgs
+               / (1.4 * Constants::hydrogen_mass_cgs);
     ncol = pmy_chemnet->n_cols_;
     // allocate array for column density
     // enroll SixRayBoundaryVariable object
@@ -209,7 +216,7 @@ void ChemRadIntegrator::UpdateRadiation() {
 //! \fn void GetColMB(BoundaryFace direction)
 //! \brief calculate column densities within the meshblock
 //!
-//! direction: 0:+x, 1:-x, 2:+y, 3:-y, 4:+y, 5:-z (bvals/bvals_interfaces.hpp)
+//! direction: 0:+x, 1:-x, 2:+y, 3:-y, 4:+z, 5:-z (bvals/bvals_interfaces.hpp)
 
 void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
   const int iH2 = pmy_chemnet->iH2_;
@@ -233,7 +240,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           NHtot_cell = pmy_mb->phydro->w(IDN, k, j, i) * pmy_mb->pcoord->dx1f(i)
-            * lunit;
+            * col_unit;
           if (i == is) {
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell;
             col(direction, k, j, i, pmy_chemnet->iNH2_) =
@@ -251,7 +258,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
               NHtot_cell*f_cell * xCI;
           } else {
             NHtot_cell_prev = pmy_mb->phydro->w(IDN, k, j, i-1)
-              * pmy_mb->pcoord->dx1f(i-1) * lunit;
+              * pmy_mb->pcoord->dx1f(i-1) * col_unit;
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell
               +  NHtot_cell_prev*f_prev
               + col(direction, k, j, i-1, pmy_chemnet->iNHtot_);
@@ -291,7 +298,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
       for (int j=js; j<=je; ++j) {
         for (int i=ie; i>=is; --i) {
           NHtot_cell = pmy_mb->phydro->w(IDN, k, j, i) * pmy_mb->pcoord->dx1f(i)
-            * lunit;
+            * col_unit;
           if (i == ie) {
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell;
             col(direction, k, j, i, pmy_chemnet->iNH2_) =
@@ -309,7 +316,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
               NHtot_cell*f_cell * xCI;
           } else {
             NHtot_cell_prev = pmy_mb->phydro->w(IDN, k, j, i+1)
-              * pmy_mb->pcoord->dx1f(i+1) * lunit;
+              * pmy_mb->pcoord->dx1f(i+1) * col_unit;
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell
               + NHtot_cell_prev*f_prev
               + col(direction, k, j, i+1, pmy_chemnet->iNHtot_);
@@ -349,7 +356,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           NHtot_cell = pmy_mb->phydro->w(IDN, k, j, i) * pmy_mb->pcoord->dx2f(j)
-            * lunit;
+            * col_unit;
           if (j == js) {
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell;
             col(direction, k, j, i, pmy_chemnet->iNH2_) =
@@ -367,7 +374,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
               NHtot_cell*f_cell * xCI;
           } else {
             NHtot_cell_prev = pmy_mb->phydro->w(IDN, k, j-1, i)
-              * pmy_mb->pcoord->dx2f(j-1) * lunit;
+              * pmy_mb->pcoord->dx2f(j-1) * col_unit;
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell
               + NHtot_cell_prev*f_prev
               + col(direction, k, j-1, i, pmy_chemnet->iNHtot_);
@@ -407,7 +414,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
       for (int j=je; j>=js; --j) {
         for (int i=is; i<=ie; ++i) {
           NHtot_cell = pmy_mb->phydro->w(IDN, k, j, i) * pmy_mb->pcoord->dx2f(j)
-            * lunit;
+            * col_unit;
           if (j == je) {
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell;
             col(direction, k, j, i, pmy_chemnet->iNH2_) =
@@ -425,7 +432,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
               NHtot_cell*f_cell * xCI;
           } else {
             NHtot_cell_prev = pmy_mb->phydro->w(IDN, k, j+1, i)
-              * pmy_mb->pcoord->dx2f(j+1) * lunit;
+              * pmy_mb->pcoord->dx2f(j+1) * col_unit;
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell
               + NHtot_cell_prev*f_prev
               + col(direction, k, j+1, i, pmy_chemnet->iNHtot_);
@@ -465,7 +472,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           NHtot_cell = pmy_mb->phydro->w(IDN, k, j, i) * pmy_mb->pcoord->dx3f(k)
-            * lunit;
+            * col_unit;
           if (k == ks) {
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell;
             col(direction, k, j, i, pmy_chemnet->iNH2_) =
@@ -483,7 +490,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
               NHtot_cell*f_cell * xCI;
           } else {
             NHtot_cell_prev = pmy_mb->phydro->w(IDN, k-1, j, i)
-              * pmy_mb->pcoord->dx3f(k-1) * lunit;
+              * pmy_mb->pcoord->dx3f(k-1) * col_unit;
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell
               + NHtot_cell_prev*f_prev
               + col(direction, k-1, j, i, pmy_chemnet->iNHtot_);
@@ -523,7 +530,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
           NHtot_cell = pmy_mb->phydro->w(IDN, k, j, i) * pmy_mb->pcoord->dx3f(k)
-            * lunit;
+            * col_unit;
           if (k == ke) {
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell;
             col(direction, k, j, i, pmy_chemnet->iNH2_) =
@@ -541,7 +548,7 @@ void ChemRadIntegrator::GetColMB(BoundaryFace direction) {
               NHtot_cell*f_cell * xCI;
           } else {
             NHtot_cell_prev = pmy_mb->phydro->w(IDN, k+1, j, i)
-              * pmy_mb->pcoord->dx3f(k+1) * lunit;
+              * pmy_mb->pcoord->dx3f(k+1) * col_unit;
             col(direction, k, j, i, pmy_chemnet->iNHtot_) = NHtot_cell*f_cell
               + NHtot_cell_prev*f_prev
               + col(direction, k+1, j, i, pmy_chemnet->iNHtot_);
@@ -607,7 +614,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
     // +x
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
-        NH_ghostzone = lunit *
+        NH_ghostzone = col_unit *
           pmy_mb->phydro->w(IDN, k, j, is-1) * pmy_mb->pcoord->dx1f(is-1) * f_prev;
         NH_boundary = col(direction, k, j, is-1, pmy_chemnet->iNHtot_) + NH_ghostzone;
         NH2_boundary = col(direction, k, j, is-1, pmy_chemnet->iNH2_)
@@ -635,7 +642,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
     // -x
     for (int k=ks; k<=ke; ++k) {
       for (int j=js; j<=je; ++j) {
-        NH_ghostzone = lunit *
+        NH_ghostzone = col_unit *
           pmy_mb->phydro->w(IDN, k, j, ie+1) * pmy_mb->pcoord->dx1f(ie+1) * f_prev;
         NH_boundary = col(direction, k, j, ie+1, pmy_chemnet->iNHtot_) + NH_ghostzone;
         NH2_boundary = col(direction, k, j, ie+1, pmy_chemnet->iNH2_)
@@ -664,7 +671,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
     if (js != 0) { // y dimension included
       for (int k=ks; k<=ke; ++k) {
         for (int i=is; i<=ie; ++i) {
-          NH_ghostzone = lunit *
+          NH_ghostzone = col_unit *
             pmy_mb->phydro->w(IDN, k, js-1, i) * pmy_mb->pcoord->dx2f(js-1) * f_prev;
           NH_boundary = col(direction, k, js-1, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
           NH2_boundary = col(direction, k, js-1, i, pmy_chemnet->iNH2_)
@@ -694,7 +701,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
     if (je != 0) { // y dimension included
       for (int k=ks; k<=ke; ++k) {
         for (int i=is; i<=ie; ++i) {
-          NH_ghostzone = lunit *
+          NH_ghostzone = col_unit *
             pmy_mb->phydro->w(IDN, k, je+1, i) * pmy_mb->pcoord->dx2f(je+1) * f_prev;
           NH_boundary = col(direction, k, je+1, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
           NH2_boundary = col(direction, k, je+1, i, pmy_chemnet->iNH2_)
@@ -724,7 +731,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
     if (ks != 0) { // z dimension included
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          NH_ghostzone = lunit *
+          NH_ghostzone = col_unit *
             pmy_mb->phydro->w(IDN, ks-1, j, i) * pmy_mb->pcoord->dx3f(ks-1) * f_prev;
           NH_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
           NH2_boundary = col(direction, ks-1, j, i, pmy_chemnet->iNH2_)
@@ -754,7 +761,7 @@ void ChemRadIntegrator::UpdateCol(BoundaryFace direction) {
     if (ke != 0) { // z dimension included
       for (int j=js; j<=je; ++j) {
         for (int i=is; i<=ie; ++i) {
-          NH_ghostzone = lunit *
+          NH_ghostzone = col_unit *
             pmy_mb->phydro->w(IDN, ke+1, j, i) * pmy_mb->pcoord->dx3f(ke+1) * f_prev;
           NH_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNHtot_) + NH_ghostzone;
           NH2_boundary = col(direction, ke+1, j, i, pmy_chemnet->iNH2_)
