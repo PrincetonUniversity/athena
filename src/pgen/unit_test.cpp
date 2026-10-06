@@ -38,34 +38,9 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   punit->PrintConstantsInCodeUnits();
 
   std::string lunit = std::get<1>(punit->basis_length);
-  std::string tunit = std::get<1>(punit->basis_time);
   std::string munit = std::get<1>(punit->basis_mass);
   std::string vunit = std::get<1>(punit->basis_velocity);
   std::string nunit = std::get<1>(punit->basis_ndensity);
-
-  // Convert time and mesh values from input file
-  Real tlim0  = pin->GetReal("time", "tlim");
-  Real dt0    = pin->GetReal("output1", "dt");
-  Real x1max0 = pin->GetReal("mesh", "x1max");
-  punit->ConvertInputFile(pin);
-  Real tlim1  = pin->GetReal("time", "tlim");
-  Real dt1    = pin->GetReal("output1", "dt");
-  Real x1max1 = pin->GetReal("mesh", "x1max");
-
-  std::cout << "=== Values from input file converted ===" << std::endl;
-  std::cout << "From the <time> block:" << std::endl;
-  std::cout << "  tlim before conversion  = " << tlim0 << " " << tunit << std::endl;
-  std::cout << "  tlim after conversion   = " << tlim1 << " code time" << std::endl;
-  std::cout << std::endl;
-  std::cout << "From the <output1> block:" << std::endl;
-  std::cout << "  dt before conversion    = " << dt0 << " " << tunit << std::endl;
-  std::cout << "  dt after conversion     = " << dt1 << " code time" << std::endl;
-  std::cout << std::endl;
-  std::cout << "From the <mesh> block:" << std::endl;
-  std::cout << "  x1max before conversion = " << x1max0 << " " << lunit << std::endl;
-  std::cout << "  x1max after conversion  = " << x1max1 << " code length" << std::endl;
-  std::cout << std::endl;
-
 
   // Pressure
   Real pres = pin->GetReal("problem", "pamb");

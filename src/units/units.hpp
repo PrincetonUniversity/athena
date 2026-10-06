@@ -57,9 +57,6 @@ class Units {
   void PrintytUnitsOverride();
   Real Returncgs(std::string parameter,Real value,std::string unit);
   void CompleteBasis();
-  void ConvertInputFile(ParameterInput *pin);
-  void ConvertTimeFromInputFile(ParameterInput *pin);
-  void ConvertMeshFromInputFile(ParameterInput *pin);
 
   // unit system
   std::string unit_system;
