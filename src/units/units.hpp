@@ -21,28 +21,28 @@
 
 //! \brief Physical constants defined in c.g.s.
 namespace Constants {
-static const Real grav_const_cgs = 6.67259e-8;
+static const Real grav_const_cgs       = 6.67259e-8;
 // Changed from 1.9891e+33 to agree with Astropy:
-static const Real Msun_cgs       = 1.9884099e33;
-static const Real solar_lum_cgs  = 3.8268e33;
+static const Real solar_mass_cgs       = 1.9884099e33;
+static const Real solar_lum_cgs        = 3.8268e33;
 // Changed from 3.155815e7 to agree with Astropy and the FITS standard:
-static const Real yr_cgs         = 3.15576e7;
-static const Real Myr_cgs        = 3.15576e13;
+static const Real yr_cgs               = 3.15576e7;
+static const Real million_yr_cgs       = 3.15576e13;
 // Changed from 3.085678e+18 to agree with Astropy:
-static const Real pc_cgs         = 3.08567758e18;
-static const Real kpc_cgs        = 3.08567758e21;
-static const Real au_cgs         = 1.495978707e13;
-static const Real km_s_cgs       = 1.0e5;
-static const Real H_mass_cgs     = 1.6733e-24;
-static const Real rad_aconst_cgs = 7.5646e-15;
-static const Real k_B_cgs        = 1.380658e-16;
-static const Real c_cgs          = 2.99792458e10;
-static const Real echarge_cgs    = 4.80320427e-10;
-static const Real kelvin_cgs     = 1;
-static const Real yrinmyr        = 1e6;
-static const Real cminkm         = 100000;
-static const Real thomson        = 6.6524e-25;       // Thompson cross section (cm^2)
-static const Real mp             = 1.6726231e-24;    // Mass of a proton (g)
+static const Real pc_cgs               = 3.08567758e18;
+static const Real kpc_cgs              = 3.08567758e21;
+static const Real au_cgs               = 1.495978707e13;
+static const Real km_s_cgs             = 1.0e5;
+static const Real hydrogen_mass_cgs    = 1.6733e-24;
+static const Real radiation_aconst_cgs = 7.5646e-15;
+static const Real k_boltzmann_cgs      = 1.380658e-16;
+static const Real speed_of_light_cgs   = 2.99792458e10;
+static const Real echarge_cgs          = 4.80320427e-10;
+static const Real kelvin_cgs           = 1;
+static const Real yrinmyr              = 1e6;
+static const Real cminkm               = 100000;
+static const Real thomson              = 6.6524e-25; // Thompson cross section (cm^2)
+static const Real mp                   = 1.6726231e-24; // Mass of a proton (g)
 } // namespace Constants
 
 //! \brief Class for units
@@ -98,24 +98,24 @@ class Units {
   Real code_ndensity;
   Real code_energy_cgs, code_energydensity_cgs, code_pressure_cgs;
   Real code_magneticfield_cgs;
-  Real code_temp_cgs; // T/mu
+  Real code_temperature_mu_cgs; // T/mu
 
   // c.g.s. units in code units
   Real gram_code, cm_code, second_code, dyne_code, erg_code, kelvin_code;
 
   // physical constants in code units
-  Real Gconst_code;
-  Real Msun_code;
+  Real grav_const_code;
+  Real solar_mass_code;
   Real solar_lum_code;
   Real yr_code;
-  Real Myr_code; // Changed from million_yr to Myr to agree with the FITS standard
+  Real million_yr_code;
   Real pc_code;
   Real kpc_code;
   Real km_s_code;
-  Real H_mass_code;
-  Real rad_aconst_code; // aR
-  Real k_B_code; // k_B
-  Real c_code;
+  Real hydrogen_mass_code;
+  Real radiation_aconst_code; // aR
+  Real k_boltzmann_code; // k_B
+  Real speed_of_light_code;
   Real echarge_code;
   Real bethe_code; // 1.e51 erg
 

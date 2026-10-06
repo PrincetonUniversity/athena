@@ -114,7 +114,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   std::cout << std::endl;
 
   std::cout << "Gravitational constant in code units = "
-            << punit->Gconst_code << std::endl;
+            << punit->grav_const_code << std::endl;
   return;
 }
 

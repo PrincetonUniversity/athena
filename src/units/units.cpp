@@ -204,12 +204,12 @@ Units::Units(ParameterInput *pin) :
 
     // Set the basis using the input values
     basis_length   = std::make_tuple(code_length_cgs_/Constants::pc_cgs,"pc");
-    basis_time     = std::make_tuple(code_time_cgs_/Constants::Myr_cgs,"Myr");
+    basis_time     = std::make_tuple(code_time_cgs_/Constants::million_yr_cgs,"Myr");
     basis_velocity = std::make_tuple(code_length_cgs_/code_time_cgs_/Constants::km_s_cgs,
                                      "km/s");
     basis_ndensity = std::make_tuple((code_mass_cgs_/(
-        mean_weight*Constants::H_mass_cgs))/CUBE(Constants::pc_cgs),"n/cm^3");
-    basis_mass     = std::make_tuple(code_mass_cgs_/Constants::Msun_cgs,"Msun");
+        mean_weight*Constants::hydrogen_mass_cgs))/CUBE(Constants::pc_cgs),"n/cm^3");
+    basis_mass     = std::make_tuple(code_mass_cgs_/Constants::solar_mass_cgs,"Msun");
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in Units constructor" << std::endl
@@ -248,7 +248,7 @@ void Units::SetUnitsConstants() {
   //
   // For constants named X_code, divide the code value by
   // the constant to get the real (pysical) world value.
-  // i.e. mass (code units) / Msun_code = mass (Msun)
+  // i.e. mass (code units) / solar_mass_code = mass (Msun)
   // or energy (code units) / erg_code = energy (ergs)
   // set public MLT unit variable
   code_length_cgs = code_length_cgs_;
@@ -265,8 +265,8 @@ void Units::SetUnitsConstants() {
 
   code_magneticfield_cgs = std::sqrt(4.*PI*code_pressure_cgs);
 
-  code_temp_cgs = code_pressure_cgs/code_density_cgs
-                    *Constants::H_mass_cgs/Constants::k_B_cgs;
+  code_temperature_mu_cgs = code_pressure_cgs/code_density_cgs
+                    *Constants::hydrogen_mass_cgs/Constants::k_boltzmann_cgs;
 
   // constants in code units
   cm_code     = 1.0/code_length_cgs;
@@ -277,23 +277,23 @@ void Units::SetUnitsConstants() {
   kelvin_code = 1.0; // (changgoo) in principle, this should be 1/[code temperature]
                      // but this is what has been adopted in Athena (not sure why)
 
-  Gconst_code = Constants::grav_const_cgs
+  grav_const_code = Constants::grav_const_cgs
                      *cm_code*cm_code*cm_code/(gram_code*second_code*second_code);
-  Msun_code = Constants::Msun_cgs*gram_code;
+  solar_mass_code = Constants::solar_mass_cgs*gram_code;
   solar_lum_code  = Constants::solar_lum_cgs*erg_code/second_code;
 
   yr_code   = Constants::yr_cgs*second_code;
-  Myr_code  = Constants::Myr_cgs*second_code;
+  million_yr_code  = Constants::million_yr_cgs*second_code;
   pc_code   = Constants::pc_cgs*cm_code;
   kpc_code  = Constants::kpc_cgs*cm_code;
   km_s_code = Constants::km_s_cgs*cm_code/second_code;
 
-  H_mass_code = Constants::H_mass_cgs*gram_code;
-  rad_aconst_code = Constants::rad_aconst_cgs*erg_code
+  hydrogen_mass_code = Constants::hydrogen_mass_cgs*gram_code;
+  radiation_aconst_code = Constants::radiation_aconst_cgs*erg_code
                          /(cm_code*cm_code*cm_code
                           *kelvin_code*kelvin_code*kelvin_code*kelvin_code);
-  k_B_code = Constants::k_B_cgs*erg_code/kelvin_code;
-  c_code = Constants::c_cgs*cm_code/second_code;
+  k_boltzmann_code = Constants::k_boltzmann_cgs*erg_code/kelvin_code;
+  speed_of_light_code = Constants::speed_of_light_cgs*cm_code/second_code;
   echarge_code = Constants::echarge_cgs*std::sqrt(dyne_code*4*PI)*cm_code;
   bethe_code = 1.e51 * erg_code;
 }
@@ -331,14 +331,15 @@ void Units::PrintCodeUnits() {
   std::cout << "by the constant to get real (physical) world value." << std::endl;
   std::cout << "i.e. mass (code units) * code_mass_cgs = mass (g)" << std::endl;
   std::cout << std::scientific << "=========== Code Units (cgs) ===========" << std::endl;
-  std::cout << "code_length_cgs   = " << code_length_cgs   << " cm" << std::endl;
-  std::cout << "code_time_cgs     = " << code_time_cgs     << " s" << std::endl;
-  std::cout << "code_mass_cgs     = " << code_mass_cgs     << " g" << std::endl;
-  std::cout << "code_density_cgs  = " << code_density_cgs  << " g/cm^3" << std::endl;
+  std::cout << "code_length_cgs = " << code_length_cgs << " cm" << std::endl;
+  std::cout << "code_time_cgs = " << code_time_cgs << " s" << std::endl;
+  std::cout << "code_mass_cgs = " << code_mass_cgs << " g" << std::endl;
+  std::cout << "code_density_cgs = " << code_density_cgs << " g/cm^3" << std::endl;
   std::cout << "code_velocity_cgs = " << code_velocity_cgs << " cm/s" << std::endl;
-  std::cout << "code_energy_cgs   = " << code_energy_cgs   << " erg" << std::endl;
+  std::cout << "code_energy_cgs = " << code_energy_cgs << " erg" << std::endl;
   std::cout << "code_pressure_cgs = " << code_pressure_cgs << " erg/cm^2" << std::endl;
-  std::cout << "code_temp_cgs     = " << code_temp_cgs     << " K" << std::endl;
+  std::cout << "code_temperature_mu_cgs = " << code_temperature_mu_cgs
+            << " K" << std::endl;
   std::cout << "========================================" << std::endl;
 }
 
@@ -349,21 +350,21 @@ void Units::PrintCodeUnits() {
 void Units::PrintConstantsInCodeUnits() {
   std::cout << "For constants named X_code, divide the code value by" << std::endl;
   std::cout << "the constant to get the real (pysical) world value." << std::endl;
-  std::cout << "i.e. mass (code units) / Msun_code = mass (Msun)" << std::endl;
+  std::cout << "i.e. mass (code units) / solar_mass_code = mass (Msun)" << std::endl;
   std::cout << "or energy (code units) / erg_code = energy (ergs)" << std::endl;
   std::cout << std::scientific << "==== Constants in Code Units ====" << std::endl;
-  std::cout << "Myr_code       = " << Myr_code << std::endl;
-  std::cout << "pc_code        = " << pc_code << std::endl;
-  std::cout << "km_s_code      = " << km_s_code << std::endl;
-  std::cout << "Msun_code      = " << Msun_code << std::endl;
-  std::cout << "dyne_code      = " << dyne_code << std::endl;
-  std::cout << "erg_code       = " << erg_code << std::endl;
-  std::cout << "Gconst_code    = " << Gconst_code << std::endl;
-  std::cout << "solar_lum_code = " << solar_lum_code << std::endl;
-  std::cout << "H_mass_code    = " << H_mass_code << std::endl;
-  std::cout << "k_B_code       = " << k_B_code << std::endl;
-  std::cout << "c_code         = " << c_code << std::endl;
-  std::cout << "echarge_code   = " << echarge_code << std::endl;
+  std::cout << "million_yr_code     = " << million_yr_code << std::endl;
+  std::cout << "pc_code             = " << pc_code << std::endl;
+  std::cout << "km_s_code           = " << km_s_code << std::endl;
+  std::cout << "solar_mass_code     = " << solar_mass_code << std::endl;
+  std::cout << "dyne_code           = " << dyne_code << std::endl;
+  std::cout << "erg_code            = " << erg_code << std::endl;
+  std::cout << "grav_const_code     = " << grav_const_code << std::endl;
+  std::cout << "solar_lum_code      = " << solar_lum_code << std::endl;
+  std::cout << "hydrogen_mass_code  = " << hydrogen_mass_code << std::endl;
+  std::cout << "k_boltzmann_code    = " << k_boltzmann_code << std::endl;
+  std::cout << "speed_of_light_code = " << speed_of_light_code << std::endl;
+  std::cout << "echarge_code        = " << echarge_code << std::endl;
   std::cout << "=================================" << std::endl;
 }
 
@@ -501,7 +502,7 @@ Real Units::Returncgs(std::string parameter, Real value, std::string unit) {
     if (unit == "yr") {
       code_cgs_ = Constants::yr_cgs*value;
     } else if (unit == "Myr") {
-      code_cgs_ = Constants::Myr_cgs*value;
+      code_cgs_ = Constants::million_yr_cgs*value;
     } else if (unit == "s") {
       code_cgs_ = value;
     } else { // If more time units are added, they should be added here
@@ -530,7 +531,7 @@ Real Units::Returncgs(std::string parameter, Real value, std::string unit) {
     }
   } else if (parameter == "basis_mass") {
     if (unit == "Msun") {
-      code_cgs_ = Constants::Msun_cgs*value;
+      code_cgs_ = Constants::solar_mass_cgs*value;
     } else if (unit == "g") {
       code_cgs_ = value;
     } else if (unit == "kg") {
@@ -582,7 +583,7 @@ void Units::CompleteBasis() {
     code_mass_cgs_ = Returncgs("basis_mass",
                       std::get<0>(basis_mass),std::get<1>(basis_mass));
     code_ndensity_cgs_ = code_mass_cgs_/(
-        mean_weight*Constants::H_mass_cgs*CUBE(code_length_cgs_));
+        mean_weight*Constants::hydrogen_mass_cgs*CUBE(code_length_cgs_));
     // Set corresponding ndensity basis
     Real nden_conv = Returncgs("basis_ndensity",1.0,std::get<1>(basis_ndensity));
     std::get<0>(basis_ndensity) = code_ndensity_cgs_/nden_conv;
@@ -590,7 +591,7 @@ void Units::CompleteBasis() {
     code_ndensity_cgs_ = Returncgs("basis_ndensity",
                           std::get<0>(basis_ndensity),std::get<1>(basis_ndensity));
     // Using length and ndensity to get mass basis
-    code_mass_cgs_ = mean_weight*Constants::H_mass_cgs*
+    code_mass_cgs_ = mean_weight*Constants::hydrogen_mass_cgs*
                       CUBE(code_length_cgs_)*code_ndensity_cgs_;
     Real mass_conv = Returncgs("basis_mass",1.0,std::get<1>(basis_mass));
     std::get<0>(basis_mass) = code_mass_cgs_/mass_conv;
