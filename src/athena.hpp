@@ -19,7 +19,7 @@
 #include "defs.hpp"
 
 // See if we have FP16 support
-#ifndef __INTEL_LLVM_COMPILER
+#if !defined(__INTEL_LLVM_COMPILER) && !defined(_CRAYC) && !defined(__cray__)
 #if defined(__fp16) || defined(__FLT16_MAX__) || defined(__ARM_FP16_FORMAT_IEEE)
 #define fp16_t __fp16
 #elif defined(_Float16)
@@ -27,7 +27,7 @@
 #endif
 #else
 #define fp16_t_not_supported
-#endif // __INTEL_LLVM_COMPILER
+#endif // !__INTEL_LLVM_COMPILER && !_CRAYC && !__cray__
 
 // primitive type alias that allows code to run with either floats or doubles
 #if SINGLE_PRECISION_ENABLED
