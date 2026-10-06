@@ -16,6 +16,7 @@
 #include <limits>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -142,6 +143,79 @@ class HistoryOutput : public OutputType {
  public:
   explicit HistoryOutput(OutputParameters oparams) : OutputType(oparams) {}
   void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) override;
+};
+
+//----------------------------------------------------------------------------------------
+//! \class Int2DOutput
+//! \brief derived OutputType class for integrals over two dimensions
+
+class Int2DOutput : public OutputType {
+ public:
+  explicit Int2DOutput(const Mesh *pm, const OutputParameters &op) : OutputType(op) {}
+  void WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag);
+
+ protected:
+  // Instance variables
+  std::string fname;     // name of the output file
+  std::vector<Real> xf;  // coordinates of cell edges in the third dimension
+  int nx;  // number of cells in the third dimension
+
+  // Constructor helper
+  void ProcessHeader(const std::string& ext, const Mesh *pm);
+
+ private:
+  // Helpers
+  virtual void AddToIntegrals(const MeshBlock *pmb,
+      AthenaArray<Real> &integrals, AthenaArray<Real> &area) = 0;
+  virtual void SetThirdDim(const Mesh *pm) = 0;
+};
+
+//----------------------------------------------------------------------------------------
+//! \class IntX1X2Output
+//! \brief derived OutputType class for integrals over x1 and x2 directions
+
+class IntX1X2Output : public Int2DOutput {
+ public:
+  explicit IntX1X2Output(const Mesh *pm, const OutputParameters &op)
+  : Int2DOutput(pm, op) { ProcessHeader("int12", pm); }
+
+ private:
+  // Helpers
+  void AddToIntegrals(const MeshBlock *pmb,
+      AthenaArray<Real> &integrals, AthenaArray<Real> &area) override;
+  void SetThirdDim(const Mesh *pm) override;
+};
+
+//----------------------------------------------------------------------------------------
+//! \class IntX1X3Output
+//! \brief derived OutputType class for integrals over x1 and x3 directions
+
+class IntX1X3Output : public Int2DOutput {
+ public:
+  explicit IntX1X3Output(const Mesh *pm, const OutputParameters &op)
+  : Int2DOutput(pm, op) { ProcessHeader("int13", pm); }
+
+ private:
+  // Helpers
+  void AddToIntegrals(const MeshBlock *pmb,
+      AthenaArray<Real> &integrals, AthenaArray<Real> &area) override;
+  void SetThirdDim(const Mesh *pm) override;
+};
+
+//----------------------------------------------------------------------------------------
+//! \class IntX2X3Output
+//! \brief derived OutputType class for integrals over x2 and x3 directions
+
+class IntX2X3Output : public Int2DOutput {
+ public:
+  explicit IntX2X3Output(const Mesh *pm, const OutputParameters &op)
+  : Int2DOutput(pm, op) { ProcessHeader("int23", pm); }
+
+ private:
+  // Helpers
+  void AddToIntegrals(const MeshBlock *pmb,
+      AthenaArray<Real> &integrals, AthenaArray<Real> &area) override;
+  void SetThirdDim(const Mesh *pm) override;
 };
 
 //----------------------------------------------------------------------------------------

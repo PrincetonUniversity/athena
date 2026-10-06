@@ -503,31 +503,22 @@ Real __attribute__((weak)) Coordinates::GetFace3Area(const int k, const int j,
 void __attribute__((weak)) Coordinates::VolCenterFace1Area(const int k, const int j,
                            const int il, const int iu, AthenaArray<Real> &area) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    Real& area_i = area(i);
-    area_i = dx2v(j)*dx3v(k);
-  }
-  return;
+  for (int i = il; i <= iu; ++i)
+    area(i) = dx2v(j) * dx3v(k);
 }
 
 void __attribute__((weak)) Coordinates::VolCenterFace2Area(const int k, const int j,
                            const int il, const int iu, AthenaArray<Real> &area) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    Real& area_i = area(i);
-    area_i = dx1v(i)*dx3v(k);
-  }
-  return;
+  for (int i = il; i <= iu; ++i)
+    area(i) = dx1v(i) * dx3v(k);
 }
 
 void __attribute__((weak)) Coordinates::VolCenterFace3Area(const int k, const int j,
                            const int il, const int iu, AthenaArray<Real> &area) {
 #pragma omp simd
-  for (int i=il; i<=iu; ++i) {
-    Real& area_i = area(i);
-    area_i = dx1v(i)*dx2v(j);
-  }
-  return;
+  for (int i = il; i <= iu; ++i)
+    area(i) = dx1v(i) * dx2v(j);
 }
 
 //----------------------------------------------------------------------------------------

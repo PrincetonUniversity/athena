@@ -952,6 +952,75 @@ def athdf(filename, raw=False, data=None, quantities=None, dtype=None, level=Non
 
 # ========================================================================================
 
+def int2d(filename):
+    """Reads an output file for integrals of data fields over two dimensions.
+
+    Positional Argument
+        filename
+            Name of or path to the output file (with extension int12, int13, or int23).
+
+    Returned Values
+        A namedtuple containing the following fields:
+            xf
+                Coordinates of the cell edges in the third dimension.
+            time
+                Times in the series.
+            *
+                2D integrals of the data fields specified by output*/variable in the
+                input file as a function of time and the third dimension.
+    """
+    from collections import namedtuple
+    from struct import unpack
+
+    # Hard code the size of an int from C/C++.
+    intsize = 4  # bytes
+
+    with open(filename, "rb") as f:
+        # Read and check the size of the Athena++ Real.
+        realsize = unpack("=i", f.read(intsize))[0]
+        dtype = np.dtype(f"f{realsize}")
+
+        # Read the number of output variables.
+        nvar = unpack("=i", f.read(intsize))[0]
+
+        # Read the names of the variables.
+        varnames = []
+        for i in range(nvar):
+            size = unpack("=i", f.read(intsize))[0]
+            varnames.append(f.read(size).decode())
+
+        # Read the coordinates of cell edges in the third dimension.
+        nx = unpack("=i", f.read(intsize))[0]
+        xf = np.frombuffer(f.read((nx+1) * realsize), dtype=dtype)
+
+        # Loop over the time series.
+        arraysize = nx * realsize
+        integrals = []
+        time = np.array([])
+        while True:
+            # Read the time.
+            b = f.read(realsize)
+            if len(b) <= 0:
+                break
+            time = np.concatenate((time, np.frombuffer(b, dtype=dtype)))
+
+            # Read the 2D integrals.
+            if len(time) > 1:
+                for i, v in enumerate(integrals):
+                    a = np.frombuffer(f.read(arraysize), dtype=dtype)
+                    integrals[i] = np.vstack((v, a))
+            else:
+                for i in range(nvar):
+                    integrals.append(np.frombuffer(f.read(arraysize), dtype=dtype))
+
+        # Construct and return a namedtuple.
+        names = ["xf", "time"] + varnames
+        pairs = dict(zip(names, [xf, time] + integrals))
+        return namedtuple("Int2D", names)(**pairs)
+
+
+# ========================================================================================
+
 def restrict_like(vals, levels, vols=None):
     """Average cell values according to given mesh refinement scheme."""
 

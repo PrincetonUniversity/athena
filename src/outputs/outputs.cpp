@@ -327,6 +327,12 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
           pnew_type = new FormattedTableOutput(op);
         } else if (op.file_type.compare("vtk") == 0) {
           pnew_type = new VTKOutput(op);
+        } else if (op.file_type.compare("int12") == 0) {
+          pnew_type = new IntX1X2Output(pm, op);
+        } else if (op.file_type.compare("int13") == 0) {
+          pnew_type = new IntX1X3Output(pm, op);
+        } else if (op.file_type.compare("int23") == 0) {
+          pnew_type = new IntX2X3Output(pm, op);
         } else if (op.file_type.compare("rst") == 0) {
           pnew_type = new RestartOutput(op);
           num_rst_outputs++;
