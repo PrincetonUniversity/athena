@@ -51,8 +51,9 @@ mass_val   = 6.6   # mass value in physical units
 vel        = 7.7   # velocity value in physical units
 
 <units>
-#Default value for the mean atomic weight is 1.4 
-mean_weight = 1.4
+# Mass per hydrogen nucleus in units of m_H, relating ndensity to mass density
+# (default 1.4). This is not the mean molecular weight mu.
+mass_per_hydrogen = 1.4
 
 #Preset unit systems
 unit_system = ism

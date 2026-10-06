@@ -142,5 +142,5 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   Units *punit = Mesh::punit;
   // Prints a Python dictionary to use units_override
   //  when loading hdf5 data into yt.
-  punit->PrintytUnitsOverride();
+  punit->PrintYtUnitsOverride();
 }

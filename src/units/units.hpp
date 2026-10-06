@@ -11,7 +11,6 @@
 // C headers
 
 // C++ headers
-#include <iomanip>
 #include <string>
 #include <tuple>
 
@@ -22,27 +21,20 @@
 //! \brief Physical constants defined in c.g.s.
 namespace Constants {
 static const Real grav_const_cgs       = 6.67259e-8;
-// Changed from 1.9891e+33 to agree with Astropy:
 static const Real solar_mass_cgs       = 1.9884099e33;
-static const Real solar_lum_cgs        = 3.8268e33;
-// Changed from 3.155815e7 to agree with Astropy and the FITS standard:
+static const Real solar_lum_cgs        = 3.8268e+33;
 static const Real yr_cgs               = 3.15576e7;
 static const Real million_yr_cgs       = 3.15576e13;
-// Changed from 3.085678e+18 to agree with Astropy:
 static const Real pc_cgs               = 3.08567758e18;
 static const Real kpc_cgs              = 3.08567758e21;
 static const Real au_cgs               = 1.495978707e13;
-static const Real km_s_cgs             = 1.0e5;
+static const Real km_s_cgs             = 1.0e+5;
 static const Real hydrogen_mass_cgs    = 1.6733e-24;
 static const Real radiation_aconst_cgs = 7.5646e-15;
 static const Real k_boltzmann_cgs      = 1.380658e-16;
-static const Real speed_of_light_cgs   = 2.99792458e10;
+static const Real speed_of_light_cgs   = 2.99792458e+10;
 static const Real echarge_cgs          = 4.80320427e-10;
 static const Real kelvin_cgs           = 1;
-static const Real yrinmyr              = 1e6;
-static const Real cminkm               = 100000;
-static const Real thomson              = 6.6524e-25; // Thompson cross section (cm^2)
-static const Real mp                   = 1.6726231e-24; // Mass of a proton (g)
 } // namespace Constants
 
 //! \brief Class for units
@@ -54,9 +46,7 @@ class Units {
   void PrintCodeUnits();
   void PrintBasisUnits();
   void PrintConstantsInCodeUnits();
-  void PrintytUnitsOverride();
-  Real Returncgs(std::string parameter,Real value,std::string unit);
-  void CompleteBasis();
+  void PrintYtUnitsOverride();
 
   // unit system
   std::string unit_system;
@@ -74,25 +64,24 @@ class Units {
   // Then either 'ndensity' or 'mass' (with possible units):
   //   ndensity (n/cm^3, n/m^3)
   //   mass (Msun, g, kg)
-
   std::tuple<Real, std::string> basis_length;
   std::tuple<Real, std::string> basis_time;
   std::tuple<Real, std::string> basis_velocity;
   std::tuple<Real, std::string> basis_ndensity;
   std::tuple<Real, std::string> basis_mass;
 
+  // mass per hydrogen nucleus in units of hydrogen_mass_cgs (1.4 for solar abundances);
+  // relates ndensity to mass density. Not the mean molecular weight mu used for T/mu.
+  Real mass_per_hydrogen;
+
   // code units in c.g.s.
   // i.e. multiply this to convert quantities in c.g.s.
   // public accessor for default MLT units
   // ideally this should be accessor methods, but
   // no on-the-fly change in unit system is assumed
-
   Real code_mass_cgs, code_length_cgs, code_time_cgs;
 
-  Real mean_weight;
-
   Real code_volume_cgs, code_density_cgs, code_velocity_cgs;
-  Real code_ndensity;
   Real code_energy_cgs, code_energydensity_cgs, code_pressure_cgs;
   Real code_magneticfield_cgs;
   Real code_temperature_mu_cgs; // T/mu
@@ -119,9 +108,11 @@ class Units {
  private:
   // code MLT units in c.g.s.
   Real code_mass_cgs_, code_length_cgs_, code_time_cgs_;
-  Real code_velocity_cgs_, code_ndensity_cgs_;
 
-  bool velocity_basis = false;
-  bool mass_basis = false;
+  bool velocity_basis_ = false;
+  bool mass_basis_ = false;
+
+  Real ToCgs(const std::string &parameter, Real value, const std::string &unit);
+  void CompleteBasis();
 };
 #endif // UNITS_UNITS_HPP_
