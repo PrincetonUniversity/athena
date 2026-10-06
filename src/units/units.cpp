@@ -10,6 +10,7 @@
 
 // C++ headers
 #include <iostream>
+#include <limits>     // numeric_limits
 #include <sstream>    // stringstream
 #include <stdexcept> // throw exceptions
 
@@ -208,7 +209,7 @@ Units::Units(ParameterInput *pin) :
     basis_velocity = std::make_tuple(code_length_cgs_/code_time_cgs_/Constants::km_s_cgs,
                                      "km/s");
     basis_ndensity = std::make_tuple((code_mass_cgs_/(
-        mean_weight*Constants::hydrogen_mass_cgs))/CUBE(Constants::pc_cgs),"n/cm^3");
+        mean_weight*Constants::hydrogen_mass_cgs))/CUBE(code_length_cgs_),"n/cm^3");
     basis_mass     = std::make_tuple(code_mass_cgs_/Constants::solar_mass_cgs,"Msun");
   } else {
     std::stringstream msg;
@@ -337,7 +338,7 @@ void Units::PrintCodeUnits() {
   std::cout << "code_density_cgs = " << code_density_cgs << " g/cm^3" << std::endl;
   std::cout << "code_velocity_cgs = " << code_velocity_cgs << " cm/s" << std::endl;
   std::cout << "code_energy_cgs = " << code_energy_cgs << " erg" << std::endl;
-  std::cout << "code_pressure_cgs = " << code_pressure_cgs << " erg/cm^2" << std::endl;
+  std::cout << "code_pressure_cgs = " << code_pressure_cgs << " erg/cm^3" << std::endl;
   std::cout << "code_temperature_mu_cgs = " << code_temperature_mu_cgs
             << " K" << std::endl;
   std::cout << "========================================" << std::endl;
@@ -381,7 +382,8 @@ void Units::PrintytUnitsOverride() {
   std::string munit = std::get<1>(basis_mass);
   std::cout << "======= Units Override for yt ======" << std::endl;
   std::cout << "Units override for importing HDF5 files into yt:" << std::endl;
-  std::cout << std::fixed << std::setprecision(6)
+  std::cout << std::scientific
+            << std::setprecision(std::numeric_limits<Real>::max_digits10)
             << "{\"length_unit\":("  << lval << ",\"" << lunit
             << "\"),\"time_unit\":(" << tval << ",\"" << tunit
             << "\"),\"mass_unit\":(" << mval << ",\"" << munit << "\")}" << std::endl;
@@ -414,7 +416,7 @@ Real Units::Returncgs(std::string parameter, Real value, std::string unit) {
     } else if (unit == "m") {
       code_cgs_ = 100*value;
     } else if (unit == "km") {
-      code_cgs_ = 1000*value;
+      code_cgs_ = 1.0e5*value;
     } else { // If more length units are added, they should be added here
       msg << "  Allowed units are: pc, kpc, au, cm, m, or km" << std::endl;
       ATHENA_ERROR(msg);
