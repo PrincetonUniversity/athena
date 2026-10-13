@@ -109,7 +109,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       for (int j=js; j<=je; j++) {
         for (int i=is; i<=ie; i++) {
           phydro->u(IEN,k,j,i) = p0/gm1 + 0.5*bx0*bx0 +
-                                 (SQR(phydro->u(IM1,k,j,i))
+                                 0.5*(SQR(phydro->u(IM1,k,j,i))
                                   + SQR(phydro->u(IM2,k,j,i)))/phydro->u(IDN,k,j,i);
         }
       }
