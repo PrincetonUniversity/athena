@@ -183,6 +183,12 @@ hydro_sod_shock_roe
     against the analytic solution (which are computed by the executable automatically and
     stored in the temporary file shock_errors.dat). Roe variant.
 
+hydro_units
+    Regression test for the units module. Runs the unit_test problem generator with
+    each preset, custom_basis, and custom unit system and checks the printed code and
+    basis units against values computed in the test. Also checks that invalid <units>
+    input is rejected.
+
 hydro4_hydro_linwave_2d
     Regression test based on Newtonian hydro linear wave convergence problem
     Check errors of reconstruction and time integrator options other than default VL2+PLM
