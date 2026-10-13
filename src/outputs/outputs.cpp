@@ -154,7 +154,7 @@ enum base_type {
   U = 1,  // unsigned integer types
 };
 
-inline bool type_string_check(const base_type base_t, const uint bits,
+inline bool type_string_check(const base_type base_t, const unsigned int bits,
                               const OutputParameters &op) {
   std::string check_string;
   const std::string &type_string = op.data_format;
