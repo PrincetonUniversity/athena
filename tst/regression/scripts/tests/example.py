@@ -108,7 +108,7 @@ def analyze():
     # the y-interface locations, the z-interface locations, and the values of the
     # variables themselves. In a 1D problem we ignore the second and third returned
     # values, assigning them to the _ variable as is typical Python style.
-    x_ref, _, _, data_ref = athena_read.vtk('data/sr_hydro_shock1_hlle.vtk')
+    x_ref, _, _, data_ref = athena_read.vtk('data/sr_hydro_shock1_hllc.vtk')
 
     # Read in the data produced during this test. This will usually be stored in the
     # tst/regression/bin/ directory, but again we omit the first part of the path. Note
