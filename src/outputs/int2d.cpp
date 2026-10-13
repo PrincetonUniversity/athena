@@ -88,7 +88,7 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
     if (n != rsize) {
       msg << "### FATAL ERROR in Int2DOutput::ProcessHeader" << std::endl
           << "Inconsistent Athena++ Real size: "
-          << rsize << " bytes compied vs. " << n << " bytes in existing header"
+          << rsize << " bytes compiled vs. " << n << " bytes in existing header"
           << std::endl;
       ATHENA_ERROR(msg);
       return;
@@ -224,7 +224,7 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
     fout.open(fname, std::ios::out | std::ios::app | std::ios::binary);
     if (!fout.is_open()) {
       std::stringstream msg;
-      msg << "### FATAL ERROR in IntX1X2Output::ProcessHeader" << std::endl
+      msg << "### FATAL ERROR in Int2DOutput::WriteOutputFile" << std::endl
           << "Unable to open output file '" << fname << "'" << std::endl;
       ATHENA_ERROR(msg);
       return;
