@@ -394,12 +394,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
           for (int i=is; i<=ie+1; i++) {
             // B1(x2) = b0*(tanh((x2-z1)/a) - tanh((x2-z2)/a) - 1), following the same
             // form as the v1 profile; initialized here via the exact area average over
-            // the x1 face (fourth-order accurate IC):
-            pfield->b.x1f(k,j,i) = -b0 + b0*a/pcoord->dx2f(j)*(
-                std::log(std::cosh((pcoord->x2f(j+1) - z1)/a)
-                         / std::cosh((pcoord->x2f(j+1) - z2)/a))
-                - std::log(std::cosh((pcoord->x2f(j) - z1)/a)
-                           / std::cosh((pcoord->x2f(j) - z2)/a)));
+            // the x1 face (fourth-order accurate IC). The antiderivative is evaluated as
+            // a difference of log(cosh()) terms (not log of a ratio) so that the face
+            // average is bitwise antisymmetric under x2 -> -x2 and the reflect-and-shift
+            // symmetry of the IC holds exactly in floating point.
+            Real lc_hi = std::log(std::cosh((pcoord->x2f(j+1) - z1)/a))
+                         - std::log(std::cosh((pcoord->x2f(j+1) - z2)/a));
+            Real lc_lo = std::log(std::cosh((pcoord->x2f(j) - z1)/a))
+                         - std::log(std::cosh((pcoord->x2f(j) - z2)/a));
+            pfield->b.x1f(k,j,i) = -b0 + b0*a/pcoord->dx2f(j)*(lc_hi - lc_lo);
           }
         }
       }
