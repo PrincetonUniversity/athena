@@ -34,6 +34,10 @@ using H5Real = double;
 using H5Real = float;
 #define H5T_NATIVE_REAL H5T_NATIVE_FLOAT
 #endif // H5_DOUBLE_PRECISION_ENABLED
+// half-precision HDF5 output needs both a compiler fp16 type and HDF5 >= 1.14.4
+#if defined(fp16_t) && defined(H5T_NATIVE_FLOAT16)
+#define FP16_HDF5_OUTPUT
+#endif
 #endif // HDF5OUTPUT
 
 // forward declarations
@@ -256,7 +260,7 @@ using mesh_t = typename std::conditional<
 };
 
 // Instantiate the get_[hdf5, mesh]_type functions for all types used in outputs.cpp
-#if defined(fp16_t) && defined(H5T_NATIVE_FLOAT16)
+#ifdef FP16_HDF5_OUTPUT
 template<> inline hid_t ATHDF5Output<fp16_t>::get_hdf5_type() {
   return H5T_NATIVE_FLOAT16;
 }

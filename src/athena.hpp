@@ -18,11 +18,13 @@
 #include "athena_arrays.hpp"
 #include "defs.hpp"
 
-// See if we have FP16 support
+// See if we have FP16 support. __fp16 is the ARM storage-only half type; on x86 the
+// compilers that support half precision (GCC >= 12, Clang >= 15) provide _Float16 and
+// define __FLT16_MAX__, but have no __fp16.
 #if !defined(__INTEL_LLVM_COMPILER) && !defined(_CRAYC) && !defined(__cray__)
-#if defined(__fp16) || defined(__FLT16_MAX__) || defined(__ARM_FP16_FORMAT_IEEE)
+#if defined(__ARM_FP16_FORMAT_IEEE)
 #define fp16_t __fp16
-#elif defined(_Float16)
+#elif defined(__FLT16_MAX__)
 #define fp16_t _Float16
 #endif
 #else

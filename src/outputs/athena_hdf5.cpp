@@ -969,7 +969,7 @@ void ATHDF5Output<T>::MakeXDMF() {
 }
 
 // Explicit template instantiations for all types used in outputs.cpp
-#ifdef fp16_t
+#ifdef FP16_HDF5_OUTPUT
 template class ATHDF5Output<fp16_t>;
 #endif
 template class ATHDF5Output<float>;
