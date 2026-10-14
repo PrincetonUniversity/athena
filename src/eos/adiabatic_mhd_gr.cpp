@@ -668,8 +668,20 @@ void EquationOfState::FastMagnetosonicSpeedsGR(Real wgas, Real pgas, Real u0, Re
   Real a1 = b / a;
   Real a0 = c / a;
   Real s = std::sqrt(std::max(SQR(a1) - 4.0 * a0, static_cast<Real>(0.0)));
-  *p_lambda_plus = (a1 >= 0.0) ? -2.0 * a0 / (a1 + s) : (-a1 + s) / 2.0;
-  *p_lambda_minus = (a1 >= 0.0) ? (-a1 - s) / 2.0 : -2.0 * a0 / (a1 - s);
+  // The root that does not suffer cancellation is taken from the quadratic formula and
+  // the other from the product of the roots; when a1 is exactly zero (no normal
+  // velocity) the roots are +/-s/2, which keeps lambda_plus and -lambda_minus bitwise
+  // equal under a reflection of the normal direction (#165).
+  if (a1 > 0.0) {
+    *p_lambda_plus = -2.0 * a0 / (a1 + s);
+    *p_lambda_minus = (-a1 - s) / 2.0;
+  } else if (a1 < 0.0) {
+    *p_lambda_plus = (-a1 + s) / 2.0;
+    *p_lambda_minus = -2.0 * a0 / (a1 - s);
+  } else {
+    *p_lambda_plus = 0.5 * s;
+    *p_lambda_minus = -0.5 * s;
+  }
   return;
 }
 

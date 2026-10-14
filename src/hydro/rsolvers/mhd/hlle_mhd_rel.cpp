@@ -274,11 +274,12 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
     flux_r[IBZ] = b_r[3] * u_r[1] - b_r[1] * u_r[3];
 
     // Calculate conserved quantities in HLL region in GR (MB2005 9)
+    // (the flux difference is grouped so that the sum is mirror symmetric, #165)
     Real lambda_diff_inv = 1.0 / (lambda_r-lambda_l);
     Real cons_hll[NWAVE];
     if (GENERAL_RELATIVITY) {
       for (int n = 0; n < NWAVE; ++n) {
-        cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + flux_l[n] - flux_r[n])
+        cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + (flux_l[n] - flux_r[n]))
                       * lambda_diff_inv;
       }
     }

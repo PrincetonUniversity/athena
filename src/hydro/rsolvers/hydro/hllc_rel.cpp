@@ -224,9 +224,10 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
 
     Real lambda_diff_inv = 1.0 / (lambda_r-lambda_l);
     // Calculate conserved quantities in HLL region in GR (MB2005 9)
+    // (the flux difference is grouped so that the sum is mirror symmetric, #165)
     Real cons_hll[NWAVE];
     for (int n = 0; n < NWAVE; ++n) {
-      cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + flux_l[n] - flux_r[n])
+      cons_hll[n] = (lambda_r*cons_r[n] - lambda_l*cons_l[n] + (flux_l[n] - flux_r[n]))
                     * lambda_diff_inv;
     }
 
@@ -300,15 +301,21 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
     // indices. Local arrays indexed by the runtime ivx/ivy/ivz, or selected through a
     // pointer, cannot be privatized per SIMD lane (they live at one loop-invariant stack
     // address), which an "omp simd" vectorizer may silently miscompile (#521).
+    // A contact that is exactly stationary with respect to the interface, as on every
+    // face of a symmetry plane, takes the average of the L* and R* states: the two are
+    // mirror images of each other, so the average is itself mirror symmetric (#165).
     const bool use_l = (lambda_l >= v_interface);
     const bool use_r = (!use_l) && (lambda_r <= v_interface);
-    const bool use_lstar = (!use_l) && (!use_r) && (lambda_star >= v_interface);
+    const bool use_lstar = (!use_l) && (!use_r) && (lambda_star > v_interface);
+    const bool use_rstar = (!use_l) && (!use_r) && (lambda_star < v_interface);
     Real cons_sel[NWAVE], flux_sel[NWAVE];
     for (int n = 0; n < NWAVE; ++n) {
       cons_sel[n] = use_l ? cons_l[n] : (use_r ? cons_r[n]
-                    : (use_lstar ? cons_lstar[n] : cons_rstar[n]));
+                    : (use_lstar ? cons_lstar[n] : (use_rstar ? cons_rstar[n]
+                    : 0.5 * (cons_lstar[n] + cons_rstar[n]))));
       flux_sel[n] = use_l ? flux_l[n] : (use_r ? flux_r[n]
-                    : (use_lstar ? flux_lstar[n] : flux_rstar[n]));
+                    : (use_lstar ? flux_lstar[n] : (use_rstar ? flux_rstar[n]
+                    : 0.5 * (flux_lstar[n] + flux_rstar[n]))));
     }
     if (GENERAL_RELATIVITY) {
       cons(IDN,i) = cons_sel[IDN];
