@@ -9,7 +9,7 @@
 # each corner EMF are summed, and the HLLD solver's choice of flux on a stationary
 # contact all used to break it at the 1-ulp level (#165), and the extremum-preserving
 # PPM limiter then amplifies the seed to a truncation-error-sized asymmetry within a
-# few tens of steps. This test runs the blast with HLLE and HLLD, with PLM and with
+# few tens of steps. This test runs the blast with HLLE, HLLD and Roe, with PLM and with
 # extremum-preserving PPM, in 2D and 3D, and requires the solution to stay bit-exactly
 # symmetric. FMA contraction is disabled for the build because it seeds the same kind
 # of asymmetry on its own (a*b+c is contracted or not depending on operand order).
@@ -26,7 +26,7 @@ import athena_read                             # noqa
 athena_read.check_nan_flag = True
 logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on module
 
-_fluxes = ['hlle', 'hlld']
+_fluxes = ['hlle', 'hlld', 'roe']
 _exec = os.path.join('bin', 'athena')
 
 # (label, symmetry, extra arguments). PLM keeps a 1-ulp seed at the roundoff level for
