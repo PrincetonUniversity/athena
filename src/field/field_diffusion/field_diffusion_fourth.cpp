@@ -142,10 +142,10 @@ void FieldDiffusion::OhmicEMFFourth(EdgeField &e) {
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         e1(ks  ,j,i) += E1(ks,j,i)
-                        + ONE_24TH*(E1(ks,j,i-1) - 2.0*E1(ks,j,i) + E1(ks,j,i+1));
+                        + ONE_24TH*((E1(ks,j,i-1) + E1(ks,j,i+1)) - 2.0*E1(ks,j,i));
         e1(ke+1,j,i)  = e1(ks,j,i);
         e2(ks  ,j,i) += E2(ks,j,i)
-                        + ONE_24TH*(E2(ks,j-1,i) - 2.0*E2(ks,j,i) + E2(ks,j+1,i));
+                        + ONE_24TH*((E2(ks,j-1,i) + E2(ks,j+1,i)) - 2.0*E2(ks,j,i));
         e2(ke+1,j,i)  = e2(ks,j,i);
         e3(ks,  j,i) += E3(ks,j,i);
       }
@@ -159,11 +159,11 @@ void FieldDiffusion::OhmicEMFFourth(EdgeField &e) {
 #pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         e1(k,j,i) += E1(k,j,i)
-                     + ONE_24TH*(E1(k,j,i-1) - 2.0*E1(k,j,i) + E1(k,j,i+1));
+                     + ONE_24TH*((E1(k,j,i-1) + E1(k,j,i+1)) - 2.0*E1(k,j,i));
         e2(k,j,i) += E2(k,j,i)
-                     + ONE_24TH*(E2(k,j-1,i) - 2.0*E2(k,j,i) + E2(k,j+1,i));
+                     + ONE_24TH*((E2(k,j-1,i) + E2(k,j+1,i)) - 2.0*E2(k,j,i));
         e3(k,j,i) += E3(k,j,i)
-                     + ONE_24TH*(E3(k-1,j,i) - 2.0*E3(k,j,i) + E3(k+1,j,i));
+                     + ONE_24TH*((E3(k-1,j,i) + E3(k+1,j,i)) - 2.0*E3(k,j,i));
       }
     }
   }
@@ -230,8 +230,8 @@ void FieldDiffusion::PoyntingFluxFourth() {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
-          Real corr = (g1(k,j-1,i) - 2.0*g1(k,j,i) + g1(k,j+1,i));
-          if (f3) corr += (g1(k-1,j,i) - 2.0*g1(k,j,i) + g1(k+1,j,i));
+          Real corr = ((g1(k,j-1,i) + g1(k,j+1,i)) - 2.0*g1(k,j,i));
+          if (f3) corr += ((g1(k-1,j,i) + g1(k+1,j,i)) - 2.0*g1(k,j,i));
           f1(k,j,i) = g1(k,j,i) + ONE_24TH*corr;
         }
       }
@@ -264,8 +264,8 @@ void FieldDiffusion::PoyntingFluxFourth() {
       for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          Real corr = (g2(k,j,i-1) - 2.0*g2(k,j,i) + g2(k,j,i+1));
-          if (f3) corr += (g2(k-1,j,i) - 2.0*g2(k,j,i) + g2(k+1,j,i));
+          Real corr = ((g2(k,j,i-1) + g2(k,j,i+1)) - 2.0*g2(k,j,i));
+          if (f3) corr += ((g2(k-1,j,i) + g2(k+1,j,i)) - 2.0*g2(k,j,i));
           f2fl(k,j,i) = g2(k,j,i) + ONE_24TH*corr;
         }
       }
@@ -296,8 +296,8 @@ void FieldDiffusion::PoyntingFluxFourth() {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          Real corr = (g3(k,j,i-1) - 2.0*g3(k,j,i) + g3(k,j,i+1))
-                      + (g3(k,j-1,i) - 2.0*g3(k,j,i) + g3(k,j+1,i));
+          Real corr = ((g3(k,j,i-1) + g3(k,j,i+1)) - 2.0*g3(k,j,i))
+                      + ((g3(k,j-1,i) + g3(k,j+1,i)) - 2.0*g3(k,j,i));
           f3fl(k,j,i) = g3(k,j,i) + ONE_24TH*corr;
         }
       }

@@ -65,9 +65,9 @@ void HydroDiffusion::DeconvolvePrimitivesFourth(const AthenaArray<Real> &p) {
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          Real lap = (p(n,k,j,i-1) - 2.0*p(n,k,j,i) + p(n,k,j,i+1));
-          if (f2) lap += (p(n,k,j-1,i) - 2.0*p(n,k,j,i) + p(n,k,j+1,i));
-          if (f3) lap += (p(n,k-1,j,i) - 2.0*p(n,k,j,i) + p(n,k+1,j,i));
+          Real lap = ((p(n,k,j,i-1) + p(n,k,j,i+1)) - 2.0*p(n,k,j,i));
+          if (f2) lap += ((p(n,k,j-1,i) + p(n,k,j+1,i)) - 2.0*p(n,k,j,i));
+          if (f3) lap += ((p(n,k-1,j,i) + p(n,k+1,j,i)) - 2.0*p(n,k,j,i));
           wc_(n,k,j,i) = p(n,k,j,i) - ONE_24TH*lap;
         }
       }
@@ -195,8 +195,8 @@ void HydroDiffusion::ViscousFluxIsoFourth(const AthenaArray<Real> &p,
 #pragma omp simd
           for (int i=is; i<=ie+1; ++i) {
             Real corr = 0.0;
-            if (f2) corr += (fpt_(n,k,j-1,i) - 2.0*fpt_(n,k,j,i) + fpt_(n,k,j+1,i));
-            if (f3) corr += (fpt_(n,k-1,j,i) - 2.0*fpt_(n,k,j,i) + fpt_(n,k+1,j,i));
+            if (f2) corr += ((fpt_(n,k,j-1,i) + fpt_(n,k,j+1,i)) - 2.0*fpt_(n,k,j,i));
+            if (f3) corr += ((fpt_(n,k-1,j,i) + fpt_(n,k+1,j,i)) - 2.0*fpt_(n,k,j,i));
             x1flux(n,k,j,i) += fpt_(n,k,j,i) + ONE_24TH*corr;
           }
         }
@@ -288,8 +288,8 @@ void HydroDiffusion::ViscousFluxIsoFourth(const AthenaArray<Real> &p,
         for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            Real corr = (fpt_(n,k,j,i-1) - 2.0*fpt_(n,k,j,i) + fpt_(n,k,j,i+1));
-            if (f3) corr += (fpt_(n,k-1,j,i) - 2.0*fpt_(n,k,j,i) + fpt_(n,k+1,j,i));
+            Real corr = ((fpt_(n,k,j,i-1) + fpt_(n,k,j,i+1)) - 2.0*fpt_(n,k,j,i));
+            if (f3) corr += ((fpt_(n,k-1,j,i) + fpt_(n,k+1,j,i)) - 2.0*fpt_(n,k,j,i));
             x2flux(n,k,j,i) += fpt_(n,k,j,i) + ONE_24TH*corr;
           }
         }
@@ -372,8 +372,8 @@ void HydroDiffusion::ViscousFluxIsoFourth(const AthenaArray<Real> &p,
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            Real corr = (fpt_(n,k,j,i-1) - 2.0*fpt_(n,k,j,i) + fpt_(n,k,j,i+1))
-                        + (fpt_(n,k,j-1,i) - 2.0*fpt_(n,k,j,i) + fpt_(n,k,j+1,i));
+            Real corr = ((fpt_(n,k,j,i-1) + fpt_(n,k,j,i+1)) - 2.0*fpt_(n,k,j,i))
+                        + ((fpt_(n,k,j-1,i) + fpt_(n,k,j+1,i)) - 2.0*fpt_(n,k,j,i));
             x3flux(n,k,j,i) += fpt_(n,k,j,i) + ONE_24TH*corr;
           }
         }
@@ -425,8 +425,8 @@ void HydroDiffusion::ThermalFluxIsoFourth(const AthenaArray<Real> &p,
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
           Real corr = 0.0;
-          if (f2) corr += (fpt_(0,k,j-1,i) - 2.0*fpt_(0,k,j,i) + fpt_(0,k,j+1,i));
-          if (f3) corr += (fpt_(0,k-1,j,i) - 2.0*fpt_(0,k,j,i) + fpt_(0,k+1,j,i));
+          if (f2) corr += ((fpt_(0,k,j-1,i) + fpt_(0,k,j+1,i)) - 2.0*fpt_(0,k,j,i));
+          if (f3) corr += ((fpt_(0,k-1,j,i) + fpt_(0,k+1,j,i)) - 2.0*fpt_(0,k,j,i));
           x1flux(k,j,i) += fpt_(0,k,j,i) + ONE_24TH*corr;
         }
       }
@@ -459,8 +459,8 @@ void HydroDiffusion::ThermalFluxIsoFourth(const AthenaArray<Real> &p,
       for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          Real corr = (fpt_(0,k,j,i-1) - 2.0*fpt_(0,k,j,i) + fpt_(0,k,j,i+1));
-          if (f3) corr += (fpt_(0,k-1,j,i) - 2.0*fpt_(0,k,j,i) + fpt_(0,k+1,j,i));
+          Real corr = ((fpt_(0,k,j,i-1) + fpt_(0,k,j,i+1)) - 2.0*fpt_(0,k,j,i));
+          if (f3) corr += ((fpt_(0,k-1,j,i) + fpt_(0,k+1,j,i)) - 2.0*fpt_(0,k,j,i));
           x2flux(k,j,i) += fpt_(0,k,j,i) + ONE_24TH*corr;
         }
       }
@@ -492,8 +492,8 @@ void HydroDiffusion::ThermalFluxIsoFourth(const AthenaArray<Real> &p,
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          Real corr = (fpt_(0,k,j,i-1) - 2.0*fpt_(0,k,j,i) + fpt_(0,k,j,i+1))
-                      + (fpt_(0,k,j-1,i) - 2.0*fpt_(0,k,j,i) + fpt_(0,k,j+1,i));
+          Real corr = ((fpt_(0,k,j,i-1) + fpt_(0,k,j,i+1)) - 2.0*fpt_(0,k,j,i))
+                      + ((fpt_(0,k,j-1,i) + fpt_(0,k,j+1,i)) - 2.0*fpt_(0,k,j,i));
           x3flux(k,j,i) += fpt_(0,k,j,i) + ONE_24TH*corr;
         }
       }
