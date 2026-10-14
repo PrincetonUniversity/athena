@@ -191,9 +191,9 @@ void PassiveScalars::DiffusiveFluxIsoFourth(const AthenaArray<Real> &prim_r,
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            Real lap = (prim_r(n,k,j,i-1) - 2.0*prim_r(n,k,j,i) + prim_r(n,k,j,i+1));
-            if (f2) lap += (prim_r(n,k,j-1,i) - 2.0*prim_r(n,k,j,i) + prim_r(n,k,j+1,i));
-            if (f3) lap += (prim_r(n,k-1,j,i) - 2.0*prim_r(n,k,j,i) + prim_r(n,k+1,j,i));
+            Real lap = ((prim_r(n,k,j,i-1) + prim_r(n,k,j,i+1)) - 2.0*prim_r(n,k,j,i));
+            if (f2) lap += ((prim_r(n,k,j-1,i) + prim_r(n,k,j+1,i)) - 2.0*prim_r(n,k,j,i));
+            if (f3) lap += ((prim_r(n,k-1,j,i) + prim_r(n,k+1,j,i)) - 2.0*prim_r(n,k,j,i));
             rc_(n,k,j,i) = prim_r(n,k,j,i) - ONE_24TH*lap;
           }
         }
@@ -203,9 +203,9 @@ void PassiveScalars::DiffusiveFluxIsoFourth(const AthenaArray<Real> &prim_r,
       for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
         for (int i=il; i<=iu; ++i) {
-          Real lap = (w(IDN,k,j,i-1) - 2.0*w(IDN,k,j,i) + w(IDN,k,j,i+1));
-          if (f2) lap += (w(IDN,k,j-1,i) - 2.0*w(IDN,k,j,i) + w(IDN,k,j+1,i));
-          if (f3) lap += (w(IDN,k-1,j,i) - 2.0*w(IDN,k,j,i) + w(IDN,k+1,j,i));
+          Real lap = ((w(IDN,k,j,i-1) + w(IDN,k,j,i+1)) - 2.0*w(IDN,k,j,i));
+          if (f2) lap += ((w(IDN,k,j-1,i) + w(IDN,k,j+1,i)) - 2.0*w(IDN,k,j,i));
+          if (f3) lap += ((w(IDN,k-1,j,i) + w(IDN,k+1,j,i)) - 2.0*w(IDN,k,j,i));
           rhoc_(k,j,i) = w(IDN,k,j,i) - ONE_24TH*lap;
         }
       }
@@ -242,8 +242,8 @@ void PassiveScalars::DiffusiveFluxIsoFourth(const AthenaArray<Real> &prim_r,
 #pragma omp simd
           for (int i=is; i<=ie+1; ++i) {
             Real corr = 0.0;
-            if (f2) corr += (spt_(n,k,j-1,i) - 2.0*spt_(n,k,j,i) + spt_(n,k,j+1,i));
-            if (f3) corr += (spt_(n,k-1,j,i) - 2.0*spt_(n,k,j,i) + spt_(n,k+1,j,i));
+            if (f2) corr += ((spt_(n,k,j-1,i) + spt_(n,k,j+1,i)) - 2.0*spt_(n,k,j,i));
+            if (f3) corr += ((spt_(n,k-1,j,i) + spt_(n,k+1,j,i)) - 2.0*spt_(n,k,j,i));
             x1flux(n,k,j,i) += spt_(n,k,j,i) + ONE_24TH*corr;
           }
         }
@@ -280,8 +280,8 @@ void PassiveScalars::DiffusiveFluxIsoFourth(const AthenaArray<Real> &prim_r,
         for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            Real corr = (spt_(n,k,j,i-1) - 2.0*spt_(n,k,j,i) + spt_(n,k,j,i+1));
-            if (f3) corr += (spt_(n,k-1,j,i) - 2.0*spt_(n,k,j,i) + spt_(n,k+1,j,i));
+            Real corr = ((spt_(n,k,j,i-1) + spt_(n,k,j,i+1)) - 2.0*spt_(n,k,j,i));
+            if (f3) corr += ((spt_(n,k-1,j,i) + spt_(n,k+1,j,i)) - 2.0*spt_(n,k,j,i));
             x2flux(n,k,j,i) += spt_(n,k,j,i) + ONE_24TH*corr;
           }
         }
@@ -317,8 +317,8 @@ void PassiveScalars::DiffusiveFluxIsoFourth(const AthenaArray<Real> &prim_r,
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            Real corr = (spt_(n,k,j,i-1) - 2.0*spt_(n,k,j,i) + spt_(n,k,j,i+1))
-                        + (spt_(n,k,j-1,i) - 2.0*spt_(n,k,j,i) + spt_(n,k,j+1,i));
+            Real corr = ((spt_(n,k,j,i-1) + spt_(n,k,j,i+1)) - 2.0*spt_(n,k,j,i))
+                        + ((spt_(n,k,j-1,i) + spt_(n,k,j+1,i)) - 2.0*spt_(n,k,j,i));
             x3flux(n,k,j,i) += spt_(n,k,j,i) + ONE_24TH*corr;
           }
         }
