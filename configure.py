@@ -27,6 +27,7 @@
 #   -omp              enable parallelization with OpenMP
 #   -hdf5             enable HDF5 output (requires the HDF5 library)
 #   --hdf5_path=path  path to HDF5 libraries (requires the HDF5 library)
+#   -fp16             enable half precision HDF5 output (requires HDF5 >= 1.14.4)
 #   -fft              enable FFT (requires the FFTW library)
 #   --fftw_path=path  path to FFTW libraries (requires the FFTW library)
 #   --grav=xxx        use xxx as the self-gravity solver
@@ -242,6 +243,12 @@ parser.add_argument('-h5double',
                     action='store_true',
                     default=False,
                     help='enable double precision HDF5 output')
+
+# -fp16 argument
+parser.add_argument('-fp16',
+                    action='store_true',
+                    default=False,
+                    help='enable half precision HDF5 output')
 
 # --hdf5_path argument
 parser.add_argument('--hdf5_path',
@@ -955,6 +962,12 @@ if args['h5double']:
 else:
     definitions['H5_DOUBLE_PRECISION_ENABLED'] = '0'
 
+# -fp16 argument (does nothing if no -hdf5)
+if args['fp16']:
+    definitions['FP16_ENABLED'] = '1'
+else:
+    definitions['FP16_ENABLED'] = '0'
+
 # --cflag=[string] argument
 if args['cflag'] is not None:
     makefile_options['COMPILER_FLAGS'] += ' '+args['cflag']
@@ -1065,6 +1078,7 @@ output_config('FFT', ('ON' if args['fft'] else 'OFF'), flog)
 output_config('HDF5 output', ('ON' if args['hdf5'] else 'OFF'), flog)
 if args['hdf5']:
     output_config('HDF5 precision', ('double' if args['h5double'] else 'single'), flog)
+    output_config('HDF5 fp16 output', ('ON' if args['fp16'] else 'OFF'), flog)
 output_config('Compiler', args['cxx'], flog)
 output_config('Compilation command', makefile_options['COMPILER_COMMAND'] + ' '
               + makefile_options['PREPROCESSOR_FLAGS'] + ' '

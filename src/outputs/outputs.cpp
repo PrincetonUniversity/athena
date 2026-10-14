@@ -365,13 +365,19 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
             pnew_type = new ATHDF5Output<fp16_t>(op);
 #elif defined(fp16_t)
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
-                << "HDF5 >= 1.14.4 is required for half precision floating point"
+                << "HDF5 >= 1.14.4 built with _Float16 support is required for half"
+                << " precision floating point in output block '" << op.block_name << "'"
+                << std::endl;
+            ATHENA_ERROR(msg);
+#elif FP16_ENABLED
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "Compiler/hardware does not support half precision floating point"
                 << " in output block '" << op.block_name << "'" << std::endl;
             ATHENA_ERROR(msg);
 #else
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
-                << "Compiler/hardware does not support half precision floating point"
-                << " in output block '" << op.block_name << "'" << std::endl;
+                << "Half precision floating point in output block '" << op.block_name
+                << "' requires reconfiguring with -fp16" << std::endl;
             ATHENA_ERROR(msg);
 #endif
           } else if (type_string_check(base_type::F, 32, op)) {

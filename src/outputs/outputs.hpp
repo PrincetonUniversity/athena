@@ -34,8 +34,9 @@ using H5Real = double;
 using H5Real = float;
 #define H5T_NATIVE_REAL H5T_NATIVE_FLOAT
 #endif // H5_DOUBLE_PRECISION_ENABLED
-// half-precision HDF5 output needs both a compiler fp16 type and HDF5 >= 1.14.4
-#if defined(fp16_t) && defined(H5T_NATIVE_FLOAT16)
+// half-precision HDF5 output needs both a compiler fp16 type and HDF5 >= 1.14.4 built
+// with _Float16; otherwise H5T_NATIVE_FLOAT16 exists but is H5I_INVALID_HID at runtime
+#if defined(fp16_t) && defined(H5T_NATIVE_FLOAT16) && defined(H5_HAVE__FLOAT16)
 #define FP16_HDF5_OUTPUT
 #endif
 #endif // HDF5OUTPUT
