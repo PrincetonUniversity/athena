@@ -55,6 +55,9 @@ class HydroDiffusion {
   enum DiffProcess {iso=0, aniso=1};
 
   // functions
+  // alias the 4th-order diffusion scratch onto Hydro's flux-calculation scratch;
+  // called at the end of the Hydro constructor (see hydro_diffusion.cpp)
+  void InitFourthOrderScratch();
   // iprim is primitives in the inertial system
   void CalcDiffusionFlux(const AthenaArray<Real> &prim, const AthenaArray<Real> &iprim,
                          const AthenaArray<Real> &bcc);

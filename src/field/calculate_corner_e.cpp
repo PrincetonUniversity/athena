@@ -297,6 +297,7 @@ void Field::ComputeCornerE_UCT4() {
   // corner state naming: E/W = L1/R1, N/S = L2/R2 one-sided limits w.r.t. the corner
   for (int k=ks; k<=ke; ++k) {
     for (int j=js; j<=je+1; ++j) {
+#pragma omp simd
       for (int i=is; i<=ie+1; ++i) {
         // corner wavespeeds: take the max of the face-centered estimates on the two
         // faces adjacent to the corner (symmetric w.r.t. the corner, following LDZ04)
@@ -357,6 +358,7 @@ void Field::ComputeCornerE_UCT4() {
     // E1=-(v X B)=VzBy-VyBz
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=js; j<=je+1; ++j) {
+#pragma omp simd
         for (int i=is; i<=ie; ++i) {
           Real alpha_plus_z = std::abs(alpha_plus_x3_(k,j,i));
           Real alpha_minus_z = std::abs(alpha_minus_x3_(k,j,i));
@@ -392,6 +394,7 @@ void Field::ComputeCornerE_UCT4() {
     // E2=-(v X B)=VxBz-VzBx
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=js; j<=je; ++j) {
+#pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
           Real alpha_plus_z = std::abs(alpha_plus_x3_(k,j,i));
           Real alpha_minus_z = std::abs(alpha_minus_x3_(k,j,i));
