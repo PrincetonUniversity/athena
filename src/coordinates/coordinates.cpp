@@ -602,20 +602,18 @@ void __attribute__((weak)) Coordinates::Laplacian(const AthenaArray<Real> &s,
         for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
-            delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))*oodx1sq;
+            delta_s(n,k,j,i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq;
           }
           if (f2) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              delta_s(n,k,j,i) += (s(n,k,j-1,i) - 2.0*s(n,k,j,i)
-                                   + s(n,k,j+1,i))*oodx2sq;
+              delta_s(n,k,j,i) += ((s(n,k,j-1,i) + s(n,k,j+1,i)) - 2.0*s(n,k,j,i))*oodx2sq;
             }
           }
           if (f3) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              delta_s(n,k,j,i) += (s(n,k-1,j,i) - 2.0*s(n,k,j,i)
-                                   + s(n,k+1,j,i))*oodx3sq;
+              delta_s(n,k,j,i) += ((s(n,k-1,j,i) + s(n,k+1,j,i)) - 2.0*s(n,k,j,i))*oodx3sq;
             }
           }
         }
@@ -662,8 +660,8 @@ void __attribute__((weak)) Coordinates::LaplacianX1(const AthenaArray<Real> &s,
       const Real oodx2sq = il2_[X2DIR], oodx3sq = il2_[X3DIR];
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))*oodx2sq
-                     + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))*oodx3sq;
+        delta_s(i) = ((s(n,k,j-1,i) + s(n,k,j+1,i)) - 2.0*s(n,k,j,i))*oodx2sq
+                     + ((s(n,k-1,j,i) + s(n,k+1,j,i)) - 2.0*s(n,k,j,i))*oodx3sq;
       }
       return;
     }
@@ -677,7 +675,7 @@ void __attribute__((weak)) Coordinates::LaplacianX1(const AthenaArray<Real> &s,
       const Real oodx2sq = il2_[X2DIR];
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        delta_s(i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))*oodx2sq;
+        delta_s(i) = ((s(n,k,j-1,i) + s(n,k,j+1,i)) - 2.0*s(n,k,j,i))*oodx2sq;
       }
       return;
     }
@@ -703,10 +701,8 @@ void __attribute__((weak)) Coordinates::LaplacianX1All(const AthenaArray<Real> &
           for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              delta_s(n,k,j,i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i)
-                                  + s(n,k,j+1,i))*oodx2sq
-                                 + (s(n,k-1,j,i) - 2.0*s(n,k,j,i)
-                                    + s(n,k+1,j,i))*oodx3sq;
+              delta_s(n,k,j,i) = ((s(n,k,j-1,i) + s(n,k,j+1,i)) - 2.0*s(n,k,j,i))*oodx2sq
+                                 + ((s(n,k-1,j,i) + s(n,k+1,j,i)) - 2.0*s(n,k,j,i))*oodx3sq;
             }
           }
         }
@@ -733,8 +729,7 @@ void __attribute__((weak)) Coordinates::LaplacianX1All(const AthenaArray<Real> &
           for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              delta_s(n,k,j,i) = (s(n,k,j-1,i) - 2.0*s(n,k,j,i)
-                                  + s(n,k,j+1,i))*oodx2sq;
+              delta_s(n,k,j,i) = ((s(n,k,j-1,i) + s(n,k,j+1,i)) - 2.0*s(n,k,j,i))*oodx2sq;
             }
           }
         }
@@ -767,8 +762,8 @@ void __attribute__((weak)) Coordinates::LaplacianX2(const AthenaArray<Real> &s,
       const Real oodx1sq = il2_[X1DIR], oodx3sq = il2_[X3DIR];
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))*oodx1sq
-                     + (s(n,k-1,j,i) - 2.0*s(n,k,j,i) + s(n,k+1,j,i))*oodx3sq;
+        delta_s(i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq
+                     + ((s(n,k-1,j,i) + s(n,k+1,j,i)) - 2.0*s(n,k,j,i))*oodx3sq;
       }
       return;
     }
@@ -782,7 +777,7 @@ void __attribute__((weak)) Coordinates::LaplacianX2(const AthenaArray<Real> &s,
       const Real oodx1sq = il2_[X1DIR];
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))*oodx1sq;
+        delta_s(i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq;
       }
       return;
     }
@@ -805,10 +800,8 @@ void __attribute__((weak)) Coordinates::LaplacianX2All(const AthenaArray<Real> &
           for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i)
-                                  + s(n,k,j,i+1))*oodx1sq
-                                 + (s(n,k-1,j,i) - 2.0*s(n,k,j,i)
-                                    + s(n,k+1,j,i))*oodx3sq;
+              delta_s(n,k,j,i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq
+                                 + ((s(n,k-1,j,i) + s(n,k+1,j,i)) - 2.0*s(n,k,j,i))*oodx3sq;
             }
           }
         }
@@ -835,8 +828,7 @@ void __attribute__((weak)) Coordinates::LaplacianX2All(const AthenaArray<Real> &
           for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i)
-                                  + s(n,k,j,i+1))*oodx1sq;
+              delta_s(n,k,j,i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq;
             }
           }
         }
@@ -866,8 +858,8 @@ void __attribute__((weak)) Coordinates::LaplacianX3(const AthenaArray<Real> &s,
       const Real oodx1sq = il2_[X1DIR], oodx2sq = il2_[X2DIR];
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))*oodx1sq
-                     + (s(n,k,j-1,i) - 2.0*s(n,k,j,i) + s(n,k,j+1,i))*oodx2sq;
+        delta_s(i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq
+                     + ((s(n,k,j-1,i) + s(n,k,j+1,i)) - 2.0*s(n,k,j,i))*oodx2sq;
       }
       return;
     }
@@ -881,7 +873,7 @@ void __attribute__((weak)) Coordinates::LaplacianX3(const AthenaArray<Real> &s,
       const Real oodx1sq = il2_[X1DIR];
 #pragma omp simd
       for (int i=il; i<=iu; ++i) {
-        delta_s(i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i) + s(n,k,j,i+1))*oodx1sq;
+        delta_s(i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq;
       }
       return;
     }
@@ -905,10 +897,8 @@ void __attribute__((weak)) Coordinates::LaplacianX3All(const AthenaArray<Real> &
           for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i)
-                                  + s(n,k,j,i+1))*oodx1sq
-                                 + (s(n,k,j-1,i) - 2.0*s(n,k,j,i)
-                                    + s(n,k,j+1,i))*oodx2sq;
+              delta_s(n,k,j,i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq
+                                 + ((s(n,k,j-1,i) + s(n,k,j+1,i)) - 2.0*s(n,k,j,i))*oodx2sq;
             }
           }
         }
@@ -935,8 +925,7 @@ void __attribute__((weak)) Coordinates::LaplacianX3All(const AthenaArray<Real> &
           for (int j=jl; j<=ju; ++j) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              delta_s(n,k,j,i) = (s(n,k,j,i-1) - 2.0*s(n,k,j,i)
-                                  + s(n,k,j,i+1))*oodx1sq;
+              delta_s(n,k,j,i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq;
             }
           }
         }
