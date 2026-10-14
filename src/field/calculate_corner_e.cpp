@@ -315,9 +315,11 @@ void Field::ComputeCornerE_UCT4() {
         // x2), and -E3 is the x1-flux of B2 (hence "+" on the B2 jump across x1)
         bx_S_minus_bx_N = bx_S(k,j,i) - bx_N(k,j,i);
         by_W_minus_by_E = by_W(k,j,i) - by_E(k,j,i);
+        // (the two corner states exchanged by an x1 reflection are added first, so that
+        // the sum is mirror symmetric, #165)
         e3(k,j,i) = (
-            alpha_plus_x*alpha_plus_y*e3_NE + alpha_plus_x*alpha_minus_y*e3_SE +
-            alpha_minus_x*alpha_plus_y*e3_NW + alpha_minus_x*alpha_minus_y*e3_SW
+            (alpha_plus_x*alpha_plus_y*e3_NE + alpha_minus_x*alpha_plus_y*e3_NW) +
+            (alpha_plus_x*alpha_minus_y*e3_SE + alpha_minus_x*alpha_minus_y*e3_SW)
                      ) / ((alpha_plus_x + alpha_minus_x)*(alpha_plus_y + alpha_minus_y))
                     - alpha_plus_y*alpha_minus_y*bx_S_minus_bx_N / (
                         alpha_plus_y + alpha_minus_y)
@@ -366,10 +368,10 @@ void Field::ComputeCornerE_UCT4() {
           // and +E1 is the x3-flux of B2 ("-" on the B2 jump across x3)
           by_R3_minus_by_L3 = by_R3(k,j,i) - by_L3(k,j,i);
           bz_R2_minus_bz_L2 = bz_R2(k,j,i) - bz_L2(k,j,i);
-          e1(k,j,i) = (alpha_plus_z*alpha_plus_y*e1_L3L2 +
-                       alpha_plus_z*alpha_minus_y*e1_L3R2 +
-                       alpha_minus_z*alpha_plus_y*e1_R3L2 +
-                       alpha_minus_z*alpha_minus_y*e1_R3R2)
+          e1(k,j,i) = ((alpha_plus_z*alpha_plus_y*e1_L3L2 +
+                        alpha_minus_z*alpha_plus_y*e1_R3L2) +
+                       (alpha_plus_z*alpha_minus_y*e1_L3R2 +
+                        alpha_minus_z*alpha_minus_y*e1_R3R2))
               / ((alpha_plus_z + alpha_minus_z)*(alpha_plus_y + alpha_minus_y))
               + alpha_plus_y*alpha_minus_y*bz_R2_minus_bz_L2 /
               (alpha_plus_y + alpha_minus_y)
@@ -401,10 +403,10 @@ void Field::ComputeCornerE_UCT4() {
           // and -E2 is the x3-flux of B1 ("+" on the B1 jump across x3)
           bx_R3_minus_bx_L3 = bx_R3(k,j,i) - bx_L3(k,j,i);
           bz_R1_minus_bz_L1 = bz_R1(k,j,i) - bz_L1(k,j,i);
-          e2(k,j,i) = (alpha_plus_z*alpha_plus_x*e2_L3L1 +
-                       alpha_plus_z*alpha_minus_x*e2_L3R1 +
-                       alpha_minus_z*alpha_plus_x*e2_R3L1 +
-                       alpha_minus_z*alpha_minus_x*e2_R3R1)
+          e2(k,j,i) = ((alpha_plus_z*alpha_plus_x*e2_L3L1 +
+                        alpha_minus_z*alpha_plus_x*e2_R3L1) +
+                       (alpha_plus_z*alpha_minus_x*e2_L3R1 +
+                        alpha_minus_z*alpha_minus_x*e2_R3R1))
               / ((alpha_plus_z + alpha_minus_z)*(alpha_plus_x + alpha_minus_x))
               - alpha_plus_x*alpha_minus_x*bz_R1_minus_bz_L1 /
               (alpha_plus_x + alpha_minus_x)
