@@ -194,6 +194,10 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
     alpha_plus_x3_.NewAthenaArray(ncells3, ncells2, ncells1);
     alpha_minus_x3_.NewAthenaArray(ncells3, ncells2, ncells1);
   }
+
+  // alias the 4th-order resistive Poynting-flux scratch onto the conversion scratch
+  // above (never simultaneously live; see FieldDiffusion::InitFourthOrderScratch)
+  if (fdif.field_diffusion_defined) fdif.InitFourthOrderScratch(this);
 }
 
 
@@ -282,39 +286,44 @@ void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
                                              Coordinates *pco, int il, int iu, int jl,
                                              int ju, int kl, int ku) {
   MeshBlock *pmb = pmy_block;
+  // dimensionality dispatch hoisted out of the innermost loop (loop-invariant);
+  // trivial dimensions default to second-order cell-centered field reconstruction
+  const bool f2 = pmb->block_size.nx2 > 1;
+  const bool f3 = pmb->block_size.nx3 > 1;
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
+      if (f3) { // 3D
 #pragma omp simd
-      for (int i=il; i<=iu; ++i) {
-        const Real& b1_im1 = bf_center.x1f(k  , j  , i-1);
-        const Real& b1_i   = bf_center.x1f(k  , j  , i  );
-        const Real& b1_ip1 = bf_center.x1f(k  , j  , i+1);
-        const Real& b1_ip2 = bf_center.x1f(k  , j  , i+2);
-        const Real& b2_j   = bf_center.x2f(k  , j  , i);
-        const Real& b2_jp1 = bf_center.x2f(k  , j+1, i);
-        const Real& b3_k   = bf_center.x3f(k  , j  , i);
-        const Real& b3_kp1 = bf_center.x3f(k+1, j  , i);
-
-        Real& bcc1 = bc_center(IB1,k,j,i);
-        Real& bcc2 = bc_center(IB2,k,j,i);
-        Real& bcc3 = bc_center(IB3,k,j,i);
-
-        bcc1 = -1.0/16.0*(b1_im1 + b1_ip2) + 9.0/16.0*(b1_i + b1_ip1);
-
-        if (pmb->block_size.nx2 > 1) {
-          const Real& b2_jm1 = bf_center.x2f(k,j-1,i);
-          const Real& b2_jp2 = bf_center.x2f(k,j+2,i);
-          bcc2 = -1.0/16.0*(b2_jm1 + b2_jp2) + 9.0/16.0*(b2_j + b2_jp1);
-        } else { // default to second-order cell-centered field reconstruction in 1D:
-          bcc2 = 0.5*(b2_j + b2_jp1);
+        for (int i=il; i<=iu; ++i) {
+          bc_center(IB1,k,j,i) =
+              -1.0/16.0*(bf_center.x1f(k,j,i-1) + bf_center.x1f(k,j,i+2))
+              + 9.0/16.0*(bf_center.x1f(k,j,i) + bf_center.x1f(k,j,i+1));
+          bc_center(IB2,k,j,i) =
+              -1.0/16.0*(bf_center.x2f(k,j-1,i) + bf_center.x2f(k,j+2,i))
+              + 9.0/16.0*(bf_center.x2f(k,j,i) + bf_center.x2f(k,j+1,i));
+          bc_center(IB3,k,j,i) =
+              -1.0/16.0*(bf_center.x3f(k-1,j,i) + bf_center.x3f(k+2,j,i))
+              + 9.0/16.0*(bf_center.x3f(k,j,i) + bf_center.x3f(k+1,j,i));
         }
-
-        if (pmb->block_size.nx3 > 1) {
-          const Real& b3_km1 = bf_center.x3f(k-1,j,i);
-          const Real& b3_kp2 = bf_center.x3f(k+2,j,i);
-          bcc3 = -1.0/16.0*(b3_km1 + b3_kp2) + 9.0/16.0*(b3_k + b3_kp1);
-        } else {
-          bcc3 = 0.5*(b3_k + b3_kp1);
+      } else if (f2) { // 2D
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          bc_center(IB1,k,j,i) =
+              -1.0/16.0*(bf_center.x1f(k,j,i-1) + bf_center.x1f(k,j,i+2))
+              + 9.0/16.0*(bf_center.x1f(k,j,i) + bf_center.x1f(k,j,i+1));
+          bc_center(IB2,k,j,i) =
+              -1.0/16.0*(bf_center.x2f(k,j-1,i) + bf_center.x2f(k,j+2,i))
+              + 9.0/16.0*(bf_center.x2f(k,j,i) + bf_center.x2f(k,j+1,i));
+          bc_center(IB3,k,j,i) = 0.5*(bf_center.x3f(k,j,i) + bf_center.x3f(k+1,j,i));
+        }
+      } else { // 1D
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          bc_center(IB1,k,j,i) =
+              -1.0/16.0*(bf_center.x1f(k,j,i-1) + bf_center.x1f(k,j,i+2))
+              + 9.0/16.0*(bf_center.x1f(k,j,i) + bf_center.x1f(k,j,i+1));
+          bc_center(IB2,k,j,i) = 0.5*(bf_center.x2f(k,j,i) + bf_center.x2f(k,j+1,i));
+          bc_center(IB3,k,j,i) = 0.5*(bf_center.x3f(k,j,i) + bf_center.x3f(k+1,j,i));
         }
       }
     }
@@ -341,6 +350,7 @@ void Field::CellCenteredToAveragedField(const AthenaArray<Real> &bc_center,
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
       for (int i=il; i<=iu; ++i) {
         bc(IB1,k,j,i) = bc_center(IB1,k,j,i) + C*laplacian_cc(0,k,j,i);
         bc(IB2,k,j,i) = bc_center(IB2,k,j,i) + C*laplacian_cc(1,k,j,i);
@@ -384,8 +394,15 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
     }
   }
 
-  pco->LaplacianX1All(bf.x1f, laplacian_bx1, nl, nu, kl_buf, ku_buf, jl_buf, ju_buf,
-                      il, iu+1);
+  // In 1D the transverse Laplacian of the x1-faced field is identically zero
+  // (LaplacianX1All would just ZeroClear the scratch), so B1 = <B1> exactly; skip the
+  // Laplacian and reduce the correction loop to a copy. The x2f/x3f corrections below
+  // are genuine d^2/dx1^2 terms in 1D and must be retained.
+  const bool f2_fc = pmb->block_size.nx2 > 1;
+  if (f2_fc) {
+    pco->LaplacianX1All(bf.x1f, laplacian_bx1, nl, nu, kl_buf, ku_buf, jl_buf, ju_buf,
+                        il, iu+1);
+  }
   pco->LaplacianX2All(bf.x2f, laplacian_bx2, nl, nu, kl_buf, ku_buf, jl, ju+1,
                       il_buf, iu_buf);
   pco->LaplacianX3All(bf.x3f, laplacian_bx3, nl, nu, kl, ku+1, jl_buf, ju_buf,
@@ -395,15 +412,28 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
   Real h = pco->dx1f(il);
   Real C = (h*h)/24.0;
 
-  for (int k=kl_buf; k<=ku_buf; ++k) {
-    for (int j=jl_buf; j<=ju_buf; ++j) {
-      for (int i=il; i<=iu+1; ++i) {
-        bf_center.x1f(k,j,i) = bf.x1f(k,j,i) - C*laplacian_bx1(k,j,i);
+  if (f2_fc) {
+    for (int k=kl_buf; k<=ku_buf; ++k) {
+      for (int j=jl_buf; j<=ju_buf; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu+1; ++i) {
+          bf_center.x1f(k,j,i) = bf.x1f(k,j,i) - C*laplacian_bx1(k,j,i);
+        }
+      }
+    }
+  } else {
+    for (int k=kl_buf; k<=ku_buf; ++k) {
+      for (int j=jl_buf; j<=ju_buf; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu+1; ++i) {
+          bf_center.x1f(k,j,i) = bf.x1f(k,j,i);
+        }
       }
     }
   }
   for (int k=kl_buf; k<=ku_buf; ++k) {
     for (int j=jl; j<=ju+1; ++j) {
+#pragma omp simd
       for (int i=il_buf; i<=iu_buf; ++i) {
         bf_center.x2f(k,j,i) = bf.x2f(k,j,i) - C*laplacian_bx2(k,j,i);
       }
@@ -411,6 +441,7 @@ void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center
   }
   for (int k=kl; k<=ku+1; ++k) {
     for (int j=jl_buf; j<=ju_buf; ++j) {
+#pragma omp simd
       for (int i=il_buf; i<=iu_buf; ++i) {
         bf_center.x3f(k,j,i) = bf.x3f(k,j,i) - C*laplacian_bx3(k,j,i);
       }

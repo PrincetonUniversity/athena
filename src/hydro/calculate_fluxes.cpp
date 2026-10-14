@@ -173,6 +173,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
       if (order == 4) {
         for (int n=0; n<NWAVE; n++) {
+#pragma omp simd
           for (int i=is; i<=ie+1; i++) {
             wl3d_(n,k,j,i) = wl_(n,i);
             wr3d_(n,k,j,i) = wr_(n,i);
@@ -293,6 +294,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX2(k, j, is, ie+1, b1, bx_Nb_, bx_S_,
                                             0, 0, 0);
           for (int n=0; n<2; n++) {
+#pragma omp simd
             for (int i=is; i<=ie+1; i++) {
               v_NE(n,k,j,i) = v_NE_(n,i);
               v_SE(n,k,j,i) = v_SE_(n,i);
@@ -300,6 +302,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
               v_SW(n,k,j,i) = v_SW_(n,i);
             }
           }
+#pragma omp simd
           for (int i=is; i<=ie+1; i++) {
             bx_N(k,j,i) = bx_N_(i);
             bx_S(k,j,i) = bx_S_(i);
@@ -369,6 +372,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
             pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, b1, bx_L3_, bx_R3_,
                                               0, 0, 0);
             for (int n=0; n<3; n+=2) {
+#pragma omp simd
               for (int i=is; i<=ie+1; i++) {
                 v_L3L1(n,k+1,j,i) = v_L3L1_(n,i);
                 v_L3R1(n,k+1,j,i) = v_L3R1_(n,i);
@@ -376,6 +380,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
                 v_R3R1(n,k,j,i) = v_R3R1_(n,i);
               }
             }
+#pragma omp simd
             for (int i=is; i<=ie+1; i++) {
               bx_L3(k+1,j,i) = bx_L3_(i);
               bx_R3(k,j,i) = bx_R3_(i);
@@ -461,6 +466,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 
         if (order == 4) {
           for (int n=0; n<NWAVE; n++) {
+#pragma omp simd
             for (int i=il; i<=iu; i++) {
               wl3d_(n,k,j,i) = wl_(n,i);
               wr3d_(n,k,j,i) = wr_(n,i);
@@ -565,6 +571,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, wl3d_,
                                             vl_temp2, vr_temp2, IVX, IVY, 0);
           for (int n=0; n<2; n++) {
+#pragma omp simd
             for (int i=is; i<=ie+1; i++) {
               v_NE(n,k,j,i) = 0.5*(v_NE(n,k,j,i) + vl_temp2(n,i));
               v_NW(n,k,j,i) = 0.5*(v_NW(n,k,j,i) + vr_temp2(n,i));
@@ -574,6 +581,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, wr3d_,
                                             vl_temp2, vr_temp2, IVX, IVY, 0);
           for (int n=0; n<2; n++) {
+#pragma omp simd
             for (int i=is; i<=ie+1; i++) {
               v_SE(n,k,j,i) = 0.5*(v_SE(n,k,j,i) + vl_temp2(n,i));
               v_SW(n,k,j,i) = 0.5*(v_SW(n,k,j,i) + vr_temp2(n,i));
@@ -582,6 +590,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           // Limited transverse reconstructions: call PPMx1() for single-state b_y
           pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, b2,
                                             by_E_, by_W_, 0, 0, 0);
+#pragma omp simd
           for (int i=is; i<=ie+1; i++) {
             by_E(k,j,i) = by_E_(i);
             by_W(k,j,i) = by_W_(i);
@@ -646,6 +655,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
             pmb->precon->PiecewiseParabolicX3(k, j, is, ie, b2, by_L3_, by_R3_,
                                               0, 0, 0);
             for (int n=1; n<3; n++) {
+#pragma omp simd
               for (int i=is; i<=ie; i++) {
                 v_L3L2(n,k+1,j,i) = v_L3L2_(n,i);
                 v_L3R2(n,k+1,j,i) = v_L3R2_(n,i);
@@ -653,6 +663,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
                 v_R3R2(n,k,j,i) = v_R3R2_(n,i);
               }
             }
+#pragma omp simd
             for (int i=is; i<=ie; i++) {
               by_L3(k+1,j,i) = by_L3_(i);
               by_R3(k,j,i) = by_R3_(i);
@@ -728,6 +739,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
 #endif
         if (order == 4) {
           for (int n=0; n<NWAVE; n++) {
+#pragma omp simd
             for (int i=il; i<=iu; i++) {
               wl3d_(n,k,j,i) = wl_(n,i);
               wr3d_(n,k,j,i) = wr_(n,i);
@@ -811,6 +823,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, wl3d_,
                                             vl_temp2, vr_temp2, IVZ, IVZ, 2);
           for (int n=0; n<3; n+=2) {
+#pragma omp simd
             for (int i=is; i<=ie+1; i++) {
               v_L3L1(n,k,j,i) = 0.5*(v_L3L1(n,k,j,i) + vl_temp2(n,i));
               v_L3R1(n,k,j,i) = 0.5*(v_L3R1(n,k,j,i) + vr_temp2(n,i));
@@ -822,6 +835,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, wr3d_,
                                             vl_temp2, vr_temp2, IVZ, IVZ, 2);
           for (int n=0; n<3; n+=2) {
+#pragma omp simd
             for (int i=is; i<=ie+1; i++) {
               v_R3L1(n,k,j,i) = 0.5*(v_R3L1(n,k,j,i) + vl_temp2(n,i));
               v_R3R1(n,k,j,i) = 0.5*(v_R3R1(n,k,j,i) + vr_temp2(n,i));
@@ -830,6 +844,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           // Limited transverse reconstructions: call PPMx1() for single-state b_z
           pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, b3,
                                             bz_L1_, bz_R1_, 0, 0, 0);
+#pragma omp simd
           for (int i=is; i<=ie+1; i++) {
             bz_L1(k,j,i) = bz_L1_(i);
             bz_R1(k,j,i) = bz_R1_(i);
@@ -863,6 +878,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
           pmb->precon->PiecewiseParabolicX2(k, j, is, ie, b3, bx_Nb_, bz_R2_,
                                             0, 0, 0);
           for (int n=1; n<3; n++) {
+#pragma omp simd
             for (int i=is; i<=ie; i++) {
               v_L3L2(n,k,j,i) = 0.5*(v_L3L2(n,k,j,i) + v_L3L2_(n,i));
               v_L3R2(n,k,j,i) = 0.5*(v_L3R2(n,k,j,i) + v_L3R2_(n,i));
@@ -870,6 +886,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
               v_R3R2(n,k,j,i) = 0.5*(v_R3R2(n,k,j,i) + v_R3R2_(n,i));
             }
           }
+#pragma omp simd
           for (int i=is; i<=ie; i++) {
             bz_L2(k,j,i) = bz_L2_(i);
             bz_R2(k,j,i) = bz_R2_(i);
