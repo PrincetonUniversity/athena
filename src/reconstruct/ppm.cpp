@@ -227,7 +227,17 @@ void Reconstruction::PiecewiseParabolicX1(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
-        Real qb_tmp = (q_ip1(n,i) - q(n,i))*(q(n,i) - q_im1(n,i));
+        // Cell-average extremum test (CS eq 20). A neighbor difference at the roundoff
+        // level relative to the other one is treated as exactly zero, so that the branch
+        // taken below does not depend on the sign of an O(epsilon) quantity. Otherwise a
+        // 1-ulp asymmetry (e.g. from FMA contraction) sends mirror-image cells down
+        // different branches and grows to a truncation-error-sized asymmetry.
+        Real dqc_m = q(n,i) - q_im1(n,i);
+        Real dqc_p = q_ip1(n,i) - q(n,i);
+        Real dqc_tol = (1.0e-6)*std::max(std::abs(dqc_m), std::abs(dqc_p));
+        if (std::abs(dqc_m) <= dqc_tol) dqc_m = 0.0;
+        if (std::abs(dqc_p) <= dqc_tol) dqc_p = 0.0;
+        Real qb_tmp = dqc_m*dqc_p;
 
         Real qa = d2qc_im1(i);
         Real qb = d2qc(i);
@@ -527,7 +537,17 @@ void Reconstruction::PiecewiseParabolicX2(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
-        Real qb_tmp = (q_jp1(n,i) - q(n,i))*(q(n,i) - q_jm1(n,i));
+        // Cell-average extremum test (CS eq 20). A neighbor difference at the roundoff
+        // level relative to the other one is treated as exactly zero, so that the branch
+        // taken below does not depend on the sign of an O(epsilon) quantity. Otherwise a
+        // 1-ulp asymmetry (e.g. from FMA contraction) sends mirror-image cells down
+        // different branches and grows to a truncation-error-sized asymmetry.
+        Real dqc_m = q(n,i) - q_jm1(n,i);
+        Real dqc_p = q_jp1(n,i) - q(n,i);
+        Real dqc_tol = (1.0e-6)*std::max(std::abs(dqc_m), std::abs(dqc_p));
+        if (std::abs(dqc_m) <= dqc_tol) dqc_m = 0.0;
+        if (std::abs(dqc_p) <= dqc_tol) dqc_p = 0.0;
+        Real qb_tmp = dqc_m*dqc_p;
 
         Real qa = d2qc_jm1(i);
         Real qb = d2qc(i);
@@ -816,7 +836,17 @@ void Reconstruction::PiecewiseParabolicX3(
 #pragma omp simd simdlen(SIMD_WIDTH)
       for (int i=il; i<=iu; ++i) {
         Real qa_tmp = dqf_minus(i)*dqf_plus(i);
-        Real qb_tmp = (q_kp1(n,i) - q(n,i))*(q(n,i) - q_km1(n,i));
+        // Cell-average extremum test (CS eq 20). A neighbor difference at the roundoff
+        // level relative to the other one is treated as exactly zero, so that the branch
+        // taken below does not depend on the sign of an O(epsilon) quantity. Otherwise a
+        // 1-ulp asymmetry (e.g. from FMA contraction) sends mirror-image cells down
+        // different branches and grows to a truncation-error-sized asymmetry.
+        Real dqc_m = q(n,i) - q_km1(n,i);
+        Real dqc_p = q_kp1(n,i) - q(n,i);
+        Real dqc_tol = (1.0e-6)*std::max(std::abs(dqc_m), std::abs(dqc_p));
+        if (std::abs(dqc_m) <= dqc_tol) dqc_m = 0.0;
+        if (std::abs(dqc_p) <= dqc_tol) dqc_p = 0.0;
+        Real qb_tmp = dqc_m*dqc_p;
 
         // Check if extrema is smooth
         Real qa = d2qc_km1(i);

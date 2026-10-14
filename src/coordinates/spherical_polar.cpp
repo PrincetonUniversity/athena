@@ -775,9 +775,9 @@ void Coordinates::ConvertAngle(MeshBlock *pmb, const int nang,
 void Coordinates::GetGeometryZeta(NRRadiation *prad, const int k, const int j,
                                      const int i, AthenaArray<Real> &g_zeta) {
   const int& nzeta = prad->nzeta;
-  Real radius = x1v(i);
+  Real inv_radius = coord_src1_i_(i);
   for(int n=0; n<nzeta*2+1; ++n) {
-    g_zeta(n) = 1./radius;
+    g_zeta(n) = inv_radius;
   }
 }
 
@@ -787,7 +787,7 @@ void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
                                     const int i, const int n_zeta,
                                     AthenaArray<Real> &g_psi) {
   const int &npsi = prad->npsi;
-  Real radius = x1v(i);
+  Real inv_radius = coord_src1_i_(i);
   Real sinzeta_v = 1.0 - prad->coszeta_v(n_zeta) * prad->coszeta_v(n_zeta);
   sinzeta_v = std::sqrt(sinzeta_v);
   const Real &cottheta = prad->cot_theta(j);
@@ -797,7 +797,7 @@ void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
     }
   } else {
     for(int n=0; n<2*npsi+1; ++n) {
-      g_psi(n) = sinzeta_v * cottheta * prad->sin_psi_f(n)/radius;
+      g_psi(n) = sinzeta_v * cottheta * prad->sin_psi_f(n) * inv_radius;
     }
   }
 }
@@ -806,7 +806,7 @@ void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
 void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
                         const int i, AthenaArray<Real> &g_psi) {
   const int& npsi = prad->npsi;
-  Real radius = x1v(i);
+  Real inv_radius = coord_src1_i_(i);
 
   const Real &cottheta = prad->cot_theta(j);
   if (npsi == 1) {
@@ -815,7 +815,7 @@ void Coordinates::GetGeometryPsi(NRRadiation *prad, const int k, const int j,
     }
   } else {
     for(int n=0; n<2*npsi+1; ++n) {
-      g_psi(n) = cottheta * prad->sin_psi_f(n)/radius;
+      g_psi(n) = cottheta * prad->sin_psi_f(n) * inv_radius;
     }
   }
 }

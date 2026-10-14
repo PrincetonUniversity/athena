@@ -183,6 +183,12 @@ hydro_sod_shock_roe
     against the analytic solution (which are computed by the executable automatically and
     stored in the temporary file shock_errors.dat). Roe variant.
 
+hydro_units
+    Regression test for the units module. Runs the unit_test problem generator with
+    each preset, custom_basis, and custom unit system and checks the printed code and
+    basis units against values computed in the test. Also checks that invalid <units>
+    input is rejected.
+
 hydro4_hydro_linwave_2d
     Regression test based on Newtonian hydro linear wave convergence problem
     Check errors of reconstruction and time integrator options other than default VL2+PLM
@@ -344,6 +350,20 @@ sr_sr_mhd_linwave
     Regression test based on SR MHD linear wave convergence problem.
     Runs a linear wave convergence test in 3D and checks L1 errors as saved by the
     executable in linearwave-errors.dat.
+
+symmetry_cyl_meshblock_axisymmetry
+    Regression test based on the Keplerian disk in cylindrical coordinates (pgen/disk.cpp).
+    Runs the axisymmetric disk on one MeshBlock, on sixteen MeshBlocks along phi, and on
+    four MeshBlocks along phi with x2max written to twelve digits, and requires every run
+    to be axisymmetric to the bit and the multi-block runs to reproduce the one-block run.
+    Catches a uniform cell width formed per MeshBlock from the block's rounded edges.
+
+symmetry_hydro_blast_mirror
+    Regression test based on the spherical blast wave (pgen/blast.cpp) with a smooth
+    pressure ramp, on an even, origin-centered grid. Runs a few steps in 2D and 3D with
+    the extremum-preserving PPM limiter (xorder=3 and 4) and requires the solution to
+    stay mirror-symmetric to roundoff under x->-x, y->-y, z->-z. Catches a limiter
+    branch that flips on a 1-ulp asymmetry where neighboring cells are bitwise equal.
 
 symmetry_hydro_linwave_aligned
     Regression test based on Newtonian hydro linear wave convergence problem
