@@ -112,6 +112,9 @@ class Hydro {
   // 4D scratch arrays
   AthenaArray<Real> scr1_nkji_, scr2_nkji_;
   AthenaArray<Real> wl3d_, wr3d_;
+  // fourth-order MHD (UCT4): face-centered (point-valued) L/R Riemann states, used
+  // for the corner wavespeed estimates in Hydro::CalculateFluxes
+  AthenaArray<Real> wl_fc_, wr_fc_;
   // 1D scratch arrays
   AthenaArray<Real> laplacian_l_fc_, laplacian_r_fc_;
 

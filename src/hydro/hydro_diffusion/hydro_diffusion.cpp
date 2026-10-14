@@ -23,7 +23,9 @@
 #include "../../coordinates/coordinates.hpp"
 #include "../../field/field.hpp"
 #include "../../mesh/mesh.hpp"
+#include "../../orbital_advection/orbital_advection.hpp"
 #include "../../parameter_input.hpp"
+#include "../../reconstruct/reconstruction.hpp"
 #include "../hydro.hpp"
 #include "hydro_diffusion.hpp"
 
@@ -94,6 +96,33 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
     nu_tot_.NewAthenaArray(nc1);
     kappa_tot_.NewAthenaArray(nc1);
   }
+
+  // fourth-order diffusive fluxes: uniform Cartesian grids only (guaranteed for 4th-order
+  // MHD, which requires square cells; for non-Cartesian/non-uniform 4th-order hydro the
+  // second-order diffusion operators are retained)
+  fourth_order_ = hydro_diffusion_defined
+                  && pmb_->precon->xorder == 4
+                  && std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0
+                  && pmb_->precon->uniform_[X1DIR]
+                  && (!pmb_->pmy_mesh->f2 || pmb_->precon->uniform_[X2DIR])
+                  && (!pmb_->pmy_mesh->f3 || pmb_->precon->uniform_[X3DIR]);
+  if (fourth_order_) {
+    if (nu_aniso > 0.0 || kappa_aniso > 0.0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in HydroDiffusion" << std::endl
+          << "Anisotropic viscosity/conduction are not implemented for the "
+          << "fourth-order (time/xorder=4) diffusive fluxes" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    wc_.NewAthenaArray(NHYDRO, nc3, nc2, nc1);
+    fpt_.NewAthenaArray(NHYDRO, nc3+1, nc2+1, nc1+1);
+    gc1_.NewAthenaArray(nc3, nc2, nc1);
+    gc2_.NewAthenaArray(nc3, nc2, nc1);
+    gc3_.NewAthenaArray(nc3, nc2, nc1);
+    gc4_.NewAthenaArray(nc3, nc2, nc1);
+    if (kappa_iso > 0.0)
+      tc_.NewAthenaArray(nc3, nc2, nc1);
+  }
 }
 
 
@@ -106,6 +135,27 @@ void HydroDiffusion::CalcDiffusionFlux(const AthenaArray<Real> &prim,
                                        const AthenaArray<Real> &iprim,
                                        const AthenaArray<Real> &bcc) {
   SetDiffusivity(prim, bcc);
+
+  // fourth-order (uniform Cartesian) diffusive fluxes from point-valued primitives
+  if (fourth_order_) {
+    if (pmb_->porb->orbital_advection_defined) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in HydroDiffusion" << std::endl
+          << "Orbital advection is not supported with fourth-order diffusion"
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    DeconvolvePrimitivesFourth(prim);
+    if (nu_iso > 0.0) {
+      ClearFlux(visflx);
+      ViscousFluxIsoFourth(prim, visflx);
+    }
+    if (kappa_iso > 0.0) {
+      ClearFlux(cndflx);
+      ThermalFluxIsoFourth(prim, cndflx);
+    }
+    return;
+  }
 
   if (nu_iso > 0.0 || nu_aniso > 0.0) ClearFlux(visflx);
   if (nu_iso > 0.0) ViscousFluxIso(prim, iprim, visflx);
