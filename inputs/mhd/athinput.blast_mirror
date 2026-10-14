@@ -1,0 +1,60 @@
+<comment>
+problem   = spherical MHD blast wave on an even grid centered on the origin: the solution must
+            stay mirror-symmetric to roundoff under x->-x, y->-y, z->-z (regression test)
+reference = Gardiner. T.A. & Stone, J.M., JCP, 205, 509 (2005) (for MHD version of test)
+configure = --prob=blast -b --nghost=3
+
+<job>
+problem_id = Blast      # problem ID: basename of output filenames
+
+<output1>
+file_type  = tab        # tabular dump of the last frame
+variable   = prim       # variables to be output
+data_format = %24.16e   # full double precision: the test compares bits
+dt         = 0.01       # time increment between outputs
+
+<time>
+cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1         # cycle limit
+tlim       = 0.01       # time limit (a few steps; see the regression test)
+integrator = rk3        # time integration algorithm
+xorder     = 3          # order of spatial reconstruction (xorder=4 is hydro-only)
+ext_preserving = true   # extremum-preserving PPM limiter (xorder=3,4)
+ncycle_out = 0          # interval for stdout summary info
+
+<mesh>
+nx1        = 64         # Number of zones in X1-direction
+x1min      = -0.5       # minimum value of X1
+x1max      = 0.5        # maximum value of X1
+ix1_bc     = periodic   # inner-X1 boundary flag
+ox1_bc     = periodic   # outer-X1 boundary flag
+
+nx2        = 64         # Number of zones in X2-direction
+x2min      = -0.5       # minimum value of X2
+x2max      = 0.5        # maximum value of X2
+ix2_bc     = periodic   # inner-X2 boundary flag
+ox2_bc     = periodic   # outer-X2 boundary flag
+
+nx3        = 1          # Number of zones in X3-direction
+x3min      = -0.5       # minimum value of X3
+x3max      = 0.5        # maximum value of X3
+ix3_bc     = periodic   # inner-X3 boundary flag
+ox3_bc     = periodic   # outer-X3 boundary flag
+
+<meshblock>
+nx1        = 64
+nx2        = 64
+nx3        = 1
+
+<hydro>
+gamma           = 1.666666666667 # gamma = C_p/C_v
+iso_sound_speed = 0.4082482905   # equivalent to sqrt(gamma*p/d) for p=0.1, d=1
+
+<problem>
+compute_error = false  # check whether blast is spherical at end
+pamb          = 0.1    # ambient pressure
+prat          = 4.     # Pressure ratio initially
+radius        = 0.3    # Radius of the inner sphere
+ramp          = 0.25   # log-linear ramp in pressure between radius-ramp and radius
+b0            = 1.0    # magnetic field strength
+angle         = 0.0    # angle from x-axis to magnetic field (degrees)
