@@ -478,7 +478,7 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     flx[4] += coeff[2]*(alpha_s*(hp - v1*cs) - qf*vbet - afpbb);
     flx[4] += coeff[3]*(0.5*vsq + (gm1-1.0)*x/gm1);
     flx[4] += coeff[4]*(alpha_s*(hp + v1*cs) + qf*vbet - afpbb);
-    flx[4] += coeff[5]*(v1*bet3 - v3*bet2);
+    flx[4] += coeff[5]*(v2*bet3 - v3*bet2);
     flx[4] += coeff[6]*(alpha_f*(hp + v1*cf) - qs*vbet + aspbb);
 
     flx[5] += coeff[0]*as_prime*bet2_star;
