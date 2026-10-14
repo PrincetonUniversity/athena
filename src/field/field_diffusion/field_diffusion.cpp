@@ -25,6 +25,7 @@
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
+#include "../../reconstruct/reconstruction.hpp"
 #include "../field.hpp"
 #include "field_diffusion.hpp"
 
@@ -78,6 +79,27 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
       CalcMagDiffCoeff_ = ConstDiffusivity;
     else
       CalcMagDiffCoeff_ = pmb->pmy_mesh->FieldDiffusivity_;
+
+    // fourth-order diffusive EMF (4th-order MHD guarantees uniform Cartesian
+    // square cells; only Ohmic resistivity is implemented at fourth order)
+    fourth_order_ = (pmb->precon->xorder == 4);
+    if (fourth_order_) {
+      if (eta_hall != 0.0 || eta_ad != 0.0) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in FieldDiffusion" << std::endl
+            << "Hall effect and ambipolar diffusion are not implemented for the "
+            << "fourth-order (time/xorder=4) diffusive EMF" << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      e_pt_.x1e.NewAthenaArray(nc3+1, nc2+1, nc1);
+      e_pt_.x2e.NewAthenaArray(nc3+1, nc2, nc1+1);
+      e_pt_.x3e.NewAthenaArray(nc3, nc2+1, nc1+1);
+      pfpt_.x1f.NewAthenaArray(nc3, nc2, nc1+1);
+      pfpt_.x2f.NewAthenaArray(nc3, nc2+1, nc1);
+      pfpt_.x3f.NewAthenaArray(nc3+1, nc2, nc1);
+    }
+  } else {
+    fourth_order_ = false;
   }
 
   if (field_diffusion_defined && RELATIVISTIC_DYNAMICS) {
@@ -101,6 +123,15 @@ void FieldDiffusion::CalcDiffusionEMF(FaceField &bi, const AthenaArray<Real> &bc
   if ((eta_ohm == 0.0) && (eta_ad == 0.0)) return;
 
   SetDiffusivity(ph->w, pf->bcc);
+
+  // fourth-order (uniform Cartesian) resistive EMF from the point-valued
+  // face-/cell-centered fields (b_fc, bcc_center)
+  if (fourth_order_) {
+    ClearEMF(e_oa);
+    if (eta_ohm != 0.0) OhmicEMFFourth(e_oa);
+    if (NON_BAROTROPIC_EOS) PoyntingFluxFourth();
+    return;
+  }
 
   CalcCurrent(bi);
   ClearEMF(e_oa);
