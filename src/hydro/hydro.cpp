@@ -149,6 +149,10 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     }
   }
 
+  // alias the 4th-order diffusion scratch onto the flux-calculation scratch above
+  // (never simultaneously live; see HydroDiffusion::InitFourthOrderScratch)
+  if (hdif.hydro_diffusion_defined) hdif.InitFourthOrderScratch();
+
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
 }
 
