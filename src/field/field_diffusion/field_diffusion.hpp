@@ -60,6 +60,9 @@ class FieldDiffusion {
   // static constexpr int n_ambi = 2;
 
   // functions
+  // alias pfpt_ onto Field's 4th-order conversion scratch; called at the end of the
+  // Field constructor (see field_diffusion.cpp)
+  void InitFourthOrderScratch(Field *pf);
   void CalcDiffusionEMF(FaceField &bi, const AthenaArray<Real> &bc, EdgeField &e);
   void AddEMF(const EdgeField &e_src, EdgeField &e_des);
   void ClearEMF(EdgeField &e);

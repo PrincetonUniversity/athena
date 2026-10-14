@@ -32,6 +32,7 @@ class ParameterInput;
 class Hydro {
   friend class Field;
   friend class EquationOfState;
+  friend class HydroDiffusion;
  public:
   Hydro(MeshBlock *pmb, ParameterInput *pin);
 

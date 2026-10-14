@@ -29,6 +29,7 @@ class Hydro;
 
 class Field {
   friend class Hydro;
+  friend class FieldDiffusion;
  public:
   Field(MeshBlock *pmb, ParameterInput *pin);
 
