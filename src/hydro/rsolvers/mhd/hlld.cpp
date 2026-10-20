@@ -247,19 +247,19 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     urdst.mx = urst.mx;
 
     // eqn (59) of M&K
-    Real tmp = invsumd*(sqrtdl*(ulst.my*ulst_d_inv) + sqrtdr*(urst.my*urst_d_inv) +
-                        bxsig*(urst.by - ulst.by));
-    uldst.my = uldst.d * tmp;
-    urdst.my = urdst.d * tmp;
+    Real vydst = invsumd*(sqrtdl*(ulst.my*ulst_d_inv) + sqrtdr*(urst.my*urst_d_inv) +
+                          bxsig*(urst.by - ulst.by));
+    uldst.my = uldst.d * vydst;
+    urdst.my = urdst.d * vydst;
 
     // eqn (60) of M&K
-    tmp = invsumd*(sqrtdl*(ulst.mz*ulst_d_inv) + sqrtdr*(urst.mz*urst_d_inv) +
-                   bxsig*(urst.bz - ulst.bz));
-    uldst.mz = uldst.d * tmp;
-    urdst.mz = urdst.d * tmp;
+    Real vzdst = invsumd*(sqrtdl*(ulst.mz*ulst_d_inv) + sqrtdr*(urst.mz*urst_d_inv) +
+                          bxsig*(urst.bz - ulst.bz));
+    uldst.mz = uldst.d * vzdst;
+    urdst.mz = urdst.d * vzdst;
 
     // eqn (61) of M&K
-    tmp = invsumd*(sqrtdl*urst.by + sqrtdr*ulst.by +
+    Real tmp = invsumd*(sqrtdl*urst.by + sqrtdr*ulst.by +
                    bxsig*sqrtdl*sqrtdr*((urst.my*urst_d_inv) - (ulst.my*ulst_d_inv)));
     uldst.by = urdst.by = tmp;
 
@@ -268,8 +268,10 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
                    bxsig*sqrtdl*sqrtdr*((urst.mz*urst_d_inv) - (ulst.mz*ulst_d_inv)));
     uldst.bz = urdst.bz = tmp;
 
-    // eqn (63) of M&K
-    tmp = spd[2]*bxi + (uldst.my*uldst.by + uldst.mz*uldst.bz)/uldst.d;
+    // eqn (63) of M&K: v** dot B**, using the shared ** velocity (equal on both sides)
+    // rather than uldst.my/uldst.d, so that the value is the same bitwise whichever
+    // side is "left" (mirror symmetry, #165)
+    tmp = spd[2]*bxi + (vydst*uldst.by + vzdst*uldst.bz);
     uldst.e = ulst.e - sqrtdl*bxsig*(vbstl - tmp);
     urdst.e = urst.e + sqrtdr*bxsig*(vbstr - tmp);
 
@@ -306,7 +308,11 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
     urst.by = spd[4] * (urst.by - ur.by);
     urst.bz = spd[4] * (urst.bz - ur.bz);
 
-    if (spd[0] >= 0.0) {
+    // The tests are strict so that a wave speed that is exactly zero falls through to
+    // the next state (the fluxes agree there), and an exactly zero contact speed, as on
+    // every face of a symmetry plane, takes the average of Fl** and Fr**: the two are
+    // mirror images of each other, so the average is itself mirror symmetric (#165).
+    if (spd[0] > 0.0) {
       // return Fl if flow is supersonic
       flxi[IDN] = fl.d;
       flxi[IVX] = fl.mx;
@@ -315,7 +321,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       flxi[IEN] = fl.e;
       flxi[IBY] = fl.by;
       flxi[IBZ] = fl.bz;
-    } else if (spd[4] <= 0.0) {
+    } else if (spd[4] < 0.0) {
       // return Fr if flow is supersonic
       flxi[IDN] = fr.d;
       flxi[IVX] = fr.mx;
@@ -324,7 +330,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       flxi[IEN] = fr.e;
       flxi[IBY] = fr.by;
       flxi[IBZ] = fr.bz;
-    } else if (spd[1] >= 0.0) {
+    } else if (spd[1] > 0.0) {
       // return Fl*
       flxi[IDN] = fl.d  + ulst.d;
       flxi[IVX] = fl.mx + ulst.mx;
@@ -333,7 +339,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       flxi[IEN] = fl.e  + ulst.e;
       flxi[IBY] = fl.by + ulst.by;
       flxi[IBZ] = fl.bz + ulst.bz;
-    } else if (spd[3] <= 0.0) {
+    } else if (spd[3] < 0.0) {
       // return Fr*
       flxi[IDN] = fr.d  + urst.d;
       flxi[IVX] = fr.mx + urst.mx;
@@ -342,7 +348,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       flxi[IEN] = fr.e  + urst.e;
       flxi[IBY] = fr.by + urst.by;
       flxi[IBZ] = fr.bz + urst.bz;
-    } else if (spd[2] >= 0.0) {
+    } else if (spd[2] > 0.0) {
       // return Fl**
       flxi[IDN] = fl.d  + ulst.d + uldst.d;
       flxi[IVX] = fl.mx + ulst.mx + uldst.mx;
@@ -351,7 +357,7 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       flxi[IEN] = fl.e  + ulst.e + uldst.e;
       flxi[IBY] = fl.by + ulst.by + uldst.by;
       flxi[IBZ] = fl.bz + ulst.bz + uldst.bz;
-    } else {
+    } else if (spd[2] < 0.0) {
       // return Fr**
       flxi[IDN] = fr.d + urst.d + urdst.d;
       flxi[IVX] = fr.mx + urst.mx + urdst.mx;
@@ -360,6 +366,15 @@ void Hydro::RiemannSolver(const int k, const int j, const int il, const int iu,
       flxi[IEN] = fr.e + urst.e + urdst.e;
       flxi[IBY] = fr.by + urst.by + urdst.by;
       flxi[IBZ] = fr.bz + urst.bz + urdst.bz;
+    } else {
+      // return the average of Fl** and Fr** (stationary contact)
+      flxi[IDN] = 0.5*((fl.d  + ulst.d  + uldst.d)  + (fr.d  + urst.d  + urdst.d));
+      flxi[IVX] = 0.5*((fl.mx + ulst.mx + uldst.mx) + (fr.mx + urst.mx + urdst.mx));
+      flxi[IVY] = 0.5*((fl.my + ulst.my + uldst.my) + (fr.my + urst.my + urdst.my));
+      flxi[IVZ] = 0.5*((fl.mz + ulst.mz + uldst.mz) + (fr.mz + urst.mz + urdst.mz));
+      flxi[IEN] = 0.5*((fl.e  + ulst.e  + uldst.e)  + (fr.e  + urst.e  + urdst.e));
+      flxi[IBY] = 0.5*((fl.by + ulst.by + uldst.by) + (fr.by + urst.by + urdst.by));
+      flxi[IBZ] = 0.5*((fl.bz + ulst.bz + uldst.bz) + (fr.bz + urst.bz + urdst.bz));
     }
 
     flx(IDN,k,j,i) = flxi[IDN];

@@ -35,6 +35,11 @@ using H5Real = double;
 using H5Real = float;
 #define H5T_NATIVE_REAL H5T_NATIVE_FLOAT
 #endif // H5_DOUBLE_PRECISION_ENABLED
+// half-precision HDF5 output needs both a compiler fp16 type and HDF5 >= 1.14.4 built
+// with _Float16; otherwise H5T_NATIVE_FLOAT16 exists but is H5I_INVALID_HID at runtime
+#if defined(fp16_t) && defined(H5T_NATIVE_FLOAT16) && defined(H5_HAVE__FLOAT16)
+#define FP16_HDF5_OUTPUT
+#endif
 #endif // HDF5OUTPUT
 
 // forward declarations
@@ -279,15 +284,14 @@ class ATHDF5Output : public OutputType {
   hid_t H5Type;                               // HDF5 type of data (float, double, etc.)
   hid_t MeshType;                             // HDF5 type of mesh data
 
-  // Set output type for mesh data
+  // Set output type for mesh data: fp16 and unsigned integer outputs write coordinates
+  // and time at H5Real precision, since fp16 is too coarse and overflows above 65504
 using mesh_t = typename std::conditional<
 #ifdef fp16_t
-  std::is_same<h5out_t, fp16_t>::value,
-  fp16_t,
-#else
+  std::is_same<h5out_t, fp16_t>::value ||
+#endif
   std::is_unsigned<h5out_t>::value,
   H5Real,
-#endif
   h5out_t
 >::type;
 
@@ -330,12 +334,12 @@ using mesh_t = typename std::conditional<
 };
 
 // Instantiate the get_[hdf5, mesh]_type functions for all types used in outputs.cpp
-#if defined(fp16_t) && defined(H5T_NATIVE_FLOAT16)
+#ifdef FP16_HDF5_OUTPUT
 template<> inline hid_t ATHDF5Output<fp16_t>::get_hdf5_type() {
   return H5T_NATIVE_FLOAT16;
 }
 template<> inline hid_t ATHDF5Output<fp16_t>::get_mesh_type() {
-  return H5T_NATIVE_FLOAT16;
+  return H5T_NATIVE_REAL;
 }
 #endif
 template<> inline hid_t ATHDF5Output<float>::get_hdf5_type() {

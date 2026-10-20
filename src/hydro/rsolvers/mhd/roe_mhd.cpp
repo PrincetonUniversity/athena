@@ -445,55 +445,44 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     if (dens < 0.0) llf_flag=1;
 
     // Now multiply projection with R-eigenvectors from eq. B21 and SUM into output fluxes
-    flx[0] += coeff[0]*alpha_f;
-    flx[0] += coeff[2]*alpha_s;
-    flx[0] += coeff[3];
-    flx[0] += coeff[4]*alpha_s;
-    flx[0] += coeff[6]*alpha_f;
+    // A reflection of the interface exchanges each pair of left- and right-going waves
+    // (fast, Alfven, slow) and reverses the sign of the entropy wave's coefficient, so
+    // the contributions of each pair are added first to keep the sum mirror symmetric
+    // (#165).
+    Real c_a_sum = coeff[1] + coeff[5];
+    Real c_a_dif = coeff[5] - coeff[1];
+    flx[0] += ((coeff[0]*alpha_f + coeff[6]*alpha_f) +
+               (coeff[2]*alpha_s + coeff[4]*alpha_s)) + coeff[3];
 
-    flx[1] += coeff[0]*(alpha_f*(v1 - cf));
-    flx[1] += coeff[2]*(alpha_s*(v1 - cs));
-    flx[1] += coeff[3]*v1;
-    flx[1] += coeff[4]*(alpha_s*(v1 + cs));
-    flx[1] += coeff[6]*(alpha_f*(v1 + cf));
+    flx[1] += ((coeff[0]*(alpha_f*(v1 - cf)) + coeff[6]*(alpha_f*(v1 + cf))) +
+               (coeff[2]*(alpha_s*(v1 - cs)) + coeff[4]*(alpha_s*(v1 + cs)))) +
+              coeff[3]*v1;
 
-    flx[2] += coeff[0]*(alpha_f*v2 + qs*bet2_star);
-    flx[2] -= coeff[1]*bet3;
-    flx[2] += coeff[2]*(alpha_s*v2 - qf*bet2_star);
-    flx[2] += coeff[3]*v2;
-    flx[2] += coeff[4]*(alpha_s*v2 + qf*bet2_star);
-    flx[2] += coeff[5]*bet3;
-    flx[2] += coeff[6]*(alpha_f*v2 - qs*bet2_star);
+    flx[2] += ((coeff[0]*(alpha_f*v2 + qs*bet2_star) +
+                coeff[6]*(alpha_f*v2 - qs*bet2_star)) +
+               (coeff[2]*(alpha_s*v2 - qf*bet2_star) +
+                coeff[4]*(alpha_s*v2 + qf*bet2_star))) +
+              (c_a_dif*bet3 + coeff[3]*v2);
 
-    flx[3] += coeff[0]*(alpha_f*v3 + qs*bet3_star);
-    flx[3] += coeff[1]*bet2;
-    flx[3] += coeff[2]*(alpha_s*v3 - qf*bet3_star);
-    flx[3] += coeff[3]*v3;
-    flx[3] += coeff[4]*(alpha_s*v3 + qf*bet3_star);
-    flx[3] -= coeff[5]*bet2;
-    flx[3] += coeff[6]*(alpha_f*v3 - qs*bet3_star);
+    flx[3] += ((coeff[0]*(alpha_f*v3 + qs*bet3_star) +
+                coeff[6]*(alpha_f*v3 - qs*bet3_star)) +
+               (coeff[2]*(alpha_s*v3 - qf*bet3_star) +
+                coeff[4]*(alpha_s*v3 + qf*bet3_star))) +
+              (coeff[3]*v3 - c_a_dif*bet2);
 
-    flx[4] += coeff[0]*(alpha_f*(hp - v1*cf) + qs*vbet + aspbb);
-    flx[4] -= coeff[1]*(v2*bet3 - v3*bet2);
-    flx[4] += coeff[2]*(alpha_s*(hp - v1*cs) - qf*vbet - afpbb);
-    flx[4] += coeff[3]*(0.5*vsq + (gm1-1.0)*x/gm1);
-    flx[4] += coeff[4]*(alpha_s*(hp + v1*cs) + qf*vbet - afpbb);
-    flx[4] += coeff[5]*(v1*bet3 - v3*bet2);
-    flx[4] += coeff[6]*(alpha_f*(hp + v1*cf) - qs*vbet + aspbb);
+    flx[4] += ((coeff[0]*(alpha_f*(hp - v1*cf) + qs*vbet + aspbb) +
+                coeff[6]*(alpha_f*(hp + v1*cf) - qs*vbet + aspbb)) +
+               (coeff[2]*(alpha_s*(hp - v1*cs) - qf*vbet - afpbb) +
+                coeff[4]*(alpha_s*(hp + v1*cs) + qf*vbet - afpbb))) +
+              (c_a_dif*(v2*bet3 - v3*bet2) + coeff[3]*(0.5*vsq + (gm1-1.0)*x/gm1));
 
-    flx[5] += coeff[0]*as_prime*bet2_star;
-    flx[5] -= coeff[1]*bet3*s*isqrtd;
-    flx[5] -= coeff[2]*af_prime*bet2_star;
-    flx[5] -= coeff[4]*af_prime*bet2_star;
-    flx[5] -= coeff[5]*bet3*s*isqrtd;
-    flx[5] += coeff[6]*as_prime*bet2_star;
+    flx[5] += ((coeff[0]*as_prime*bet2_star + coeff[6]*as_prime*bet2_star) -
+               (coeff[2]*af_prime*bet2_star + coeff[4]*af_prime*bet2_star)) -
+              c_a_sum*bet3*s*isqrtd;
 
-    flx[6] += coeff[0]*as_prime*bet3_star;
-    flx[6] += coeff[1]*bet2*s*isqrtd;
-    flx[6] -= coeff[2]*af_prime*bet3_star;
-    flx[6] -= coeff[4]*af_prime*bet3_star;
-    flx[6] += coeff[5]*bet2*s*isqrtd;
-    flx[6] += coeff[6]*as_prime*bet3_star;
+    flx[6] += ((coeff[0]*as_prime*bet3_star + coeff[6]*as_prime*bet3_star) -
+               (coeff[2]*af_prime*bet3_star + coeff[4]*af_prime*bet3_star)) +
+              c_a_sum*bet2*s*isqrtd;
 
     //--- Isothermal MHD
 
@@ -571,43 +560,34 @@ inline void RoeFlux(const Real wroe[], const Real b1, const Real x, const Real y
     if (dens < 0.0) llf_flag=1;
 
     // Now multiply projection with R-eigenvectors from eq. B21 and SUM into output fluxes
-    flx[0] += coeff[0]*alpha_f;
-    flx[0] += coeff[2]*alpha_s;
-    flx[0] += coeff[3]*alpha_s;
-    flx[0] += coeff[5]*alpha_f;
+    // (pairing the left- and right-going waves as in the adiabatic case, #165)
+    Real c_a_sum = coeff[1] + coeff[4];
+    Real c_a_dif = coeff[4] - coeff[1];
+    flx[0] += (coeff[0]*alpha_f + coeff[5]*alpha_f) +
+              (coeff[2]*alpha_s + coeff[3]*alpha_s);
 
-    flx[1] += coeff[0]*alpha_f*(v1 - cf);
-    flx[1] += coeff[2]*alpha_s*(v1 - cs);
-    flx[1] += coeff[3]*alpha_s*(v1 + cs);
-    flx[1] += coeff[5]*alpha_f*(v1 + cf);
+    flx[1] += (coeff[0]*alpha_f*(v1 - cf) + coeff[5]*alpha_f*(v1 + cf)) +
+              (coeff[2]*alpha_s*(v1 - cs) + coeff[3]*alpha_s*(v1 + cs));
 
-    flx[2] += coeff[0]*(alpha_f*v2 + qs*bet2_star);
-    flx[2] -= coeff[1]*bet3;
-    flx[2] += coeff[2]*(alpha_s*v2 - qf*bet2_star);
-    flx[2] += coeff[3]*(alpha_s*v2 + qf*bet2_star);
-    flx[2] += coeff[4]*bet3;
-    flx[2] += coeff[5]*(alpha_f*v2 - qs*bet2_star);
+    flx[2] += ((coeff[0]*(alpha_f*v2 + qs*bet2_star) +
+                coeff[5]*(alpha_f*v2 - qs*bet2_star)) +
+               (coeff[2]*(alpha_s*v2 - qf*bet2_star) +
+                coeff[3]*(alpha_s*v2 + qf*bet2_star))) +
+              c_a_dif*bet3;
 
-    flx[3] += coeff[0]*(alpha_f*v3 + qs*bet3_star);
-    flx[3] += coeff[1]*bet2;
-    flx[3] += coeff[2]*(alpha_s*v3 - qf*bet3_star);
-    flx[3] += coeff[3]*(alpha_s*v3 + qf*bet3_star);
-    flx[3] -= coeff[4]*bet2;
-    flx[3] += coeff[5]*(alpha_f*v3 - qs*bet3_star);
+    flx[3] += ((coeff[0]*(alpha_f*v3 + qs*bet3_star) +
+                coeff[5]*(alpha_f*v3 - qs*bet3_star)) +
+               (coeff[2]*(alpha_s*v3 - qf*bet3_star) +
+                coeff[3]*(alpha_s*v3 + qf*bet3_star))) -
+              c_a_dif*bet2;
 
-    flx[4] += coeff[0]*as_prime*bet2_star;
-    flx[4] -= coeff[1]*bet3*s/sqrtd;
-    flx[4] -= coeff[2]*af_prime*bet2_star;
-    flx[4] -= coeff[3]*af_prime*bet2_star;
-    flx[4] -= coeff[4]*bet3*s/sqrtd;
-    flx[4] += coeff[5]*as_prime*bet2_star;
+    flx[4] += ((coeff[0]*as_prime*bet2_star + coeff[5]*as_prime*bet2_star) -
+               (coeff[2]*af_prime*bet2_star + coeff[3]*af_prime*bet2_star)) -
+              c_a_sum*bet3*s/sqrtd;
 
-    flx[5] += coeff[0]*as_prime*bet3_star;
-    flx[5] += coeff[1]*bet2*s/sqrtd;
-    flx[5] -= coeff[2]*af_prime*bet3_star;
-    flx[5] -= coeff[3]*af_prime*bet3_star;
-    flx[5] += coeff[4]*bet2*s/sqrtd;
-    flx[5] += coeff[5]*as_prime*bet3_star;
+    flx[5] += ((coeff[0]*as_prime*bet3_star + coeff[5]*as_prime*bet3_star) -
+               (coeff[2]*af_prime*bet3_star + coeff[3]*af_prime*bet3_star)) +
+              c_a_sum*bet2*s/sqrtd;
   }
 }
 } // namespace

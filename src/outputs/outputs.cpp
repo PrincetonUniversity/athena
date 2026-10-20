@@ -154,7 +154,7 @@ enum base_type {
   U = 1,  // unsigned integer types
 };
 
-inline bool type_string_check(const base_type base_t, const uint bits,
+inline bool type_string_check(const base_type base_t, const unsigned int bits,
                               const OutputParameters &op) {
   std::string check_string;
   const std::string &type_string = op.data_format;
@@ -359,7 +359,7 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
             }
           // Check float options
           } else if (type_string_check(base_type::F, 16, op)) {
-#ifdef fp16_t
+#ifdef FP16_HDF5_OUTPUT
             if (H5T_NATIVE_FLOAT16 == H5I_INVALID_HID) {
               msg << "### FATAL ERROR in Outputs constructor" << std::endl
                   << "HDF5 is not configured for requested fp16 support in "
@@ -369,10 +369,21 @@ Outputs::Outputs(Mesh *pm, ParameterInput *pin) {
             std::cout << "Using fp16 data format for HDF5 output in block '"
                       << op.block_name << "'" << std::endl;
             pnew_type = new ATHDF5Output<fp16_t>(op);
-#else
+#elif defined(fp16_t)
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "HDF5 >= 1.14.4 built with _Float16 support is required for half"
+                << " precision floating point in output block '" << op.block_name << "'"
+                << std::endl;
+            ATHENA_ERROR(msg);
+#elif FP16_ENABLED
             msg << "### FATAL ERROR in Outputs constructor" << std::endl
                 << "Compiler/hardware does not support half precision floating point"
                 << " in output block '" << op.block_name << "'" << std::endl;
+            ATHENA_ERROR(msg);
+#else
+            msg << "### FATAL ERROR in Outputs constructor" << std::endl
+                << "Half precision floating point in output block '" << op.block_name
+                << "' requires reconfiguring with -fp16" << std::endl;
             ATHENA_ERROR(msg);
 #endif
           } else if (type_string_check(base_type::F, 32, op)) {

@@ -12,6 +12,7 @@
 
 // C++ headers
 #include <string>
+#include <tuple>
 
 // Athena++ headers
 #include "../athena.hpp"
@@ -26,6 +27,7 @@ static const Real yr_cgs               = 3.15576e7;
 static const Real million_yr_cgs       = 3.15576e13;
 static const Real pc_cgs               = 3.08567758e18;
 static const Real kpc_cgs              = 3.08567758e21;
+static const Real au_cgs               = 1.495978707e13;
 static const Real km_s_cgs             = 1.0e+5;
 static const Real hydrogen_mass_cgs    = 1.6733e-24;
 static const Real radiation_aconst_cgs = 7.5646e-15;
@@ -42,10 +44,35 @@ class Units {
 
   void SetUnitsConstants();
   void PrintCodeUnits();
+  void PrintBasisUnits();
   void PrintConstantsInCodeUnits();
+  void PrintYtUnitsOverride();
 
   // unit system
   std::string unit_system;
+
+  // Code to physical units conversion basis
+  // Value and unit stored in a tuple (val,unit)
+  // To access basis value use: std::get<0>(basis_X)
+  // To access basis unit use : std::get<1>(basis_X)
+  //
+  // User chooses a 'length' basis (with possible units):
+  //   length (pc, kpc, au, cm, m, km)
+  // Then either 'time' or 'velocity' (with possible units):
+  //   time (yr, Myr, s)
+  //   velocity (km/s, cm/s, m/s)
+  // Then either 'ndensity' or 'mass' (with possible units):
+  //   ndensity (n/cm^3, n/m^3)
+  //   mass (Msun, g, kg)
+  std::tuple<Real, std::string> basis_length;
+  std::tuple<Real, std::string> basis_time;
+  std::tuple<Real, std::string> basis_velocity;
+  std::tuple<Real, std::string> basis_ndensity;
+  std::tuple<Real, std::string> basis_mass;
+
+  // mass per hydrogen nucleus in units of hydrogen_mass_cgs (1.4 for solar abundances);
+  // relates ndensity to mass density. Not the mean molecular weight mu used for T/mu.
+  Real mass_per_hydrogen;
 
   // code units in c.g.s.
   // i.e. multiply this to convert quantities in c.g.s.
@@ -55,7 +82,7 @@ class Units {
   Real code_mass_cgs, code_length_cgs, code_time_cgs;
 
   Real code_volume_cgs, code_density_cgs, code_velocity_cgs;
-  Real code_energydensity_cgs, code_pressure_cgs;
+  Real code_energy_cgs, code_energydensity_cgs, code_pressure_cgs;
   Real code_magneticfield_cgs;
   Real code_temperature_mu_cgs; // T/mu
 
@@ -81,5 +108,11 @@ class Units {
  private:
   // code MLT units in c.g.s.
   Real code_mass_cgs_, code_length_cgs_, code_time_cgs_;
+
+  bool velocity_basis_ = false;
+  bool mass_basis_ = false;
+
+  Real ToCgs(const std::string &parameter, Real value, const std::string &unit);
+  void CompleteBasis();
 };
 #endif // UNITS_UNITS_HPP_
