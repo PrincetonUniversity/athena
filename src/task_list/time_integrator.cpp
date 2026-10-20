@@ -1906,6 +1906,17 @@ TaskStatus TimeIntegratorTaskList::AddSourceTerms(MeshBlock *pmb, int stage) {
       // Evaluate the source terms at the time at the beginning of the stage
       ph->hsrc.AddSourceTerms(t_start_stage, dt, ph->flux, ph->w, ps->r, pf->bcc,
                                    ph->u, ps->s);
+
+      // The penultimate stage of SSPRK(5,4) also adds F(u^(3)) to the register u2 (s2),
+      // which is used in the last stage, with the weight 0.063692468666290 (see
+      // IntegrateHydro() and IntegrateScalars()). The source terms are added to u2 (s2)
+      // here with the same weight.
+      if (stage == 4 && integrator == "ssprk5_4") {
+        const Real beta = 0.063692468666290; // F(u^(3)) coeff.
+        const Real dt_ssp = beta*pmb->pmy_mesh->dt;
+        ph->hsrc.AddSourceTerms(t_start_stage, dt_ssp, ph->flux, ph->w, ps->r, pf->bcc,
+                                     ph->u2, ps->s2);
+      }
     }
     return TaskStatus::next;
   }
