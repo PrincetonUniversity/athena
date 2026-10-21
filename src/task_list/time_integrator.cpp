@@ -2246,9 +2246,20 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
                          + stage_wghts[(stage-1)].ebeta*pmb->pmy_mesh->dt;
       // Scaled coefficient for RHS time-advance within stage
       Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+      // Here ph->w holds the primitives of the previous stage, and ph->w1 holds the new
+      // primitives W(U) computed above by ConservedToPrimitive(). The physical boundary
+      // conditions are applied to the new primitives. The built-in boundary functions
+      // access them through ph->hbvar, which points to ph->w1, but user-defined boundary
+      // functions are passed ph->w.
+      //
+      // First swap: SwapAthenaArray() exchanges only the data pointers of the two arrays
+      // (no data are copied). After it ph->w holds the new primitives and ph->w1 the
+      // previous ones, so that the boundary functions of both kinds act on the new
+      // primitives, provided that ph->hbvar is pointed to ph->w.
+      ph->w.SwapAthenaArray(ph->w1);
       // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable interface
       // from conserved to primitive formulations:
-      ph->hbvar.SwapHydroQuantity(ph->w1, HydroBoundaryQuantity::prim);
+      ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
       if (NSCALARS > 0) {
         ps->sbvar.var_cc = &(ps->r);
         if (pmb->pmy_mesh->multilevel) {
@@ -2256,6 +2267,12 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
         }
       }
       pbval->ApplyPhysicalBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
+      // Second swap: undo the first one, and point ph->hbvar back to ph->w1. The code
+      // below and the swap at the end of this function use ph->w for the previous
+      // primitives and ph->w1 for the new ones: the fourth-order W(U) reads and writes
+      // the new primitives in ph->w1, and the final swap moves them to ph->w.
+      ph->w.SwapAthenaArray(ph->w1);
+      ph->hbvar.SwapHydroQuantity(ph->w1, HydroBoundaryQuantity::prim);
       // Perform 4th order W(U)
       pmb->peos->ConservedToPrimitiveCellAverage(ph->u, ph->w, pf->b,
                                                  ph->w1, pf->bcc, pmb->pcoord,
