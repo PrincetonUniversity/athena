@@ -56,9 +56,6 @@ Real fac, sin_a2, cos_a2, sin_a3, cos_a3;
 Real lambda, k_par; // Wavelength, 2*PI/wavelength
 
 // functions to compute vector potential to initialize the solution
-Real A1(const Real x1, const Real x2, const Real x3);
-Real A2(const Real x1, const Real x2, const Real x3);
-Real A3(const Real x1, const Real x2, const Real x3);
 // exact edge-averaged values of the vector potential (4th-order accurate IC)
 Real AveA1(const Real x1f, const Real x1f_ip1, const Real x2, const Real x3);
 Real AveA2(const Real x1, const Real x2f, const Real x2f_jp1, const Real x3);
@@ -345,62 +342,19 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   a2.NewAthenaArray(nx3, nx2, nx1);
   a3.NewAthenaArray(nx3, nx2, nx1);
 
-  int level = loc.level;
   // Initialize components of the vector potential
   if (block_size.nx3 > 1) {
     for (int k=ks; k<=ke+1; k++) {
       for (int j=js; j<=je+1; j++) {
         for (int i=is; i<=ie+1; i++) {
-          if ((pbval->nblevel[1][0][1]>level && j==js)
-              || (pbval->nblevel[1][2][1]>level && j==je+1)
-              || (pbval->nblevel[0][1][1]>level && k==ks)
-              || (pbval->nblevel[2][1][1]>level && k==ke+1)
-              || (pbval->nblevel[0][0][1]>level && j==js   && k==ks)
-              || (pbval->nblevel[0][2][1]>level && j==je+1 && k==ks)
-              || (pbval->nblevel[2][0][1]>level && j==js   && k==ke+1)
-              || (pbval->nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
-            Real x1l = pcoord->x1f(i)+0.25*pcoord->dx1f(i);
-            Real x1r = pcoord->x1f(i)+0.75*pcoord->dx1f(i);
-            a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
-                             A1(x1r, pcoord->x2f(j), pcoord->x3f(k)));
-          } else {
-            a1(k,j,i) = AveA1(pcoord->x1f(i), pcoord->x1f(i+1), pcoord->x2f(j),
-                              pcoord->x3f(k));
-          }
+          a1(k,j,i) = AveA1(pcoord->x1f(i), pcoord->x1f(i+1), pcoord->x2f(j),
+                            pcoord->x3f(k));
 
-          if ((pbval->nblevel[1][1][0]>level && i==is)
-              || (pbval->nblevel[1][1][2]>level && i==ie+1)
-              || (pbval->nblevel[0][1][1]>level && k==ks)
-              || (pbval->nblevel[2][1][1]>level && k==ke+1)
-              || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
-              || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
-              || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
-              || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
-            Real x2l = pcoord->x2f(j)+0.25*pcoord->dx2f(j);
-            Real x2r = pcoord->x2f(j)+0.75*pcoord->dx2f(j);
-            a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
-                             A2(pcoord->x1f(i), x2r, pcoord->x3f(k)));
-          } else {
-            a2(k,j,i) = AveA2(pcoord->x1f(i), pcoord->x2f(j), pcoord->x2f(j+1),
-                              pcoord->x3f(k));
-          }
+          a2(k,j,i) = AveA2(pcoord->x1f(i), pcoord->x2f(j), pcoord->x2f(j+1),
+                            pcoord->x3f(k));
 
-          if ((pbval->nblevel[1][1][0]>level && i==is)
-              || (pbval->nblevel[1][1][2]>level && i==ie+1)
-              || (pbval->nblevel[1][0][1]>level && j==js)
-              || (pbval->nblevel[1][2][1]>level && j==je+1)
-              || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
-              || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
-              || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
-              || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
-            Real x3l = pcoord->x3f(k)+0.25*pcoord->dx3f(k);
-            Real x3r = pcoord->x3f(k)+0.75*pcoord->dx3f(k);
-            a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
-                             A3(pcoord->x1f(i), pcoord->x2f(j), x3r));
-          } else {
-            a3(k,j,i) = AveA3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k),
-                              pcoord->x3f(k+1));
-          }
+          a3(k,j,i) = AveA3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k),
+                            pcoord->x3f(k+1));
         }
       }
     }
@@ -484,45 +438,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 }
 
 namespace {
-//----------------------------------------------------------------------------------------
-//! \fn Real A1(const Real x1,const Real x2,const Real x3)
-//! \brief A1: 1-component of vector potential, using a gauge such that Ax = 0, and Ay,
-//! Az are functions of x and y alone.
-
-Real A1(const Real x1, const Real x2, const Real x3) {
-  Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
-  Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Ay = fac*(b_perp/k_par)*std::sin(k_par*(x));
-  Real Az = (b_perp/k_par)*std::cos(k_par*(x)) + b_par*y;
-
-  return -Ay*sin_a3 - Az*sin_a2*cos_a3;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn Real A2(const Real x1,const Real x2,const Real x3)
-//! \brief A2: 2-component of vector potential
-
-Real A2(const Real x1, const Real x2, const Real x3) {
-  Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
-  Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Ay = fac*(b_perp/k_par)*std::sin(k_par*(x));
-  Real Az = (b_perp/k_par)*std::cos(k_par*(x)) + b_par*y;
-
-  return Ay*cos_a3 - Az*sin_a2*sin_a3;
-}
-
-//----------------------------------------------------------------------------------------
-//! \fn Real A3(const Real x1,const Real x2,const Real x3)
-//! \brief A3: 3-component of vector potential
-
-Real A3(const Real x1, const Real x2, const Real x3) {
-  Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
-  Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Az = (b_perp/k_par)*std::cos(k_par*(x)) + b_par*y;
-
-  return Az*cos_a2;
-}
-
 //----------------------------------------------------------------------------------------
 //! \fn Real AveA1(const Real x1f, const Real x1f_ip1, const Real x2, const Real x3)
 //! \brief AveA1: 1-component of vector potential, exactly averaged along the x1 edge
