@@ -720,14 +720,21 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         }
       }
     } else { // w/o orbital advection ///
-      Real temp = 0.0;
-      Real temp_prev = 0.0;
+      // Stage times in units of dt. Time is treated as one more evolved variable tau
+      // with dtau/dt = 1 and tau = t^n at the start of the step. The register updates of
+      // WeightedAve(),
+      //   u1 += delta*u;  u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*RHS,
+      // are applied to tau in the same way as to the fluid variables, with RHS = 1.
+      // (For y'=1 the exact solution is the elapsed time, so the stage values of the
+      // scheme applied to it are the times of the stages.) Measured from t^n, tau in
+      // the main register u is sbeta at the start of a stage and ebeta at its end; tau
+      // in u1 is u1_time; u2 holds U^n, so tau in u2 is 0.
+      Real u1_time = 0.0;
       stage_wghts[0].sbeta = 0.0;
       for (int l=0; l<nstages-1; l++) {
-        temp_prev = temp;
-        temp = temp_prev + stage_wghts[l].delta*stage_wghts[l].sbeta;
-        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*temp_prev
-                               + stage_wghts[l].gamma_2*temp
+        u1_time += stage_wghts[l].delta*stage_wghts[l].sbeta;
+        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*stage_wghts[l].sbeta
+                               + stage_wghts[l].gamma_2*u1_time
                                + stage_wghts[l].gamma_3*0.0
                                + stage_wghts[l].beta;
         stage_wghts[l+1].sbeta = stage_wghts[l].ebeta;
@@ -868,14 +875,21 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         }
       }
     } else { // w/o orbital advection ///
-      Real temp = 0.0;
-      Real temp_prev = 0.0;
+      // Stage times in units of dt. Time is treated as one more evolved variable tau
+      // with dtau/dt = 1 and tau = t^n at the start of the step. The register updates of
+      // WeightedAve(),
+      //   u1 += delta*u;  u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*RHS,
+      // are applied to tau in the same way as to the fluid variables, with RHS = 1.
+      // (For y'=1 the exact solution is the elapsed time, so the stage values of the
+      // scheme applied to it are the times of the stages.) Measured from t^n, tau in
+      // the main register u is sbeta at the start of a stage and ebeta at its end; tau
+      // in u1 is u1_time; u2 holds U^n, so tau in u2 is 0.
+      Real u1_time = 0.0;
       stage_wghts[0].sbeta = 0.0;
       for (int l=0; l<nstages-1; l++) {
-        temp_prev = temp;
-        temp = temp_prev + stage_wghts[l].delta*stage_wghts[l].sbeta;
-        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*temp_prev
-                               + stage_wghts[l].gamma_2*temp
+        u1_time += stage_wghts[l].delta*stage_wghts[l].sbeta;
+        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*stage_wghts[l].sbeta
+                               + stage_wghts[l].gamma_2*u1_time
                                + stage_wghts[l].gamma_3*0.0
                                + stage_wghts[l].beta;
         stage_wghts[l+1].sbeta = stage_wghts[l].ebeta;
@@ -1906,6 +1920,17 @@ TaskStatus TimeIntegratorTaskList::AddSourceTerms(MeshBlock *pmb, int stage) {
       // Evaluate the source terms at the time at the beginning of the stage
       ph->hsrc.AddSourceTerms(t_start_stage, dt, ph->flux, ph->w, ps->r, pf->bcc,
                                    ph->u, ps->s);
+
+      // The penultimate stage of SSPRK(5,4) also adds F(u^(3)) to the register u2 (s2),
+      // which is used in the last stage, with the weight 0.063692468666290 (see
+      // IntegrateHydro() and IntegrateScalars()). The source terms are added to u2 (s2)
+      // here with the same weight.
+      if (stage == 4 && integrator == "ssprk5_4") {
+        const Real beta = 0.063692468666290; // F(u^(3)) coeff.
+        const Real dt_ssp = beta*pmb->pmy_mesh->dt;
+        ph->hsrc.AddSourceTerms(t_start_stage, dt_ssp, ph->flux, ph->w, ps->r, pf->bcc,
+                                     ph->u2, ps->s2);
+      }
     }
     return TaskStatus::next;
   }
