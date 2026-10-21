@@ -262,6 +262,14 @@ void Field::ComputeCornerE_STS() {
 //! and the alpha^{+,-} fast magnetosonic wavespeeds are computed during
 //! Hydro::CalculateFluxes when xorder=4.
 //!
+//! In 2D the corner states are point values and the corner EMF is the edge average.
+//! In 3D the corner states are still averaged along the edge (transverse PPM of the
+//! face-averaged states), and the EMF is evaluated as the product of these edge
+//! averages without deconvolving to point values and re-averaging. The edge-averaged
+//! EMF is therefore formally O(h^2) accurate in 3D whenever the EMF is a nonlinear
+//! function of the varying quantities (it is exact to fourth order for the CPAW and
+//! linear-wave tests, where the EMF perturbation is linear in the wave amplitude).
+//!
 //! Sign convention of the diffusion terms: for each transverse field component B_t
 //! differenced across direction d at the edge, the term enters with the sign such that
 //! the corner EMF reduces to the 1D HLL flux of B_t along d in the plane-symmetric
