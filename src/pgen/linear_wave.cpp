@@ -161,7 +161,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Compute eigenvectors, where the quantities u0 and bx0 are parallel to the
   // wavevector, and v0,w0,by0,bz0 are perpendicular.
-  d0 = 1.0;
+  d0 = pin->GetOrAddReal("problem", "d0", 1.0);  // background density
   p0 = 0.0;
   u0 = vflow;
   Real v0 = 0.0;

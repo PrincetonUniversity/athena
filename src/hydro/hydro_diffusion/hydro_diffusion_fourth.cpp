@@ -385,8 +385,9 @@ void HydroDiffusion::ViscousFluxIsoFourth(const AthenaArray<Real> &p,
 
 //----------------------------------------------------------------------------------------
 //! \fn void HydroDiffusion::ThermalFluxIsoFourth
-//! \brief fourth-order isotropic conductive flux, F = -kappa dT/dx, on a uniform
-//! Cartesian grid (temperature point values tc_ from DeconvolvePrimitivesFourth)
+//! \brief fourth-order isotropic conductive flux, F = -kappa rho dT/dx (same convention
+//! as ThermalFluxIso), on a uniform Cartesian grid (temperature point values tc_ from
+//! DeconvolvePrimitivesFourth)
 
 void HydroDiffusion::ThermalFluxIsoFourth(const AthenaArray<Real> &p,
                                           AthenaArray<Real> *flx) {
@@ -415,7 +416,9 @@ void HydroDiffusion::ThermalFluxIsoFourth(const AthenaArray<Real> &p,
                        - (tc_(k,j,i+1) - tc_(k,j,i-2)))/(24.0*h1);
           Real kappaf = (9.0*(kappa_d(iso,k,j,i-1) + kappa_d(iso,k,j,i))
                          - (kappa_d(iso,k,j,i-2) + kappa_d(iso,k,j,i+1)))/16.0;
-          fpt_(0,k,j,i) = -kappaf*dTdx;
+          Real rhof = (9.0*(wc_(IDN,k,j,i-1) + wc_(IDN,k,j,i))
+                       - (wc_(IDN,k,j,i-2) + wc_(IDN,k,j,i+1)))/16.0;
+          fpt_(0,k,j,i) = -kappaf*rhof*dTdx;
         }
       }
     }
@@ -450,7 +453,9 @@ void HydroDiffusion::ThermalFluxIsoFourth(const AthenaArray<Real> &p,
                        - (tc_(k,j+1,i) - tc_(k,j-2,i)))/(24.0*h2);
           Real kappaf = (9.0*(kappa_d(iso,k,j-1,i) + kappa_d(iso,k,j,i))
                          - (kappa_d(iso,k,j-2,i) + kappa_d(iso,k,j+1,i)))/16.0;
-          fpt_(0,k,j,i) = -kappaf*dTdy;
+          Real rhof = (9.0*(wc_(IDN,k,j-1,i) + wc_(IDN,k,j,i))
+                       - (wc_(IDN,k,j-2,i) + wc_(IDN,k,j+1,i)))/16.0;
+          fpt_(0,k,j,i) = -kappaf*rhof*dTdy;
         }
       }
     }
@@ -483,7 +488,9 @@ void HydroDiffusion::ThermalFluxIsoFourth(const AthenaArray<Real> &p,
                        - (tc_(k+1,j,i) - tc_(k-2,j,i)))/(24.0*h3);
           Real kappaf = (9.0*(kappa_d(iso,k-1,j,i) + kappa_d(iso,k,j,i))
                          - (kappa_d(iso,k-2,j,i) + kappa_d(iso,k+1,j,i)))/16.0;
-          fpt_(0,k,j,i) = -kappaf*dTdz;
+          Real rhof = (9.0*(wc_(IDN,k-1,j,i) + wc_(IDN,k,j,i))
+                       - (wc_(IDN,k-2,j,i) + wc_(IDN,k+1,j,i)))/16.0;
+          fpt_(0,k,j,i) = -kappaf*rhof*dTdz;
         }
       }
     }
