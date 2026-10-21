@@ -11,4 +11,4 @@ select = ["E", "W", "F"]
 # Codes ignored in setup.cfg that ruff implements. E121, E123, E126, E704, and W503
 # are not implemented in ruff, and ruff has no equivalent of the E12x continuation-line
 # checks, so flake8 remains the reference
-ignore = ["E226", "E241", "E731"]
+ignore = ["E226", "E241"]
