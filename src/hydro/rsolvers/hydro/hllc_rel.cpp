@@ -148,8 +148,7 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
   const Real gamma_prime = gamma_adi/(gamma_adi - 1.0);
 
   // Go through each interface
-  // TODO(KGF): this pragma started causing SR regression test failures in 2023. See #518
-  //#pragma omp simd simdlen(SIMD_WIDTH)  // issues with or without simdlen clause
+#pragma omp simd simdlen(SIMD_WIDTH)
   for (int i=il; i<=iu; ++i) {
     // Extract left primitives
     Real rho_l = prim_l(IDN,i);
@@ -195,33 +194,33 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
     Real cons_l[NWAVE];
     cons_l[IDN] = rho_l * u_l[0];
     cons_l[IEN] = wgas_l * u_l[0] * u_l[0] - pgas_l;
-    cons_l[ivx] = wgas_l * u_l[1] * u_l[0];
-    cons_l[ivy] = wgas_l * u_l[2] * u_l[0];
-    cons_l[ivz] = wgas_l * u_l[3] * u_l[0];
+    cons_l[IVX] = wgas_l * u_l[1] * u_l[0];
+    cons_l[IVY] = wgas_l * u_l[2] * u_l[0];
+    cons_l[IVZ] = wgas_l * u_l[3] * u_l[0];
 
     // Calculate fluxes in L region (MB2005 2,3)
     Real flux_l[NWAVE];
     flux_l[IDN] = rho_l * u_l[1];
     flux_l[IEN] = wgas_l * u_l[0] * u_l[1];
-    flux_l[ivx] = wgas_l * u_l[1] * u_l[1] + pgas_l;
-    flux_l[ivy] = wgas_l * u_l[2] * u_l[1];
-    flux_l[ivz] = wgas_l * u_l[3] * u_l[1];
+    flux_l[IVX] = wgas_l * u_l[1] * u_l[1] + pgas_l;
+    flux_l[IVY] = wgas_l * u_l[2] * u_l[1];
+    flux_l[IVZ] = wgas_l * u_l[3] * u_l[1];
 
     // Calculate conserved quantities in R region (MB2005 3)
     Real cons_r[NWAVE];
     cons_r[IDN] = rho_r * u_r[0];
     cons_r[IEN] = wgas_r * u_r[0] * u_r[0] - pgas_r;
-    cons_r[ivx] = wgas_r * u_r[1] * u_r[0];
-    cons_r[ivy] = wgas_r * u_r[2] * u_r[0];
-    cons_r[ivz] = wgas_r * u_r[3] * u_r[0];
+    cons_r[IVX] = wgas_r * u_r[1] * u_r[0];
+    cons_r[IVY] = wgas_r * u_r[2] * u_r[0];
+    cons_r[IVZ] = wgas_r * u_r[3] * u_r[0];
 
     // Calculate fluxes in R region (MB2005 2,3)
     Real flux_r[NWAVE];
     flux_r[IDN] = rho_r * u_r[1];
     flux_r[IEN] = wgas_r * u_r[0] * u_r[1];
-    flux_r[ivx] = wgas_r * u_r[1] * u_r[1] + pgas_r;
-    flux_r[ivy] = wgas_r * u_r[2] * u_r[1];
-    flux_r[ivz] = wgas_r * u_r[3] * u_r[1];
+    flux_r[IVX] = wgas_r * u_r[1] * u_r[1] + pgas_r;
+    flux_r[IVY] = wgas_r * u_r[2] * u_r[1];
+    flux_r[IVZ] = wgas_r * u_r[3] * u_r[1];
 
     Real lambda_diff_inv = 1.0 / (lambda_r-lambda_l);
     // Calculate conserved quantities in HLL region in GR (MB2005 9)
@@ -240,18 +239,18 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
 
     // Calculate contact wavespeed (MB2005 18)
     Real lambda_star;
-    Real b = -(cons_hll[IEN] + flux_hll[ivx]);
+    Real b = -(cons_hll[IEN] + flux_hll[IVX]);
     if (std::abs(flux_hll[IEN]) > TINY_NUMBER) {  // use quadratic formula
       // Follows algorithm in Numerical Recipes (section 5.6) for avoiding cancellations
-      lambda_star = - 2.0 * cons_hll[ivx]
-                    / (b - std::sqrt(SQR(b) - 4.0*flux_hll[IEN]*cons_hll[ivx]));
+      lambda_star = - 2.0 * cons_hll[IVX]
+                    / (b - std::sqrt(SQR(b) - 4.0*flux_hll[IEN]*cons_hll[IVX]));
     } else { // no quadratic term
-      lambda_star = - cons_hll[ivx] / b;
+      lambda_star = - cons_hll[IVX] / b;
     }
 
     // Calculate contact pressure (MB2006 48)
     // Note: Could also use (MB2005 17), but note the first minus sign there is wrong.
-    Real pgas_star = -flux_hll[IEN] * lambda_star + flux_hll[ivx];
+    Real pgas_star = -flux_hll[IEN] * lambda_star + flux_hll[IVX];
 
     // Calculate conserved quantities in L* region (MB2005 16)
     Real cons_lstar[NWAVE];
@@ -261,7 +260,7 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
       cons_lstar[n] = cons_l[n] * (lambda_l-vx_l_ratio);
     }
     cons_lstar[IEN] += pgas_star*lambda_star - pgas_l*vx_l_ratio;
-    cons_lstar[ivx] += pgas_star - pgas_l;
+    cons_lstar[IVX] += pgas_star - pgas_l;
     for (int n = 0; n < NWAVE; ++n) {
       cons_lstar[n] *= lambda_diff_inv;
     }
@@ -280,7 +279,7 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
       cons_rstar[n] = cons_r[n] * (lambda_r-vx_r_ratio);
     }
     cons_rstar[IEN] += pgas_star*lambda_star - pgas_r*vx_r_ratio;
-    cons_rstar[ivx] += pgas_star - pgas_r;
+    cons_rstar[IVX] += pgas_star - pgas_r;
     for (int n = 0; n < NWAVE; ++n) {
       cons_rstar[n] *= lambda_diff_inv;
     }
@@ -297,33 +296,32 @@ void HLLCTransforming(MeshBlock *pmb, const int k, const int j, const int il,
       v_interface = gi(i01,i) / std::sqrt(SQR(gi(i01,i)) - gi(I00,i)*gi(i11,i));
     }
 
-    // Determine region of wavefan
-    Real *cons_interface, *flux_interface;
-    if (lambda_l >= v_interface) {  // L region
-      cons_interface = cons_l;
-      flux_interface = flux_l;
-    } else if (lambda_r <= v_interface) { // R region
-      cons_interface = cons_r;
-      flux_interface = flux_r;
-    } else if (lambda_star >= v_interface) {  // aL region
-      cons_interface = cons_lstar;
-      flux_interface = flux_lstar;
-    } else {  // c region
-      cons_interface = cons_rstar;
-      flux_interface = flux_rstar;
+    // Determine region of wavefan and copy out element-by-element with compile-time
+    // indices. Local arrays indexed by the runtime ivx/ivy/ivz, or selected through a
+    // pointer, cannot be privatized per SIMD lane (they live at one loop-invariant stack
+    // address), which an "omp simd" vectorizer may silently miscompile (#521).
+    const bool use_l = (lambda_l >= v_interface);
+    const bool use_r = (!use_l) && (lambda_r <= v_interface);
+    const bool use_lstar = (!use_l) && (!use_r) && (lambda_star >= v_interface);
+    Real cons_sel[NWAVE], flux_sel[NWAVE];
+    for (int n = 0; n < NWAVE; ++n) {
+      cons_sel[n] = use_l ? cons_l[n] : (use_r ? cons_r[n]
+                    : (use_lstar ? cons_lstar[n] : cons_rstar[n]));
+      flux_sel[n] = use_l ? flux_l[n] : (use_r ? flux_r[n]
+                    : (use_lstar ? flux_lstar[n] : flux_rstar[n]));
     }
-
-    // Set conserved quantities in GR
     if (GENERAL_RELATIVITY) {
-      for (int n = 0; n < NWAVE; ++n) {
-        cons(n,i) = cons_interface[n];
-      }
+      cons(IDN,i) = cons_sel[IDN];
+      cons(IEN,i) = cons_sel[IEN];
+      cons(ivx,i) = cons_sel[IVX];
+      cons(ivy,i) = cons_sel[IVY];
+      cons(ivz,i) = cons_sel[IVZ];
     }
-
-    // Set fluxes
-    for (int n = 0; n < NHYDRO; ++n) {
-      flux(n,k,j,i) = flux_interface[n];
-    }
+    flux(IDN,k,j,i) = flux_sel[IDN];
+    flux(IEN,k,j,i) = flux_sel[IEN];
+    flux(ivx,k,j,i) = flux_sel[IVX];
+    flux(ivy,k,j,i) = flux_sel[IVY];
+    flux(ivz,k,j,i) = flux_sel[IVZ];
   }
 
   // Transform fluxes to global coordinates if in GR
