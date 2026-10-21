@@ -16,15 +16,19 @@ _input = 'hydro/athinput.blast_int2d'
 _mesh_3d = [(-0.5, 0.5, 16), (-0.5, 0.5, 16), (-0.5, 0.5, 16)]
 _mesh_2d = [(-0.5, 0.5, 16), (-0.5, 0.5, 16), (-0.5, 0.5, 1)]
 _args_2d = ['mesh/nx3=1', 'meshblock/nx3=1']
+# AMR with MeshBlocks small enough that the mesh is refined only near the blast and
+# runs long enough for the refined region to change between outputs
+_args_amr = ['mesh/refinement=adaptive', 'meshblock/nx1=4', 'meshblock/nx2=4',
+             'time/tlim=0.1']
 
 # (label, extra command-line arguments, root mesh)
 _cases = [
     ('3d_uniform', [], _mesh_3d),
     ('3d_smr', ['mesh/refinement=static'], _mesh_3d),
-    ('3d_amr', ['mesh/refinement=adaptive'], _mesh_3d),
+    ('3d_amr', _args_amr + ['meshblock/nx3=4'], _mesh_3d),
     ('2d_uniform', _args_2d, _mesh_2d),
     ('2d_smr', _args_2d + ['mesh/refinement=static'], _mesh_2d),
-    ('2d_amr', _args_2d + ['mesh/refinement=adaptive'], _mesh_2d),
+    ('2d_amr', _args_2d + _args_amr, _mesh_2d),
 ]
 
 

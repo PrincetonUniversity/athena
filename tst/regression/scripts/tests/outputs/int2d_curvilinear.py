@@ -1,7 +1,7 @@
 # Regression test for the int12, int13, and int23 outputs in curvilinear coordinates
 #
 # Runs a blast wave in cylindrical and spherical-polar coordinates on 3D meshes of
-# several MeshBlocks, with and without static refinement, writing the 2D integrals of
+# several MeshBlocks with no refinement, SMR, and AMR, writing the 2D integrals of
 # the primitive variables together with full-precision formatted table dumps of the
 # same data. Checks that the integrals match those computed from the dumps with the
 # exact areas of the coordinate surfaces.
@@ -35,8 +35,14 @@ _coords = {
          'refinement1/x3min=0.0', 'refinement1/x3max=0.3']),
 }
 
+# AMR with MeshBlocks small enough that the mesh is refined only near the blast and
+# runs long enough for the refined region to change between outputs
+amr_arguments = ['mesh/refinement=adaptive', 'meshblock/nx1=4', 'meshblock/nx2=4',
+                 'meshblock/nx3=4', 'time/tlim=0.1']
+
 # (label suffix, extra command-line arguments)
-_refinements = [('uniform', []), ('smr', ['mesh/refinement=static'])]
+_refinements = [('uniform', []), ('smr', ['mesh/refinement=static']),
+                ('amr', amr_arguments)]
 
 # configure options passed to prepare(), reused when building each coordinate system
 _config_kwargs = {}

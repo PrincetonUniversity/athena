@@ -83,10 +83,14 @@ def cell_area(coord, third, centers, lower, upper):
 
 
 def expected_integrals(tab_files, mesh, coord, ext, xf, varnames):
-    """Integrals over all MeshBlocks, binned on the faces xf of the third dimension."""
+    """Integrals over all MeshBlocks, binned on the faces xf of the third dimension.
+
+    Also returns the integrals of the absolute values, which set the scale of the
+    roundoff error when positive and negative contributions cancel."""
     third = _third_axis[ext]
     bin_centers = 0.5 * (xf[:-1] + xf[1:])
     result = {name: np.zeros(len(bin_centers)) for name in varnames}
+    magnitude = {name: np.zeros(len(bin_centers)) for name in varnames}
     for filename in tab_files:
         _, columns = read_tab(filename)
         centers, lower, upper = cell_geometry(columns, mesh)
@@ -97,7 +101,8 @@ def expected_integrals(tab_files, mesh, coord, ext, xf, varnames):
             weighted = columns[name] * area
             for n in range(len(weighted)):
                 result[name][first[n]:last[n]] += weighted[n]
-    return result
+                magnitude[name][first[n]:last[n]] += abs(weighted[n])
+    return result, magnitude
 
 
 def check(basename, ext, mesh, coord, label):
@@ -131,10 +136,10 @@ def check(basename, ext, mesh, coord, label):
             logger.warning('%s %s: record %d time %g, tab dump time %g', label, ext, n,
                            time[n], tab_time)
             status = False
-        ref = expected_integrals(tab_files, mesh, coord, ext, xf, varnames)
+        ref, magnitude = expected_integrals(tab_files, mesh, coord, ext, xf, varnames)
         for name in varnames:
             got = np.atleast_2d(getattr(out, name))[n]
-            scale = max(np.abs(ref[name]).max(), 1.0e-300)
+            scale = max(magnitude[name].max(), 1.0e-300)
             err = np.abs(got - ref[name]).max() / scale
             if err > _rtol:
                 logger.warning('%s %s: %s at t=%g differs by %.3e (relative)',
