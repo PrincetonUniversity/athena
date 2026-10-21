@@ -32,7 +32,7 @@ namespace {
 constexpr int N_gl = 12;
 constexpr Real d0 = 1.0;
 constexpr bool use_gl_quadrature = true;
-Real radius, omega_x1, omega_x2, omega, iso_cs;
+Real radius, omega_x1, omega_x2, omega;
 Real s_width, s_height, center_x1, center_x2;
 
 // pointwise analytic initial condition for slotted cylinder
@@ -48,7 +48,6 @@ int RefinementCondition(MeshBlock *pmb);
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // read and initialize global parameters
-  iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   // cylinder dimensions
   radius = pin->GetOrAddReal("problem", "radius", 0.15);
   center_x1 = pin->GetOrAddReal("problem", "center_x1", 0.50);

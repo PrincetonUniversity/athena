@@ -39,17 +39,40 @@ jobs:
         run: ./check_athena_cpp_style.sh
 
   regression:
-    name: Regression (${{ matrix.os }}, ${{ matrix.cxx }}, ${{ matrix.mpi }})
+    name: Regression (${{ matrix.os }}, ${{ matrix.cxx }}, ${{ matrix.mpi }}, ${{ matrix.tests }})
     needs: [python-lint, cpp-lint]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 120
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-26.04]
+        cxx: [g++, clang++]
+        mpi: [openmpi, mpich]
+        tests: [default]
         include:
+          # Longer test sets, run once in parallel with the default sets
+          - os: ubuntu-26.04
+            cxx: g++
+            mpi: openmpi
+            tests: extended
+          # Older GCC and OpenMPI releases, closer to those on many clusters
           - os: ubuntu-24.04
             cxx: g++
             mpi: openmpi
+            tests: default
+          # Intel oneAPI compiler and Intel MPI (x86-64 Linux only)
+          - os: ubuntu-24.04
+            cxx: icpx
+            mpi: intelmpi
+            tests: default
+            oneapi: '2026.2'
+            impi: '2021.19'
+          # Apple Clang has no OpenMP, so the omp/ and hybrid/ tests use Homebrew GCC
+          - os: macos-15
+            cxx: clang++
+            mpi: openmpi
+            tests: default
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -57,16 +80,48 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: tst/ci/github/requirements.txt
-      - name: Install MPI, FFTW, and HDF5
+
+      - name: Install MPI, FFTW, and HDF5 (Ubuntu)
+        if: runner.os == 'Linux'
         run: |
-          if [ "${{ matrix.mpi }}" == "openmpi" ]; then MPI_PKGS="libopenmpi-dev openmpi-bin"
-          else MPI_PKGS="libmpich-dev mpich"; fi
+          case "${{ matrix.mpi }}" in
+            openmpi) MPI_PKGS="libopenmpi-dev openmpi-bin" ;;
+            mpich) MPI_PKGS="libmpich-dev mpich" ;;
+            intelmpi) MPI_PKGS="" ;;
+          esac
+          if [ "${{ matrix.cxx }}" == "clang++" ]; then OMP_PKGS="libomp-dev"; fi
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends $MPI_PKGS libfftw3-dev libhdf5-dev pkg-config
+          sudo apt-get install -y --no-install-recommends $MPI_PKGS $OMP_PKGS \
+            libfftw3-dev libhdf5-dev pkg-config
+
+      - name: Install Intel oneAPI compiler and Intel MPI
+        if: matrix.cxx == 'icpx'
+        run: |
+          wget -qO- https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB \
+            | gpg --dearmor | sudo tee /usr/share/keyrings/oneapi-archive-keyring.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/oneapi-archive-keyring.gpg] https://apt.repos.intel.com/oneapi all main" \
+            | sudo tee /etc/apt/sources.list.d/oneAPI.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            intel-oneapi-compiler-dpcpp-cpp-${{ matrix.oneapi }} \
+            intel-oneapi-mpi-devel-${{ matrix.impi }}
+
+      - name: Install MPI, FFTW, HDF5, and GCC (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install open-mpi fftw hdf5 gcc pkgconf
+          # Homebrew installs GCC as g++-<major version>
+          echo "OMP_CMD=$(ls $(brew --prefix)/bin/g++-[0-9]* | sort -V | tail -n 1)" >> "$GITHUB_ENV"
+          echo "OMP_CHOICE=g++" >> "$GITHUB_ENV"
+
       - name: Install Python dependencies
         run: python -m pip install -r tst/ci/github/requirements.txt
+
       - name: Run regression tests
         env:
           CXX_CHOICE: ${{ matrix.cxx }}
           MPI_CHOICE: ${{ matrix.mpi }}
-        run: ./tst/ci/github/run_tests_github.sh
+          TEST_SET: ${{ matrix.tests }}
+        run: |
+          if [ "$CXX_CHOICE" == "icpx" ]; then source /opt/intel/oneapi/setvars.sh; fi
+          ./tst/ci/github/run_tests_github.sh
