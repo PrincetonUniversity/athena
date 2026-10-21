@@ -421,10 +421,15 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
         }
       }
       if (NON_BAROTROPIC_EOS) {
+        // the hydro conserved variables above are point values at the cell centers
+        // (corrected to cell averages by correct_ic), so add the pointwise magnetic
+        // energy rather than the square of the face-averaged B1
         for (int k=ks; k<=ke; k++) {
           for (int j=js; j<=je; j++) {
+            Real b1 = b0*(std::tanh((pcoord->x2v(j) - z1)/a)
+                          - std::tanh((pcoord->x2v(j) - z2)/a) - 1.0);
             for (int i=is; i<=ie; i++) {
-              phydro->u(IEN,k,j,i) += 0.5*SQR(pfield->b.x1f(k,j,i));
+              phydro->u(IEN,k,j,i) += 0.5*SQR(b1);
             }
           }
         }
