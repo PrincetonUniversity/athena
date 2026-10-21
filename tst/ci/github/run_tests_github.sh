@@ -23,6 +23,14 @@ set -ev
 
 CXX_CHOICE=${CXX_CHOICE:-g++}
 CXX_CMD=${CXX_CMD:-$CXX_CHOICE}
+if [ "$CXX_CHOICE" == "icpx" ] && [ "$CXX_CMD" == "icpx" ]; then
+    # configure.py builds with -xhost, whose executables refuse to run on non-Intel
+    # processors such as the AMD CPUs of many runners; replace it with -march=native
+    WRAPPER_DIR=$(mktemp -d)
+    printf '#!/bin/bash\nexec icpx "${@/#-xhost/-march=native}"\n' > "$WRAPPER_DIR/icpx"
+    chmod +x "$WRAPPER_DIR/icpx"
+    CXX_CMD=$WRAPPER_DIR/icpx
+fi
 MPI_CHOICE=${MPI_CHOICE:-openmpi}
 OMP_CHOICE=${OMP_CHOICE:-$CXX_CHOICE}
 OMP_CMD=${OMP_CMD:-$CXX_CMD}
