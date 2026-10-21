@@ -34,7 +34,8 @@ def _dye_concentration(data):
     if 'r0' in data:
         return data['r0']
     if 's0' in data:  # conserved dye density -> specific concentration
-        return data['s0']/data['rho']
+        rho = data['dens'] if 'dens' in data else data['rho']
+        return data['s0']/rho
     raise RuntimeError('no passive scalar (r0/s0) found in output; '
                        'configure with --nscalars=1 and output prim variables')
 
@@ -42,7 +43,8 @@ def _dye_concentration(data):
 def dye_entropy(filename):
     """Compute S = -Int c*ln(c) dV for a single .athdf output (thesis eq. 5.22)."""
     data = athena_read.athdf(filename)
-    c = np.clip(_dye_concentration(data), 1e-300, None)
+    # float64 before clipping: outputs may be float32, where 1e-300 underflows to 0
+    c = np.clip(_dye_concentration(data).astype(np.float64), 1e-300, None)
     # uniform Cartesian mesh assumed:
     dx = data['x1f'][1] - data['x1f'][0]
     dy = data['x2f'][1] - data['x2f'][0]
