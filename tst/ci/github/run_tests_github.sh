@@ -13,6 +13,8 @@
 #   OMP_CHOICE  configure.py --cxx choice for the omp/ and hybrid/ tests (default:
 #               $CXX_CHOICE); Apple Clang has no OpenMP, so macOS uses Homebrew GCC
 #   OMP_CMD     C++ compiler command for the omp/ and hybrid/ tests (default: $CXX_CMD)
+#   CVODE_PATH  install prefix of an existing CVODE; if unset, the extended set builds
+#               CVODE 6.2.0 from source (needed by the chemistry/ tests)
 #   TEST_SET    default: the sets formerly run on Travis CI
 #               extended: the longer sets, run in a separate job
 
@@ -66,6 +68,19 @@ CONFIG="--config=--cxx=$CXX_CHOICE --config=--ccmd=$CXX_CMD"
 OMP_CONFIG="--config=--cxx=$OMP_CHOICE --config=--ccmd=$OMP_CMD"
 
 if [ "$TEST_SET" == "extended" ]; then
+    if [ -z "${CVODE_PATH:-}" ]; then
+        # Serial, shared-library build, as only the cvode and nvecserial libraries are used
+        CVODE_VERSION=6.2.0
+        CVODE_DIR=$(mktemp -d)
+        curl -fsSL "https://github.com/LLNL/sundials/releases/download/v$CVODE_VERSION/cvode-$CVODE_VERSION.tar.gz" \
+            | tar -xz -C "$CVODE_DIR"
+        cmake -S "$CVODE_DIR/cvode-$CVODE_VERSION" -B "$CVODE_DIR/build" \
+              -D CMAKE_INSTALL_LIBDIR=lib -D CMAKE_INSTALL_PREFIX="$CVODE_DIR/install" \
+              -D CMAKE_BUILD_TYPE=Release -D BUILD_STATIC_LIBS=OFF -D EXAMPLES_ENABLE_C=OFF
+        cmake --build "$CVODE_DIR/build" --parallel
+        cmake --install "$CVODE_DIR/build"
+        export CVODE_PATH=$CVODE_DIR/install
+    fi
     time python3 run_tests.py sr $CONFIG --silent
     time python3 run_tests.py mhd $CONFIG --silent
     time python3 run_tests.py shearingbox $CONFIG $MPIRUN_OPTS --silent
