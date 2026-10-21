@@ -19,9 +19,10 @@
 //!  4. the face-averaged resistive Poynting flux S = E x B is assembled from
 //!     fourth-order interpolations of e_pt_ and bcc_center to face-centered points,
 //!     followed by the transverse Laplacian face-averaging correction.
-//! The diffusivity eta_O is interpolated to edges with the same second-order averages
-//! as the second-order operators (exact for constant coefficients, which is the only
-//! supported use of Ohmic resistivity at fourth order at present).
+//! The diffusivity eta_O (point values at cell centers) is interpolated to the edges
+//! with the tensor product of the fourth-order face stencil (9(a+b) - (c+d))/16 in the
+//! two transverse directions, so that a spatially varying coefficient from an enrolled
+//! FieldDiffusivity function keeps the operator fourth-order accurate.
 
 // C headers
 
@@ -34,6 +35,13 @@
 #include "../../mesh/mesh.hpp"
 #include "../field.hpp"
 #include "field_diffusion.hpp"
+
+namespace {
+// fourth-order interpolation of cell-centered point values to the face between b and c
+inline Real Interp4(Real a, Real b, Real c, Real d) {
+  return (9.0*(b + c) - (a + d))/16.0;
+}
+} // namespace
 
 namespace {
 constexpr Real ONE_24TH = 1.0/24.0;
@@ -61,7 +69,8 @@ void FieldDiffusion::OhmicEMFFourth(EdgeField &e) {
   if (!f2) {
 #pragma omp simd
     for (int i=is; i<=ie+1; ++i) {
-      Real eta_O = 0.5*(etaB(oh,ks,js,i-1) + etaB(oh,ks,js,i));
+      Real eta_O = Interp4(etaB(oh,ks,js,i-2), etaB(oh,ks,js,i-1),
+                           etaB(oh,ks,js,i), etaB(oh,ks,js,i+1));
       Real dB3dx = (27.0*(bf.x3f(ks,js,i) - bf.x3f(ks,js,i-1))
                     - (bf.x3f(ks,js,i+1) - bf.x3f(ks,js,i-2)))/(24.0*h1);
       Real dB2dx = (27.0*(bf.x2f(ks,js,i) - bf.x2f(ks,js,i-1))
@@ -89,10 +98,18 @@ void FieldDiffusion::OhmicEMFFourth(EdgeField &e) {
         if (f3) {
           J1 -= (27.0*(bf.x2f(k,j,i) - bf.x2f(k-1,j,i))
                  - (bf.x2f(k+1,j,i) - bf.x2f(k-2,j,i)))/(24.0*h3);
-          eta_O = 0.25*(etaB(oh,k  ,j,i) + etaB(oh,k  ,j-1,i)
-                        + etaB(oh,k-1,j,i) + etaB(oh,k-1,j-1,i));
+          eta_O = Interp4(
+              Interp4(etaB(oh,k-2,j-2,i), etaB(oh,k-2,j-1,i), etaB(oh,k-2,j,i),
+                      etaB(oh,k-2,j+1,i)),
+              Interp4(etaB(oh,k-1,j-2,i), etaB(oh,k-1,j-1,i), etaB(oh,k-1,j,i),
+                      etaB(oh,k-1,j+1,i)),
+              Interp4(etaB(oh,k  ,j-2,i), etaB(oh,k  ,j-1,i), etaB(oh,k  ,j,i),
+                      etaB(oh,k  ,j+1,i)),
+              Interp4(etaB(oh,k+1,j-2,i), etaB(oh,k+1,j-1,i), etaB(oh,k+1,j,i),
+                      etaB(oh,k+1,j+1,i)));
         } else {
-          eta_O = 0.5*(etaB(oh,k,j,i) + etaB(oh,k,j-1,i));
+          eta_O = Interp4(etaB(oh,k,j-2,i), etaB(oh,k,j-1,i), etaB(oh,k,j,i),
+                          etaB(oh,k,j+1,i));
         }
         E1(k,j,i) = eta_O*J1;
       }
@@ -110,10 +127,18 @@ void FieldDiffusion::OhmicEMFFourth(EdgeField &e) {
         if (f3) {
           J2 += (27.0*(bf.x1f(k,j,i) - bf.x1f(k-1,j,i))
                  - (bf.x1f(k+1,j,i) - bf.x1f(k-2,j,i)))/(24.0*h3);
-          eta_O = 0.25*(etaB(oh,k  ,j,i) + etaB(oh,k  ,j,i-1)
-                        + etaB(oh,k-1,j,i) + etaB(oh,k-1,j,i-1));
+          eta_O = Interp4(
+              Interp4(etaB(oh,k-2,j,i-2), etaB(oh,k-2,j,i-1), etaB(oh,k-2,j,i),
+                      etaB(oh,k-2,j,i+1)),
+              Interp4(etaB(oh,k-1,j,i-2), etaB(oh,k-1,j,i-1), etaB(oh,k-1,j,i),
+                      etaB(oh,k-1,j,i+1)),
+              Interp4(etaB(oh,k  ,j,i-2), etaB(oh,k  ,j,i-1), etaB(oh,k  ,j,i),
+                      etaB(oh,k  ,j,i+1)),
+              Interp4(etaB(oh,k+1,j,i-2), etaB(oh,k+1,j,i-1), etaB(oh,k+1,j,i),
+                      etaB(oh,k+1,j,i+1)));
         } else {
-          eta_O = 0.5*(etaB(oh,k,j,i) + etaB(oh,k,j,i-1));
+          eta_O = Interp4(etaB(oh,k,j,i-2), etaB(oh,k,j,i-1), etaB(oh,k,j,i),
+                          etaB(oh,k,j,i+1));
         }
         E2(k,j,i) = eta_O*J2;
       }
@@ -129,8 +154,15 @@ void FieldDiffusion::OhmicEMFFourth(EdgeField &e) {
                    - (bf.x2f(k,j,i+1) - bf.x2f(k,j,i-2)))/(24.0*h1)
                   - (27.0*(bf.x1f(k,j,i) - bf.x1f(k,j-1,i))
                      - (bf.x1f(k,j+1,i) - bf.x1f(k,j-2,i)))/(24.0*h2);
-        Real eta_O = 0.25*(etaB(oh,k,j  ,i) + etaB(oh,k,j  ,i-1)
-                           + etaB(oh,k,j-1,i) + etaB(oh,k,j-1,i-1));
+        Real eta_O = Interp4(
+            Interp4(etaB(oh,k,j-2,i-2), etaB(oh,k,j-2,i-1), etaB(oh,k,j-2,i),
+                    etaB(oh,k,j-2,i+1)),
+            Interp4(etaB(oh,k,j-1,i-2), etaB(oh,k,j-1,i-1), etaB(oh,k,j-1,i),
+                    etaB(oh,k,j-1,i+1)),
+            Interp4(etaB(oh,k,j  ,i-2), etaB(oh,k,j  ,i-1), etaB(oh,k,j  ,i),
+                    etaB(oh,k,j  ,i+1)),
+            Interp4(etaB(oh,k,j+1,i-2), etaB(oh,k,j+1,i-1), etaB(oh,k,j+1,i),
+                    etaB(oh,k,j+1,i+1)));
         E3(k,j,i) = eta_O*J3;
       }
     }
