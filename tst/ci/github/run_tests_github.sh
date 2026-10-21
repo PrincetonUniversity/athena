@@ -72,6 +72,7 @@ if [ "$TEST_SET" == "extended" ]; then
     time python3 run_tests.py implicit_radiation $CONFIG $MPIRUN_OPTS --silent
     time python3 run_tests.py multi_group $CONFIG --silent
     time python3 run_tests.py chemistry $CONFIG --silent
+    time python3 run_tests.py hydro4 $CONFIG --silent
     exit 0
 fi
 
