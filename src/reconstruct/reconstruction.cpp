@@ -236,6 +236,17 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       ATHENA_ERROR(msg);
     }
 
+    // UCT4 uses the Newtonian FastMagnetosonicSpeed() for the corner wavespeeds, which
+    // is a no-op returning 0 in SR/GR builds (division by zero in the corner EMFs), and
+    // the fourth-order field conversions assume Newtonian MHD
+    if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Selected time/xorder=" << input_recon << " with MHD is not supported"
+          << " for relativistic dynamics (SR/GR)" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
     // fourth-order MHD (UCT4) computes the cell-centered/averaged fields in the main
     // time-integrator task list, which the operator-split STS task list does not do
     if (MAGNETIC_FIELDS_ENABLED && STS_ENABLED) {
