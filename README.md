@@ -3,6 +3,7 @@ athena
 <!-- Jenkins Status Badge in Markdown (with view), unprotected, flat style -->
 <!-- In general, need to be on Princeton VPN, logged into Princeton CAS, with ViewStatus access to Jenkins instance to click on unprotected Build Status Badge, but server is configured to whitelist GitHub -->
 <!-- [![Jenkins Build Status](https://jenkins.princeton.edu/buildStatus/icon?job=athena/PrincetonUniversity_athena_jenkins_master)](https://jenkins.princeton.edu/job/athena/job/PrincetonUniversity_athena_jenkins_master/) -->
+[![CI](https://github.com/PrincetonUniversity/athena/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/PrincetonUniversity/athena/actions/workflows/ci.yml)
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11660592.svg)](https://doi.org/10.5281/zenodo.11660592)
 [![codecov](https://codecov.io/gh/PrincetonUniversity/athena/branch/master/graph/badge.svg?token=ZzniY084kP)](https://codecov.io/gh/PrincetonUniversity/athena)

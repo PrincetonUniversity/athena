@@ -38,7 +38,6 @@ constexpr bool use_gl_quadrature = true;
 Real (*IntegrandInitial)(Real x1);
 Real (*IntegrandFinal)(Real x1);
 Real a_width, b_center, alpha;
-Real iso_cs;
 int m_coord;
 Real t_final;
 int iprob;
@@ -64,7 +63,6 @@ Real FinalCosineSphericalIntegrand(Real x2);
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
   // read and initialize global parameters
-  iso_cs = pin->GetReal("hydro", "iso_sound_speed");
   // initial condition; see Mignone (2014) section 5.1.1
   alpha = pin->GetOrAddReal("problem", "alpha", 1.0);
   a_width = pin->GetOrAddReal("problem", "a_width", 10.0);

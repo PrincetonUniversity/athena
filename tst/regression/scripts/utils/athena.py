@@ -50,6 +50,26 @@ def configure(*args, **kwargs):
         os.chdir(current_dir)
 
 
+# Function for locating CVODE, for tests that configure with --chem_ode_solver=cvode.
+# Returns the value for configure.py's --cvode_path, or None if the path was already
+# given via run_tests.py --config=--cvode_path=PATH (which is appended to the configure
+# command and takes precedence); otherwise falls back to the CVODE_PATH environment
+# variable
+def cvode_path():
+    if any(arg.startswith('--cvode_path') for arg in global_config_args):
+        return None
+    path = os.environ.get('CVODE_PATH')
+    if not path:
+        raise AthenaError('CVODE path not specified. Pass --config=--cvode_path=PATH to '
+                          'run_tests.py or set the CVODE_PATH environment variable to '
+                          'the CVODE installation prefix (containing include/ and lib/)')
+    header = os.path.join(path, 'include', 'cvode', 'cvode.h')
+    if not os.path.isfile(header):
+        raise AthenaError('CVODE_PATH=\'{0}\' is not a CVODE installation prefix: '
+                          '{1} not found'.format(path, header))
+    return path
+
+
 # Function for compiling Athena++
 def make(clean_first=True, obj_only=False):
     current_dir = os.getcwd()

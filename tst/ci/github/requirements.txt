@@ -1,0 +1,8 @@
+# Python dependencies of tst/regression/run_tests.py and the tests it runs
+numpy
+scipy
+h5py
+matplotlib
+mpmath
+colorama
+termcolor
