@@ -214,6 +214,28 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       return;
     }
 
+    // fourth-order MHD (UCT4) builds its corner EMFs from the states reconstructed in
+    // the full-order Hydro::CalculateFluxes call of each stage; the VL2 predictor uses
+    // first-order fluxes and so does not populate them
+    if (MAGNETIC_FIELDS_ENABLED
+        && pin->GetOrAddString("time", "integrator", "vl2") == "vl2") {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Selected time/xorder=" << input_recon << " with MHD requires a"
+          << " multistage RK integrator (e.g. rk3), not vl2" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    // the general EOS ConservedToPrimitive overwrites the fourth-order cell-centered
+    // field with the second-order average
+    if (MAGNETIC_FIELDS_ENABLED && GENERAL_EOS) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Selected time/xorder=" << input_recon << " with MHD is not supported"
+          << " with a general EOS" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
     // fourth-order MHD (UCT4) computes the cell-centered/averaged fields in the main
     // time-integrator task list, which the operator-split STS task list does not do
     if (MAGNETIC_FIELDS_ENABLED && STS_ENABLED) {
