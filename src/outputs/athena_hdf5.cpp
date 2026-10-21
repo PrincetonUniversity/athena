@@ -528,9 +528,13 @@ void ATHDF5Output<h5out_t>::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool 
           << "Coordinate name too long\n";
       ATHENA_ERROR(msg);
     }
+    // H5Awrite reads max_name_length+1 bytes (the size of string_type) from the buffer,
+    // so the name is copied into a zero-padded buffer of that size.
+    char coordinate_name[max_name_length+1] = {};
+    std::strncpy(coordinate_name, COORDINATE_SYSTEM, max_name_length);
     attribute = H5Acreate2(file, "Coordinates", string_type, dataspace_scalar,
                           H5P_DEFAULT, H5P_DEFAULT);
-    H5Awrite(attribute, string_type, COORDINATE_SYSTEM);
+    H5Awrite(attribute, string_type, coordinate_name);
     H5Aclose(attribute);
 
     // Write extent of grid in x1-direction
@@ -969,7 +973,7 @@ void ATHDF5Output<T>::MakeXDMF() {
 }
 
 // Explicit template instantiations for all types used in outputs.cpp
-#ifdef fp16_t
+#ifdef FP16_HDF5_OUTPUT
 template class ATHDF5Output<fp16_t>;
 #endif
 template class ATHDF5Output<float>;

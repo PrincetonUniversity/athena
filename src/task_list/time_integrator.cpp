@@ -720,14 +720,21 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         }
       }
     } else { // w/o orbital advection ///
-      Real temp = 0.0;
-      Real temp_prev = 0.0;
+      // Stage times in units of dt. Time is treated as one more evolved variable tau
+      // with dtau/dt = 1 and tau = t^n at the start of the step. The register updates of
+      // WeightedAve(),
+      //   u1 += delta*u;  u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*RHS,
+      // are applied to tau in the same way as to the fluid variables, with RHS = 1.
+      // (For y'=1 the exact solution is the elapsed time, so the stage values of the
+      // scheme applied to it are the times of the stages.) Measured from t^n, tau in
+      // the main register u is sbeta at the start of a stage and ebeta at its end; tau
+      // in u1 is u1_time; u2 holds U^n, so tau in u2 is 0.
+      Real u1_time = 0.0;
       stage_wghts[0].sbeta = 0.0;
       for (int l=0; l<nstages-1; l++) {
-        temp_prev = temp;
-        temp = temp_prev + stage_wghts[l].delta*stage_wghts[l].sbeta;
-        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*temp_prev
-                               + stage_wghts[l].gamma_2*temp
+        u1_time += stage_wghts[l].delta*stage_wghts[l].sbeta;
+        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*stage_wghts[l].sbeta
+                               + stage_wghts[l].gamma_2*u1_time
                                + stage_wghts[l].gamma_3*0.0
                                + stage_wghts[l].beta;
         stage_wghts[l+1].sbeta = stage_wghts[l].ebeta;
@@ -868,14 +875,21 @@ TimeIntegratorTaskList::TimeIntegratorTaskList(ParameterInput *pin, Mesh *pm) {
         }
       }
     } else { // w/o orbital advection ///
-      Real temp = 0.0;
-      Real temp_prev = 0.0;
+      // Stage times in units of dt. Time is treated as one more evolved variable tau
+      // with dtau/dt = 1 and tau = t^n at the start of the step. The register updates of
+      // WeightedAve(),
+      //   u1 += delta*u;  u = gamma_1*u + gamma_2*u1 + gamma_3*u2 + beta*dt*RHS,
+      // are applied to tau in the same way as to the fluid variables, with RHS = 1.
+      // (For y'=1 the exact solution is the elapsed time, so the stage values of the
+      // scheme applied to it are the times of the stages.) Measured from t^n, tau in
+      // the main register u is sbeta at the start of a stage and ebeta at its end; tau
+      // in u1 is u1_time; u2 holds U^n, so tau in u2 is 0.
+      Real u1_time = 0.0;
       stage_wghts[0].sbeta = 0.0;
       for (int l=0; l<nstages-1; l++) {
-        temp_prev = temp;
-        temp = temp_prev + stage_wghts[l].delta*stage_wghts[l].sbeta;
-        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*temp_prev
-                               + stage_wghts[l].gamma_2*temp
+        u1_time += stage_wghts[l].delta*stage_wghts[l].sbeta;
+        stage_wghts[l].ebeta = stage_wghts[l].gamma_1*stage_wghts[l].sbeta
+                               + stage_wghts[l].gamma_2*u1_time
                                + stage_wghts[l].gamma_3*0.0
                                + stage_wghts[l].beta;
         stage_wghts[l+1].sbeta = stage_wghts[l].ebeta;
@@ -1930,6 +1944,17 @@ TaskStatus TimeIntegratorTaskList::AddSourceTerms(MeshBlock *pmb, int stage) {
       // Evaluate the source terms at the time at the beginning of the stage
       ph->hsrc.AddSourceTerms(t_start_stage, dt, ph->flux, ph->w, ps->r, pf->bcc,
                                    ph->u, ps->s);
+
+      // The penultimate stage of SSPRK(5,4) also adds F(u^(3)) to the register u2 (s2),
+      // which is used in the last stage, with the weight 0.063692468666290 (see
+      // IntegrateHydro() and IntegrateScalars()). The source terms are added to u2 (s2)
+      // here with the same weight.
+      if (stage == 4 && integrator == "ssprk5_4") {
+        const Real beta = 0.063692468666290; // F(u^(3)) coeff.
+        const Real dt_ssp = beta*pmb->pmy_mesh->dt;
+        ph->hsrc.AddSourceTerms(t_start_stage, dt_ssp, ph->flux, ph->w, ps->r, pf->bcc,
+                                     ph->u2, ps->s2);
+      }
     }
     return TaskStatus::next;
   }
@@ -2297,9 +2322,20 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
                          + stage_wghts[(stage-1)].ebeta*pmb->pmy_mesh->dt;
       // Scaled coefficient for RHS time-advance within stage
       Real dt = (stage_wghts[(stage-1)].beta)*(pmb->pmy_mesh->dt);
+      // Here ph->w holds the primitives of the previous stage, and ph->w1 holds the new
+      // primitives W(U) computed above by ConservedToPrimitive(). The physical boundary
+      // conditions are applied to the new primitives. The built-in boundary functions
+      // access them through ph->hbvar, which points to ph->w1, but user-defined boundary
+      // functions are passed ph->w.
+      //
+      // First swap: SwapAthenaArray() exchanges only the data pointers of the two arrays
+      // (no data are copied). After it ph->w holds the new primitives and ph->w1 the
+      // previous ones, so that the boundary functions of both kinds act on the new
+      // primitives, provided that ph->hbvar is pointed to ph->w.
+      ph->w.SwapAthenaArray(ph->w1);
       // Swap Hydro and (possibly) passive scalar quantities in BoundaryVariable interface
       // from conserved to primitive formulations:
-      ph->hbvar.SwapHydroQuantity(ph->w1, HydroBoundaryQuantity::prim);
+      ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
       if (NSCALARS > 0) {
         ps->sbvar.var_cc = &(ps->r);
         if (pmb->pmy_mesh->multilevel) {
@@ -2307,6 +2343,12 @@ TaskStatus TimeIntegratorTaskList::Primitives(MeshBlock *pmb, int stage) {
         }
       }
       pbval->ApplyPhysicalBoundaries(t_end_stage, dt, pmb->pbval->bvars_main_int);
+      // Second swap: undo the first one, and point ph->hbvar back to ph->w1. The code
+      // below and the swap at the end of this function use ph->w for the previous
+      // primitives and ph->w1 for the new ones: the fourth-order W(U) reads and writes
+      // the new primitives in ph->w1, and the final swap moves them to ph->w.
+      ph->w.SwapAthenaArray(ph->w1);
+      ph->hbvar.SwapHydroQuantity(ph->w1, HydroBoundaryQuantity::prim);
       // Perform 4th order W(U); for MHD, the point-valued cell-centered field
       // bcc_center is passed for the pointwise variable inversion
       if (MAGNETIC_FIELDS_ENABLED) {

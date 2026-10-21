@@ -164,7 +164,7 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
 
   // Go through each interface
   // TODO(KGF): see comment in hllc_rel.cpp
-  //#pragma omp simd simdlen(SIMD_WIDTH)
+#pragma omp simd simdlen(SIMD_WIDTH)
   for (int i=il; i<=iu; ++i) {
     // Extract left primitives
     Real rho_l = prim_l(IDN,i);
@@ -235,9 +235,9 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
     Real ptot_l = pgas_l + 0.5*b_sq_l;
     cons_l[IDN] = rho_l * u_l[0];
     cons_l[IEN] = wtot_l * u_l[0] * u_l[0] - b_l[0] * b_l[0] - ptot_l;
-    cons_l[ivx] = wtot_l * u_l[1] * u_l[0] - b_l[1] * b_l[0];
-    cons_l[ivy] = wtot_l * u_l[2] * u_l[0] - b_l[2] * b_l[0];
-    cons_l[ivz] = wtot_l * u_l[3] * u_l[0] - b_l[3] * b_l[0];
+    cons_l[IVX] = wtot_l * u_l[1] * u_l[0] - b_l[1] * b_l[0];
+    cons_l[IVY] = wtot_l * u_l[2] * u_l[0] - b_l[2] * b_l[0];
+    cons_l[IVZ] = wtot_l * u_l[3] * u_l[0] - b_l[3] * b_l[0];
     cons_l[IBY] = b_l[2] * u_l[0] - b_l[0] * u_l[2];
     cons_l[IBZ] = b_l[3] * u_l[0] - b_l[0] * u_l[3];
 
@@ -245,9 +245,9 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
     Real flux_l[NWAVE];
     flux_l[IDN] = rho_l * u_l[1];
     flux_l[IEN] = wtot_l * u_l[0] * u_l[1] - b_l[0] * b_l[1];
-    flux_l[ivx] = wtot_l * u_l[1] * u_l[1] - b_l[1] * b_l[1] + ptot_l;
-    flux_l[ivy] = wtot_l * u_l[2] * u_l[1] - b_l[2] * b_l[1];
-    flux_l[ivz] = wtot_l * u_l[3] * u_l[1] - b_l[3] * b_l[1];
+    flux_l[IVX] = wtot_l * u_l[1] * u_l[1] - b_l[1] * b_l[1] + ptot_l;
+    flux_l[IVY] = wtot_l * u_l[2] * u_l[1] - b_l[2] * b_l[1];
+    flux_l[IVZ] = wtot_l * u_l[3] * u_l[1] - b_l[3] * b_l[1];
     flux_l[IBY] = b_l[2] * u_l[1] - b_l[1] * u_l[2];
     flux_l[IBZ] = b_l[3] * u_l[1] - b_l[1] * u_l[3];
 
@@ -257,9 +257,9 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
     Real ptot_r = pgas_r + 0.5*b_sq_r;
     cons_r[IDN] = rho_r * u_r[0];
     cons_r[IEN] = wtot_r * u_r[0] * u_r[0] - b_r[0] * b_r[0] - ptot_r;
-    cons_r[ivx] = wtot_r * u_r[1] * u_r[0] - b_r[1] * b_r[0];
-    cons_r[ivy] = wtot_r * u_r[2] * u_r[0] - b_r[2] * b_r[0];
-    cons_r[ivz] = wtot_r * u_r[3] * u_r[0] - b_r[3] * b_r[0];
+    cons_r[IVX] = wtot_r * u_r[1] * u_r[0] - b_r[1] * b_r[0];
+    cons_r[IVY] = wtot_r * u_r[2] * u_r[0] - b_r[2] * b_r[0];
+    cons_r[IVZ] = wtot_r * u_r[3] * u_r[0] - b_r[3] * b_r[0];
     cons_r[IBY] = b_r[2] * u_r[0] - b_r[0] * u_r[2];
     cons_r[IBZ] = b_r[3] * u_r[0] - b_r[0] * u_r[3];
 
@@ -267,9 +267,9 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
     Real flux_r[NWAVE];
     flux_r[IDN] = rho_r * u_r[1];
     flux_r[IEN] = wtot_r * u_r[0] * u_r[1] - b_r[0] * b_r[1];
-    flux_r[ivx] = wtot_r * u_r[1] * u_r[1] - b_r[1] * b_r[1] + ptot_r;
-    flux_r[ivy] = wtot_r * u_r[2] * u_r[1] - b_r[2] * b_r[1];
-    flux_r[ivz] = wtot_r * u_r[3] * u_r[1] - b_r[3] * b_r[1];
+    flux_r[IVX] = wtot_r * u_r[1] * u_r[1] - b_r[1] * b_r[1] + ptot_r;
+    flux_r[IVY] = wtot_r * u_r[2] * u_r[1] - b_r[2] * b_r[1];
+    flux_r[IVZ] = wtot_r * u_r[3] * u_r[1] - b_r[3] * b_r[1];
     flux_r[IBY] = b_r[2] * u_r[1] - b_r[1] * u_r[2];
     flux_r[IBZ] = b_r[3] * u_r[1] - b_r[1] * u_r[3];
 
@@ -297,31 +297,33 @@ void HLLETransforming(MeshBlock *pmb, const int k, const int j,
     }
 
     // Determine region of wavefan
-    Real *cons_interface, *flux_interface;
-    if (lambda_l >= v_interface) {  // L region
-      cons_interface = cons_l;
-      flux_interface = flux_l;
-    } else if (lambda_r <= v_interface) { // R region
-      cons_interface = cons_r;
-      flux_interface = flux_r;
-    } else {  // HLL region
-      cons_interface = cons_hll;
-      flux_interface = flux_hll;
+    // Determine region of wavefan and copy out element-by-element. Local arrays are
+    // indexed only by compile-time constants and the chosen state is written with
+    // explicit stores (runtime ivx/ivy/ivz only appear in the global array index), so
+    // every lane-private value can be kept in registers under "omp simd" (#521).
+    const bool use_l = (lambda_l >= v_interface);
+    const bool use_r = (!use_l) && (lambda_r <= v_interface);
+    Real cons_sel[NWAVE], flux_sel[NWAVE];
+    for (int n = 0; n < NWAVE; ++n) {
+      cons_sel[n] = use_l ? cons_l[n] : (use_r ? cons_r[n] : cons_hll[n]);
+      flux_sel[n] = use_l ? flux_l[n] : (use_r ? flux_r[n] : flux_hll[n]);
     }
-
-    // Set conserved quantities in GR
     if (GENERAL_RELATIVITY) {
-      for (int n = 0; n < NWAVE; ++n) {
-        cons(n,i) = cons_interface[n];
-      }
+      cons(IDN,i) = cons_sel[IDN];
+      cons(IEN,i) = cons_sel[IEN];
+      cons(ivx,i) = cons_sel[IVX];
+      cons(ivy,i) = cons_sel[IVY];
+      cons(ivz,i) = cons_sel[IVZ];
+      cons(IBY,i) = cons_sel[IBY];
+      cons(IBZ,i) = cons_sel[IBZ];
     }
-
-    // Set fluxes
-    for (int n = 0; n < NHYDRO; ++n) {
-      flux(n,k,j,i) = flux_interface[n];
-    }
-    ey(k,j,i) = -flux_interface[IBY];
-    ez(k,j,i) = flux_interface[IBZ];
+    flux(IDN,k,j,i) = flux_sel[IDN];
+    flux(IEN,k,j,i) = flux_sel[IEN];
+    flux(ivx,k,j,i) = flux_sel[IVX];
+    flux(ivy,k,j,i) = flux_sel[IVY];
+    flux(ivz,k,j,i) = flux_sel[IVZ];
+    ey(k,j,i) = -flux_sel[IBY];
+    ez(k,j,i) = flux_sel[IBZ];
   }
 
   // Transform fluxes to global coordinates if in GR
