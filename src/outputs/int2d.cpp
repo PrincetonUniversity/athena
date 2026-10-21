@@ -7,6 +7,8 @@
 //! \brief implements non-trivial functions of IntX[123]X[123]Output classes.
 
 // C/C++ headers
+#include <cmath>     // cos, sin
+#include <cstring>   // strcmp
 #include <fstream>   // ifstream, ios, ofstream
 #include <iostream>  // cout, endl, <<
 #include <sstream>   // stringstream
@@ -14,7 +16,8 @@
 #include <vector>
 
 // Athena++ headers
-#include "../coordinates/coordinates.hpp"  // VolCenterFace3Area
+#include "../athena.hpp"
+#include "../coordinates/coordinates.hpp"
 #include "../mesh/mesh.hpp"  // time, my_blocks
 #include "outputs.hpp"
 
@@ -22,6 +25,49 @@
 #ifdef MPI_PARALLEL
 #include <mpi.h>
 #endif
+
+namespace {
+//----------------------------------------------------------------------------------------
+//! \fn void CellCenterArea(const Coordinates *pco, const int dir, const int k,
+//!         const int j, const int il, const int iu, AthenaArray<Real> &area)
+//! \brief computes the area of the coordinate surface normal to direction dir through
+//!     the center of each cell (k,j,il:iu), restricted to the cell.
+
+void CellCenterArea(const Coordinates *pco, const int dir, const int k, const int j,
+                    const int il, const int iu, AthenaArray<Real> &area) {
+  if (std::strcmp(COORDINATE_SYSTEM, "cylindrical") == 0) {
+    for (int i = il; i <= iu; ++i) {
+      const Real half_r2 = 0.5 * (SQR(pco->x1f(i+1)) - SQR(pco->x1f(i)));
+      if (dir == X3DIR)
+        area(i) = half_r2 * pco->dx2f(j);
+      else if (dir == X2DIR)
+        area(i) = pco->dx1f(i) * pco->dx3f(k);
+      else
+        area(i) = pco->x1v(i) * pco->dx2f(j) * pco->dx3f(k);
+    }
+  } else if (std::strcmp(COORDINATE_SYSTEM, "spherical_polar") == 0) {
+    for (int i = il; i <= iu; ++i) {
+      const Real half_r2 = 0.5 * (SQR(pco->x1f(i+1)) - SQR(pco->x1f(i)));
+      if (dir == X3DIR)
+        area(i) = half_r2 * pco->dx2f(j);
+      else if (dir == X2DIR)
+        area(i) = std::sin(pco->x2v(j)) * half_r2 * pco->dx3f(k);
+      else
+        area(i) = SQR(pco->x1v(i)) * (std::cos(pco->x2f(j)) - std::cos(pco->x2f(j+1)))
+                  * pco->dx3f(k);
+    }
+  } else {  // Cartesian
+    for (int i = il; i <= iu; ++i) {
+      if (dir == X3DIR)
+        area(i) = pco->dx1f(i) * pco->dx2f(j);
+      else if (dir == X2DIR)
+        area(i) = pco->dx1f(i) * pco->dx3f(k);
+      else
+        area(i) = pco->dx2f(j) * pco->dx3f(k);
+    }
+  }
+}
+} // namespace
 
 //----------------------------------------------------------------------------------------
 //! \fn void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm)
@@ -173,7 +219,7 @@ void Int2DOutput::ProcessHeader(const std::string& ext, const Mesh *pm) {
 void IntX1X2Output::SetThirdDim(const Mesh *pm) {
   const bool uniform = pm->use_uniform_meshgen_fn_[X3DIR];
   xf.clear();
-  nx = pm->mesh_size.nx3 << (pm->max_level - pm->root_level);
+  nx = pm->mesh_size.nx3 << (pm->f3 ? pm->max_level - pm->root_level : 0);
   for (int i = 0; i <= nx; ++i) {
     const Real rx = ComputeMeshGeneratorX(i, nx, uniform);
     xf.push_back(pm->MeshGenerator_[X3DIR](rx, pm->mesh_size));
@@ -188,7 +234,7 @@ void IntX1X2Output::SetThirdDim(const Mesh *pm) {
 void IntX1X3Output::SetThirdDim(const Mesh *pm) {
   const bool uniform = pm->use_uniform_meshgen_fn_[X2DIR];
   xf.clear();
-  nx = pm->mesh_size.nx2 << (pm->max_level - pm->root_level);
+  nx = pm->mesh_size.nx2 << (pm->f2 ? pm->max_level - pm->root_level : 0);
   for (int i = 0; i <= nx; ++i) {
     const Real rx = ComputeMeshGeneratorX(i, nx, uniform);
     xf.push_back(pm->MeshGenerator_[X2DIR](rx, pm->mesh_size));
@@ -279,7 +325,8 @@ void Int2DOutput::WriteOutputFile(Mesh *pm, ParameterInput *pin, bool flag) {
 void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals,
     AthenaArray<Real> &area) {
   // Determine where the meshblock fits.
-  const int nfine = 1 << (pmb->pmy_mesh->max_level - pmb->loc.level);
+  const Mesh *pm = pmb->pmy_mesh;
+  const int nfine = pm->f3 ? 1 << (pm->max_level - pmb->loc.level) : 1;
   const int offset = static_cast<int>(pmb->loc.lx3) * pmb->block_size.nx3 * nfine;
 
   // Integrate each data field.
@@ -291,7 +338,7 @@ void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
       for (int k = pmb->ks; k <= pmb->ke; ++k) {
         Real sum = 0;
         for (int j = pmb->js; j <= pmb->je; ++j) {
-          pmb->pcoord->VolCenterFace3Area(k, j, pmb->is, pmb->ie, area);
+          CellCenterArea(pmb->pcoord, X3DIR, k, j, pmb->is, pmb->ie, area);
           for (int i = pmb->is; i <= pmb->ie; ++i)
             sum += pdata->data(c,k,j,i) * area(i);
         }
@@ -314,7 +361,8 @@ void IntX1X2Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
 void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &integrals,
     AthenaArray<Real> &area) {
   // Determine where the meshblock fits.
-  const int nfine = 1 << (pmb->pmy_mesh->max_level - pmb->loc.level);
+  const Mesh *pm = pmb->pmy_mesh;
+  const int nfine = pm->f2 ? 1 << (pm->max_level - pmb->loc.level) : 1;
   const int offset = static_cast<int>(pmb->loc.lx2) * pmb->block_size.nx2 * nfine;
 
   // Integrate each data field.
@@ -326,7 +374,7 @@ void IntX1X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
       for (int j = pmb->js; j <= pmb->je; ++j) {
         Real sum = 0;
         for (int k = pmb->ks; k <= pmb->ke; ++k) {
-          pmb->pcoord->VolCenterFace2Area(k, j, pmb->is, pmb->ie, area);
+          CellCenterArea(pmb->pcoord, X2DIR, k, j, pmb->is, pmb->ie, area);
           for (int i = pmb->is; i <= pmb->ie; ++i)
             sum += pdata->data(c,k,j,i) * area(i);
         }
@@ -362,7 +410,7 @@ void IntX2X3Output::AddToIntegrals(const MeshBlock *pmb, AthenaArray<Real> &inte
         Real sum = 0;
         for (int k = pmb->ks; k <= pmb->ke; ++k) {
           for (int j = pmb->js; j <= pmb->je; ++j) {
-            pmb->pcoord->VolCenterFace1Area(k, j, i, i, area);
+            CellCenterArea(pmb->pcoord, X1DIR, k, j, i, i, area);
             sum += pdata->data(c,k,j,i) * area(i);
           }
         }
