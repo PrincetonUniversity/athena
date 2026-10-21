@@ -52,7 +52,7 @@ Real ang_2, ang_3; // Rotation angles about the y and z' axis
 Real sin_a2, cos_a2, sin_a3, cos_a3;
 Real amp, njeans, lambda, kwave; // amplitude, Wavelength, 2*PI/wavelength
 Real cs2, gam, gm1, omega, omega2, gconst;
-Real d0, p0, v0, u0, w0, va, b0;
+Real d0, p0;
 } // namespace
 
 void Mesh::InitUserMeshData(ParameterInput *pin) {
@@ -80,8 +80,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   if (mesh_size.nx3 > 1 && ang_2 != 0.0) lambda = std::min(lambda,x3);
 
   d0 = 1.0, p0 = 1.0;
-  u0 = 0.0, v0 = 0.0, w0 = 0.0;
-  va = 0.0, b0 = 0.0;
 
   if (NON_BAROTROPIC_EOS) {
     gam = pin->GetReal("hydro","gamma");
