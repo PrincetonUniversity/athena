@@ -1791,7 +1791,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
       // perform fourth-order correction of midpoint initial condition:
       // (correct IC on all MeshBlocks or none; switch cannot be toggled independently)
-      bool correct_ic = my_blocks(0)->precon->correct_ic_;
+      // The problem generator sets midpoint values, which this converts to cell averages.
+      // A restart file already stores cell averages, so the conversion is done only when
+      // the problem generator has been called (res_flag == 0).
+      bool correct_ic = (res_flag == 0) && my_blocks(0)->precon->correct_ic_;
       if (correct_ic)
         CorrectMidpointInitialCondition();
 
