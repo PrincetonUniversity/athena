@@ -3,5 +3,6 @@ numpy
 scipy
 h5py
 matplotlib
+mpmath
 colorama
 termcolor

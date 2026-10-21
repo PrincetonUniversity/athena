@@ -48,6 +48,10 @@ if [ "$MPI_CHOICE" == "openmpi" ]; then
     MPIRUN_OPTS=--mpirun_opts=--oversubscribe
     # Disable OpenMPI vader CMA due to namespace permission issues in containers
     export OMPI_MCA_btl_vader_single_copy_mechanism=none
+elif [ "$MPI_CHOICE" == "mpich" ]; then
+    # Ubuntu's MPICH uses UCX, whose InfiniBand transports fail to initialize on the
+    # runners (ibv_create_srq() is not supported); use shared memory and TCP only
+    export UCX_TLS=self,sm,tcp
 elif [ "$MPI_CHOICE" == "intelmpi" ]; then
     # No network fabric on the runners; use shared memory only
     export I_MPI_FABRICS=shm
