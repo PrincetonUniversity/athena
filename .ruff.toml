@@ -1,0 +1,13 @@
+# Ruff configuration mirroring the [flake8] section of setup.cfg (flake8 is the reference)
+line-length = 90
+extend-exclude = ["cpplint.py", "*.ipynb"]  # flake8 only checks .py files
+# flake8 does not honor .gitignore, to make ruff behave the same way,
+# uncomment the following line (`respect-gitignore = false`):
+# respect-gitignore = false
+
+[lint]
+# flake8 defaults: pycodestyle (E, W) and pyflakes (F)
+select = ["E", "W", "F"]
+# Subset of the codes ignored in setup.cfg that ruff implements
+# (E121, E123, E126, E226, E241, E704 and W503 have no stable ruff equivalent)
+ignore = ["E731"]
