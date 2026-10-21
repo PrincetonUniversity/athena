@@ -360,11 +360,17 @@ void Field::ComputeCornerE_UCT4() {
       for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie; ++i) {
-          Real alpha_plus_z = std::abs(alpha_plus_x3_(k,j,i));
-          Real alpha_minus_z = std::abs(alpha_minus_x3_(k,j,i));
+          // edge wavespeeds: max of the face-centered estimates on the two faces
+          // adjacent to the edge (symmetric w.r.t. the edge, as for E3 above)
+          Real alpha_plus_z = std::max(std::abs(alpha_plus_x3_(k,j,i)),
+                                       std::abs(alpha_plus_x3_(k,j-1,i)));
+          Real alpha_minus_z = std::max(std::abs(alpha_minus_x3_(k,j,i)),
+                                        std::abs(alpha_minus_x3_(k,j-1,i)));
 
-          Real alpha_plus_y = std::abs(alpha_plus_x2_(k,j,i));
-          Real alpha_minus_y = std::abs(alpha_minus_x2_(k,j,i));
+          Real alpha_plus_y = std::max(std::abs(alpha_plus_x2_(k,j,i)),
+                                       std::abs(alpha_plus_x2_(k-1,j,i)));
+          Real alpha_minus_y = std::max(std::abs(alpha_minus_x2_(k,j,i)),
+                                        std::abs(alpha_minus_x2_(k-1,j,i)));
 
           Real e1_L3L2, e1_L3R2, e1_R3L2, e1_R3R2;
           Real by_R3_minus_by_L3, bz_R2_minus_bz_L2;
@@ -396,11 +402,15 @@ void Field::ComputeCornerE_UCT4() {
       for (int j=js; j<=je; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
-          Real alpha_plus_z = std::abs(alpha_plus_x3_(k,j,i));
-          Real alpha_minus_z = std::abs(alpha_minus_x3_(k,j,i));
+          Real alpha_plus_z = std::max(std::abs(alpha_plus_x3_(k,j,i)),
+                                       std::abs(alpha_plus_x3_(k,j,i-1)));
+          Real alpha_minus_z = std::max(std::abs(alpha_minus_x3_(k,j,i)),
+                                        std::abs(alpha_minus_x3_(k,j,i-1)));
 
-          Real alpha_plus_x = std::abs(alpha_plus_x1_(k,j,i));
-          Real alpha_minus_x = std::abs(alpha_minus_x1_(k,j,i));
+          Real alpha_plus_x = std::max(std::abs(alpha_plus_x1_(k,j,i)),
+                                       std::abs(alpha_plus_x1_(k-1,j,i)));
+          Real alpha_minus_x = std::max(std::abs(alpha_minus_x1_(k,j,i)),
+                                        std::abs(alpha_minus_x1_(k-1,j,i)));
 
           Real e2_L3L1, e2_L3R1, e2_R3L1, e2_R3R1;
           Real bx_R3_minus_bx_L3, bz_R1_minus_bz_L1;

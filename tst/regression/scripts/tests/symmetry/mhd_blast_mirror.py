@@ -9,9 +9,10 @@
 # each corner EMF are summed, and the HLLD solver's choice of flux on a stationary
 # contact all used to break it at the 1-ulp level (#165), and the extremum-preserving
 # PPM limiter then amplifies the seed to a truncation-error-sized asymmetry within a
-# few tens of steps. This test runs the blast with HLLE, HLLD and Roe, with PLM and with
-# extremum-preserving PPM, in 2D and 3D, and requires the solution to stay bit-exactly
-# symmetric. FMA contraction is disabled for the build because it seeds the same kind
+# few tens of steps. This test runs the blast with HLLE, HLLD and Roe, with PLM, with
+# extremum-preserving PPM and with the fourth-order UCT4 scheme, in 2D and 3D, and
+# requires the solution to stay bit-exactly symmetric. The UCT4 edge EMFs used to break
+# the 3D symmetry through one-sided edge wavespeed estimates. FMA contraction is disabled for the build because it seeds the same kind
 # of asymmetry on its own (a*b+c is contracted or not depending on operand order).
 
 # Modules
@@ -42,6 +43,10 @@ cases = [('2d_x2_vl2', 'mirror', ['time/xorder=2', 'time/integrator=vl2',
                                   'time/tlim=0.3', 'output1/dt=0.3'] + d3),
          ('3d_x3_rk3', 'mirror', ['time/xorder=3', 'time/integrator=rk3',
                                   'time/tlim=0.3', 'output1/dt=0.3'] + d3),
+         ('2d_x4_rk3', 'mirror', ['time/xorder=4c', 'time/integrator=rk3',
+                                  'time/tlim=0.5', 'output1/dt=0.5']),
+         ('3d_x4_rk3', 'mirror', ['time/xorder=4c', 'time/integrator=rk3',
+                                  'time/tlim=0.3', 'output1/dt=0.3'] + d3),
          ('2d_x3_rk3_diag', 'point', ['time/xorder=3', 'time/integrator=rk3',
                                       'time/tlim=0.5', 'output1/dt=0.5',
                                       'problem/angle=45.0'])]
@@ -63,7 +68,7 @@ def prepare(**kwargs):
             _fluxes = [tmp[1]]
     for flux in _fluxes:
         athena.configure('b',
-                         nghost=3,
+                         nghost=6,  # required for fourth-order MHD configurations
                          prob='blast',
                          coord='cartesian',
                          flux=flux,
