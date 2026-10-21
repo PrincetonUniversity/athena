@@ -46,7 +46,7 @@ static Real amp = 1.e-6;
 // The real and imaginary parts of the linear waves
 // used as initial condition as well as test solution to compare with
 static Real v_r, v_i, p_r, p_i, er_r, er_i, fr_r, fr_i;
-static Real omegareal, omegaimg;
+static Real omegaimg;
 
 // AMR refinement condition
 int RefinementCondition(MeshBlock *pmb);
@@ -208,7 +208,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.002595343282507656;
       fr_r= 5.803552452185792e-6;
       fr_i= 0.004579152314659846;
-      omegareal= 8.111557926068842;
+      // real part of the frequency: 8.111557926068842
       omegaimg=  0.0005399950114077836;
       sigma0 = 0.01;
       break;
@@ -221,7 +221,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.025910075592072698;
       fr_r= 0.0005794967774284472;
       fr_i= 0.045749450689271914;
-      omegareal= 8.111614666406222;
+      // real part of the frequency: 8.111614666406222
       omegaimg=  0.00539501638144715;
       sigma0 = 0.1;
       break;
@@ -234,7 +234,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.22077999320680775;
       fr_r= 0.050320573067502435;
       fr_i= 0.4191946132602506;
-      omegareal= 8.116427232764806;
+      // real part of the frequency: 8.116427232764806
       omegaimg=  0.04946621158978377;
       sigma0 = 1.0;
       break;
@@ -247,7 +247,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.03457134839094067;
       fr_r= 0.20390000836732208;
       fr_i= 0.47734523049957645;
-      omegareal= 8.11808934857535;
+      // real part of the frequency: 8.11808934857535
       omegaimg=  0.057918531801229335;
       sigma0 = 10.0;
       break;
@@ -260,7 +260,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.0005865742021802234;
       fr_r= 0.1725541379069982;
       fr_i= 0.05379877178913972;
-      omegareal= 8.11138364981405;
+      // real part of the frequency: 8.11138364981405
       omegaimg=  0.006569065664451391;
       sigma0 = 100.0;
       break;
@@ -273,7 +273,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.0025938927144686375;
       fr_r= -0.0001441706051503446;
       fr_i= 0.004575470538400113;
-      omegareal= 8.110404159243402;
+      // real part of the frequency: 8.110404159243402
       omegaimg=  0.05398144874100638;
       sigma0 = 0.01;
       break;
@@ -286,7 +286,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.024520349202385106;
       fr_r= -0.013679926554110659;
       fr_i= 0.04217262048775258;
-      omegareal= 7.997736093080079;
+      // real part of the frequency: 7.997736093080079
       omegaimg=  0.5211763228783722;
       sigma0 = 0.1;
       break;
@@ -299,7 +299,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.12095401964915764;
       fr_r= -0.10566859341556321;
       fr_i= 0.030196412832965945;
-      omegareal= 6.398479314825398;
+      // real part of the frequency: 6.398479314825398
       omegaimg=  0.7044806086435424;
       sigma0 = 1.0;
       break;
@@ -312,7 +312,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 1.0653905194884314;
       fr_r= -0.04918496753828805;
       fr_i= 0.17766949176109614;
-      omegareal= 7.598198236998773;
+      // real part of the frequency: 7.598198236998773
       omegaimg=  1.6032408976918122;
       sigma0 = 10.0;
       break;
@@ -325,7 +325,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.17440949185811563;
       fr_r= 0.18330452762195915;
       fr_i= 0.038269237092134034;
-      omegareal= 8.792428775567739;
+      // real part of the frequency: 8.792428775567739
       omegaimg=  0.21678904841106914;
       sigma0 = 100.0;
       break;
@@ -338,7 +338,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.0023794592885675314;
       fr_r= -0.0014238164476813107;
       fr_i= 0.004188456336444625;
-      omegareal= 7.991803762700347;
+      // real part of the frequency: 7.991803762700347
       omegaimg=  0.5194196623360917;
       sigma0 = 0.01;
       break;
@@ -351,7 +351,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.007369404109744249;
       fr_r= -0.010447571816544906;
       fr_i= 0.0022692464424416106;
-      omegareal= 6.376759503452208;
+      // real part of the frequency: 6.376759503452208
       omegaimg=  0.5640173083760487;
       sigma0 = 0.1;
       break;
@@ -364,7 +364,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.07057816396845434;
       fr_r= -0.011965869992714585;
       fr_i=  0.006087909287739512;
-      omegareal= 6.268981302997137;
+      // real part of the frequency: 6.268981302997137
       omegaimg= 0.8321358955315021;
       sigma0 = 1.0;
       break;
@@ -377,7 +377,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.9851131720168348;
       fr_r= 0.12816968396550954;
       fr_i= 0.2810151431629262;
-      omegareal= 13.701319925124455;
+      // real part of the frequency: 13.701319925124455
       omegaimg=  4.086365212039477;
       sigma0 = 10.0;
       break;
@@ -390,7 +390,7 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
       er_i= 0.10314648118800326;
       fr_r= 0.3038178476543796;
       fr_i= 0.032551125836846495;
-      omegareal= 14.391367986265605;
+      // real part of the frequency: 14.391367986265605
       omegaimg=  0.37974582290015857;
       sigma0 = 100.0;
       break;
