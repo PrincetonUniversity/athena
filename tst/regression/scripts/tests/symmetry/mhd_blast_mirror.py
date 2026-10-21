@@ -12,8 +12,9 @@
 # few tens of steps. This test runs the blast with HLLE, HLLD and Roe, with PLM, with
 # extremum-preserving PPM and with the fourth-order UCT4 scheme, in 2D and 3D, and
 # requires the solution to stay bit-exactly symmetric. The UCT4 edge EMFs used to break
-# the 3D symmetry through one-sided edge wavespeed estimates. FMA contraction is disabled for the build because it seeds the same kind
-# of asymmetry on its own (a*b+c is contracted or not depending on operand order).
+# the 3D symmetry through one-sided edge wavespeed estimates. FMA contraction is
+# disabled for the build because it seeds the same kind of asymmetry on its own
+# (a*b+c is contracted or not depending on operand order).
 
 # Modules
 import logging

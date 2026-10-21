@@ -607,13 +607,15 @@ void __attribute__((weak)) Coordinates::Laplacian(const AthenaArray<Real> &s,
           if (f2) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              delta_s(n,k,j,i) += ((s(n,k,j-1,i) + s(n,k,j+1,i)) - 2.0*s(n,k,j,i))*oodx2sq;
+              delta_s(n,k,j,i) += ((s(n,k,j-1,i) + s(n,k,j+1,i))
+                                   - 2.0*s(n,k,j,i))*oodx2sq;
             }
           }
           if (f3) {
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
-              delta_s(n,k,j,i) += ((s(n,k-1,j,i) + s(n,k+1,j,i)) - 2.0*s(n,k,j,i))*oodx3sq;
+              delta_s(n,k,j,i) += ((s(n,k-1,j,i) + s(n,k+1,j,i))
+                                   - 2.0*s(n,k,j,i))*oodx3sq;
             }
           }
         }
@@ -702,7 +704,8 @@ void __attribute__((weak)) Coordinates::LaplacianX1All(const AthenaArray<Real> &
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
               delta_s(n,k,j,i) = ((s(n,k,j-1,i) + s(n,k,j+1,i)) - 2.0*s(n,k,j,i))*oodx2sq
-                                 + ((s(n,k-1,j,i) + s(n,k+1,j,i)) - 2.0*s(n,k,j,i))*oodx3sq;
+                                 + ((s(n,k-1,j,i) + s(n,k+1,j,i))
+                                    - 2.0*s(n,k,j,i))*oodx3sq;
             }
           }
         }
@@ -801,7 +804,8 @@ void __attribute__((weak)) Coordinates::LaplacianX2All(const AthenaArray<Real> &
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
               delta_s(n,k,j,i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq
-                                 + ((s(n,k-1,j,i) + s(n,k+1,j,i)) - 2.0*s(n,k,j,i))*oodx3sq;
+                                 + ((s(n,k-1,j,i) + s(n,k+1,j,i))
+                                    - 2.0*s(n,k,j,i))*oodx3sq;
             }
           }
         }
@@ -898,7 +902,8 @@ void __attribute__((weak)) Coordinates::LaplacianX3All(const AthenaArray<Real> &
 #pragma omp simd
             for (int i=il; i<=iu; ++i) {
               delta_s(n,k,j,i) = ((s(n,k,j,i-1) + s(n,k,j,i+1)) - 2.0*s(n,k,j,i))*oodx1sq
-                                 + ((s(n,k,j-1,i) + s(n,k,j+1,i)) - 2.0*s(n,k,j,i))*oodx2sq;
+                                 + ((s(n,k,j-1,i) + s(n,k,j+1,i))
+                                    - 2.0*s(n,k,j,i))*oodx2sq;
             }
           }
         }

@@ -192,8 +192,10 @@ void PassiveScalars::DiffusiveFluxIsoFourth(const AthenaArray<Real> &prim_r,
 #pragma omp simd
           for (int i=il; i<=iu; ++i) {
             Real lap = ((prim_r(n,k,j,i-1) + prim_r(n,k,j,i+1)) - 2.0*prim_r(n,k,j,i));
-            if (f2) lap += ((prim_r(n,k,j-1,i) + prim_r(n,k,j+1,i)) - 2.0*prim_r(n,k,j,i));
-            if (f3) lap += ((prim_r(n,k-1,j,i) + prim_r(n,k+1,j,i)) - 2.0*prim_r(n,k,j,i));
+            if (f2)
+              lap += ((prim_r(n,k,j-1,i) + prim_r(n,k,j+1,i)) - 2.0*prim_r(n,k,j,i));
+            if (f3)
+              lap += ((prim_r(n,k-1,j,i) + prim_r(n,k+1,j,i)) - 2.0*prim_r(n,k,j,i));
             rc_(n,k,j,i) = prim_r(n,k,j,i) - ONE_24TH*lap;
           }
         }

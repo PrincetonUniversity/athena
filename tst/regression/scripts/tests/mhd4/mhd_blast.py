@@ -9,7 +9,6 @@
 import logging
 import scripts.utils.athena as athena
 import sys
-import numpy as np
 sys.path.insert(0, '../../vis/python')
 import athena_read                             # noqa
 athena_read.check_nan_flag = True
