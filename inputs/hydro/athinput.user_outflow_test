@@ -1,0 +1,43 @@
+<comment>
+problem   = user-defined outflow boundary function compared with the built-in outflow
+configure = --prob=user_outflow_test --nghost=4
+
+<job>
+problem_id = UserOutflow  # problem ID: basename of output filenames
+
+<output1>
+file_type   = tab       # Tabular data dump
+variable    = prim      # variables to be output
+data_format = %.14e     # full precision
+dt          = 0.7       # time increment between outputs
+
+<time>
+cfl_number  = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = -1        # cycle limit
+tlim        = 0.7       # time limit
+integrator  = rk2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 0         # interval for stdout summary info
+
+<mesh>
+nx1        = 64         # Number of zones in X1-direction
+x1min      = -0.5       # minimum value of X1
+x1max      = 0.5        # maximum value of X1
+ix1_bc     = outflow    # inner-X1 boundary flag (outflow or user)
+ox1_bc     = outflow    # outer-X1 boundary flag (outflow or user)
+
+nx2        = 1          # Number of zones in X2-direction
+x2min      = -0.5       # minimum value of X2
+x2max      = 0.5        # maximum value of X2
+
+nx3        = 1          # Number of zones in X3-direction
+x3min      = -0.5       # minimum value of X3
+x3max      = 0.5        # maximum value of X3
+
+<hydro>
+gamma      = 1.666666666666667 # gamma = C_p/C_v
+
+<problem>
+user_bc    = 0          # 1: enroll the user-defined outflow boundary functions
+amp        = 0.5        # amplitude of the Gaussian bump in density and pressure
+width      = 0.1        # width of the Gaussian bump
