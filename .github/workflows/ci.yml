@@ -46,16 +46,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
+        os: [ubuntu-26.04]
         cxx: [g++, clang++]
         mpi: [openmpi, mpich]
         tests: [default]
         include:
           # Longer test sets, run once in parallel with the default sets
-          - os: ubuntu-24.04
+          - os: ubuntu-26.04
             cxx: g++
             mpi: openmpi
             tests: extended
+          # Older GCC and OpenMPI releases, closer to those on many clusters
+          - os: ubuntu-24.04
+            cxx: g++
+            mpi: openmpi
+            tests: default
           # Intel oneAPI compiler and Intel MPI (x86-64 Linux only)
           - os: ubuntu-24.04
             cxx: icpx
