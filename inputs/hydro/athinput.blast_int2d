@@ -1,0 +1,87 @@
+<comment>
+problem   = blast wave with 2D integral outputs (regression test)
+reference =
+configure = --prob=blast
+
+<job>
+problem_id = BlastInt2D # problem ID: basename of output filenames
+
+<output1>
+file_type   = tab       # full-precision dump, one file per MeshBlock
+data_format = %24.16e   # full double precision for comparison with the integrals
+variable    = prim      # variables to be output
+dt          = 0.01      # time increment between outputs
+
+<output2>
+file_type  = int12      # integrals over x1 and x2 as a function of x3
+variable   = prim       # variables to be output
+dt         = 0.01       # time increment between outputs
+
+<output3>
+file_type  = int13      # integrals over x1 and x3 as a function of x2
+variable   = prim       # variables to be output
+dt         = 0.01       # time increment between outputs
+
+<output4>
+file_type  = int23      # integrals over x2 and x3 as a function of x1
+variable   = prim       # variables to be output
+dt         = 0.01       # time increment between outputs
+
+<time>
+cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1         # cycle limit
+tlim       = 0.02       # time limit
+integrator = vl2        # time integration algorithm
+xorder     = 2          # order of spatial reconstruction
+ncycle_out = 0          # interval for stdout summary info
+
+<mesh>
+nx1        = 16         # Number of zones in X1-direction
+x1min      = -0.5       # minimum value of X1
+x1max      = 0.5        # maximum value of X1
+ix1_bc     = outflow    # inner-X1 boundary flag
+ox1_bc     = outflow    # outer-X1 boundary flag
+
+nx2        = 16         # Number of zones in X2-direction
+x2min      = -0.5       # minimum value of X2
+x2max      = 0.5        # maximum value of X2
+ix2_bc     = outflow    # inner-X2 boundary flag
+ox2_bc     = outflow    # outer-X2 boundary flag
+
+nx3        = 16         # Number of zones in X3-direction
+x3min      = -0.5       # minimum value of X3
+x3max      = 0.5        # maximum value of X3
+ix3_bc     = outflow    # inner-X3 boundary flag
+ox3_bc     = outflow    # outer-X3 boundary flag
+
+refinement     = none   # none, static, or adaptive
+numlevel       = 2      # number of AMR levels
+derefine_count = 5      # steps before a MeshBlock may be derefined
+
+<meshblock>
+nx1        = 8          # MeshBlock size in X1-direction
+nx2        = 8          # MeshBlock size in X2-direction
+nx3        = 8          # MeshBlock size in X3-direction
+
+<refinement1>
+x1min      = 0.0        # refined region (used with refinement = static)
+x1max      = 0.2
+x2min      = -0.2
+x2max      = 0.0
+x3min      = 0.0
+x3max      = 0.2
+level      = 1
+
+<hydro>
+gamma           = 1.666666666667 # gamma = C_p/C_v
+
+<problem>
+compute_error = false  # check whether blast is spherical at end
+pamb          = 0.1    # ambient pressure
+prat          = 100.   # Pressure ratio initially
+drat          = 2.     # Density ratio initially
+radius        = 0.2    # Radius of the inner sphere
+x1_0          = 0.1    # x1-coord of center of blast
+x2_0          = -0.05  # x2-coord of center of blast
+x3_0          = 0.05   # x3-coord of center of blast
+thr           = 0.3    # refinement threshold on the pressure gradient (adaptive)

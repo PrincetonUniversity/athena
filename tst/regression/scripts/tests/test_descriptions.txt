@@ -243,6 +243,12 @@ mhd_rj2a_shock_roe
     checks errors against the analytic solution (which are computed by the executable
     automatically and stored in the temporary file shock_errors.dat). Roe variant.
 
+mpi_mpi_int2d
+    Regression test for the int12, int13, and int23 outputs with MPI. Runs the
+    spherical-polar blast wave with AMR from outputs_int2d_curvilinear on 4 MPI ranks,
+    and checks the 2D integrals against integrals computed from full-precision
+    formatted table dumps
+
 mpi_mpi_linwave
     Regression test based on Newtonian MHD linear wave convergence problem with MPI
     Runs a linear wave convergence test in 3D including SMR and checks L1 errors (which
@@ -284,6 +290,19 @@ outputs_all_outputs
     Runs Orszag Tang vortex test, restarting the job twice and making history (hst),
     formatted table (.tab), VTK, and HDF5 (if available) outputs. Then reads last
     version of each file to make sure output data is correct
+
+outputs_int2d_cartesian
+    Regression test for the int12, int13, and int23 outputs in Cartesian coordinates.
+    Runs a blast wave on 2D and 3D meshes with no refinement, SMR, and AMR, and checks
+    the 2D integrals of the primitive variables against integrals computed from
+    full-precision formatted table dumps of the same data
+
+outputs_int2d_curvilinear
+    Regression test for the int12, int13, and int23 outputs in cylindrical and
+    spherical-polar coordinates. Runs a blast wave on 3D meshes with no refinement,
+    SMR, and AMR, and checks the 2D integrals of the primitive variables against
+    integrals computed from full-precision formatted table dumps with the exact
+    coordinate-surface areas
 
 pgen_hdf5_reader_parallel
     Parallel test script for initializing problem with preexisting array
