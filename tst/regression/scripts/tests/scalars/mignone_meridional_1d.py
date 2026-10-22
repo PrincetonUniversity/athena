@@ -79,14 +79,15 @@ try:
     # convenience package for colorizing and stylizing text using terminal ANSI escape
     # codes
     from termcolor import colored
-    percentage_formatter = lambda x: colored(
-        "{:.2%}".format(x), None if np.abs(x) < diff_threshold
-        else 'green' if x >= 0 else 'red')
+
+    def percentage_formatter(x):
+        return colored("{:.2%}".format(x), None if np.abs(x) < diff_threshold
+                       else 'green' if x >= 0 else 'red')
 except ImportError:
     # otherwise, do not use color annotations at all
-    percentage_formatter = lambda x: "{:.2%}".format(x)
+    percentage_formatter = "{:.2%}".format
 
-error_formatter = lambda x: "{:.2e}".format(x)
+error_formatter = "{:.2e}".format
 
 
 # Prepare Athena++

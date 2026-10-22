@@ -22,7 +22,6 @@ import os
 from collections import OrderedDict
 from importlib import reload
 import logging
-import logging.config
 from pkgutil import iter_modules
 from timeit import default_timer as timer
 

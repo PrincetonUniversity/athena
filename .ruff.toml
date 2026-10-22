@@ -1,0 +1,14 @@
+# Ruff configuration mirroring the [flake8] section of setup.cfg (flake8 is the reference)
+required-version = "==0.17.1"
+line-length = 90
+extend-exclude = ["cpplint.py"]
+
+[lint]
+# pycodestyle's whitespace and blank-line rules (E1, E2, E3) are preview-only in ruff
+preview = true
+# flake8 defaults: pycodestyle (E, W) and pyflakes (F)
+select = ["E", "W", "F"]
+# Codes ignored in setup.cfg that ruff implements. E121, E123, E126, E704, and W503
+# are not implemented in ruff, and ruff has no equivalent of the E12x continuation-line
+# checks, so flake8 remains the reference
+ignore = ["E226", "E241"]
