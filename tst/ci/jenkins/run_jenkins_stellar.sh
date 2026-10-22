@@ -69,7 +69,7 @@ time python -u ./run_tests.py outputs --silent
 time python -u ./run_tests.py curvilinear --silent
 time python -u ./run_tests.py symmetry --silent
 time python -u ./run_tests.py eos --silent
-time python -u ./run_tests.py scalars/mignone_radial_1d --silent
+time python -u ./run_tests.py scalars --silent
 # Exclude gr/compile*.py regression tests from code coverage analysis (nothing is executed in these tests):
 time python -u ./run_tests.py sr --silent
 time python -u ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
@@ -106,6 +106,7 @@ time python -u ./run_tests.py chemistry --silent
 
 # High-order solver regression tests w/ GCC
 time python -u ./run_tests.py hydro4 --silent
+time python -u ./run_tests.py mhd4 --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/gcc/1.10.6
@@ -151,7 +152,7 @@ time python -u ./run_tests.py shearingbox --config=--cxx=icpx --silent
 time python -u ./run_tests.py symmetry --config=--cxx=icpx \
      --config=--cflag="-fp-model=precise -ffp-contract=off" --silent
 time python -u ./run_tests.py eos --config=--cxx=icpx --silent
-time python -u ./run_tests.py scalars/mignone_radial_1d --config=--cxx=icpx --silent
+time python -u ./run_tests.py scalars --config=--cxx=icpx --silent
 
 time python -u ./run_tests.py cr --config=--cxx=icpx --silent
 time python -u ./run_tests.py nr_radiation --config=--cxx=icpx --silent
@@ -162,6 +163,7 @@ time python -u ./run_tests.py chemistry --config=--cxx=icpx --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python -u ./run_tests.py hydro4 --config=--cxx=icpx --silent
+time python -u ./run_tests.py mhd4 --config=--cxx=icpx --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/intel-2021.1/1.10.6

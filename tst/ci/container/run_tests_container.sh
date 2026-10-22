@@ -71,5 +71,6 @@ time python3 run_tests.py scalars --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD 
 # mhd/ currently contains the longest set of tests. The following command often times-out after 10 m on Travis CI
 # time python3 run_tests.py mhd --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
 
-# hydro4/ fourth-order tests currently take >30 min on Travis CI
+# hydro4/ and mhd4/ fourth-order tests take >30 min each (the high-order set on GitHub Actions)
 # time python3 run_tests.py hydro4 --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent
+# time python3 run_tests.py mhd4 --config=--cxx=$TEMP_CXX -c=--ccmd=$TEMP_CCMD --silent

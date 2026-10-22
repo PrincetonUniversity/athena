@@ -17,6 +17,7 @@
 #               CVODE 6.2.0 from source (needed by the chemistry/ tests)
 #   TEST_SET    default: the sets formerly run on Travis CI
 #               extended: the longer sets, run in a separate job
+#               high-order: the fourth-order hydro4/ and mhd4/ sets, run in a separate job
 
 # Terminate script at first cmd w/ non-zero exit status & echo commands before executing
 set -ev
@@ -99,7 +100,13 @@ if [ "$TEST_SET" == "extended" ]; then
     time python3 run_tests.py implicit_radiation $CONFIG $MPIRUN_OPTS --silent
     time python3 run_tests.py multi_group $CONFIG --silent
     time python3 run_tests.py chemistry $CONFIG --silent
+    exit 0
+fi
+
+if [ "$TEST_SET" == "high-order" ]; then
+    # Fourth-order solver sets (convergence studies over several resolutions each)
     time python3 run_tests.py hydro4 $CONFIG --silent
+    time python3 run_tests.py mhd4 $CONFIG --silent
     exit 0
 fi
 
