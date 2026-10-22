@@ -19,6 +19,7 @@
 #include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
+#include "../reconstruct/reconstruction.hpp"
 #include "eos.hpp"
 
 // EquationOfState constructor
@@ -44,7 +45,11 @@ void EquationOfState::ConservedToPrimitive(
     Coordinates *pco, int il, int iu, int jl, int ju, int kl, int ku) {
   Real gm1 = GetGamma() - 1.0;
 
-  pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
+  // fourth-order MHD (UCT4): the cell-centered/averaged fields are computed externally
+  // via Field::FaceAveragedToCellAveragedField before this function is called, and the
+  // passed bcc must not be overwritten with the second-order approximation here
+  if (pmy_block_->precon->xorder != 4)
+    pmy_block_->pfield->CalculateCellCenteredField(b,bcc,pco,il,iu,jl,ju,kl,ku);
 
   for (int k=kl; k<=ku; ++k) {
     for (int j=jl; j<=ju; ++j) {

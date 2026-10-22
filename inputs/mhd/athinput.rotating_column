@@ -1,0 +1,61 @@
+<comment>
+problem   = steady rotating column with an axial magnetic field
+configure = -b --prob=rotating_column --nghost=6 (for xorder=4)
+
+<job>
+problem_id   = RotColumn   # problem ID: basename of output filenames
+
+<output1>
+file_type  = hst       # History data dump
+dt         = 0.05      # time increment between outputs
+
+<output2>
+file_type  = vtk       # VTK data dump
+variable   = prim      # variables to be output
+dt         = 0.5       # time increment between outputs
+
+<time>
+cfl_number = 0.4       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim       = -1        # cycle limit
+tlim       = 0.5       # time limit
+integrator = rk3       # time integration algorithm
+xorder     = 4         # order of spatial reconstruction
+ncycle_out = 1         # interval for stdout summary info
+correct_ic = true      # convert the pointwise IC to cell averages (xorder=4)
+
+<mesh>
+nx1        = 64        # Number of zones in X1-direction
+x1min      = -0.5      # minimum value of X1
+x1max      = 0.5       # maximum value of X1
+ix1_bc     = periodic  # inner-X1 boundary flag
+ox1_bc     = periodic  # outer-X1 boundary flag
+
+nx2        = 64        # Number of zones in X2-direction
+x2min      = -0.5      # minimum value of X2
+x2max      = 0.5       # maximum value of X2
+ix2_bc     = periodic  # inner-X2 boundary flag
+ox2_bc     = periodic  # outer-X2 boundary flag
+
+nx3        = 1         # Number of zones in X3-direction (>1 exercises the 3D CT path)
+x3min      = -0.0625   # minimum value of X3
+x3max      = 0.0625    # maximum value of X3
+ix3_bc     = periodic  # inner-X3 boundary flag
+ox3_bc     = periodic  # outer-X3 boundary flag
+
+<meshblock>
+nx1 = 64
+nx2 = 64
+nx3 = 1
+
+<hydro>
+gamma      = 1.666666666666667  # gamma = C_p/C_v
+
+<problem>
+axis       = 3         # axis of the column (1, 2 or 3)
+d0         = 1.0       # density
+omega      = 8.0       # central angular velocity
+radius     = 0.5       # radius of the column
+nexp       = 6         # exponent of the (1 - r^2/R^2)^n profiles
+b0         = 1.0       # axial field outside the column
+db         = -0.5      # axial field perturbation on the axis
+pinf       = 1.5       # pressure outside the column

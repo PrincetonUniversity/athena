@@ -23,7 +23,9 @@
 #include "../../coordinates/coordinates.hpp"
 #include "../../field/field.hpp"
 #include "../../mesh/mesh.hpp"
+#include "../../orbital_advection/orbital_advection.hpp"
 #include "../../parameter_input.hpp"
+#include "../../reconstruct/reconstruction.hpp"
 #include "../hydro.hpp"
 #include "hydro_diffusion.hpp"
 
@@ -94,6 +96,57 @@ HydroDiffusion::HydroDiffusion(Hydro *phyd, ParameterInput *pin) :
     nu_tot_.NewAthenaArray(nc1);
     kappa_tot_.NewAthenaArray(nc1);
   }
+
+  // fourth-order diffusive fluxes: uniform Cartesian grids only (guaranteed for 4th-order
+  // MHD, which requires square cells; for non-Cartesian/non-uniform 4th-order hydro the
+  // second-order diffusion operators are retained)
+  fourth_order_ = hydro_diffusion_defined
+                  && pmb_->precon->xorder == 4
+                  && std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0
+                  && pmb_->precon->uniform_[X1DIR]
+                  && (!pmb_->pmy_mesh->f2 || pmb_->precon->uniform_[X2DIR])
+                  && (!pmb_->pmy_mesh->f3 || pmb_->precon->uniform_[X3DIR]);
+  if (fourth_order_) {
+    if (nu_aniso > 0.0 || kappa_aniso > 0.0) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in HydroDiffusion" << std::endl
+          << "Anisotropic viscosity/conduction are not implemented for the "
+          << "fourth-order (time/xorder=4) diffusive fluxes" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    // The 4th-order diffusion scratch (wc_, fpt_, gc1_..gc4_, tc_) shares storage
+    // with Hydro's 4th-order flux-calculation scratch; see InitFourthOrderScratch(),
+    // which is called at the end of the Hydro constructor (the host arrays are not
+    // yet allocated when this constructor runs from Hydro's member-init list).
+  }
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void HydroDiffusion::InitFourthOrderScratch
+//! \brief alias the fourth-order diffusion scratch onto Hydro's fourth-order
+//! flux-calculation scratch (never simultaneously live: the diffusion scratch is used
+//! only inside CalcDiffusionFlux [DIFFUSE_HYD task], the host arrays only inside
+//! Hydro::CalculateFluxes / the EOS cell-average conversions [CALC_HYDFLX/CONS2PRIM]).
+//! Called at the end of the Hydro constructor, after the host arrays are allocated.
+
+void HydroDiffusion::InitFourthOrderScratch() {
+  if (!fourth_order_) return;
+  // fourth_order_ implies xorder == 4, so Hydro's scr1_nkji_/scr2_nkji_/wl3d_/wr3d_
+  // (all (>=NHYDRO, nc3, nc2, nc1)) are allocated
+  wc_.InitWithShallowSlice(pmy_hydro_->scr1_nkji_, 4, 0, NHYDRO);
+  // fpt_ was (NHYDRO, nc3+1, nc2+1, nc1+1); the (nc3,nc2,nc1) host suffices because
+  // every fpt_ access in hydro_diffusion_fourth.cpp is bounded by
+  // i <= ie+2 < nc1, j <= je+2 < nc2, k <= ke+2 < nc3 (NGHOST >= 4 at xorder=4)
+  fpt_.InitWithShallowSlice(pmy_hydro_->scr2_nkji_, 4, 0, NHYDRO);
+  // cell-centered transverse gradients + point temperature: single components of
+  // the (NWAVE >= 4, ...) reconstruction scratch
+  gc1_.InitWithShallowSlice(pmy_hydro_->wr3d_, 4, 0, 1);
+  gc2_.InitWithShallowSlice(pmy_hydro_->wr3d_, 4, 1, 1);
+  gc3_.InitWithShallowSlice(pmy_hydro_->wr3d_, 4, 2, 1);
+  gc4_.InitWithShallowSlice(pmy_hydro_->wr3d_, 4, 3, 1);
+  if (kappa_iso > 0.0)
+    tc_.InitWithShallowSlice(pmy_hydro_->wl3d_, 4, 0, 1);
+  return;
 }
 
 
@@ -106,6 +159,27 @@ void HydroDiffusion::CalcDiffusionFlux(const AthenaArray<Real> &prim,
                                        const AthenaArray<Real> &iprim,
                                        const AthenaArray<Real> &bcc) {
   SetDiffusivity(prim, bcc);
+
+  // fourth-order (uniform Cartesian) diffusive fluxes from point-valued primitives
+  if (fourth_order_) {
+    if (pmb_->porb->orbital_advection_defined) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in HydroDiffusion" << std::endl
+          << "Orbital advection is not supported with fourth-order diffusion"
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    DeconvolvePrimitivesFourth(prim);
+    if (nu_iso > 0.0) {
+      ClearFlux(visflx);
+      ViscousFluxIsoFourth(prim, visflx);
+    }
+    if (kappa_iso > 0.0) {
+      ClearFlux(cndflx);
+      ThermalFluxIsoFourth(prim, cndflx);
+    }
+    return;
+  }
 
   if (nu_iso > 0.0 || nu_aniso > 0.0) ClearFlux(visflx);
   if (nu_iso > 0.0) ViscousFluxIso(prim, iprim, visflx);

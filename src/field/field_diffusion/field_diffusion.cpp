@@ -25,6 +25,7 @@
 #include "../../hydro/hydro.hpp"
 #include "../../mesh/mesh.hpp"
 #include "../../parameter_input.hpp"
+#include "../../reconstruct/reconstruction.hpp"
 #include "../field.hpp"
 #include "field_diffusion.hpp"
 
@@ -78,6 +79,28 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
       CalcMagDiffCoeff_ = ConstDiffusivity;
     else
       CalcMagDiffCoeff_ = pmb->pmy_mesh->FieldDiffusivity_;
+
+    // fourth-order diffusive EMF (4th-order MHD guarantees uniform Cartesian
+    // square cells; only Ohmic resistivity is implemented at fourth order)
+    fourth_order_ = (pmb->precon->xorder == 4);
+    if (fourth_order_) {
+      if (eta_hall != 0.0 || eta_ad != 0.0) {
+        std::stringstream msg;
+        msg << "### FATAL ERROR in FieldDiffusion" << std::endl
+            << "Hall effect and ambipolar diffusion are not implemented for the "
+            << "fourth-order (time/xorder=4) diffusive EMF" << std::endl;
+        ATHENA_ERROR(msg);
+      }
+      e_pt_.x1e.NewAthenaArray(nc3+1, nc2+1, nc1);
+      e_pt_.x2e.NewAthenaArray(nc3+1, nc2, nc1+1);
+      e_pt_.x3e.NewAthenaArray(nc3, nc2+1, nc1+1);
+      // pfpt_ shares storage with Field's 4th-order conversion scratch; see
+      // InitFourthOrderScratch(), called at the end of the Field constructor (the
+      // host arrays are not yet allocated when this constructor runs from Field's
+      // member-init list)
+    }
+  } else {
+    fourth_order_ = false;
   }
 
   if (field_diffusion_defined && RELATIVISTIC_DYNAMICS) {
@@ -88,6 +111,26 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
   }
 }
 
+
+//----------------------------------------------------------------------------------------
+//! \fn void FieldDiffusion::InitFourthOrderScratch
+//! \brief alias the point-valued Poynting-flux scratch pfpt_ onto Field's 4th-order
+//! conversion scratch (never simultaneously live: pfpt_ is used only inside
+//! PoyntingFluxFourth [DIFFUSE_FLD task], the host arrays only inside
+//! Field::CalculateFaceCenteredField [CONS2PRIM], the 2D EMF Laplacian correction
+//! in Hydro::CalculateFluxes [CALC_HYDFLX], and the 3D point-EMF scratch in
+//! Field::ComputeCornerE_UCT4 [CALC_FLDFLX]). Called at the end of the Field
+//! constructor (which passes itself; pmy_block->pfield is not yet assigned there).
+
+void FieldDiffusion::InitFourthOrderScratch(Field *pf) {
+  if (!fourth_order_) return;
+  // exact dimension matches: (nc3,nc2,nc1+1), (nc3,nc2+1,nc1), (nc3+1,nc2,nc1)
+  const int nc3 = pmy_block->ncells3;
+  pfpt_.x1f.InitWithShallowSlice(pf->scr1_kji_x1fc_, 3, 0, nc3);
+  pfpt_.x2f.InitWithShallowSlice(pf->scr2_kji_x2fc_, 3, 0, nc3);
+  pfpt_.x3f.InitWithShallowSlice(pf->scr3_kji_x3fc_, 3, 0, nc3+1);
+  return;
+}
 
 //----------------------------------------------------------------------------------------
 //! \fn void FieldDiffusion::CalcDiffusionEMF
@@ -101,6 +144,15 @@ void FieldDiffusion::CalcDiffusionEMF(FaceField &bi, const AthenaArray<Real> &bc
   if ((eta_ohm == 0.0) && (eta_ad == 0.0)) return;
 
   SetDiffusivity(ph->w, pf->bcc);
+
+  // fourth-order (uniform Cartesian) resistive EMF from the point-valued
+  // face-/cell-centered fields (b_fc, bcc_center)
+  if (fourth_order_) {
+    ClearEMF(e_oa);
+    if (eta_ohm != 0.0) OhmicEMFFourth(e_oa);
+    if (NON_BAROTROPIC_EOS) PoyntingFluxFourth();
+    return;
+  }
 
   CalcCurrent(bi);
   ClearEMF(e_oa);

@@ -58,6 +58,7 @@ time python -u ./run_tests.py pgen/pgen_compile --config=--cflag="$(../ci/set_wa
 time python -u ./run_tests.py pgen/hdf5_reader_serial --silent
 time python -u ./run_tests.py grav --mpirun=srun --mpirun_opts=--job-name='GCC grav/jeans_3d' --silent
 time python -u ./run_tests.py turb --mpirun=srun --mpirun_opts=--job-name='GCC turb/' --silent
+time python -u ./run_tests.py fft --mpirun=srun --mpirun_opts=--job-name='GCC fft/' --silent
 time python -u ./run_tests.py mpi --mpirun=srun --mpirun_opts=--job-name='GCC mpi/mpi_linwave' --silent
 time python -u ./run_tests.py omp --silent
 timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --mpirun=srun \
@@ -69,7 +70,7 @@ time python -u ./run_tests.py outputs --silent
 time python -u ./run_tests.py curvilinear --silent
 time python -u ./run_tests.py symmetry --silent
 time python -u ./run_tests.py eos --silent
-time python -u ./run_tests.py scalars/mignone_radial_1d --silent
+time python -u ./run_tests.py scalars --silent
 # Exclude gr/compile*.py regression tests from code coverage analysis (nothing is executed in these tests):
 time python -u ./run_tests.py sr --silent
 time python -u ./run_tests.py gr/compile_kerr-schild gr/compile_minkowski gr/compile_schwarzschild --silent
@@ -106,6 +107,7 @@ time python -u ./run_tests.py chemistry --silent
 
 # High-order solver regression tests w/ GCC
 time python -u ./run_tests.py hydro4 --silent
+time python -u ./run_tests.py mhd4 --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/gcc/1.10.6
@@ -130,6 +132,7 @@ time python -u ./run_tests.py grav --config=--cxx=icpx --mpirun=srun --mpirun_op
 #(changgoo) use icpc instead of icpx to make mpi and serial solutions identical
 #(KGF)      stellar intel-mpi/ modules are built against icpc, not icpx
 time python -u ./run_tests.py turb --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC turb/' --silent
+time python -u ./run_tests.py fft --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC fft/' --silent
 time python -u ./run_tests.py mpi --config=--cxx=icpc --mpirun=srun --mpirun_opts=--job-name='ICC mpi/mpi_linwave' --silent
 time python -u ./run_tests.py omp --config=--cxx=icpx --silent
 timeout --signal=TERM 60m time python -u ./run_tests.py hybrid --config=--cxx=icpc \
@@ -151,7 +154,7 @@ time python -u ./run_tests.py shearingbox --config=--cxx=icpx --silent
 time python -u ./run_tests.py symmetry --config=--cxx=icpx \
      --config=--cflag="-fp-model=precise -ffp-contract=off" --silent
 time python -u ./run_tests.py eos --config=--cxx=icpx --silent
-time python -u ./run_tests.py scalars/mignone_radial_1d --config=--cxx=icpx --silent
+time python -u ./run_tests.py scalars --config=--cxx=icpx --silent
 
 time python -u ./run_tests.py cr --config=--cxx=icpx --silent
 time python -u ./run_tests.py nr_radiation --config=--cxx=icpx --silent
@@ -162,6 +165,7 @@ time python -u ./run_tests.py chemistry --config=--cxx=icpx --silent
 
 # High-order solver regression tests w/ Intel compiler
 time python -u ./run_tests.py hydro4 --config=--cxx=icpx --silent
+time python -u ./run_tests.py mhd4 --config=--cxx=icpx --silent
 
 # Swap serial HDF5 library module for parallel HDF5 library:
 module unload hdf5/intel-2021.1/1.10.6

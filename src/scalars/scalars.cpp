@@ -10,6 +10,7 @@
 
 // C++ headers
 #include <algorithm>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -136,6 +137,27 @@ PassiveScalars::PassiveScalars(MeshBlock *pmb, ParameterInput *pin)  :
     dx2_.NewAthenaArray(nc1);
     dx3_.NewAthenaArray(nc1);
     // nu_scalar_tot_.NewAthenaArray(nc1);
+
+    // fourth-order diffusive fluxes: uniform Cartesian grids only (cf. HydroDiffusion)
+    diffusion_fourth_ = pmb->precon->xorder == 4
+                        && std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0
+                        && pmb->precon->uniform_[X1DIR]
+                        && (!pm->f2 || pmb->precon->uniform_[X2DIR])
+                        && (!pm->f3 || pmb->precon->uniform_[X3DIR]);
+    if (diffusion_fourth_) {
+      // The 4th-order diffusion scratch shares storage with the 4th-order
+      // flux-calculation scratch allocated above (diffusion_fourth_ implies
+      // xorder == 4): the former is live only inside DiffusiveFluxIsoFourth
+      // [DIFFUSE_SCLR task], the latter only inside PassiveScalars::CalculateFluxes
+      // [CALC_SCLRFLX task]. spt_ (formerly (NSCALARS,nc3+1,nc2+1,nc1+1)) fits the
+      // (nc3,nc2,nc1) host because every access in scalar_diffusion.cpp is bounded
+      // by i <= ie+2 < nc1, j <= je+2 < nc2, k <= ke+2 < nc3 (NGHOST >= 4).
+      rc_.InitWithShallowSlice(scr1_nkji_, 4, 0, NSCALARS);
+      spt_.InitWithShallowSlice(scr2_nkji_, 4, 0, NSCALARS);
+      rhoc_.InitWithShallowSlice(rl3d_, 4, 0, 1);
+    }
+  } else {
+    diffusion_fourth_ = false;
   }
   if (CHEMISTRY_ENABLED) {
     //allocate memory for the copy of s at intermediate step

@@ -59,6 +59,11 @@ jobs:
             cxx: g++
             mpi: openmpi
             tests: extended
+          # Fourth-order hydro4/ and mhd4/ sets, run once in parallel with the other sets
+          - os: ubuntu-26.04
+            cxx: g++
+            mpi: openmpi
+            tests: high-order
           # Older GCC and OpenMPI releases, closer to those on many clusters
           - os: ubuntu-24.04
             cxx: g++

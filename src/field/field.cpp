@@ -102,6 +102,102 @@ Field::Field(MeshBlock *pmb, ParameterInput *pin) :
       pmb->pbval->bvars_sts.push_back(&fbvar);
     }
   }
+
+  // fourth-order MHD (UCT4) integration scheme
+  if (pmb->precon->xorder == 4) {
+    // 4D scratch arrays
+    // TODO(felker): these could all share the same 4D array, extended
+    // by 1 in all directions
+    scr1_nkji_cc_.NewAthenaArray(NFIELD, ncells3, ncells2, ncells1);
+    scr1_kji_x1fc_.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+    scr2_kji_x2fc_.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+    scr3_kji_x3fc_.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+
+    b_fc.x1f.NewAthenaArray( ncells3   , ncells2   ,(ncells1+1));
+    b_fc.x2f.NewAthenaArray( ncells3   ,(ncells2+1), ncells1   );
+    b_fc.x3f.NewAthenaArray((ncells3+1), ncells2   , ncells1   );
+    bcc_center.NewAthenaArray(NFIELD, ncells3, ncells2, ncells1);
+
+    // fourth-order UCT reconstructions at corners
+
+    // pencil decomposition
+    by_W_.NewAthenaArray(ncells1);
+    by_E_.NewAthenaArray(ncells1);
+    bx_S_.NewAthenaArray(ncells1);
+    bx_N_.NewAthenaArray(ncells1);
+    // 3D states
+    bz_R1_.NewAthenaArray(ncells1);
+    bz_L1_.NewAthenaArray(ncells1);
+    bz_R2_.NewAthenaArray(ncells1);
+    bz_L2_.NewAthenaArray(ncells1);
+    by_R3_.NewAthenaArray(ncells1);
+    by_L3_.NewAthenaArray(ncells1);
+    bx_R3_.NewAthenaArray(ncells1);
+    bx_L3_.NewAthenaArray(ncells1);
+
+    // TODO(felker): only 2 velocity components are required at each interface
+    v_NE_.NewAthenaArray(3, ncells1);
+    v_SE_.NewAthenaArray(3, ncells1);
+    v_NW_.NewAthenaArray(3, ncells1);
+    v_SW_.NewAthenaArray(3, ncells1);
+    // 3D states
+    v_R3R2_.NewAthenaArray(3, ncells1);
+    v_R3L2_.NewAthenaArray(3, ncells1);
+    v_L3R2_.NewAthenaArray(3, ncells1);
+    v_L3L2_.NewAthenaArray(3, ncells1);
+    v_R3R1_.NewAthenaArray(3, ncells1);
+    v_R3L1_.NewAthenaArray(3, ncells1);
+    v_L3R1_.NewAthenaArray(3, ncells1);
+    v_L3L1_.NewAthenaArray(3, ncells1);
+
+    vl_temp2_.NewAthenaArray(3, ncells1);
+    vr_temp2_.NewAthenaArray(3, ncells1);
+
+    v_NEb_.NewAthenaArray(3, ncells1);
+    v_NWb_.NewAthenaArray(3, ncells1);
+    bx_Nb_.NewAthenaArray(ncells1);
+
+    // TODO(felker): cut down on these temporary arrays
+    by_W.NewAthenaArray(ncells3, ncells2, ncells1);
+    by_E.NewAthenaArray(ncells3, ncells2, ncells1);
+    bx_S.NewAthenaArray(ncells3, ncells2, ncells1);
+    bx_N.NewAthenaArray(ncells3, ncells2, ncells1);
+    // 3D states
+    bz_R1.NewAthenaArray(ncells3, ncells2, ncells1);
+    bz_L1.NewAthenaArray(ncells3, ncells2, ncells1);
+    bz_R2.NewAthenaArray(ncells3, ncells2, ncells1);
+    bz_L2.NewAthenaArray(ncells3, ncells2, ncells1);
+    by_R3.NewAthenaArray(ncells3, ncells2, ncells1);
+    by_L3.NewAthenaArray(ncells3, ncells2, ncells1);
+    bx_R3.NewAthenaArray(ncells3, ncells2, ncells1);
+    bx_L3.NewAthenaArray(ncells3, ncells2, ncells1);
+
+    // TODO(felker): only 2 velocity components are required at each interface
+    v_NE.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_SE.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_NW.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_SW.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    // 3D states
+    v_R3R2.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_R3L2.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_L3R2.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_L3L2.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_R3R1.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_R3L1.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_L3R1.NewAthenaArray(3, ncells3, ncells2, ncells1);
+    v_L3L1.NewAthenaArray(3, ncells3, ncells2, ncells1);
+
+    alpha_plus_x1_.NewAthenaArray(ncells3, ncells2, ncells1);
+    alpha_minus_x1_.NewAthenaArray(ncells3, ncells2, ncells1);
+    alpha_plus_x2_.NewAthenaArray(ncells3, ncells2, ncells1);
+    alpha_minus_x2_.NewAthenaArray(ncells3, ncells2, ncells1);
+    alpha_plus_x3_.NewAthenaArray(ncells3, ncells2, ncells1);
+    alpha_minus_x3_.NewAthenaArray(ncells3, ncells2, ncells1);
+  }
+
+  // alias the 4th-order resistive Poynting-flux scratch onto the conversion scratch
+  // above (never simultaneously live; see FieldDiffusion::InitFourthOrderScratch)
+  if (fdif.field_diffusion_defined) fdif.InitFourthOrderScratch(this);
 }
 
 
@@ -176,5 +272,216 @@ void Field::CalculateCellCenteredField(
       }
     }
   }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Field::CalculateCellCenteredFieldFourth
+//! \brief fourth-order interpolation of face-centered (point-valued) fields to
+//! cell-centered (point-valued) fields, using the (-1, 9, 9, -1)/16 stencil along the
+//! longitudinal direction. Falls back to second order in trivial dimensions.
+
+void Field::CalculateCellCenteredFieldFourth(const FaceField &bf_center,
+                                             AthenaArray<Real> &bc_center,
+                                             Coordinates *pco, int il, int iu, int jl,
+                                             int ju, int kl, int ku) {
+  MeshBlock *pmb = pmy_block;
+  // dimensionality dispatch hoisted out of the innermost loop (loop-invariant);
+  // trivial dimensions default to second-order cell-centered field reconstruction
+  const bool f2 = pmb->block_size.nx2 > 1;
+  const bool f3 = pmb->block_size.nx3 > 1;
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+      if (f3) { // 3D
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          bc_center(IB1,k,j,i) =
+              -1.0/16.0*(bf_center.x1f(k,j,i-1) + bf_center.x1f(k,j,i+2))
+              + 9.0/16.0*(bf_center.x1f(k,j,i) + bf_center.x1f(k,j,i+1));
+          bc_center(IB2,k,j,i) =
+              -1.0/16.0*(bf_center.x2f(k,j-1,i) + bf_center.x2f(k,j+2,i))
+              + 9.0/16.0*(bf_center.x2f(k,j,i) + bf_center.x2f(k,j+1,i));
+          bc_center(IB3,k,j,i) =
+              -1.0/16.0*(bf_center.x3f(k-1,j,i) + bf_center.x3f(k+2,j,i))
+              + 9.0/16.0*(bf_center.x3f(k,j,i) + bf_center.x3f(k+1,j,i));
+        }
+      } else if (f2) { // 2D
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          bc_center(IB1,k,j,i) =
+              -1.0/16.0*(bf_center.x1f(k,j,i-1) + bf_center.x1f(k,j,i+2))
+              + 9.0/16.0*(bf_center.x1f(k,j,i) + bf_center.x1f(k,j,i+1));
+          bc_center(IB2,k,j,i) =
+              -1.0/16.0*(bf_center.x2f(k,j-1,i) + bf_center.x2f(k,j+2,i))
+              + 9.0/16.0*(bf_center.x2f(k,j,i) + bf_center.x2f(k,j+1,i));
+          bc_center(IB3,k,j,i) = 0.5*(bf_center.x3f(k,j,i) + bf_center.x3f(k+1,j,i));
+        }
+      } else { // 1D
+#pragma omp simd
+        for (int i=il; i<=iu; ++i) {
+          bc_center(IB1,k,j,i) =
+              -1.0/16.0*(bf_center.x1f(k,j,i-1) + bf_center.x1f(k,j,i+2))
+              + 9.0/16.0*(bf_center.x1f(k,j,i) + bf_center.x1f(k,j,i+1));
+          bc_center(IB2,k,j,i) = 0.5*(bf_center.x2f(k,j,i) + bf_center.x2f(k,j+1,i));
+          bc_center(IB3,k,j,i) = 0.5*(bf_center.x3f(k,j,i) + bf_center.x3f(k+1,j,i));
+        }
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Field::CellCenteredToAveragedField
+//! \brief transform cell-centered (point-valued) B to cell-averaged <B> via
+//! <B> = B + h^2/24*Laplacian(B) (fourth-order accurate)
+
+void Field::CellCenteredToAveragedField(const AthenaArray<Real> &bc_center,
+                                        AthenaArray<Real> &bc, Coordinates *pco,
+                                        int il, int iu, int jl, int ju, int kl, int ku) {
+  // No need to add +1 ghost to longitudinal directions here as with FaceField
+  AthenaArray<Real> &laplacian_cc = scr1_nkji_cc_;
+
+  pco->Laplacian(bc_center, laplacian_cc, il, iu, jl, ju, kl, ku, 0, 2);
+
+  // uniform Cartesian mesh with square cells is required (checked in Reconstruction)
+  Real h = pco->dx1f(il);
+  Real C = (h*h)/24.0;
+
+  for (int k=kl; k<=ku; ++k) {
+    for (int j=jl; j<=ju; ++j) {
+#pragma omp simd
+      for (int i=il; i<=iu; ++i) {
+        bc(IB1,k,j,i) = bc_center(IB1,k,j,i) + C*laplacian_cc(0,k,j,i);
+        bc(IB2,k,j,i) = bc_center(IB2,k,j,i) + C*laplacian_cc(1,k,j,i);
+        bc(IB3,k,j,i) = bc_center(IB3,k,j,i) + C*laplacian_cc(2,k,j,i);
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Field::CalculateFaceCenteredField
+//! \brief convert face-averaged magnetic field to face-centered (point-valued) field
+//! via B = <B> - h^2/24*Laplacian_transverse(<B>).
+//!
+//! The function automatically shrinks the transverse loop limits for the LaplacianX*()
+//! stencil, correction, and output by 1, e.g. jl+1:ju-1 for LaplacianX2() applied to
+//! bf.x1f. As always, the longitudinal loop limits are automatically extended to correct
+//! the upper FaceField, e.g. iu+1 for bf.x1f.
+
+void Field::CalculateFaceCenteredField(const FaceField &bf, FaceField &bf_center,
+                                       Coordinates *pco, int il, int iu, int jl, int ju,
+                                       int kl, int ku) {
+  MeshBlock *pmb = pmy_block;
+
+  // Laplacians (in orthogonal directions) of face-averaged FaceField
+  AthenaArray<Real> &laplacian_bx1 = scr1_kji_x1fc_, &laplacian_bx2 = scr2_kji_x2fc_,
+                    &laplacian_bx3 = scr3_kji_x3fc_;
+
+  // All cells (ghost and real) are passed as input limits; the ghost values of bf are
+  // valid after the boundary exchange / physical BC application. Shrink the transverse
+  // stencil limits by 1 at every edge for the orthogonal Laplacian stencils.
+  int il_buf = il+1, iu_buf = iu-1, jl_buf = jl, ju_buf = ju, kl_buf = kl, ku_buf = ku;
+  int nl = 0, nu = 0;
+
+  if (pmb->block_size.nx2 > 1) {
+    if (pmb->block_size.nx3 == 1) { // 2D
+      jl_buf += 1, ju_buf -= 1;
+    } else { // 3D
+      jl_buf += 1, ju_buf -= 1, kl_buf += 1, ku_buf -= 1;
+    }
+  }
+
+  // In 1D the transverse Laplacian of the x1-faced field is identically zero
+  // (LaplacianX1All would just ZeroClear the scratch), so B1 = <B1> exactly; skip the
+  // Laplacian and reduce the correction loop to a copy. The x2f/x3f corrections below
+  // are genuine d^2/dx1^2 terms in 1D and must be retained.
+  const bool f2_fc = pmb->block_size.nx2 > 1;
+  if (f2_fc) {
+    pco->LaplacianX1All(bf.x1f, laplacian_bx1, nl, nu, kl_buf, ku_buf, jl_buf, ju_buf,
+                        il, iu+1);
+  }
+  pco->LaplacianX2All(bf.x2f, laplacian_bx2, nl, nu, kl_buf, ku_buf, jl, ju+1,
+                      il_buf, iu_buf);
+  pco->LaplacianX3All(bf.x3f, laplacian_bx3, nl, nu, kl, ku+1, jl_buf, ju_buf,
+                      il_buf, iu_buf);
+
+  // uniform Cartesian mesh with square cells is required (checked in Reconstruction)
+  Real h = pco->dx1f(il);
+  Real C = (h*h)/24.0;
+
+  if (f2_fc) {
+    for (int k=kl_buf; k<=ku_buf; ++k) {
+      for (int j=jl_buf; j<=ju_buf; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu+1; ++i) {
+          bf_center.x1f(k,j,i) = bf.x1f(k,j,i) - C*laplacian_bx1(k,j,i);
+        }
+      }
+    }
+  } else {
+    for (int k=kl_buf; k<=ku_buf; ++k) {
+      for (int j=jl_buf; j<=ju_buf; ++j) {
+#pragma omp simd
+        for (int i=il; i<=iu+1; ++i) {
+          bf_center.x1f(k,j,i) = bf.x1f(k,j,i);
+        }
+      }
+    }
+  }
+  for (int k=kl_buf; k<=ku_buf; ++k) {
+    for (int j=jl; j<=ju+1; ++j) {
+#pragma omp simd
+      for (int i=il_buf; i<=iu_buf; ++i) {
+        bf_center.x2f(k,j,i) = bf.x2f(k,j,i) - C*laplacian_bx2(k,j,i);
+      }
+    }
+  }
+  for (int k=kl; k<=ku+1; ++k) {
+    for (int j=jl_buf; j<=ju_buf; ++j) {
+#pragma omp simd
+      for (int i=il_buf; i<=iu_buf; ++i) {
+        bf_center.x3f(k,j,i) = bf.x3f(k,j,i) - C*laplacian_bx3(k,j,i);
+      }
+    }
+  }
+  return;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn void Field::FaceAveragedToCellAveragedField
+//! \brief compute the fourth-order approximations to face-centered, cell-centered, and
+//! cell-averaged magnetic fields, starting from the face-averaged field.
+//!
+//! The input loop limits (il, iu, ...) must span all cells, ghost and real (the ghost
+//! values of bf are valid after the boundary exchange / physical BC application); the
+//! output validity shrinks by 1 cell per conversion stage at each edge, i.e. the
+//! output is 2x cells smaller at each edge of the input range. The outermost ghost
+//! cells retain the second-order values that the caller initialized (they are beyond
+//! every stencil that consumes the output).
+
+void Field::FaceAveragedToCellAveragedField(const FaceField &bf, FaceField &bf_center,
+                                            AthenaArray<Real> &bc,
+                                            AthenaArray<Real> &bc_center,
+                                            Coordinates *pco, int il, int iu, int jl,
+                                            int ju, int kl, int ku) {
+  MeshBlock *pmb = pmy_block;
+  const bool f2 = (pmb->block_size.nx2 > 1);
+  const bool f3 = (pmb->block_size.nx3 > 1);
+  CalculateFaceCenteredField(bf, bf_center, pco, il, iu, jl, ju, kl, ku);
+  // ... output shrinks by 1 in transverse directions
+
+  il += 1, iu -= 1;
+  if (f2) jl += 1, ju -= 1;
+  if (f3) kl += 1, ku -= 1;
+  CalculateCellCenteredFieldFourth(bf_center, bc_center, pco, il, iu, jl, ju, kl, ku);
+
+  // All directions shrink by 1x again for the Laplacian
+  il += 1, iu -= 1;
+  if (f2) jl += 1, ju -= 1;
+  if (f3) kl += 1, ku -= 1;
+  CellCenteredToAveragedField(bc_center, bc, pco, il, iu, jl, ju, kl, ku);
   return;
 }

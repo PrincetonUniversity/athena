@@ -82,17 +82,12 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
     xorder = 3;
     rec3m_ = REC3METHOD::WENOMZ;
   } else if ((input_recon == "4") || (input_recon == "4c")) {
-    // Full 4th-order scheme for hydro or MHD on uniform Cartesian grids
+    // Full 4th-order scheme for hydro or MHD on uniform Cartesian grids.
+    // For MHD, the 4th-order upwind constrained transport (UCT4) scheme of
+    // Felker & Stone (2018), JCP 375, 1365 is used for the induction equation.
     xorder = 4;
     if (input_recon == "4c")
       characteristic_projection_ = true;
-    if (MAGNETIC_FIELDS_ENABLED) {
-      std::stringstream msg;
-      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
-          << "xorder=" << input_recon << " should not be used with MHD"<< std::endl
-          << "4th-order constrained transport algorithm is not yet merged" << std::endl;
-      ATHENA_ERROR(msg);
-    }
   } else {
     std::stringstream msg;
     msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
@@ -149,25 +144,28 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
       const Real& dx_i   = pmb->pcoord->dx1f(pmb->is);
       const Real& dx_j   = pmb->pcoord->dx2f(pmb->js);
       const Real& dx_k   = pmb->pcoord->dx3f(pmb->ks);
-      // Note, probably want to make the following condition less strict (signal warning
-      // for small differences due to floating-point issues) but upgrade to error for
-      // large deviations from a square mesh. Currently signals a warning for each
-      // MeshBlock with non-square cells.
+      // It is possible for small floating-point differences to arise despite equal
+      // analytic values for grid spacings in the coordinates.cpp calculation of:
+      // Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
+      // due to the 3x rounding operations in numerator, e.g.
+      // float(float(x1max) - float((x1min))
+      // if mesh/x1max != mesh/x2max, etc. and/or if an asymmetric MeshBlock
+      // decomposition is used. Warn for such roundoff-level deviations, but ERROR for
+      // genuinely non-square cells: the h^2/24 corrections all use h=dx1f, and for MHD
+      // the resulting inconsistent face/cell field conversions excite a violent
+      // Nyquist-mode instability (empirically, dx1f=4*dx2f NaNs a linear wave within
+      // ~100 cycles); non-square cells also silently degrade 4th-order hydro
       if ((pmb->block_size.nx2 > 1 && dx_i != dx_j) ||
           (pmb->block_size.nx3 > 1 && dx_j != dx_k)) {
-        // It is possible for small floating-point differences to arise despite equal
-        // analytic values for grid spacings in the coordinates.cpp calculation of:
-        // Real dx=(block_size.x1max-block_size.x1min)/(ie-is+1);
-        // due to the 3x rounding operations in numerator, e.g.
-        // float(float(x1max) - float((x1min))
-        // if mesh/x1max != mesh/x2max, etc. and/or if an asymmetric MeshBlock
-        // decomposition is used
-        if (Globals::my_rank == 0) {
-          // std::stringstream msg;
-          std::cout
-              << "### Warning in Reconstruction constructor" << std::endl
+        const Real rel_tol = 1.0e-12;
+        bool large_dev =
+            (pmb->block_size.nx2 > 1 && std::abs(dx_j/dx_i - 1.0) > rel_tol) ||
+            (pmb->block_size.nx3 > 1 && std::abs(dx_k/dx_j - 1.0) > rel_tol);
+        if (large_dev) {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
               << "Selected time/xorder=" << input_recon << " flux calculations"
-              << " require a uniform, Carteisan mesh with" << std::endl
+              << " require a uniform, Cartesian mesh with" << std::endl
               << "square cells (dx1f=dx2f=dx3f). "
               << "Change mesh limits and/or number of cells for equal spacings\n"
               << "Current values are:" << std::endl
@@ -176,7 +174,19 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
               << "dx1f=" << dx_i << std::endl
               << "dx2f=" << dx_j << std::endl
               << "dx3f=" << dx_k << std::endl;
-          // ATHENA_ERROR(msg);
+          ATHENA_ERROR(msg);
+        } else if (Globals::my_rank == 0) {
+          std::cout
+              << "### Warning in Reconstruction constructor" << std::endl
+              << "Selected time/xorder=" << input_recon << " flux calculations"
+              << " require a uniform, Cartesian mesh with" << std::endl
+              << "square cells (dx1f=dx2f=dx3f); found a roundoff-level deviation:"
+              << std::endl
+              << std::scientific
+              << std::setprecision(std::numeric_limits<Real>::max_digits10 - 1)
+              << "dx1f=" << dx_i << std::endl
+              << "dx2f=" << dx_j << std::endl
+              << "dx3f=" << dx_k << std::endl;
         }
       }
       if (pmb->pmy_mesh->multilevel) {
@@ -202,6 +212,70 @@ Reconstruction::Reconstruction(MeshBlock *pmb, ParameterInput *pin) :
           << "currently does not support shearing box boundary conditions " << std::endl;
       ATHENA_ERROR(msg);
       return;
+    }
+
+    // fourth-order MHD (UCT4) builds its corner EMFs from the states reconstructed in
+    // the full-order Hydro::CalculateFluxes call of each stage; the VL2 predictor uses
+    // first-order fluxes and so does not populate them
+    if (MAGNETIC_FIELDS_ENABLED
+        && pin->GetOrAddString("time", "integrator", "vl2") == "vl2") {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Selected time/xorder=" << input_recon << " with MHD requires a"
+          << " multistage RK integrator (e.g. rk3), not vl2" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    // the general EOS ConservedToPrimitive overwrites the fourth-order cell-centered
+    // field with the second-order average
+    if (MAGNETIC_FIELDS_ENABLED && GENERAL_EOS) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Selected time/xorder=" << input_recon << " with MHD is not supported"
+          << " with a general EOS" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    // UCT4 uses the Newtonian FastMagnetosonicSpeed() for the corner wavespeeds, which
+    // is a no-op returning 0 in SR/GR builds (division by zero in the corner EMFs), and
+    // the fourth-order field conversions assume Newtonian MHD
+    if (MAGNETIC_FIELDS_ENABLED && RELATIVISTIC_DYNAMICS) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Selected time/xorder=" << input_recon << " with MHD is not supported"
+          << " for relativistic dynamics (SR/GR)" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    // fourth-order MHD (UCT4) computes the cell-centered/averaged fields in the main
+    // time-integrator task list, which the operator-split STS task list does not do
+    if (MAGNETIC_FIELDS_ENABLED && STS_ENABLED) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+          << "Selected time/xorder=" << input_recon << " with MHD is currently"
+          << " incompatible with super-time-stepping (STS)" << std::endl;
+      ATHENA_ERROR(msg);
+    }
+
+    // Multidimensional fourth-order MHD (UCT4) currently requires periodic boundary
+    // conditions in all active dimensions: the specialized ghost-zone treatment of the
+    // face-averaged to face-/cell-centered field conversions near physical boundaries
+    // is unimplemented. In 1D the transverse Laplacian corrections vanish identically,
+    // so non-periodic (e.g. outflow, for shock tubes) boundaries are permitted there,
+    // on the same footing as the existing 4th-order hydro boundary support.
+    if (MAGNETIC_FIELDS_ENABLED && pmb->block_size.nx2 > 1) {
+      int ndim = 2 + (pmb->block_size.nx3 > 1);
+      for (int face=BoundaryFace::inner_x1; face<=BoundaryFace::outer_x3; face++) {
+        if (face >= 2*ndim) break;
+        if (pmb->pmy_mesh->mesh_bcs[face] != BoundaryFlag::periodic) {
+          std::stringstream msg;
+          msg << "### FATAL ERROR in Reconstruction constructor" << std::endl
+              << "Selected time/xorder=" << input_recon << " with multidimensional MHD"
+              << " requires periodic boundary conditions in all active dimensions"
+              << std::endl;
+          ATHENA_ERROR(msg);
+        }
+      }
     }
 
     // check for necessary number of ghost zones for PPM w/ fourth-order flux corrections
