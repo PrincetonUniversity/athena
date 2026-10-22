@@ -116,6 +116,7 @@ time python3 run_tests.py pgen/pgen_compile $CONFIG \
 time python3 run_tests.py pgen/hdf5_reader_serial $CONFIG -v
 time python3 run_tests.py mpi $CONFIG $MPIRUN_OPTS --silent
 time python3 run_tests.py grav $CONFIG $MPIRUN_OPTS --silent  # requires FFTW
+time python3 run_tests.py fft $CONFIG $MPIRUN_OPTS --silent  # requires FFTW
 (export OMPI_CXX=$OMP_CMD MPICH_CXX=$OMP_CMD I_MPI_CXX=$OMP_CMD
  time python3 run_tests.py hybrid $OMP_CONFIG $MPIRUN_OPTS --silent)
 time python3 run_tests.py omp $OMP_CONFIG --silent
