@@ -117,8 +117,9 @@ FieldDiffusion::FieldDiffusion(MeshBlock *pmb, ParameterInput *pin) :
 //! \brief alias the point-valued Poynting-flux scratch pfpt_ onto Field's 4th-order
 //! conversion scratch (never simultaneously live: pfpt_ is used only inside
 //! PoyntingFluxFourth [DIFFUSE_FLD task], the host arrays only inside
-//! Field::CalculateFaceCenteredField [CONS2PRIM] and the 2D EMF Laplacian correction
-//! in Hydro::CalculateFluxes [CALC_HYDFLX]). Called at the end of the Field
+//! Field::CalculateFaceCenteredField [CONS2PRIM], the 2D EMF Laplacian correction
+//! in Hydro::CalculateFluxes [CALC_HYDFLX], and the 3D point-EMF scratch in
+//! Field::ComputeCornerE_UCT4 [CALC_FLDFLX]). Called at the end of the Field
 //! constructor (which passes itself; pmy_block->pfield is not yet assigned there).
 
 void FieldDiffusion::InitFourthOrderScratch(Field *pf) {

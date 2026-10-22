@@ -252,6 +252,29 @@ void Field::ComputeCornerE_STS() {
   return;
 }
 
+namespace {
+// Point value at the edge midpoint from the line averages on an edge and its two
+// neighbors along the edge direction (uniform spacing): <q> - (h^2/24) d2q/ds2 with a
+// central second difference, written as (q_m + q_p) - 2q so that it is bit-exactly
+// mirror symmetric. EdgeAverage is the same correction applied to point values.
+inline Real EdgePointValue(const Real qm, const Real q, const Real qp) {
+  return q - ((qm + qp) - 2.0*q)*(1.0/24.0);
+}
+inline Real EdgeAverage(const Real qm, const Real q, const Real qp) {
+  return q + ((qm + qp) - 2.0*q)*(1.0/24.0);
+}
+// ...for the 4th-dim slice n of a 4D array (n = 0 for a 3D array), along x1, x2, x3
+inline Real PointX1(const AthenaArray<Real> &q, int n, int k, int j, int i) {
+  return EdgePointValue(q(n,k,j,i-1), q(n,k,j,i), q(n,k,j,i+1));
+}
+inline Real PointX2(const AthenaArray<Real> &q, int n, int k, int j, int i) {
+  return EdgePointValue(q(n,k,j-1,i), q(n,k,j,i), q(n,k,j+1,i));
+}
+inline Real PointX3(const AthenaArray<Real> &q, int n, int k, int j, int i) {
+  return EdgePointValue(q(n,k-1,j,i), q(n,k,j,i), q(n,k+1,j,i));
+}
+}  // namespace
+
 //----------------------------------------------------------------------------------------
 //! \fn  void Field::ComputeCornerE_UCT4
 //! \brief calculate the corner (edge-averaged) EMFs for the fourth-order UCT scheme
@@ -263,12 +286,17 @@ void Field::ComputeCornerE_STS() {
 //! Hydro::CalculateFluxes when xorder=4.
 //!
 //! In 2D the corner states are point values and the corner EMF is the edge average.
-//! In 3D the corner states are still averaged along the edge (transverse PPM of the
-//! face-averaged states), and the EMF is evaluated as the product of these edge
-//! averages without deconvolving to point values and re-averaging. The edge-averaged
-//! EMF is therefore formally O(h^2) accurate in 3D whenever the EMF is a nonlinear
-//! function of the varying quantities (it is exact to fourth order for the CPAW and
-//! linear-wave tests, where the EMF perturbation is linear in the wave amplitude).
+//! In 3D the corner states are line averages along the edge (transverse PPM of the
+//! face-averaged states), so they are first deconvolved to point values at the edge
+//! midpoint, q_pt = <q> - (h^2/24) d2<q>/ds2, the corner EMF is evaluated from the
+//! point states, and the result is re-averaged along the edge,
+//! <E> = E_pt + (h^2/24) d2E_pt/ds2, with central second differences along the edge
+//! direction s (EdgePointValue/EdgeAverage). This is the edge analog of the face-flux
+//! Laplacian correction in Hydro::CalculateFluxes and keeps the edge-averaged EMF
+//! fourth-order accurate when the EMF is a nonlinear function of the varying
+//! quantities; the product of the line averages alone is O(h^2) (mhd4/rotating_column).
+//! The point EMF is needed on one extra row at each end of the edge and the corner
+//! states on two (kl_e3, il_e1, jl_e2 in Hydro::CalculateFluxes).
 //!
 //! Sign convention of the diffusion terms: for each transverse field component B_t
 //! differenced across direction d at the edge, the term enters with the sign such that
@@ -299,54 +327,55 @@ void Field::ComputeCornerE_UCT4() {
     return;
   }
 
-  //---- 2-D/3-D update:
-  // E3=-(v X B)=VyBx-VxBy
-  // integrate E3 to corner using UCT
-  // corner state naming: E/W = L1/R1, N/S = L2/R2 one-sided limits w.r.t. the corner
-  for (int k=ks; k<=ke; ++k) {
-    for (int j=js; j<=je+1; ++j) {
+  if (pmb->block_size.nx3 == 1) {
+    //---- 2-D update: the corner states are point values
+    // E3=-(v X B)=VyBx-VxBy
+    // integrate E3 to corner using UCT
+    // corner state naming: E/W = L1/R1, N/S = L2/R2 one-sided limits w.r.t. the corner
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
-      for (int i=is; i<=ie+1; ++i) {
-        // corner wavespeeds: take the max of the face-centered estimates on the two
-        // faces adjacent to the corner (symmetric w.r.t. the corner, following LDZ04)
-        Real alpha_plus_x = std::max(std::abs(alpha_plus_x1_(k,j,i)),
-                                     std::abs(alpha_plus_x1_(k,j-1,i)));
-        Real alpha_minus_x = std::max(std::abs(alpha_minus_x1_(k,j,i)),
-                                      std::abs(alpha_minus_x1_(k,j-1,i)));
+        for (int i=is; i<=ie+1; ++i) {
+          // corner wavespeeds: take the max of the face-centered estimates on the two
+          // faces adjacent to the corner (symmetric w.r.t. the corner, following LDZ04)
+          Real alpha_plus_x = std::max(std::abs(alpha_plus_x1_(k,j,i)),
+                                       std::abs(alpha_plus_x1_(k,j-1,i)));
+          Real alpha_minus_x = std::max(std::abs(alpha_minus_x1_(k,j,i)),
+                                        std::abs(alpha_minus_x1_(k,j-1,i)));
 
-        Real alpha_plus_y = std::max(std::abs(alpha_plus_x2_(k,j,i)),
-                                     std::abs(alpha_plus_x2_(k,j,i-1)));
-        Real alpha_minus_y = std::max(std::abs(alpha_minus_x2_(k,j,i)),
-                                      std::abs(alpha_minus_x2_(k,j,i-1)));
+          Real alpha_plus_y = std::max(std::abs(alpha_plus_x2_(k,j,i)),
+                                       std::abs(alpha_plus_x2_(k,j,i-1)));
+          Real alpha_minus_y = std::max(std::abs(alpha_minus_x2_(k,j,i)),
+                                        std::abs(alpha_minus_x2_(k,j,i-1)));
 
-        // Londrillo & Del Zanna (2004) eq. 56; L states are weighted by alpha^+
-        Real e3_NE, e3_SE, e3_NW, e3_SW;
-        Real bx_S_minus_bx_N, by_W_minus_by_E;
-        e3_NE = v_NE(1,k,j,i)*bx_N(k,j,i) - v_NE(0,k,j,i)*by_E(k,j,i);
-        e3_SE = v_SE(1,k,j,i)*bx_S(k,j,i) - v_SE(0,k,j,i)*by_E(k,j,i);
-        e3_NW = v_NW(1,k,j,i)*bx_N(k,j,i) - v_NW(0,k,j,i)*by_W(k,j,i);
-        e3_SW = v_SW(1,k,j,i)*bx_S(k,j,i) - v_SW(0,k,j,i)*by_W(k,j,i);
+          // Londrillo & Del Zanna (2004) eq. 56; L states are weighted by alpha^+
+          Real e3_NE, e3_SE, e3_NW, e3_SW;
+          Real bx_S_minus_bx_N, by_W_minus_by_E;
+          e3_NE = v_NE(1,k,j,i)*bx_N(k,j,i) - v_NE(0,k,j,i)*by_E(k,j,i);
+          e3_SE = v_SE(1,k,j,i)*bx_S(k,j,i) - v_SE(0,k,j,i)*by_E(k,j,i);
+          e3_NW = v_NW(1,k,j,i)*bx_N(k,j,i) - v_NW(0,k,j,i)*by_W(k,j,i);
+          e3_SW = v_SW(1,k,j,i)*bx_S(k,j,i) - v_SW(0,k,j,i)*by_W(k,j,i);
 
-        // diffusion terms: +E3 is the x2-flux of B1 (hence "-" on the B1 jump across
-        // x2), and -E3 is the x1-flux of B2 (hence "+" on the B2 jump across x1)
-        bx_S_minus_bx_N = bx_S(k,j,i) - bx_N(k,j,i);
-        by_W_minus_by_E = by_W(k,j,i) - by_E(k,j,i);
-        // (the two corner states exchanged by an x1 reflection are added first, so that
-        // the sum is mirror symmetric, #165)
-        e3(k,j,i) = (
-            (alpha_plus_x*alpha_plus_y*e3_NE + alpha_minus_x*alpha_plus_y*e3_NW) +
-            (alpha_plus_x*alpha_minus_y*e3_SE + alpha_minus_x*alpha_minus_y*e3_SW)
-                     ) / ((alpha_plus_x + alpha_minus_x)*(alpha_plus_y + alpha_minus_y))
-                    - alpha_plus_y*alpha_minus_y*bx_S_minus_bx_N / (
-                        alpha_plus_y + alpha_minus_y)
-                    + alpha_plus_x*alpha_minus_x*by_W_minus_by_E/(
-                        alpha_plus_x + alpha_minus_x);
+          // diffusion terms: +E3 is the x2-flux of B1 (hence "-" on the B1 jump across
+          // x2), and -E3 is the x1-flux of B2 (hence "+" on the B2 jump across x1)
+          bx_S_minus_bx_N = bx_S(k,j,i) - bx_N(k,j,i);
+          by_W_minus_by_E = by_W(k,j,i) - by_E(k,j,i);
+          // (the two corner states exchanged by an x1 reflection are added first, so that
+          // the sum is mirror symmetric, #165)
+          e3(k,j,i) = (
+              (alpha_plus_x*alpha_plus_y*e3_NE + alpha_minus_x*alpha_plus_y*e3_NW) +
+              (alpha_plus_x*alpha_minus_y*e3_SE + alpha_minus_x*alpha_minus_y*e3_SW)
+                       ) / ((alpha_plus_x + alpha_minus_x)*(alpha_plus_y + alpha_minus_y))
+                      - alpha_plus_y*alpha_minus_y*bx_S_minus_bx_N / (
+                          alpha_plus_y + alpha_minus_y)
+                      + alpha_plus_x*alpha_minus_x*by_W_minus_by_E/(
+                          alpha_plus_x + alpha_minus_x);
+        }
       }
     }
-  }
 
-  if (pmb->block_size.nx3 == 1) {
-    // for 2D: copy E1 and E2 to edges and return
+
+    // copy E1 and E2 to edges
     // (e1_x2f and e2_x1f are the 4th-order face-averaged fluxes of B3 in 2D)
     for (int j=js; j<=je; ++j) {
       for (int i=is; i<=ie+1; ++i) {
@@ -362,12 +391,79 @@ void Field::ComputeCornerE_UCT4() {
     }
   } else {
     //---- 3-D update:
-    // integrate E1 to corners using UCT (E3 already done above)
-    // E1=-(v X B)=VzBy-VyBz
+    // The corner states are line averages along the edge (transverse PPM of the
+    // face-averaged Riemann states and of the face fields). Deconvolve them to point
+    // values at the edge midpoint, evaluate the UCT corner EMF from the point states on
+    // one extra row at each end of the edge, and re-average the EMF along the edge.
+    // The point EMFs use the Field conversion scratch, which is free during this task.
+    AthenaArray<Real> &e3_pt = scr1_kji_x1fc_, &e1_pt = scr2_kji_x2fc_,
+                      &e2_pt = scr3_kji_x3fc_;
+
+    // E3=-(v X B)=VyBx-VxBy: point EMF on x3 rows ks-1..ke+1
+    // corner state naming: E/W = L1/R1, N/S = L2/R2 one-sided limits w.r.t. the corner
+    for (int k=ks-1; k<=ke+1; ++k) {
+      for (int j=js; j<=je+1; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie+1; ++i) {
+          // corner wavespeeds: take the max of the face-centered estimates on the two
+          // faces adjacent to the corner (symmetric w.r.t. the corner, following LDZ04)
+          Real alpha_plus_x = std::max(std::abs(alpha_plus_x1_(k,j,i)),
+                                       std::abs(alpha_plus_x1_(k,j-1,i)));
+          Real alpha_minus_x = std::max(std::abs(alpha_minus_x1_(k,j,i)),
+                                        std::abs(alpha_minus_x1_(k,j-1,i)));
+
+          Real alpha_plus_y = std::max(std::abs(alpha_plus_x2_(k,j,i)),
+                                       std::abs(alpha_plus_x2_(k,j,i-1)));
+          Real alpha_minus_y = std::max(std::abs(alpha_minus_x2_(k,j,i)),
+                                        std::abs(alpha_minus_x2_(k,j,i-1)));
+
+          // point values of the corner states at the edge midpoint (deconvolved in x3)
+          Real vx_NE = PointX3(v_NE, 0, k, j, i), vy_NE = PointX3(v_NE, 1, k, j, i);
+          Real vx_SE = PointX3(v_SE, 0, k, j, i), vy_SE = PointX3(v_SE, 1, k, j, i);
+          Real vx_NW = PointX3(v_NW, 0, k, j, i), vy_NW = PointX3(v_NW, 1, k, j, i);
+          Real vx_SW = PointX3(v_SW, 0, k, j, i), vy_SW = PointX3(v_SW, 1, k, j, i);
+          Real bxN = PointX3(bx_N, 0, k, j, i), bxS = PointX3(bx_S, 0, k, j, i);
+          Real byE = PointX3(by_E, 0, k, j, i), byW = PointX3(by_W, 0, k, j, i);
+
+          // Londrillo & Del Zanna (2004) eq. 56; L states are weighted by alpha^+
+          Real e3_NE = vy_NE*bxN - vx_NE*byE;
+          Real e3_SE = vy_SE*bxS - vx_SE*byE;
+          Real e3_NW = vy_NW*bxN - vx_NW*byW;
+          Real e3_SW = vy_SW*bxS - vx_SW*byW;
+
+          // diffusion terms: +E3 is the x2-flux of B1 (hence "-" on the B1 jump across
+          // x2), and -E3 is the x1-flux of B2 (hence "+" on the B2 jump across x1)
+          Real bx_S_minus_bx_N = bxS - bxN;
+          Real by_W_minus_by_E = byW - byE;
+          // (the two corner states exchanged by an x1 reflection are added first, so
+          // that the sum is mirror symmetric, #165)
+          e3_pt(k,j,i) = (
+              (alpha_plus_x*alpha_plus_y*e3_NE + alpha_minus_x*alpha_plus_y*e3_NW) +
+              (alpha_plus_x*alpha_minus_y*e3_SE + alpha_minus_x*alpha_minus_y*e3_SW)
+                         ) / ((alpha_plus_x + alpha_minus_x)
+                              *(alpha_plus_y + alpha_minus_y))
+                        - alpha_plus_y*alpha_minus_y*bx_S_minus_bx_N / (
+                            alpha_plus_y + alpha_minus_y)
+                        + alpha_plus_x*alpha_minus_x*by_W_minus_by_E/(
+                            alpha_plus_x + alpha_minus_x);
+        }
+      }
+    }
+    // edge average of E3 along x3
+    for (int k=ks; k<=ke; ++k) {
+      for (int j=js; j<=je+1; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie+1; ++i) {
+          e3(k,j,i) = EdgeAverage(e3_pt(k-1,j,i), e3_pt(k,j,i), e3_pt(k+1,j,i));
+        }
+      }
+    }
+
+    // E1=-(v X B)=VzBy-VyBz: point EMF on x1 rows is-1..ie+1
     for (int k=ks; k<=ke+1; ++k) {
       for (int j=js; j<=je+1; ++j) {
 #pragma omp simd
-        for (int i=is; i<=ie; ++i) {
+        for (int i=is-1; i<=ie+1; ++i) {
           // edge wavespeeds: max of the face-centered estimates on the two faces
           // adjacent to the edge (symmetric w.r.t. the edge, as for E3 above)
           Real alpha_plus_z = std::max(std::abs(alpha_plus_x3_(k,j,i)),
@@ -380,21 +476,31 @@ void Field::ComputeCornerE_UCT4() {
           Real alpha_minus_y = std::max(std::abs(alpha_minus_x2_(k,j,i)),
                                         std::abs(alpha_minus_x2_(k-1,j,i)));
 
-          Real e1_L3L2, e1_L3R2, e1_R3L2, e1_R3R2;
-          Real by_R3_minus_by_L3, bz_R2_minus_bz_L2;
-          e1_L3L2 = v_L3L2(2,k,j,i)*by_L3(k,j,i) - v_L3L2(1,k,j,i)*bz_L2(k,j,i);
-          e1_L3R2 = v_L3R2(2,k,j,i)*by_L3(k,j,i) - v_L3R2(1,k,j,i)*bz_R2(k,j,i);
-          e1_R3L2 = v_R3L2(2,k,j,i)*by_R3(k,j,i) - v_R3L2(1,k,j,i)*bz_L2(k,j,i);
-          e1_R3R2 = v_R3R2(2,k,j,i)*by_R3(k,j,i) - v_R3R2(1,k,j,i)*bz_R2(k,j,i);
+          // point values of the corner states at the edge midpoint (deconvolved in x1)
+          Real vy_L3L2 = PointX1(v_L3L2, 1, k, j, i);
+          Real vz_L3L2 = PointX1(v_L3L2, 2, k, j, i);
+          Real vy_L3R2 = PointX1(v_L3R2, 1, k, j, i);
+          Real vz_L3R2 = PointX1(v_L3R2, 2, k, j, i);
+          Real vy_R3L2 = PointX1(v_R3L2, 1, k, j, i);
+          Real vz_R3L2 = PointX1(v_R3L2, 2, k, j, i);
+          Real vy_R3R2 = PointX1(v_R3R2, 1, k, j, i);
+          Real vz_R3R2 = PointX1(v_R3R2, 2, k, j, i);
+          Real byL3 = PointX1(by_L3, 0, k, j, i), byR3 = PointX1(by_R3, 0, k, j, i);
+          Real bzL2 = PointX1(bz_L2, 0, k, j, i), bzR2 = PointX1(bz_R2, 0, k, j, i);
+
+          Real e1_L3L2 = vz_L3L2*byL3 - vy_L3L2*bzL2;
+          Real e1_L3R2 = vz_L3R2*byL3 - vy_L3R2*bzR2;
+          Real e1_R3L2 = vz_R3L2*byR3 - vy_R3L2*bzL2;
+          Real e1_R3R2 = vz_R3R2*byR3 - vy_R3R2*bzR2;
 
           // diffusion terms: -E1 is the x2-flux of B3 ("+" on the B3 jump across x2),
           // and +E1 is the x3-flux of B2 ("-" on the B2 jump across x3)
-          by_R3_minus_by_L3 = by_R3(k,j,i) - by_L3(k,j,i);
-          bz_R2_minus_bz_L2 = bz_R2(k,j,i) - bz_L2(k,j,i);
-          e1(k,j,i) = ((alpha_plus_z*alpha_plus_y*e1_L3L2 +
-                        alpha_minus_z*alpha_plus_y*e1_R3L2) +
-                       (alpha_plus_z*alpha_minus_y*e1_L3R2 +
-                        alpha_minus_z*alpha_minus_y*e1_R3R2))
+          Real by_R3_minus_by_L3 = byR3 - byL3;
+          Real bz_R2_minus_bz_L2 = bzR2 - bzL2;
+          e1_pt(k,j,i) = ((alpha_plus_z*alpha_plus_y*e1_L3L2 +
+                           alpha_minus_z*alpha_plus_y*e1_R3L2) +
+                          (alpha_plus_z*alpha_minus_y*e1_L3R2 +
+                           alpha_minus_z*alpha_minus_y*e1_R3R2))
               / ((alpha_plus_z + alpha_minus_z)*(alpha_plus_y + alpha_minus_y))
               + alpha_plus_y*alpha_minus_y*bz_R2_minus_bz_L2 /
               (alpha_plus_y + alpha_minus_y)
@@ -403,11 +509,19 @@ void Field::ComputeCornerE_UCT4() {
         }
       }
     }
-
-    // integrate E2 to corners using UCT (E3 already done above)
-    // E2=-(v X B)=VxBz-VzBx
+    // edge average of E1 along x1
     for (int k=ks; k<=ke+1; ++k) {
-      for (int j=js; j<=je; ++j) {
+      for (int j=js; j<=je+1; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie; ++i) {
+          e1(k,j,i) = EdgeAverage(e1_pt(k,j,i-1), e1_pt(k,j,i), e1_pt(k,j,i+1));
+        }
+      }
+    }
+
+    // E2=-(v X B)=VxBz-VzBx: point EMF on x2 rows js-1..je+1
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js-1; j<=je+1; ++j) {
 #pragma omp simd
         for (int i=is; i<=ie+1; ++i) {
           Real alpha_plus_z = std::max(std::abs(alpha_plus_x3_(k,j,i)),
@@ -420,26 +534,45 @@ void Field::ComputeCornerE_UCT4() {
           Real alpha_minus_x = std::max(std::abs(alpha_minus_x1_(k,j,i)),
                                         std::abs(alpha_minus_x1_(k-1,j,i)));
 
-          Real e2_L3L1, e2_L3R1, e2_R3L1, e2_R3R1;
-          Real bx_R3_minus_bx_L3, bz_R1_minus_bz_L1;
-          e2_L3L1 = - v_L3L1(2,k,j,i)*bx_L3(k,j,i) + v_L3L1(0,k,j,i)*bz_L1(k,j,i);
-          e2_L3R1 = - v_L3R1(2,k,j,i)*bx_L3(k,j,i) + v_L3R1(0,k,j,i)*bz_R1(k,j,i);
-          e2_R3L1 = - v_R3L1(2,k,j,i)*bx_R3(k,j,i) + v_R3L1(0,k,j,i)*bz_L1(k,j,i);
-          e2_R3R1 = - v_R3R1(2,k,j,i)*bx_R3(k,j,i) + v_R3R1(0,k,j,i)*bz_R1(k,j,i);
+          // point values of the corner states at the edge midpoint (deconvolved in x2)
+          Real vx_L3L1 = PointX2(v_L3L1, 0, k, j, i);
+          Real vz_L3L1 = PointX2(v_L3L1, 2, k, j, i);
+          Real vx_L3R1 = PointX2(v_L3R1, 0, k, j, i);
+          Real vz_L3R1 = PointX2(v_L3R1, 2, k, j, i);
+          Real vx_R3L1 = PointX2(v_R3L1, 0, k, j, i);
+          Real vz_R3L1 = PointX2(v_R3L1, 2, k, j, i);
+          Real vx_R3R1 = PointX2(v_R3R1, 0, k, j, i);
+          Real vz_R3R1 = PointX2(v_R3R1, 2, k, j, i);
+          Real bxL3 = PointX2(bx_L3, 0, k, j, i), bxR3 = PointX2(bx_R3, 0, k, j, i);
+          Real bzL1 = PointX2(bz_L1, 0, k, j, i), bzR1 = PointX2(bz_R1, 0, k, j, i);
+
+          Real e2_L3L1 = - vz_L3L1*bxL3 + vx_L3L1*bzL1;
+          Real e2_L3R1 = - vz_L3R1*bxL3 + vx_L3R1*bzR1;
+          Real e2_R3L1 = - vz_R3L1*bxR3 + vx_R3L1*bzL1;
+          Real e2_R3R1 = - vz_R3R1*bxR3 + vx_R3R1*bzR1;
 
           // diffusion terms: +E2 is the x1-flux of B3 ("-" on the B3 jump across x1),
           // and -E2 is the x3-flux of B1 ("+" on the B1 jump across x3)
-          bx_R3_minus_bx_L3 = bx_R3(k,j,i) - bx_L3(k,j,i);
-          bz_R1_minus_bz_L1 = bz_R1(k,j,i) - bz_L1(k,j,i);
-          e2(k,j,i) = ((alpha_plus_z*alpha_plus_x*e2_L3L1 +
-                        alpha_minus_z*alpha_plus_x*e2_R3L1) +
-                       (alpha_plus_z*alpha_minus_x*e2_L3R1 +
-                        alpha_minus_z*alpha_minus_x*e2_R3R1))
+          Real bx_R3_minus_bx_L3 = bxR3 - bxL3;
+          Real bz_R1_minus_bz_L1 = bzR1 - bzL1;
+          e2_pt(k,j,i) = ((alpha_plus_z*alpha_plus_x*e2_L3L1 +
+                           alpha_minus_z*alpha_plus_x*e2_R3L1) +
+                          (alpha_plus_z*alpha_minus_x*e2_L3R1 +
+                           alpha_minus_z*alpha_minus_x*e2_R3R1))
               / ((alpha_plus_z + alpha_minus_z)*(alpha_plus_x + alpha_minus_x))
               - alpha_plus_x*alpha_minus_x*bz_R1_minus_bz_L1 /
               (alpha_plus_x + alpha_minus_x)
               + alpha_plus_z*alpha_minus_z*bx_R3_minus_bx_L3 /
               (alpha_plus_z + alpha_minus_z);
+        }
+      }
+    }
+    // edge average of E2 along x2
+    for (int k=ks; k<=ke+1; ++k) {
+      for (int j=js; j<=je; ++j) {
+#pragma omp simd
+        for (int i=is; i<=ie+1; ++i) {
+          e2(k,j,i) = EdgeAverage(e2_pt(k,j-1,i), e2_pt(k,j,i), e2_pt(k,j+1,i));
         }
       }
     }

@@ -19,6 +19,8 @@
 # Measured 2026-10 (macOS/AppleClang -O3), B_z L1 error at tlim = 0.5:
 #   2D path: 2.64e-4 (32), 1.06e-5 (64), 4.71e-7 (128); rates 4.64, 4.49
 #   3D path with edge-averaged products: 5.46e-4, 5.04e-5, 1.08e-5; rates 3.44, 2.23
+#   3D path with the corner states deconvolved to edge midpoints and the EMF re-averaged
+#   along the edge (ComputeCornerE_UCT4): 4.84e-4, 1.67e-5; rate 4.86; 1.57x the 2D path
 
 # Modules
 import logging

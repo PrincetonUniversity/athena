@@ -101,6 +101,17 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
   // scratch for the 2D 4th-order face-averaged EMF corrections (reused from Field)
   AthenaArray<Real> &laplacian_e2x1 = pmb->pfield->scr1_kji_x1fc_,
                     &laplacian_e1x2 = pmb->pfield->scr2_kji_x2fc_;
+  // loop limits of the UCT corner states along each edge direction: in 3D the states
+  // are needed on 2 extra rows at each end of the edge, for the deconvolution to point
+  // values and the re-averaging of the EMF in Field::ComputeCornerE_UCT4
+  int kl_e3 = ks, ku_e3 = ke;  // E3 states along x3
+  int il_e1 = is, iu_e1 = ie;  // E1 states along x1
+  int jl_e2 = js, ju_e2 = je;  // E2 states along x2
+  if (pmb->block_size.nx3 > 1) {
+    kl_e3 = ks-2, ku_e3 = ke+2;
+    il_e1 = is-2, iu_e1 = ie+2;
+    jl_e2 = js-2, ju_e2 = je+2;
+  }
   // -------------- end fourth-order MHD indices and variables ------
 #endif
   AthenaArray<Real> &flux_fc = scr1_nkji_;
@@ -272,14 +283,14 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // Unlike standard Athena++ E_z^c upwinding, which requires loading
       // [is-1:ie+1] x [js-1:je+1] face states, the UCT corner states are centered on
       // the corner, so only the real range including the uppermost corner is required:
-      // [is:ie+1] x [js:je+1]
+      // [is:ie+1] x [js:je+1] (plus 2 rows at each end along the edge in 3D, see kl_e3)
 
       // Limited transverse reconstructions: call PPMx2() on the x1-face L/R Riemann
       // states. Pencil decomposition in j: for the corner at x2_{j-1/2} (index j), the
       // below/N/L2 state is the PPM ql of row j-1 and the above/S/R2 state is the PPM
       // qr of row j; ql of the current row is buffered and swapped for the next row.
       // wl_{i-1/2} is the E (L1) side of the interface
-      for (int k=ks; k<=ke; ++k) {
+      for (int k=kl_e3; k<=ku_e3; ++k) {
         pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie+1, wl3d_, v_NE_, v_SE_,
                                           IVX, IVY, 0);
         pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie+1, wr3d_, v_NW_, v_SW_,
@@ -359,7 +370,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // is the PPM qr of row k.
       if (pmb->block_size.nx3 > 1) {
         for (int k=ks-1; k<=ke+1; ++k) {
-          for (int j=js; j<=je; ++j) {
+          for (int j=jl_e2; j<=ju_e2; ++j) {
             pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, wl3d_, v_L3L1_, v_R3L1_,
                                               IVX, IVX, 0);
             pmb->precon->PiecewiseParabolicX3(k, j, is, ie+1, wl3d_, v_L3L1_, v_R3L1_,
@@ -566,7 +577,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // PPMx1 pencil output ql(i) already holds the L1 state of the corner at
       // x1_{i-1/2} (index i), so no swap buffering is needed in x1.
       // wl_{j-1/2} is the N (L2) side of the interface
-      for (int k=ks; k<=ke; ++k) {
+      for (int k=kl_e3; k<=ku_e3; ++k) {
         for (int j=js; j<=je+1; ++j) {
           pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, wl3d_,
                                             vl_temp2, vr_temp2, IVX, IVY, 0);
@@ -643,20 +654,20 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       if (pmb->block_size.nx3 > 1) {
         for (int k=ks-1; k<=ke+1; ++k) {
           for (int j=js; j<=je+1; ++j) {
-            pmb->precon->PiecewiseParabolicX3(k, j, is, ie, wl3d_, v_L3L2_, v_R3L2_,
-                                              IVY, IVY, 1);
-            pmb->precon->PiecewiseParabolicX3(k, j, is, ie, wl3d_, v_L3L2_, v_R3L2_,
-                                              IVZ, IVZ, 2);
-            pmb->precon->PiecewiseParabolicX3(k, j, is, ie, wr3d_, v_L3R2_, v_R3R2_,
-                                              IVY, IVY, 1);
-            pmb->precon->PiecewiseParabolicX3(k, j, is, ie, wr3d_, v_L3R2_, v_R3R2_,
-                                              IVZ, IVZ, 2);
+            pmb->precon->PiecewiseParabolicX3(k, j, il_e1, iu_e1, wl3d_,
+                                              v_L3L2_, v_R3L2_, IVY, IVY, 1);
+            pmb->precon->PiecewiseParabolicX3(k, j, il_e1, iu_e1, wl3d_,
+                                              v_L3L2_, v_R3L2_, IVZ, IVZ, 2);
+            pmb->precon->PiecewiseParabolicX3(k, j, il_e1, iu_e1, wr3d_,
+                                              v_L3R2_, v_R3R2_, IVY, IVY, 1);
+            pmb->precon->PiecewiseParabolicX3(k, j, il_e1, iu_e1, wr3d_,
+                                              v_L3R2_, v_R3R2_, IVZ, IVZ, 2);
             // Limited transverse reconstructions: call PPMx3() for single-state b_y
-            pmb->precon->PiecewiseParabolicX3(k, j, is, ie, b2, by_L3_, by_R3_,
+            pmb->precon->PiecewiseParabolicX3(k, j, il_e1, iu_e1, b2, by_L3_, by_R3_,
                                               0, 0, 0);
             for (int n=1; n<3; n++) {
 #pragma omp simd
-              for (int i=is; i<=ie; i++) {
+              for (int i=il_e1; i<=iu_e1; i++) {
                 v_L3L2(n,k+1,j,i) = v_L3L2_(n,i);
                 v_L3R2(n,k+1,j,i) = v_L3R2_(n,i);
                 v_R3L2(n,k,j,i) = v_R3L2_(n,i);
@@ -664,7 +675,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
               }
             }
 #pragma omp simd
-            for (int i=is; i<=ie; i++) {
+            for (int i=il_e1; i<=iu_e1; i++) {
               by_L3(k+1,j,i) = by_L3_(i);
               by_R3(k,j,i) = by_R3_(i);
             }
@@ -816,7 +827,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // states and single-state b3, averaged with the x3-of-x1 reconstructions from
       // UCT4x1. PPMx1 pencil output ql(i) holds the L1 state at x1_{i-1/2} directly.
       for (int k=ks; k<=ke+1; ++k) {
-        for (int j=js; j<=je; ++j) {
+        for (int j=jl_e2; j<=ju_e2; ++j) {
           // wl_{k-1/2} is the L3 side of the interface
           pmb->precon->PiecewiseParabolicX1(k, j, is-1, ie+1, wl3d_,
                                             vl_temp2, vr_temp2, IVX, IVX, 0);
@@ -856,30 +867,30 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
       // states and single-state b3, averaged with the x3-of-x2 reconstructions from
       // UCT4x2. Pencil decomposition in j with swap buffering, as in UCT4x1.
       for (int k=ks; k<=ke+1; ++k) {
-        pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie, wl3d_, v_L3L2_, v_L3R2_,
-                                          IVY, IVY, 1);
-        pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie, wl3d_, v_L3L2_, v_L3R2_,
-                                          IVZ, IVZ, 2);
-        pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie, wr3d_, v_R3L2_, v_R3R2_,
-                                          IVY, IVY, 1);
-        pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie, wr3d_, v_R3L2_, v_R3R2_,
-                                          IVZ, IVZ, 2);
-        pmb->precon->PiecewiseParabolicX2(k, js-1, is, ie, b3, bz_L2_, bz_R2_,
+        pmb->precon->PiecewiseParabolicX2(k, js-1, il_e1, iu_e1, wl3d_,
+                                          v_L3L2_, v_L3R2_, IVY, IVY, 1);
+        pmb->precon->PiecewiseParabolicX2(k, js-1, il_e1, iu_e1, wl3d_,
+                                          v_L3L2_, v_L3R2_, IVZ, IVZ, 2);
+        pmb->precon->PiecewiseParabolicX2(k, js-1, il_e1, iu_e1, wr3d_,
+                                          v_R3L2_, v_R3R2_, IVY, IVY, 1);
+        pmb->precon->PiecewiseParabolicX2(k, js-1, il_e1, iu_e1, wr3d_,
+                                          v_R3L2_, v_R3R2_, IVZ, IVZ, 2);
+        pmb->precon->PiecewiseParabolicX2(k, js-1, il_e1, iu_e1, b3, bz_L2_, bz_R2_,
                                           0, 0, 0);
         for (int j=js; j<=je+1; ++j) {
-          pmb->precon->PiecewiseParabolicX2(k, j, is, ie, wl3d_, v_NEb_, v_L3R2_,
-                                            IVY, IVY, 1);
-          pmb->precon->PiecewiseParabolicX2(k, j, is, ie, wl3d_, v_NEb_, v_L3R2_,
-                                            IVZ, IVZ, 2);
-          pmb->precon->PiecewiseParabolicX2(k, j, is, ie, wr3d_, v_NWb_, v_R3R2_,
-                                            IVY, IVY, 1);
-          pmb->precon->PiecewiseParabolicX2(k, j, is, ie, wr3d_, v_NWb_, v_R3R2_,
-                                            IVZ, IVZ, 2);
-          pmb->precon->PiecewiseParabolicX2(k, j, is, ie, b3, bx_Nb_, bz_R2_,
+          pmb->precon->PiecewiseParabolicX2(k, j, il_e1, iu_e1, wl3d_,
+                                            v_NEb_, v_L3R2_, IVY, IVY, 1);
+          pmb->precon->PiecewiseParabolicX2(k, j, il_e1, iu_e1, wl3d_,
+                                            v_NEb_, v_L3R2_, IVZ, IVZ, 2);
+          pmb->precon->PiecewiseParabolicX2(k, j, il_e1, iu_e1, wr3d_,
+                                            v_NWb_, v_R3R2_, IVY, IVY, 1);
+          pmb->precon->PiecewiseParabolicX2(k, j, il_e1, iu_e1, wr3d_,
+                                            v_NWb_, v_R3R2_, IVZ, IVZ, 2);
+          pmb->precon->PiecewiseParabolicX2(k, j, il_e1, iu_e1, b3, bx_Nb_, bz_R2_,
                                             0, 0, 0);
           for (int n=1; n<3; n++) {
 #pragma omp simd
-            for (int i=is; i<=ie; i++) {
+            for (int i=il_e1; i<=iu_e1; i++) {
               v_L3L2(n,k,j,i) = 0.5*(v_L3L2(n,k,j,i) + v_L3L2_(n,i));
               v_L3R2(n,k,j,i) = 0.5*(v_L3R2(n,k,j,i) + v_L3R2_(n,i));
               v_R3L2(n,k,j,i) = 0.5*(v_R3L2(n,k,j,i) + v_R3L2_(n,i));
@@ -887,7 +898,7 @@ void Hydro::CalculateFluxes(AthenaArray<Real> &w, FaceField &b,
             }
           }
 #pragma omp simd
-          for (int i=is; i<=ie; i++) {
+          for (int i=il_e1; i<=iu_e1; i++) {
             bz_L2(k,j,i) = bz_L2_(i);
             bz_R2(k,j,i) = bz_R2_(i);
           }
