@@ -144,13 +144,19 @@ void Reconstruction::PiecewiseLinearX1(
   if (characteristic_projection_) {
     RightEigenmatrixDotVector(IVX, il, iu, bx, wc, dwm);
   }
+  // Compute geometric factors once per cell, not once per variable.
+  AthenaArray<Real> &dxp = scr01_i_, &dxm = scr02_i_;
+  for (int i=il; i<=iu; ++i) {
+    dxp(i) = (pco->x1f(i+1) - pco->x1v(i))/pco->dx1f(i);
+    dxm(i) = (pco->x1v(i) - pco->x1f(i))/pco->dx1f(i);
+  }
 
-  // compute ql_(i+1/2) and qr_(i-1/2) using limited slopes
+  // Compute left and right reconstructed states.
   for (int n=0; n<NWAVE; ++n) {
 #pragma omp simd simdlen(SIMD_WIDTH)
     for (int i=il; i<=iu; ++i) {
-      wl(n,i+1) = wc(n,i) + ((pco->x1f(i+1) - pco->x1v(i))/pco->dx1f(i))*dwm(n,i);
-      wr(n,i  ) = wc(n,i) - ((pco->x1v(i  ) - pco->x1f(i))/pco->dx1f(i))*dwm(n,i);
+      wl(n,i+1) = wc(n,i) + dxp(i)*dwm(n,i);
+      wr(n,i  ) = wc(n,i) - dxm(i)*dwm(n,i);
     }
   }
 
