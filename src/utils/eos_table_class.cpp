@@ -27,9 +27,6 @@
 #include "../parameter_input.hpp"
 #include "interp_table.hpp"
 
-// Order of datafields for HDF5 EOS tables
-const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)", "asq*rho/p(p/rho,rho)"};
-
 //----------------------------------------------------------------------------------------
 //! \fn void ReadBinaryTable(std::string fn, EosTable *peos_table)
 //! \brief Read data from binary EOS table and initialize interpolated table.
@@ -78,6 +75,9 @@ void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
       << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
   ATHENA_ERROR(msg);
 #else
+  // Order of datafields for HDF5 EOS tables
+  static const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)",
+                                    "asq*rho/p(p/rho,rho)"};
   bool read_ratios = pin->GetOrAddBoolean("hydro", "eos_read_ratios", true);
   std::string dens_lim_field =
       pin->GetOrAddString("hydro", "EOS_dens_lim_field", "LogDensLim");
