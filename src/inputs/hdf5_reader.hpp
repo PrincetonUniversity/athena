@@ -24,6 +24,9 @@
 #define MAX_RANK_FILE 5
 
 // Declarations
+// Only declared when HDF5 is enabled, since hdf5_reader.cpp only defines them then.
+// Calls outside #ifdef HDF5OUTPUT fail to compile instead of failing to link.
+#ifdef HDF5OUTPUT
 void HDF5ReadRealArray(const char *filename, const char *dataset_name, int rank_file,
                        const int *start_file, const int *count_file, int rank_mem,
                        const int *start_mem, const int *count_mem,
@@ -34,5 +37,6 @@ void HDF5TableLoader(const char *filename, InterpTable2D* ptable, const int nvar
                      const char **var_names,
                      const char *x2lim_name=NULL,
                      const char *x1lim_name=NULL);
+#endif  // HDF5OUTPUT
 
 #endif  // INPUTS_HDF5_READER_HPP_
