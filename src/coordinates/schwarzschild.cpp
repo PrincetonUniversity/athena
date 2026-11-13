@@ -63,15 +63,13 @@ void Coordinates::Initialize(ParameterInput *pin) {
 
   // Initialize volume-averaged coordinates and spacings: theta-direction
   if (pmy_block->block_size.nx2 == 1) {
-    Real theta_m = x2f(jl);
-    Real theta_p = x2f(jl+1);
-    x2v(jl) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
+    x2v(jl) = 0.5*(x2f(jl+1) + x2f(jl));
     dx2v(jl) = dx2f(jl);
   } else {
     for (int j=jl-ng; j<=ju+ng; ++j) {
-      Real theta_m = x2f(j);
-      Real theta_p = x2f(j+1);
-      x2v(j) = std::acos(0.5 * (std::cos(theta_m) + std::cos(theta_p)));
+      x2v(j) = ((std::sin(x2f(j+1)) - x2f(j+1)*std::cos(x2f(j+1))) -
+                (std::sin(x2f(j  )) - x2f(j  )*std::cos(x2f(j  ))))/
+               (std::cos(x2f(j  )) - std::cos(x2f(j+1)));
     }
     for (int j=jl-ng; j<=ju+ng-1; ++j) {
       dx2v(j) = x2v(j+1) - x2v(j);
