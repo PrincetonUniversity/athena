@@ -1,0 +1,72 @@
+<comment>
+problem   = Keplerian disk in cylindrical coordinates, one MeshBlock against many: the
+            grid must stay axisymmetric to the bit however it is split (regression test)
+reference = 
+configure = --prob=disk --coord=cylindrical
+
+<job>
+problem_id  = disk      # problem ID: basename of output filenames
+
+<output1>
+file_type   = tab       # tabular dump, one file per MeshBlock
+data_format = %24.16e   # full double precision: the test compares bits
+variable    = prim      # variables to be output
+dt          = 3.14      # time increment between outputs
+
+<output2>
+file_type   = hst       # History data dump
+dt          = 0.0628    # time increment between outputs
+
+<time>
+cfl_number  = 0.3       # The Courant, Friedrichs, & Lewy (CFL) Number
+nlim        = -1        # cycle limit
+tlim        = 628.      # time limit
+integrator  = vl2       # time integration algorithm
+xorder      = 2         # order of spatial reconstruction
+ncycle_out  = 1         # interval for stdout summary info
+
+<mesh>
+nx1         = 64             # Number of zones in X1-direction
+x1min       = 0.5            # minimum value of X1
+x1max       = 2.0            # maximum value of X1
+ix1_bc      = user           # Inner-X1 boundary condition flag
+ox1_bc      = user           # Outer-X1 boundary condition flag
+x1rat       = 1.0219         # non-uniform grid ratio
+
+nx2         = 256            # Number of zones in X2-direction
+x2min       = 0.             # minimum value of X2
+x2max       = 6.2831853071795862   # maximum value of X2
+ix2_bc      = periodic       # Inner-X2 boundary condition flag
+ox2_bc      = periodic       # Outer-X2 boundary condition flag
+
+nx3         = 1              # Number of zones in X3-direction
+x3min       = -0.5           # minimum value of X3
+x3max       = 0.5            # maximum value of X3
+ix3_bc      = periodic       # Inner-X3 boundary condition flag
+ox3_bc      = periodic       # Outer-X3 boundary condition flag
+
+refinement  = None
+
+<meshblock>
+nx1         = 64             # MeshBlock size in X1-direction (the whole mesh by default)
+nx2         = 256            # MeshBlock size in X2-direction
+nx3         = 1              # MeshBlock size in X3-direction
+
+<hydro>
+gamma           = 1.66666667 # gamma = C_p/C_v
+iso_sound_speed = 0.1        # isothermal sound speed
+dfloor          = 1.e-6
+pfloor          = 1.e-9
+
+<orbital_advection>
+OAorder     = 0   # 0: w/o OA, 1: w/ OA (1st), 2: w/ OA (2nd)
+Omega0      = 0.0 # angular velocity of the system
+
+<problem>
+GM          = 1.0
+r0          = 1.0
+rho0        = 1.0
+p0_over_r0  = 0.01
+p0overr0    = 0.01
+pslope      = -0.5
+dslope      = -2.25

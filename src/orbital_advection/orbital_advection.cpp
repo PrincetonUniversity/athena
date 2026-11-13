@@ -52,6 +52,10 @@ OrbitalAdvection::OrbitalAdvection(MeshBlock *pmb, ParameterInput *pin)
   xgh = (xorder<=2)? 1 : 2;
 
   // Read parameters
+  // (onx is used only with orbital advection or shearing boxes, which require one of the
+  // coordinate systems below; set it for the others so that GCC >= 15 does not report
+  // -Werror=maybe-uninitialized)
+  onx = 0;
   if (std::strcmp(COORDINATE_SYSTEM, "cartesian") == 0) {
     Omega0  = pin->GetOrAddReal("orbital_advection","Omega0",0.0);
     qshear  = pin->GetOrAddReal("orbital_advection","qshear",0.0);

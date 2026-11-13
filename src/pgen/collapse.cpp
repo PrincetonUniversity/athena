@@ -63,8 +63,6 @@ Real mass, temp, f, rhocrit, omega, bz, mu, amp;
 
 // AMR parameter
 Real njeans; // Real is used intentionally
-
-Real totalm;
 } // namespace
 
 // Mask the density outside the initial sphere
@@ -246,7 +244,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   l0 = v0 * t0;
   gauss = std::sqrt(rho0*v0*v0*4.0*pi);
   rhocrit = pin->GetReal("problem", "rhocrit") / rho0;
-  totalm = 0.0;
   Real tff = std::sqrt(3.0/8.0/f)*pi;
   Real omegatff = pin->GetOrAddReal("problem", "omegatff", 0.0);
   omega = omegatff/tff;

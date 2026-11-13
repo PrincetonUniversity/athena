@@ -10,13 +10,7 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 
 
 def prepare(**kwargs):
-    try:
-        if os.environ['CXX']:
-            cxx = os.environ['CXX']
-        else:
-            cxx = 'g++'
-    except KeyError:
-        cxx = 'g++'
+    cxx = os.environ.get('CXX')
     athena.configure(
         prob='chem_H2',
         chemistry='H2',
@@ -24,7 +18,7 @@ def prepare(**kwargs):
         cxx=cxx,
         eos='isothermal',
         nghost='3',
-        cvode_path=os.environ['CVODE_PATH']
+        cvode_path=athena.cvode_path()
         )
     athena.make()
 

@@ -85,8 +85,8 @@ def run(**kwargs):
 
 
 # formatting rules for numpy arrays of floats:
-error_formatter = lambda x: "{:.2e}".format(x)
-rate_formatter = lambda x: "{:.2f}".format(x)
+error_formatter = "{:.2e}".format
+rate_formatter = "{:.2f}".format
 
 
 # Analyze outputs

@@ -27,9 +27,6 @@
 #include "../parameter_input.hpp"
 #include "interp_table.hpp"
 
-// Order of datafields for HDF5 EOS tables
-const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)", "asq*rho/p(p/rho,rho)"};
-
 //----------------------------------------------------------------------------------------
 //! \fn void ReadBinaryTable(std::string fn, EosTable *peos_table)
 //! \brief Read data from binary EOS table and initialize interpolated table.
@@ -68,18 +65,19 @@ void ReadBinaryTable(std::string fn, EosTable *peos_table) {
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn void ReadBinaryTable(std::string fn, EosTable *peos_table, ParameterInput *pin)
+//! \fn void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin)
 //! \brief Read data from HDF5 EOS table and initialize interpolated table.
 
 void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
 #ifndef HDF5OUTPUT
-  {
-    std::stringstream msg;
-    msg << "### FATAL ERROR in EosTable::EosTable, ReadHDF5Table" << std::endl
-        << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
-    ATHENA_ERROR(msg);
-  }
-#endif
+  std::stringstream msg;
+  msg << "### FATAL ERROR in EosTable::EosTable, ReadHDF5Table" << std::endl
+      << "HDF5 EOS table specified, but HDF5 flag is not enabled."  << std::endl;
+  ATHENA_ERROR(msg);
+#else
+  // Order of datafields for HDF5 EOS tables
+  static const char *var_names[] = {"p/e(e/rho,rho)", "e/p(p/rho,rho)",
+                                    "asq*rho/p(p/rho,rho)"};
   bool read_ratios = pin->GetOrAddBoolean("hydro", "eos_read_ratios", true);
   std::string dens_lim_field =
       pin->GetOrAddString("hydro", "EOS_dens_lim_field", "LogDensLim");
@@ -107,11 +105,12 @@ void ReadHDF5Table(std::string fn, EosTable *peos_table, ParameterInput *pin) {
   } else {
     for (int i=0; i<peos_table->nVar; ++i) peos_table->EosRatios(i) = 1.0;
   }
+#endif  // HDF5OUTPUT
 }
 
 //----------------------------------------------------------------------------------------
 //! \fn void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin)
-//! \brief Read data from HDF5 EOS table and initialize interpolated table.
+//! \brief Read data from ASCII EOS table and initialize interpolated table.
 
 void ReadAsciiTable(std::string fn, EosTable *peos_table, ParameterInput *pin) {
   bool read_ratios = pin->GetOrAddBoolean("hydro", "eos_read_ratios", true);

@@ -58,7 +58,7 @@
 namespace {
 Real iso_cs, gm1, d0, p0;
 Real nwx, nwy; // Wavenumbers
-Real Lx, Ly, Lz; // root grid size, global to share with output functions
+Real Lx, Ly; // root grid size, global to share with output functions
 Real Omega_0, qshear;
 Real amp, beta;
 int ipert;
@@ -158,7 +158,6 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
   // Initialize boxsize
   Lx = pmy_mesh->mesh_size.x1max - pmy_mesh->mesh_size.x1min;
   Ly = pmy_mesh->mesh_size.x2max - pmy_mesh->mesh_size.x2min;
-  Lz = pmy_mesh->mesh_size.x3max - pmy_mesh->mesh_size.x3min;
 
   // initialize wavenumbers
   nwx = pin->GetOrAddInteger("problem","nwx",1);

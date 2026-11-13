@@ -52,7 +52,7 @@
 #endif
 
 namespace {
-Real amp, nwx, nwy; // amplitude, Wavenumbers
+Real amp, nwx; // amplitude, wavenumber in x1
 int ShBoxCoord, ipert,ifield; // initial pattern
 Real beta, B0;
 Real gm1, iso_cs;
@@ -72,7 +72,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
   amp    = pin->GetReal("problem","amp");
   beta   = pin->GetReal("problem","beta");
   nwx = pin->GetOrAddInteger("problem","nwx",1);
-  nwy = pin->GetOrAddInteger("problem","nwy",1);
   ipert  = pin->GetOrAddInteger("problem","ipert",1);
   ifield = pin->GetOrAddInteger("problem","ifield",1);
 

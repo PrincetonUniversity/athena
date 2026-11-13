@@ -1791,7 +1791,10 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
 
       // perform fourth-order correction of midpoint initial condition:
       // (correct IC on all MeshBlocks or none; switch cannot be toggled independently)
-      bool correct_ic = my_blocks(0)->precon->correct_ic_;
+      // The problem generator sets midpoint values, which this converts to cell averages.
+      // A restart file already stores cell averages, so the conversion is done only when
+      // the problem generator has been called (res_flag == 0).
+      bool correct_ic = (res_flag == 0) && my_blocks(0)->precon->correct_ic_;
       if (correct_ic)
         CorrectMidpointInitialCondition();
 
@@ -1962,7 +1965,15 @@ void Mesh::Initialize(int res_flag, ParameterInput *pin) {
     my_blocks(i)->phydro->NewBlockTimeStep();
   }
 
+  // The restart file stores dt as left by NewTimeStep() at the end of the previous
+  // cycle, i.e. the step that is to be taken next. NewTimeStep() doubles dt before it
+  // takes the minimum with the current limits, which treats dt as the step just taken.
+  // After a restart the first step is therefore capped at the stored value; the CFL,
+  // user and end-time limits can still reduce it.
+  const Real dt_restart = dt;
   NewTimeStep();
+  if (res_flag != 0 && fluid_setup != FluidFormulation::fixed && dt_restart > 0.0)
+    dt = std::min(dt, dt_restart);
   return;
 }
 

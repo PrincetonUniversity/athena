@@ -95,8 +95,10 @@ void ODEWrapper::Integrate(const Real tinit, const Real dt) {
   //std::array<Real, NSPECIES> y, ydot;
 
   // TODO(KGF): alternative 2
-  Real *y = new Real[NSPECIES];
-  Real *ydot = new Real[NSPECIES];
+  // (allocate at least one element: NSPECIES is 0 without chemistry, and GCC >= 14
+  // rejects the zero-size allocation with -Werror=alloc-size)
+  Real *y = new Real[NSPECIES > 0 ? NSPECIES : 1];
+  Real *ydot = new Real[NSPECIES > 0 ? NSPECIES : 1];
 
   // internal energy and rates
   Real E = 0.;

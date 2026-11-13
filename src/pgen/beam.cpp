@@ -38,10 +38,6 @@
 #include "../nr_radiation/radiation.hpp"
 #include "../parameter_input.hpp"
 
-// File scope variables
-static int ang;
-static int octnum;
-
 int RefinementCondition(MeshBlock *pmb);
 
 //======================================================================================
@@ -69,8 +65,6 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 }
 
 void MeshBlock::InitUserMeshBlockData(ParameterInput *pin) {
-  ang = pin->GetOrAddInteger("problem","ang",0);
-  octnum = pin->GetOrAddInteger("problem","octnum",0);
   return;
 }
 

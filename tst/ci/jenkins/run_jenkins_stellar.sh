@@ -145,7 +145,11 @@ time python -u ./run_tests.py curvilinear --config=--cxx=icpx --silent
 time python -u ./run_tests.py shearingbox --config=--cxx=icpx --silent
 #(changgoo) suppress diffusion test
 # time python -u ./run_tests.py diffusion --config=--cxx=icpc --silent
-time python -u ./run_tests.py symmetry --config=--cxx=icpx --silent
+# icpx defaults to -fp-model=fast, which reorders floating-point operations and breaks the
+# bit-exact mirror symmetry checked by symmetry/mhd_blast_mirror. This --cflag replaces the
+# test's own -ffp-contract=off, and -fp-model=precise re-enables contraction, so pass both
+time python -u ./run_tests.py symmetry --config=--cxx=icpx \
+     --config=--cflag="-fp-model=precise -ffp-contract=off" --silent
 time python -u ./run_tests.py eos --config=--cxx=icpx --silent
 time python -u ./run_tests.py scalars/mignone_radial_1d --config=--cxx=icpx --silent
 

@@ -85,6 +85,9 @@
 // use double precision for HDF5 output? default=0 (false; write out binary32)
 #define H5_DOUBLE_PRECISION_ENABLED @H5_DOUBLE_PRECISION_ENABLED@
 
+// allow half precision (binary16) HDF5 output? default=0 (false)
+#define FP16_ENABLED @FP16_ENABLED@
+
 // compile with debug symbols and use optional sections of source code? default=0 (false)
 #define DEBUG @DEBUG_OPTION@
 

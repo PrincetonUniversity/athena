@@ -451,6 +451,9 @@ void NRRadiation::AngularGrid(int angle_flag, int nzeta, int npsi) {
 
       for (int i=0; i<2*npsi+1; ++i)
         sin_psi_f(i) = sin(psi_f(i));
+      sin_psi_f(0)        = 0.0;
+      sin_psi_f(npsi)     = 0.0;
+      sin_psi_f(2*npsi)   = 0.0;
 
       for (int i=0; i<2*npsi; ++i)
         len_psi(i) = psi_f(i+1) - psi_f(i);

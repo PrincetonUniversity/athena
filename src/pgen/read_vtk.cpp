@@ -42,6 +42,8 @@
 //function to read data field from vtk file
 static void readvtk(MeshBlock *mb, std::string filename, std::string field,
                     int component, AthenaArray<Real> &data, int isjoinedvtk);
+//read one line of the vtk file header
+static void ReadVTKLine(FILE *fp, char *cline, const std::string &filename);
 //swap bytes
 static void ath_bswap(void *vdat, int len, int cnt);
 
@@ -425,7 +427,8 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
                     int component, AthenaArray<Real> &data, int isjoinedvtk) {
   std::stringstream msg;
   FILE *fp = NULL;
-  char cline[256], type[256], variable[256], format[256], t_type[256], t_format[256];
+  char cline[256], type[256], variable[256], format[256];
+  char t_type[256] = "", t_format[256] = "";
   std::string line;
   const std::string athena_header = "# vtk DataFile Version 2.0"; // athena4.2 header
   const std::string athena_header3 = "# vtk DataFile Version 3.0"; // athena4.2 header
@@ -458,7 +461,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   }
 
   // get header
-  fgets(cline,256,fp);
+  ReadVTKLine(fp, cline, filename);
   line.assign(cline);
   StringUtils::trim(line);
   if (SHOW_OUTPUT) {
@@ -473,7 +476,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   }
 
   // get comment field
-  fgets(cline,256,fp);
+  ReadVTKLine(fp, cline, filename);
   line.assign(cline);
   StringUtils::trim(line);
   if (SHOW_OUTPUT) {
@@ -481,7 +484,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   }
 
   // get BINARY or ASCII
-  fgets(cline,256,fp);
+  ReadVTKLine(fp, cline, filename);
   line.assign(cline);
   StringUtils::trim(line);
   if (SHOW_OUTPUT) {
@@ -495,7 +498,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   }
 
   // get DATASET STRUCTURED_POINTS or DATASET UNSTRUCTURED_GRID
-  fgets(cline,256,fp);
+  ReadVTKLine(fp, cline, filename);
   line.assign(cline);
   StringUtils::trim(line);
   if (SHOW_OUTPUT) {
@@ -511,7 +514,7 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   // I'm assuming from this point on that the header is in good shape
 
   // read dimensions
-  fgets(cline,256,fp);
+  ReadVTKLine(fp, cline, filename);
   if (SHOW_OUTPUT) {
     std::cout << cline;
   }
@@ -532,21 +535,21 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
   }
 
   // Origin
-  fgets(cline,256,fp);
+  ReadVTKLine(fp, cline, filename);
   if (SHOW_OUTPUT) {
     std::cout << cline;
   }
   sscanf(cline,"ORIGIN %le %le %le\n",&ox_vtk,&oy_vtk,&oz_vtk);
 
   // spacing
-  fgets(cline,256,fp);
+  ReadVTKLine(fp, cline, filename);
   if (SHOW_OUTPUT) {
     std::cout << cline;
   }
   sscanf(cline,"ORIGIN %le %le %le\n",&dx_vtk,&dy_vtk,&dz_vtk);
 
   // Cell Data = Nx*Ny*Nz
-  fgets(cline,256,fp);
+  ReadVTKLine(fp, cline, filename);
   if (SHOW_OUTPUT) {
     std::cout << cline;
   }
@@ -580,8 +583,8 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
     // check lookup table
     if (std::strcmp(type, "SCALARS") == 0) {
       // Read in the LOOKUP_TABLE (only default supported for now)
-      fscanf(fp,"%s %s\n", t_type, t_format);
-      if (std::strcmp(t_type, "LOOKUP_TABLE") != 0 ||
+      if (std::fscanf(fp,"%s %s\n", t_type, t_format) != 2 ||
+          std::strcmp(t_type, "LOOKUP_TABLE") != 0 ||
           std::strcmp(t_format, "default") != 0 ) {
         fclose(fp);
         msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
@@ -660,6 +663,21 @@ static void readvtk(MeshBlock *mb, std::string filename, std::string field,
           << "Input type not supported: " << type << std::endl;
         throw std::runtime_error(msg.str().c_str());
     }
+  }
+}
+
+//======================================================================================
+//! \fn static void ReadVTKLine(FILE *fp, char *cline, const std::string &filename)
+//! \brief read one line of the vtk file header into cline (of length 256); close the
+//! file and throw if the header ends early or the read fails
+//======================================================================================
+static void ReadVTKLine(FILE *fp, char *cline, const std::string &filename) {
+  if (std::fgets(cline, 256, fp) == nullptr) {
+    std::fclose(fp);
+    std::stringstream msg;
+    msg << "### FATAL ERROR in Problem Generator [read_vtk]" << std::endl
+        << "Unable to read header of vtk file " << filename << std::endl;
+    throw std::runtime_error(msg.str().c_str());
   }
 }
 

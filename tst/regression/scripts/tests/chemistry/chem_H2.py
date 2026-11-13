@@ -12,13 +12,7 @@ logger = logging.getLogger('athena' + __name__[7:])  # set logger name based on 
 
 
 def prepare(**kwargs):
-    try:
-        if os.environ['CXX']:
-            cxx = os.environ['CXX']
-        else:
-            cxx = 'g++'
-    except KeyError:
-        cxx = 'g++'
+    cxx = os.environ.get('CXX')
     athena.configure(
         prob='chem_uniform',
         chemistry='H2',

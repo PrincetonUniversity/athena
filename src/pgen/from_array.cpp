@@ -22,6 +22,10 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"     // ParameterInput
 
+#ifndef HDF5OUTPUT
+#error "The from_array problem generator requires HDF5 (configure with -hdf5)"
+#endif
+
 //----------------------------------------------------------------------------------------
 //! \fn void Mesh::InitUserMeshData(ParameterInput *pin)
 //! \brief Function for setting initial conditions

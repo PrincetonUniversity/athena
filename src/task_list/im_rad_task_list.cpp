@@ -14,9 +14,13 @@
 
 // Athena++ headers
 #include "../athena.hpp"
+#include "../bvals/bvals.hpp"
+#include "../bvals/cc/hydro/bvals_hydro.hpp"
 #include "../globals.hpp"
+#include "../hydro/hydro.hpp"
 #include "../mesh/mesh.hpp"
 #include "../nr_radiation/radiation.hpp"
+#include "../scalars/scalars.hpp"
 #include "im_rad_task_list.hpp"
 
 #ifdef OPENMP_PARALLEL
@@ -87,6 +91,15 @@ void IMRadTaskList::DoTaskListOneStage(Real wght) {
 }
 
 TaskStatus IMRadTaskList::PhysicalBoundary(MeshBlock *pmb) {
+  Hydro *ph = pmb->phydro;
+  ph->hbvar.SwapHydroQuantity(ph->w, HydroBoundaryQuantity::prim);
+  if (NSCALARS > 0) {
+    PassiveScalars *ps = pmb->pscalars;
+    ps->sbvar.var_cc = &(ps->r);
+    if (pmb->pmy_mesh->multilevel) {
+      ps->sbvar.coarse_buf = &(ps->coarse_r_);
+    }
+  }
   pmb->pnrrad->rad_bvar.var_cc = &(pmb->pnrrad->ir);
   pmb->pbval->ApplyPhysicalBoundaries(time, dt, pmb->pbval->bvars_main_int);
   return TaskStatus::success;

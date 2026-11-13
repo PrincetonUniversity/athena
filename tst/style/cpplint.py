@@ -54,7 +54,6 @@ import itertools
 import math  # for log
 import os
 import re
-import sre_compile
 import string
 import sys
 import sysconfig
@@ -1065,7 +1064,7 @@ def Match(pattern, s):
   # performance reasons; factoring it out into a separate function turns out
   # to be noticeably expensive.
   if pattern not in _regexp_compile_cache:
-    _regexp_compile_cache[pattern] = sre_compile.compile(pattern)
+    _regexp_compile_cache[pattern] = re.compile(pattern)
   return _regexp_compile_cache[pattern].match(s)
 
 
@@ -1083,14 +1082,14 @@ def ReplaceAll(pattern, rep, s):
     string with replacements made (or original string if no replacements)
   """
   if pattern not in _regexp_compile_cache:
-    _regexp_compile_cache[pattern] = sre_compile.compile(pattern)
+    _regexp_compile_cache[pattern] = re.compile(pattern)
   return _regexp_compile_cache[pattern].sub(rep, s)
 
 
 def Search(pattern, s):
   """Searches the string for the pattern, caching the compiled regexp."""
   if pattern not in _regexp_compile_cache:
-    _regexp_compile_cache[pattern] = sre_compile.compile(pattern)
+    _regexp_compile_cache[pattern] = re.compile(pattern)
   return _regexp_compile_cache[pattern].search(s)
 
 
@@ -1632,7 +1631,7 @@ class FileInfo(object):
           root_dir = os.path.dirname(root_dir)
           one_up_dir = os.path.dirname(one_up_dir)
 
-        prefix = os.path.commonprefix([root_dir, project_dir])
+        prefix = os.path.commonpath([root_dir, project_dir])
         return fullname[len(prefix) + 1:]
 
       # Not SVN <= 1.6? Try to find a git, hg, or svn top level directory by
@@ -1648,7 +1647,7 @@ class FileInfo(object):
       if (os.path.exists(os.path.join(root_dir, ".git")) or
           os.path.exists(os.path.join(root_dir, ".hg")) or
           os.path.exists(os.path.join(root_dir, ".svn"))):
-        prefix = os.path.commonprefix([root_dir, project_dir])
+        prefix = os.path.commonpath([root_dir, project_dir])
         return fullname[len(prefix) + 1:]
 
     # Don't know what to do; header guard warnings may be wrong...
@@ -6902,14 +6901,9 @@ def _IsParentOrSame(parent, child):
   if parent == child:
     return True
 
-  prefix = os.path.commonprefix([parent, child])
-  if prefix != parent:
-    return False
-  # Note: os.path.commonprefix operates on character basis, so
-  # take extra care of situations like '/foo/ba' and '/foo/bar/baz'
-  child_suffix = child[len(prefix):]
-  child_suffix = child_suffix.lstrip(os.sep)
-  return child == os.path.join(prefix, child_suffix)
+  # os.path.commonpath compares whole path components, so '/foo/ba' is not a
+  # parent of '/foo/bar/baz'
+  return os.path.commonpath([parent, child]) == parent
 
 def main():
   filenames = ParseArguments(sys.argv[1:])
