@@ -138,9 +138,9 @@ void Hydro::NewBlockTimeStep() {
               + std::abs(gi_(I02,i))) / gi_(I00,i);
           Real speed3 = -(std::sqrt(SQR(gi_(I03,i)) - gi_(I00,i) * gi_(I33,i))
               + std::abs(gi_(I03,i))) / gi_(I00,i);
-          dt1(i) /= speed1;
-          dt2(i) /= speed2;
-          dt3(i) /= speed3;
+          dt1(i) = pmb->pcoord->dx1f(i) / speed1;
+          dt2(i) = pmb->pcoord->dx2f(j) / speed2;
+          dt3(i) = pmb->pcoord->dx3f(k) / speed3;
         }
       }
 
