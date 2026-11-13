@@ -142,7 +142,16 @@ Hydro::Hydro(MeshBlock *pmb, ParameterInput *pin) :
     // 1D scratch arrays
     laplacian_l_fc_.NewAthenaArray(nc1);
     laplacian_r_fc_.NewAthenaArray(nc1);
+    // fourth-order MHD (UCT4): face-centered L/R states for corner wavespeeds
+    if (MAGNETIC_FIELDS_ENABLED) {
+      wl_fc_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
+      wr_fc_.NewAthenaArray(NWAVE, nc3, nc2, nc1);
+    }
   }
+
+  // alias the 4th-order diffusion scratch onto the flux-calculation scratch above
+  // (never simultaneously live; see HydroDiffusion::InitFourthOrderScratch)
+  if (hdif.hydro_diffusion_defined) hdif.InitFourthOrderScratch();
 
   UserTimeStep_ = pmb->pmy_mesh->UserTimeStep_;
 }

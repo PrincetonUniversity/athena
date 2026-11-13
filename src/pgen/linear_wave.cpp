@@ -33,6 +33,7 @@
 #include "../mesh/mesh.hpp"
 #include "../parameter_input.hpp"
 #include "../reconstruct/reconstruction.hpp"
+#include "../scalars/scalars.hpp"
 
 #ifdef MPI_PARALLEL
 #include <mpi.h>
@@ -51,9 +52,20 @@ Real gam,gm1,iso_cs,vflow;
 Real ev[NWAVE], rem[NWAVE][NWAVE], lem[NWAVE][NWAVE];
 
 // functions to compute vector potential to initialize the solution
-Real A1(const Real x1, const Real x2, const Real x3);
-Real A2(const Real x1, const Real x2, const Real x3);
-Real A3(const Real x1, const Real x2, const Real x3);
+// exact edge-averaged and differenced values of the vector potential, used for the
+// fourth-order accurate initialization of the face-averaged fields in 1D/2D
+Real AveDiff2A1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                const Real x2f_jp1);
+Real AveDiff1A2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                const Real x2f_jp1);
+Real AveDiff1A3(const Real x1f_i, const Real x1f_ip1, const Real x2f_j);
+Real AveDiff2A3(const Real x1f_i, const Real x2f_j, const Real x2f_jp1);
+// exact edge-averaged values of the vector potential, used for the fourth-order
+// accurate initialization of the face-averaged fields in 3D
+Real EdgeAveCos(const Real xs, const Real xe);
+Real AveA1(const Real x1f_i, const Real x1f_ip1, const Real x2f, const Real x3f);
+Real AveA2(const Real x1f, const Real x2f_j, const Real x2f_jp1, const Real x3f);
+Real AveA3(const Real x1f, const Real x2f, const Real x3f_k, const Real x3f_kp1);
 
 // function to compute eigenvectors of linear waves
 void Eigensystem(const Real d, const Real v1, const Real v2, const Real v3,
@@ -146,7 +158,7 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 
   // Compute eigenvectors, where the quantities u0 and bx0 are parallel to the
   // wavevector, and v0,w0,by0,bz0 are perpendicular.
-  d0 = 1.0;
+  d0 = pin->GetOrAddReal("problem", "d0", 1.0);  // background density
   p0 = 0.0;
   u0 = vflow;
   Real v0 = 0.0;
@@ -190,8 +202,31 @@ void Mesh::InitUserMeshData(ParameterInput *pin) {
 void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
   if (!pin->GetOrAddBoolean("problem", "compute_error", false)) return;
 
+  // Exact damping factors for the decaying visco-resistive Alfven wave test: with
+  // nu_iso == eta_ohm, the damped eigenmode is exactly the ideal Alfven eigenmode
+  // scaled by exp(-nu k^2 t); a passive scalar (transported by the Alfven velocity
+  // field, which is everywhere perpendicular to the wavevector) decays purely
+  // diffusively by exp(-nu_scalar k^2 t).
+  Real nu_iso = pin->GetOrAddReal("problem", "nu_iso", 0.0);
+  Real eta_ohm = pin->GetOrAddReal("problem", "eta_ohm", 0.0);
+  Real nu_scalar = pin->GetOrAddReal("problem", "nu_scalar_iso", 0.0);
+  Real damp = 1.0;
+  Real damp_s = std::exp(-nu_scalar*SQR(k_par)*time);
+  if (nu_iso > 0.0 || eta_ohm > 0.0) {
+    if (wave_flag != 1 ||
+        std::abs(nu_iso - eta_ohm) > 1.0e-12*(nu_iso + eta_ohm)) {
+      std::stringstream msg;
+      msg << "### FATAL ERROR in function Mesh::UserWorkAfterLoop" << std::endl
+          << "compute_error with viscosity/resistivity requires the Alfven wave "
+          << "(wave_flag=1) and nu_iso == eta_ohm (exactly damped eigenmode)"
+          << std::endl;
+      ATHENA_ERROR(msg);
+    }
+    damp = std::exp(-nu_iso*SQR(k_par)*time);
+  }
+
   // Initialize errors to zero
-  Real l1_err[NHYDRO+NFIELD]{}, max_err[NHYDRO+NFIELD]{};
+  Real l1_err[NHYDRO+NFIELD+NSCALARS]{}, max_err[NHYDRO+NFIELD+NSCALARS]{};
 
   for (int b=0; b<nblocal; ++b) {
     MeshBlock *pmb = my_blocks(b);
@@ -212,12 +247,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     // Save analytic solution of conserved variables in 4D scratch array
     AthenaArray<Real> cons_;
     // Even for MHD, there are only cell-centered mesh variables
-    int ncells4 = NHYDRO + NFIELD;
+    int ncells4 = NHYDRO + NFIELD + NSCALARS;
     int nl = 0;
     int nu = ncells4 - 1;
     cons_.NewAthenaArray(ncells4, pmb->ncells3, pmb->ncells2, pmb->ncells1);
 
     //  Compute errors at cell centers
+    const Real amp_d = amp*damp;
     for (int k=kl; k<=ku; k++) {
       for (int j=jl; j<=ju; j++) {
         for (int i=il; i<=iu; i++) {
@@ -225,10 +261,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
                    + pmb->pcoord->x3v(k)*sin_a2;
           Real sn = std::sin(k_par*x);
 
-          Real d1 = d0 + amp*sn*rem[0][wave_flag];
-          Real mx = d0*vflow + amp*sn*rem[1][wave_flag];
-          Real my = amp*sn*rem[2][wave_flag];
-          Real mz = amp*sn*rem[3][wave_flag];
+          Real d1 = d0 + amp_d*sn*rem[0][wave_flag];
+          Real mx = d0*vflow + amp_d*sn*rem[1][wave_flag];
+          Real my = amp_d*sn*rem[2][wave_flag];
+          Real mz = amp_d*sn*rem[3][wave_flag];
           Real m1 = mx*cos_a2*cos_a3 - my*sin_a3 - mz*sin_a2*cos_a3;
           Real m2 = mx*cos_a2*sin_a3 + my*cos_a3 - mz*sin_a2*sin_a3;
           Real m3 = mx*sin_a2                    + mz*cos_a2;
@@ -240,12 +276,12 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
           cons_(IM3,k,j,i) = m3;
 
           if (NON_BAROTROPIC_EOS) {
-            Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp*sn*rem[4][wave_flag];
+            Real e0 = p0/gm1 + 0.5*d0*u0*u0 + amp_d*sn*rem[4][wave_flag];
             if (MAGNETIC_FIELDS_ENABLED) {
               e0 += 0.5*(bx0*bx0 + by0*by0 + bz0*bz0);
               Real bx = bx0;
-              Real by = by0 + amp*sn*rem[5][wave_flag];
-              Real bz = bz0 + amp*sn*rem[6][wave_flag];
+              Real by = by0 + amp_d*sn*rem[5][wave_flag];
+              Real bz = bz0 + amp_d*sn*rem[6][wave_flag];
               Real b1 = bx*cos_a2*cos_a3 - by*sin_a3 - bz*sin_a2*cos_a3;
               Real b2 = bx*cos_a2*sin_a3 + by*cos_a3 - bz*sin_a2*sin_a3;
               Real b3 = bx*sin_a2                    + bz*cos_a2;
@@ -255,6 +291,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             }
             cons_(IEN,k,j,i) = e0;
           }
+
+          // passive scalar mass, s = rho*(0.5 + amp*sn) diffusively damped
+          for (int n=0; n<NSCALARS; ++n)
+            cons_(NHYDRO+NFIELD+n,k,j,i) = d1*(0.5 + amp*damp_s*sn);
         }
       }
     }
@@ -338,6 +378,13 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
             max_err[NHYDRO + IB2] = std::max(db2, max_err[NHYDRO+IB2]);
             max_err[NHYDRO + IB3] = std::max(db3, max_err[NHYDRO+IB3]);
           }
+
+          for (int n=0; n<NSCALARS; ++n) {
+            Real ds = std::abs(cons_(NHYDRO+NFIELD+n,k,j,i)
+                               - pmb->pscalars->s(n,k,j,i));
+            l1_err[NHYDRO+NFIELD+n] += ds*vol;
+            max_err[NHYDRO+NFIELD+n] = std::max(ds, max_err[NHYDRO+NFIELD+n]);
+          }
         }
       }
     }
@@ -346,15 +393,15 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
 
 #ifdef MPI_PARALLEL
   if (Globals::my_rank == 0) {
-    MPI_Reduce(MPI_IN_PLACE, &l1_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_SUM, 0,
-               MPI_COMM_WORLD);
-    MPI_Reduce(MPI_IN_PLACE, &max_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_MAX, 0,
-               MPI_COMM_WORLD);
+    MPI_Reduce(MPI_IN_PLACE, &l1_err, (NHYDRO+NFIELD+NSCALARS), MPI_ATHENA_REAL,
+               MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(MPI_IN_PLACE, &max_err, (NHYDRO+NFIELD+NSCALARS), MPI_ATHENA_REAL,
+               MPI_MAX, 0, MPI_COMM_WORLD);
   } else {
-    MPI_Reduce(&l1_err, &l1_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_SUM, 0,
+    MPI_Reduce(&l1_err, &l1_err, (NHYDRO+NFIELD+NSCALARS), MPI_ATHENA_REAL, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(&max_err, &max_err, (NHYDRO+NFIELD), MPI_ATHENA_REAL, MPI_MAX, 0,
-               MPI_COMM_WORLD);
+    MPI_Reduce(&max_err, &max_err, (NHYDRO+NFIELD+NSCALARS), MPI_ATHENA_REAL, MPI_MAX,
+               0, MPI_COMM_WORLD);
   }
 #endif
 
@@ -363,9 +410,9 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
     // normalize errors by number of cells
     Real vol= (mesh_size.x1max - mesh_size.x1min)*(mesh_size.x2max - mesh_size.x2min)
               *(mesh_size.x3max - mesh_size.x3min);
-    for (int i=0; i<(NHYDRO+NFIELD); ++i) l1_err[i] = l1_err[i]/vol;
+    for (int i=0; i<(NHYDRO+NFIELD+NSCALARS); ++i) l1_err[i] = l1_err[i]/vol;
     // compute rms error
-    for (int i=0; i<(NHYDRO+NFIELD); ++i) {
+    for (int i=0; i<(NHYDRO+NFIELD+NSCALARS); ++i) {
       rms_err += SQR(l1_err[i]);
       max_max_over_l1 = std::max(max_max_over_l1, (max_err[i]/l1_err[i]));
     }
@@ -395,8 +442,10 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       std::fprintf(pfile, "# Nx1  Nx2  Nx3  Ncycle  ");
       std::fprintf(pfile, "RMS-L1-Error  d_L1  M1_L1  M2_L1  M3_L1  E_L1 ");
       if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile, "  B1c_L1  B2c_L1  B3c_L1");
+      for (int n=0; n<NSCALARS; ++n) std::fprintf(pfile, "  s%d_L1", n);
       std::fprintf(pfile, "  Largest-Max/L1  d_max  M1_max  M2_max  M3_max  E_max ");
       if (MAGNETIC_FIELDS_ENABLED) std::fprintf(pfile, "  B1c_max  B2c_max  B3c_max");
+      for (int n=0; n<NSCALARS; ++n) std::fprintf(pfile, "  s%d_max", n);
       std::fprintf(pfile, "\n");
     }
 
@@ -412,6 +461,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       std::fprintf(pfile, "  %e", l1_err[NHYDRO+IB2]);
       std::fprintf(pfile, "  %e", l1_err[NHYDRO+IB3]);
     }
+    for (int n=0; n<NSCALARS; ++n)
+      std::fprintf(pfile, "  %e", l1_err[NHYDRO+NFIELD+n]);
     std::fprintf(pfile, "  %e  %e  ", max_max_over_l1, max_err[IDN]);
     std::fprintf(pfile, "%e  %e  %e", max_err[IM1], max_err[IM2], max_err[IM3]);
     if (NON_BAROTROPIC_EOS)
@@ -421,6 +472,8 @@ void Mesh::UserWorkAfterLoop(ParameterInput *pin) {
       std::fprintf(pfile, "  %e", max_err[NHYDRO+IB2]);
       std::fprintf(pfile, "  %e", max_err[NHYDRO+IB3]);
     }
+    for (int n=0; n<NSCALARS; ++n)
+      std::fprintf(pfile, "  %e", max_err[NHYDRO+NFIELD+n]);
     std::fprintf(pfile, "\n");
     std::fclose(pfile);
   }
@@ -451,104 +504,82 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
     dby = amp*rem[NWAVE-2][wave_flag];
     dbz = amp*rem[NWAVE-1][wave_flag];
 
-    int level = loc.level;
     // Initialize components of the vector potential
     if (block_size.nx3 > 1) {
       for (int k=ks; k<=ke+1; k++) {
         for (int j=js; j<=je+1; j++) {
           for (int i=is; i<=ie+1; i++) {
-            if ((pbval->nblevel[1][0][1]>level && j==js)
-                || (pbval->nblevel[1][2][1]>level && j==je+1)
-                || (pbval->nblevel[0][1][1]>level && k==ks)
-                || (pbval->nblevel[2][1][1]>level && k==ke+1)
-                || (pbval->nblevel[0][0][1]>level && j==js   && k==ks)
-                || (pbval->nblevel[0][2][1]>level && j==je+1 && k==ks)
-                || (pbval->nblevel[2][0][1]>level && j==js   && k==ke+1)
-                || (pbval->nblevel[2][2][1]>level && j==je+1 && k==ke+1)) {
-              Real x1l = pcoord->x1f(i)+0.25*pcoord->dx1f(i);
-              Real x1r = pcoord->x1f(i)+0.75*pcoord->dx1f(i);
-              a1(k,j,i) = 0.5*(A1(x1l, pcoord->x2f(j), pcoord->x3f(k)) +
-                               A1(x1r, pcoord->x2f(j), pcoord->x3f(k)));
-            } else {
-              a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
-            }
+            a1(k,j,i) = AveA1(pcoord->x1f(i), pcoord->x1f(i+1), pcoord->x2f(j),
+                              pcoord->x3f(k));
 
-            if ((pbval->nblevel[1][1][0]>level && i==is)
-                || (pbval->nblevel[1][1][2]>level && i==ie+1)
-                || (pbval->nblevel[0][1][1]>level && k==ks)
-                || (pbval->nblevel[2][1][1]>level && k==ke+1)
-                || (pbval->nblevel[0][1][0]>level && i==is   && k==ks)
-                || (pbval->nblevel[0][1][2]>level && i==ie+1 && k==ks)
-                || (pbval->nblevel[2][1][0]>level && i==is   && k==ke+1)
-                || (pbval->nblevel[2][1][2]>level && i==ie+1 && k==ke+1)) {
-              Real x2l = pcoord->x2f(j)+0.25*pcoord->dx2f(j);
-              Real x2r = pcoord->x2f(j)+0.75*pcoord->dx2f(j);
-              a2(k,j,i) = 0.5*(A2(pcoord->x1f(i), x2l, pcoord->x3f(k)) +
-                               A2(pcoord->x1f(i), x2r, pcoord->x3f(k)));
-            } else {
-              a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
-            }
+            a2(k,j,i) = AveA2(pcoord->x1f(i), pcoord->x2f(j), pcoord->x2f(j+1),
+                              pcoord->x3f(k));
 
-            if ((pbval->nblevel[1][1][0]>level && i==is)
-                || (pbval->nblevel[1][1][2]>level && i==ie+1)
-                || (pbval->nblevel[1][0][1]>level && j==js)
-                || (pbval->nblevel[1][2][1]>level && j==je+1)
-                || (pbval->nblevel[1][0][0]>level && i==is   && j==js)
-                || (pbval->nblevel[1][0][2]>level && i==ie+1 && j==js)
-                || (pbval->nblevel[1][2][0]>level && i==is   && j==je+1)
-                || (pbval->nblevel[1][2][2]>level && i==ie+1 && j==je+1)) {
-              Real x3l = pcoord->x3f(k)+0.25*pcoord->dx3f(k);
-              Real x3r = pcoord->x3f(k)+0.75*pcoord->dx3f(k);
-              a3(k,j,i) = 0.5*(A3(pcoord->x1f(i), pcoord->x2f(j), x3l) +
-                               A3(pcoord->x1f(i), pcoord->x2f(j), x3r));
-            } else {
-              a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
-            }
+            a3(k,j,i) = AveA3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3f(k),
+                              pcoord->x3f(k+1));
           }
         }
       }
-    } else {
-      for (int k=ks; k<=ke+1; k++) {
-        for (int j=js; j<=je+1; j++) {
+      // Initialize interface fields by differencing the midpoint approx. of A vector
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
           for (int i=is; i<=ie+1; i++) {
-            if (i != ie+1)
-              a1(k,j,i) = A1(pcoord->x1v(i), pcoord->x2f(j), pcoord->x3f(k));
-            if (j != je+1)
-              a2(k,j,i) = A2(pcoord->x1f(i), pcoord->x2v(j), pcoord->x3f(k));
-            if (k != ke+1)
-              a3(k,j,i) = A3(pcoord->x1f(i), pcoord->x2f(j), pcoord->x3v(k));
+            pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
+                                   (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
           }
         }
       }
-    }
-
-    // Initialize interface fields
-    for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie+1; i++) {
-          pfield->b.x1f(k,j,i) = (a3(k  ,j+1,i) - a3(k,j,i))/pcoord->dx2f(j) -
-                                 (a2(k+1,j  ,i) - a2(k,j,i))/pcoord->dx3f(k);
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
+                                   (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
+          }
         }
       }
-    }
-
-    for (int k=ks; k<=ke; k++) {
-      for (int j=js; j<=je+1; j++) {
-        for (int i=is; i<=ie; i++) {
-          pfield->b.x2f(k,j,i) = (a1(k+1,j,i  ) - a1(k,j,i))/pcoord->dx3f(k) -
-                                 (a3(k  ,j,i+1) - a3(k,j,i))/pcoord->dx1f(i);
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
+                                   (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
+          }
         }
       }
-    }
-
-    for (int k=ks; k<=ke+1; k++) {
-      for (int j=js; j<=je; j++) {
-        for (int i=is; i<=ie; i++) {
-          pfield->b.x3f(k,j,i) = (a2(k,j  ,i+1) - a2(k,j,i))/pcoord->dx1f(i) -
-                                 (a1(k,j+1,i  ) - a1(k,j,i))/pcoord->dx2f(j);
+    } else { // 1D or 2D
+      // Initialize the face-averaged interface fields exactly, from the analytic
+      // edge-averaged and differenced vector potential (fourth-order accurate IC)
+      // TODO(felker): add 3D implementation
+      // B1 initialization
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie+1; i++) {
+            pfield->b.x1f(k,j,i) = AveDiff2A3(pcoord->x1f(i), pcoord->x2f(j),
+                                              pcoord->x2f(j+1));
+          }
         }
       }
-    }
+      // B2 initialization
+      for (int k=ks; k<=ke; k++) {
+        for (int j=js; j<=je+1; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x2f(k,j,i) = -AveDiff1A3(pcoord->x1f(i), pcoord->x1f(i+1),
+                                               pcoord->x2f(j));
+          }
+        }
+      }
+      // B3 initialization
+      for (int k=ks; k<=ke+1; k++) {
+        for (int j=js; j<=je; j++) {
+          for (int i=is; i<=ie; i++) {
+            pfield->b.x3f(k,j,i) =
+                AveDiff1A2(pcoord->x1f(i), pcoord->x1f(i+1), pcoord->x2f(j),
+                           pcoord->x2f(j+1))
+                - AveDiff2A1(pcoord->x1f(i), pcoord->x1f(i+1), pcoord->x2f(j),
+                             pcoord->x2f(j+1));
+          }
+        }
+      }
+    } // end if 2D or 1D
   }
 
   // initialize conserved variables
@@ -573,6 +604,11 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
             phydro->u(IEN,k,j,i) += 0.5*(bx0*bx0+by0*by0+bz0*bz0);
           }
         }
+
+        // passive scalar concentration r = 0.5 + amp*sin(k x) (pointwise; converted
+        // to a cell-averaged IC by CorrectMidpointInitialCondition when correct_ic)
+        for (int n=0; n<NSCALARS; ++n)
+          pscalars->s(n,k,j,i) = phydro->u(IDN,k,j,i)*(0.5 + amp*sn);
       }
     }
   }
@@ -581,41 +617,182 @@ void MeshBlock::ProblemGenerator(ParameterInput *pin) {
 
 namespace {
 //----------------------------------------------------------------------------------------
-//! \fn Real A1(const Real x1,const Real x2,const Real x3)
-//  \brief A1: 1-component of vector potential, using a gauge such that Ax = 0, and Ay,
-//  Az are functions of x and y alone.
+//! \fn Real AveDiff2A1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+//!                     const Real x2f_jp1)
+//! \brief AveDiff2A1: 1-component of vector potential on x2-x3 edges, averaged along
+//! x1, and differenced between x2 faces (x3f constant). Used to compute B3
+//! (2D, cos_a2 = 1 assumed)
 
-Real A1(const Real x1, const Real x2, const Real x3) {
-  Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
-  Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Ay =  bz0*x - (dbz/k_par)*std::cos(k_par*(x));
-  Real Az = -by0*x + (dby/k_par)*std::cos(k_par*(x)) + bx0*y;
+Real AveDiff2A1(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                const Real x2f_jp1) {
+  // xl_i, xl_ip1 are lower (x2f_j) x2-x3 edge x endpoints
+  Real xl_i = x1f_i*cos_a3 + x2f_j*sin_a3;
+  Real xl_ip1 = x1f_ip1*cos_a3 + x2f_j*sin_a3;
+  // xu_i, xu_ip1 are upper (x2f_jp1) x2-x3 edge x1 endpoints
+  Real xu_i = x1f_i*cos_a3 + x2f_jp1*sin_a3;
+  Real xu_ip1 = x1f_ip1*cos_a3 + x2f_jp1*sin_a3;
 
+  Real dx1f = x1f_ip1 - x1f_i;
+  Real dx2f = x2f_jp1 - x2f_j;
+
+  Real Ay;
+  if (cos_a3 != 0.0) {
+    // O(bz0) linear term
+    Ay = -bz0*SQR(sin_a3);
+    Ay += dbz*sin_a3/(SQR(k_par)*cos_a3*dx1f*dx2f)
+          *((std::sin(k_par*xu_ip1) - std::sin(k_par*xu_i))
+            - (std::sin(k_par*xl_ip1) - std::sin(k_par*xl_i)));
+  } else { // vertical coordinate aligned wave--- uniform on the x1 edge
+    // O(bz0) linear term
+    Ay = -bz0;
+    // O(amp) perturbative term
+    // Using the difference of cosine trig identity, with angles x+/-dx2f/2
+    Ay -= (2.0*dbz/(k_par*dx2f))*std::sin(k_par*dx2f/2.0)
+          *std::sin(k_par*(x2f_j + dx2f/2.0));
+  }
+  return Ay;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveDiff1A2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+//!                     const Real x2f_jp1)
+//! \brief AveDiff1A2: 2-component of vector potential on x1-x3 edges, averaged along
+//! x2, and differenced between x1 faces (x3f constant). Used to compute B3
+//! (2D, cos_a2 = 1 assumed)
+
+Real AveDiff1A2(const Real x1f_i, const Real x1f_ip1, const Real x2f_j,
+                const Real x2f_jp1) {
+  // xl_j, xl_jp1 are lower (x1f_i) x1-x3 edge x2 endpoints
+  Real xl_j = x1f_i*cos_a3 + x2f_j*sin_a3;
+  Real xl_jp1 = x1f_i*cos_a3 + x2f_jp1*sin_a3;
+  // xu_j, xu_jp1 are upper (x1f_ip1) x1-x3 edge x2 endpoints
+  Real xu_j = x1f_ip1*cos_a3 + x2f_j*sin_a3;
+  Real xu_jp1 = x1f_ip1*cos_a3 + x2f_jp1*sin_a3;
+
+  Real dx1f = x1f_ip1 - x1f_i;
+  Real dx2f = x2f_jp1 - x2f_j;
+  Real Ay;
+  if (sin_a3 != 0.0) {
+    // O(bz0) linear term
+    Ay = bz0*SQR(cos_a3);
+    Ay -= dbz*cos_a3/(SQR(k_par)*sin_a3*dx1f*dx2f)
+          *((std::sin(k_par*xu_jp1) - std::sin(k_par*xu_j))
+            - (std::sin(k_par*xl_jp1) - std::sin(k_par*xl_j)));
+  } else { // horizontal coordinate aligned wave--- uniform on the x2 edge
+    // O(bz0) linear term
+    Ay = bz0;
+    // O(amp) perturbative term
+    // Using the difference of cosine trig identity, with angles x+/-dx1f/2
+    Ay += (2.0*dbz/(k_par*dx1f))*std::sin(k_par*dx1f/2.0)
+          *std::sin(k_par*(x1f_i + dx1f/2.0));
+  }
+  return Ay;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveDiff1A3(const Real x1f_i, const Real x1f_ip1, const Real x2f_j)
+//! \brief AveDiff1A3: 3-component of vector potential on x1-x2 edges, averaged along
+//! x3, and differenced between x1 faces (x2f constant). Used to compute B2
+//! (2D, cos_a2 = 1 assumed)
+
+Real AveDiff1A3(const Real x1f_i, const Real x1f_ip1, const Real x2f_j) {
+  // xl is lower (x1f_i) x1-x2 edge x3 midpoint
+  // (no need for endpoints due to lack of x3 dependence)
+  Real xl = x1f_i*cos_a3 + x2f_j*sin_a3;
+
+  // xu is upper (x1f_ip1) x1-x2 edge x3 midpoint
+  Real xu = x1f_ip1*cos_a3 + x2f_j*sin_a3;
+
+  // O(bx0,by0) linear term
+  Real Az = -by0*cos_a3 - bx0*sin_a3;
+
+  Real dx1f = x1f_ip1 - x1f_i;
+
+  // O(amp) perturbative term
+  Az += (dby/(k_par*dx1f))*(std::cos(k_par*xu) - std::cos(k_par*xl));
+
+  return Az;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveDiff2A3(const Real x1f_i, const Real x2f_j, const Real x2f_jp1)
+//! \brief AveDiff2A3: 3-component of vector potential on x1-x2 edges, averaged along
+//! x3, and differenced between x2 faces (x1f constant). Used to compute B1
+//! (2D, cos_a2 = 1 assumed)
+
+Real AveDiff2A3(const Real x1f_i, const Real x2f_j, const Real x2f_jp1) {
+  // xl is lower (x2f_j) x1-x2 edge x3 midpoint (no need for endpoints due to
+  // lack of x3 dependence)
+  Real xl = x1f_i*cos_a3 + x2f_j*sin_a3;
+
+  // xu is upper (x2f_jp1) x1-x2 edge x3 midpoint
+  Real xu = x1f_i*cos_a3 + x2f_jp1*sin_a3;
+
+  // O(bx0,by0) linear term
+  Real Az = -by0*sin_a3 + bx0*cos_a3;
+
+  Real dx2f = x2f_jp1 - x2f_j;
+
+  // O(amp) perturbative term
+  Az += (dby/(k_par*dx2f))*(std::cos(k_par*xu) - std::cos(k_par*xl));
+
+  return Az;
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real EdgeAveCos(const Real xs, const Real xe)
+//! \brief exact average of cos(k_par*x) over an edge along which the phase coordinate x
+//! varies linearly from xs to xe (xs == xe for an edge orthogonal to the wavevector)
+
+Real EdgeAveCos(const Real xs, const Real xe) {
+  if (xs == xe) return std::cos(k_par*xs);
+  return (std::sin(k_par*xe) - std::sin(k_par*xs))/(k_par*(xe - xs));
+}
+
+//----------------------------------------------------------------------------------------
+//! \fn Real AveA1(const Real x1f_i, const Real x1f_ip1, const Real x2f, const Real x3f)
+//! \brief AveA1: 1-component of vector potential, exactly averaged along the x1 edge
+//! (3D, arbitrary wavevector orientation). The averages of the terms linear in the
+//! rotated coordinates x, y equal their values at the edge midpoint.
+
+Real AveA1(const Real x1f_i, const Real x1f_ip1, const Real x2f, const Real x3f) {
+  Real xs = x1f_i*cos_a2*cos_a3 + x2f*cos_a2*sin_a3 + x3f*sin_a2;
+  Real xe = x1f_ip1*cos_a2*cos_a3 + x2f*cos_a2*sin_a3 + x3f*sin_a2;
+  Real xm = 0.5*(xs + xe);
+  Real ym = -0.5*(x1f_i + x1f_ip1)*sin_a3 + x2f*cos_a3;
+  Real avecos = EdgeAveCos(xs, xe);
+  Real Ay = bz0*xm - (dbz/k_par)*avecos;
+  Real Az = -by0*xm + (dby/k_par)*avecos + bx0*ym;
   return -Ay*sin_a3 - Az*sin_a2*cos_a3;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real A2(const Real x1,const Real x2,const Real x3)
-//  \brief A2: 2-component of vector potential
+//! \fn Real AveA2(const Real x1f, const Real x2f_j, const Real x2f_jp1, const Real x3f)
+//! \brief AveA2: 2-component of vector potential, exactly averaged along the x2 edge
 
-Real A2(const Real x1, const Real x2, const Real x3) {
-  Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
-  Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Ay =  bz0*x - (dbz/k_par)*std::cos(k_par*(x));
-  Real Az = -by0*x + (dby/k_par)*std::cos(k_par*(x)) + bx0*y;
-
+Real AveA2(const Real x1f, const Real x2f_j, const Real x2f_jp1, const Real x3f) {
+  Real xs = x1f*cos_a2*cos_a3 + x2f_j*cos_a2*sin_a3 + x3f*sin_a2;
+  Real xe = x1f*cos_a2*cos_a3 + x2f_jp1*cos_a2*sin_a3 + x3f*sin_a2;
+  Real xm = 0.5*(xs + xe);
+  Real ym = -x1f*sin_a3 + 0.5*(x2f_j + x2f_jp1)*cos_a3;
+  Real avecos = EdgeAveCos(xs, xe);
+  Real Ay = bz0*xm - (dbz/k_par)*avecos;
+  Real Az = -by0*xm + (dby/k_par)*avecos + bx0*ym;
   return Ay*cos_a3 - Az*sin_a2*sin_a3;
 }
 
 //----------------------------------------------------------------------------------------
-//! \fn Real A3(const Real x1,const Real x2,const Real x3)
-//  \brief A3: 3-component of vector potential
+//! \fn Real AveA3(const Real x1f, const Real x2f, const Real x3f_k, const Real x3f_kp1)
+//! \brief AveA3: 3-component of vector potential, exactly averaged along the x3 edge
+//! (y does not depend on x3)
 
-Real A3(const Real x1, const Real x2, const Real x3) {
-  Real x =  x1*cos_a2*cos_a3 + x2*cos_a2*sin_a3 + x3*sin_a2;
-  Real y = -x1*sin_a3        + x2*cos_a3;
-  Real Az = -by0*x + (dby/k_par)*std::cos(k_par*(x)) + bx0*y;
-
+Real AveA3(const Real x1f, const Real x2f, const Real x3f_k, const Real x3f_kp1) {
+  Real xs = x1f*cos_a2*cos_a3 + x2f*cos_a2*sin_a3 + x3f_k*sin_a2;
+  Real xe = x1f*cos_a2*cos_a3 + x2f*cos_a2*sin_a3 + x3f_kp1*sin_a2;
+  Real xm = 0.5*(xs + xe);
+  Real y = -x1f*sin_a3 + x2f*cos_a3;
+  Real avecos = EdgeAveCos(xs, xe);
+  Real Az = -by0*xm + (dby/k_par)*avecos + bx0*y;
   return Az*cos_a2;
 }
 

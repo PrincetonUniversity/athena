@@ -22,6 +22,8 @@ tlim       = 5.0       # time limit
 integrator  = vl2       # time integration algorithm
 xorder      = 2         # order of spatial reconstruction
 ncycle_out  = 1         # interval for stdout summary info
+correct_ic  = false     # correct midpoint assumption in initial condition
+correct_err = false     # correct midpoint assumption in analytic solution
 
 <mesh>
 nx1        = 256       # Number of zones in X1-direction
@@ -65,6 +67,8 @@ b_par   = 1.0         # B parallel
 b_perp  = 0.1         # B perpendicular
 pres    = 0.1         # pressure
 v_par   = 0.0         # vpar = {0, 1} -> {traveling, standing} wave
+ang_3   = -999.9      # rotation of k around x3 axis (-999.9 -> auto diagonal)
 ang_2   = 0.0         # rotation of k around x2 axis
+ang_3_vert= false     # set to 'true' to make ang_3=pi/2
 dir     = 1           # 1: right polarization (whistler wave), 2: left
 

@@ -18,7 +18,7 @@ cfl_number = 0.3        # The Courant, Friedrichs, & Lewy (CFL) Number
 nlim       = -1         # cycle limit
 tlim       = 0.01       # time limit (a few steps; see the regression test)
 integrator = rk3        # time integration algorithm
-xorder     = 3          # order of spatial reconstruction (xorder=4 is hydro-only)
+xorder     = 3          # order of spatial reconstruction
 ext_preserving = true   # extremum-preserving PPM limiter (xorder=3,4)
 ncycle_out = 0          # interval for stdout summary info
 

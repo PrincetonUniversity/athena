@@ -25,7 +25,7 @@ pgen_choices.remove('from_array')
 gr_probs = set([pgen for pgen in pgen_choices if pgen[0:3] == 'gr_'])
 # MHD-required problems: --rsolver=hlld by default
 mhd_probs = set(['hb3', 'hgb', 'jgg', 'cpaw', 'field_loop',
-                 'orszag_tang', 'rotor', 'resist', 'magnoh'])
+                 'orszag_tang', 'rotor', 'resist', 'magnoh', 'rotating_column'])
 grav_mg_probs = set(['binary_gravity', 'collapse'])
 crdiff_probs = set(['cr_diffusion_mg'])
 # Chemistry problems
